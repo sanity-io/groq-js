@@ -1,0 +1,41 @@
+// Jest Snapshot v1, https://goo.gl/fbAQLP
+
+exports[`Basic parsing Example query 1`] = `
+Object {
+  "base": Object {
+    "base": Object {
+      "type": "Star",
+    },
+    "query": Object {
+      "left": Object {
+        "name": "_type",
+        "type": "Identifier",
+      },
+      "op": "==",
+      "right": Object {
+        "type": "Value",
+        "value": "product",
+      },
+      "type": "OpCall",
+    },
+    "type": "Filter",
+  },
+  "query": Object {
+    "properties": Array [
+      Object {
+        "key": Object {
+          "type": "Value",
+          "value": "name",
+        },
+        "type": "Property",
+        "value": Object {
+          "name": "name",
+          "type": "Identifier",
+        },
+      },
+    ],
+    "type": "Object",
+  },
+  "type": "Project",
+}
+`;
