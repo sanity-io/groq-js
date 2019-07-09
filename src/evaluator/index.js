@@ -1,4 +1,6 @@
-const Value = require('./value');
+const Value = require('./value')
+const functions = require('./functions')
+const operators = require('./operators')
 
 class Scope {
   constructor(params, source, value, parent) {
@@ -21,7 +23,7 @@ function execute(node, scope) {
 
 const EXECUTORS = {
   This(_, scope) {
-    return scope.value
+    return new Value(scope.value)
   },
 
   Star(_, scope) {
@@ -29,15 +31,15 @@ const EXECUTORS = {
   },
 
   OpCall({op, left, right}, scope) {
-    return new Value(async () => {
-      let a = await execute(left, scope).get()
-      let b = await execute(right, scope).get()
-      if (op == '==') {
-        return a == b
-      }
+    let func = operators[op]
+    if (!func) throw new Error("Unknown operator: " + op)
+    return func(left, right, scope, execute)
+  },
 
-      throw new Error('unknown operator: ' + op)
-    })
+  FuncCall({name, args}, scope) {
+    let func = functions[name]
+    if (!func) throw new Error("Unknown function: " + name)
+    return func(args, scope, execute)
   },
 
   Filter({base, query}, scope) {
@@ -52,7 +54,19 @@ const EXECUTORS = {
   },
 
   Identifier({name}, scope) {
-    return new Value(scope.value[name])
+    return new Value(name in scope.value ? scope.value[name] : null)
+  },
+
+  GetIdentifier({base, name}, scope) {
+    return new Value(async () => {
+      let obj = await execute(base, scope).get()
+
+      if (obj && typeof obj === 'object') {
+        return obj[name]
+      } else {
+        return null
+      }
+    })
   },
 
   Value({value}) {
@@ -70,15 +84,55 @@ const EXECUTORS = {
     })
   },
 
+  ArrProject({base, query}, scope) {
+    let b = execute(base, scope)
+    return new Value(async function*() {
+      for await (let data of b) {
+        let newScope = scope.createNested(data)
+        let newData = await execute(query, newScope).get()
+        yield newData
+      }
+    })
+  },
+
   Object({properties}, scope) {
     return new Value(async () => {
       let result = {}
       for (let prop of properties) {
-        let key = await execute(prop.key, scope).get()
-        let value = await execute(prop.value, scope).get()
-        result[key] = value
+        switch (prop.type) {
+          case 'ObjectSplat':
+            Object.assign(result, scope.value)
+            break
+
+          case 'Property':
+            let key = await execute(prop.key, scope).get()
+            let value = await execute(prop.value, scope).get()
+            result[key] = value
+            break
+
+          default:
+            throw new Error("Unknown node type: " + prop.type)
+        }
       }
       return result
+    })
+  },
+
+  Array({elements}, scope) {
+    return new Value(async function*() {
+      for (let element of elements) {
+        yield await execute(element, scope).get()
+      }
+    })
+  },
+
+  And({left, right}, scope) {
+    return new Value(async () => {
+      let leftData = await execute(left, scope).get()
+      if (leftData === false) return false
+      let rightData = await execute(right, scope).get()
+      // TODO: Correct boolean semantics
+      return rightData
     })
   }
 }

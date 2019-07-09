@@ -1,8 +1,7 @@
-
 const ArrayIterator = Array.prototype[Symbol.iterator]
 
 function isIterator(obj) {
-  return typeof obj === 'object' && typeof obj.next === 'function'
+  return obj && typeof obj.next === 'function'
 }
 
 /** A Value represents a value that can be produced during execution of a query.
@@ -19,7 +18,7 @@ class Value {
    * (b) Promise which resolves to JSON-data
    * (c) Function which returns (a) or (b). This function will be invoked synchronously.
    * (d) Generator function which yields JSON-data
-  */
+   */
   constructor(inner) {
     this.inner = typeof inner === 'function' ? inner() : inner
   }
@@ -48,4 +47,4 @@ class Value {
   }
 }
 
-module.exports = Value;
+module.exports = Value

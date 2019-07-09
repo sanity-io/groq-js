@@ -32,6 +32,11 @@ const BUILDER = {
 
   ident(p, mark) {
     let name = p.processStringEnd()
+
+    if (name === 'null') return {type: 'Value', value: null}
+    if (name === 'true') return {type: 'Value', value: true}
+    if (name === 'false') return {type: 'Value', value: false}
+
     return {
       type: 'Identifier',
       name: name
@@ -41,11 +46,12 @@ const BUILDER = {
   attr_ident(p, mark) {
     let base = p.process()
     let name = p.processString()
-    return {
+
+    return unwrapArrProjection(base, base => ({
       type: 'GetIdentifier',
       base,
       name
-    }
+    }))
   },
 
   arr_expr(p, mark) {
@@ -70,16 +76,16 @@ const BUILDER = {
   neg(p, mark) {
     let base = p.process()
 
-    if (base.type === "Value") {
+    if (base.type === 'Value') {
       return {
-        type: "Value",
+        type: 'Value',
         value: -base.value
       }
     }
 
     return {
-      type: "Neg",
-      base,
+      type: 'Neg',
+      base
     }
   },
 
@@ -93,8 +99,8 @@ const BUILDER = {
     }
 
     return {
-      type: "Deref",
-      base,
+      type: 'Deref',
+      base
     }
   },
 
@@ -119,6 +125,14 @@ const BUILDER = {
   },
 
   integer(p, mark) {
+    let strValue = p.processStringEnd()
+    return {
+      type: 'Value',
+      value: Number(strValue)
+    }
+  },
+
+  float(p, mark) {
     let strValue = p.processStringEnd()
     return {
       type: 'Value',
@@ -162,7 +176,7 @@ const BUILDER = {
 
   object_splat(p, mark) {
     return {
-      type: 'ObjectSplat',
+      type: 'ObjectSplat'
     }
   },
 
@@ -176,6 +190,30 @@ const BUILDER = {
       type: 'Array',
       elements: elements
     }
+  },
+
+  func_call(p, mark) {
+    let name = p.processStringEnd()
+    let args = []
+    while (p.getMark().name !== 'func_args_end') {
+      args.push(p.process())
+    }
+    p.shift()
+    return {
+      type: 'FuncCall',
+      name,
+      args
+    }
+  },
+
+  and(p, mark) {
+    let left = p.process()
+    let right = p.process()
+    return {
+      type: 'And',
+      left,
+      right
+    }
   }
 }
 
@@ -185,6 +223,18 @@ function extractPropertyKey(node) {
   }
 
   throw new Error('Cannot determine property key for type: ' + node.type)
+}
+
+function unwrapArrProjection(base, func) {
+  if (base.type === 'ArrProject') {
+    return {
+      type: 'ArrProject',
+      base: base.base,
+      query: func(base.query)
+    }
+  } else {
+    return func(base)
+  }
 }
 
 function parse(input) {
