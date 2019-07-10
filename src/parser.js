@@ -5,21 +5,21 @@ const BUILDER = {
   filter(p, mark) {
     let base = p.process()
     let query = p.process()
-    return {
+    return unwrapArrProjection(base, base => ({
       type: 'Filter',
-      base: base,
-      query: query
-    }
+      base,
+      query
+    }))
   },
 
   project(p, mark) {
     let base = p.process()
     let query = p.process()
-    return {
+    return unwrapArrProjection(base, base => ({
       type: 'Project',
-      base: base,
-      query: query
-    }
+      base,
+      query
+    }))
   },
 
   star(p, mark) {
