@@ -8,6 +8,12 @@ function isPromise(obj) {
   return obj && typeof obj.then === 'function'
 }
 
+const EmptyIterator = {
+  next() {
+    return {done: true}
+  }
+}
+
 /** A Value represents a value that can be produced during execution of a query.
  *
  * Value provides a `get()` method for returning the whole data, but also
@@ -57,7 +63,11 @@ class Value {
         }
       }
     } else {
-      return ArrayIterator.call(this.inner)
+      if (Array.isArray(this.inner)) {
+        return ArrayIterator.call(this.inner)
+      } else {
+        return EmptyIterator
+      }
     }
   }
 }
