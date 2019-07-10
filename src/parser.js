@@ -102,10 +102,10 @@ const BUILDER = {
       throw new Error('TODO: Handle deref properly')
     }
 
-    return {
+    return unwrapArrProjection(base, base => ({
       type: 'Deref',
       base
-    }
+    }))
   },
 
   comp(p, mark) {
@@ -226,7 +226,7 @@ function extractPropertyKey(node) {
     return node.name
   }
 
-  if (node.type === 'Deref') {
+  if (node.type === 'Deref' || node.type === 'ArrProject') {
     return extractPropertyKey(node.base)
   }
 
