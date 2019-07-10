@@ -53,3 +53,17 @@ exports['<='] = function count(left, right, scope, execute) {
     return a <= b
   })
 }
+
+exports['in'] = function count(left, right, scope, execute) {
+  return new Value(async () => {
+    let a = await execute(left, scope).get()
+    
+    for await (let b of execute(right, scope)) {
+      if (a == b) {
+        return true
+      }
+    }
+
+    return false
+  })
+}
