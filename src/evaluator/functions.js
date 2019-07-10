@@ -14,7 +14,7 @@ exports.count = function count(args, scope, execute) {
 }
 
 exports.defined = function defined(args, scope, execute) {
-  if (args.length !== 1) throw new Error("count: 1 argument required")
+  if (args.length !== 1) throw new Error("defined: 1 argument required")
 
   return new Value(async () => {
     let inner = await execute(args[0], scope).get()
