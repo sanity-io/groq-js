@@ -152,6 +152,10 @@ function evaluate(tree, options = {}) {
   let params = {identity: 'groot'}
 
   if (options.documents != null) {
+    if (!Array.isArray(options.documents)) {
+      throw new Error('documents must be an array')
+    }
+
     source = new StaticSource(options.documents)
   } else {
     source = new StaticSource([])
