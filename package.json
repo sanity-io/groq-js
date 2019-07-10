@@ -14,5 +14,6 @@
   "devDependencies": {
     "jest": "^24.8.0",
     "prettier": "^1.18.2"
-  }
+  },
+  "files": ["src", "README.md"]
 }
