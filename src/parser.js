@@ -226,6 +226,10 @@ function extractPropertyKey(node) {
     return node.name
   }
 
+  if (node.type === 'Deref') {
+    return extractPropertyKey(node.base)
+  }
+
   throw new Error('Cannot determine property key for type: ' + node.type)
 }
 

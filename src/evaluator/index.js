@@ -99,6 +99,19 @@ const EXECUTORS = {
     })
   },
 
+  Deref({base}, scope) {
+    return new Value(async function() {
+      let ref = await execute(base, scope).get()
+      if (!ref) return
+
+      for await (let doc of scope.source.createSink()) {
+        if (typeof doc._id === 'string' && ref._ref === doc._id) {
+          return doc
+        }
+      }
+    })
+  },
+
   Object({properties}, scope) {
     return new Value(async () => {
       let result = {}
