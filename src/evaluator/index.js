@@ -30,6 +30,10 @@ const EXECUTORS = {
     return scope.source.createSink()
   },
 
+  Parent(_, scope) {
+    return new Value(scope.parent && scope.parent.value)
+  },
+
   OpCall({op, left, right}, scope) {
     let func = operators[op]
     if (!func) throw new Error("Unknown operator: " + op)

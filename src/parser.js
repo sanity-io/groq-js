@@ -30,6 +30,10 @@ const BUILDER = {
     return {type: 'This'}
   },
 
+  parent(p, mark) {
+    return {type: 'Parent'}
+  },
+
   ident(p, mark) {
     let name = p.processStringEnd()
 
