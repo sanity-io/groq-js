@@ -4,6 +4,10 @@ function isIterator(obj) {
   return obj && typeof obj.next === 'function'
 }
 
+function isPromise(obj) {
+  return obj && typeof obj.then === 'function'
+}
+
 /** A Value represents a value that can be produced during execution of a query.
  *
  * Value provides a `get()` method for returning the whole data, but also
@@ -40,8 +44,19 @@ class Value {
   [Symbol.asyncIterator]() {
     if (isIterator(this.inner)) {
       return this.inner
+    } else if (isPromise(this.inner)) {
+      return {
+        iterator: null,
+        promise: this.inner,
+        async next() {
+          if (!this.iterator) {
+            let inner = await this.promise
+            this.iterator = ArrayIterator.call(inner)
+          }
+          return this.iterator.next()
+        }
+      }
     } else {
-      // TODO: Support promise here as well
       return ArrayIterator.call(this.inner)
     }
   }
