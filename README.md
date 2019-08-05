@@ -37,6 +37,34 @@ npm i git+https://git@github.com/sanity-io/groq-js.git
 yarn add git+https://git@github.com/sanity-io/groq-js.git
 ```
 
+## Tests
+
+Tests are written in [Jest](https://jestjs.io/):
+
+```bash
+# Install dependencies
+yarn
+
+# Run tests
+yarn test
+```
+
+You can also generate tests from [the official GROQ test suite](https://github.com/sanity-io/groq-test-suite):
+
+```bash
+# Clone the repo somewhere:
+git clone https://github.com/sanity-io/groq-test-suite somewhere
+
+# Install dependencies:
+(cd somewhere && yarn)
+
+# Generate test file (in this repo):
+./test/generate.sh somewhere
+
+# Run tests as usual:
+yarn test
+```
+
 ## Versioning
 
 GROQ-JS is currently not released.
