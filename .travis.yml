@@ -1,0 +1,20 @@
+language: node_js
+node_js:
+  - node
+  - lts/*
+
+env:
+  GROQ_TEST_SUITE=master
+
+before_script:
+  - git init groq-test-suite
+  - |
+    (
+      cd groq-test-suite
+      git remote add origin https://github.com/sanity-io/groq-test-suite
+      git fetch origin $GROQ_TEST_SUITE
+      git reset --hard FETCH_HEAD
+    )
+  - (cd groq-test-suite && yarn)
+  - ./test/generate.sh groq-test-suite
+
