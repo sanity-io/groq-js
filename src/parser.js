@@ -1,10 +1,45 @@
 const {parse: rawParse} = require('./rawParser')
 const MarkProcessor = require('./markProcessor')
 
+function isNumber(node) {
+  return node.type == 'Value' && typeof node.value == 'number'
+}
+
+function isString(node) {
+  return node.type == 'Value' && typeof node.value == 'string'
+}
+
 const BUILDER = {
   filter(p, mark) {
     let base = p.process()
     let query = p.process()
+
+    if (isNumber(query)) {
+      return {
+        type: 'Slice',
+        base,
+        index: query
+      }
+    }
+
+    if (isString(query)) {
+      return {
+        type: 'Attribute',
+        base,
+        name: query.value
+      }
+    }
+    
+    if (query.type == 'Range') {
+      return {
+        type: 'RangeSlice',
+        base,
+        left: query.left,
+        right: query.right,
+        isExclusive: query.isExclusive
+      }
+    }
+
     return unwrapArrProjection(base, base => ({
       type: 'Filter',
       base,
@@ -52,7 +87,7 @@ const BUILDER = {
     let name = p.processString()
 
     return unwrapArrProjection(base, base => ({
-      type: 'GetIdentifier',
+      type: 'Attribute',
       base,
       name
     }))
@@ -73,7 +108,19 @@ const BUILDER = {
     return {
       type: 'Range',
       left,
-      right
+      right,
+      isExclusive: false
+    }
+  },
+
+  exc_range(p, mark) {
+    let left = p.process()
+    let right = p.process()
+    return {
+      type: 'Range',
+      left,
+      right,
+      isExclusive: true
     }
   },
 
@@ -217,6 +264,14 @@ const BUILDER = {
       type: 'And',
       left,
       right
+    }
+  },
+
+  not(p, mark) {
+    let base = p.process()
+    return {
+      type: 'Not',
+      base
     }
   }
 }

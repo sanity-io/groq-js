@@ -57,6 +57,9 @@ class Value {
         async next() {
           if (!this.iterator) {
             let inner = await this.promise
+            if (!Array.isArray(inner)) {
+              return {done: true}
+            }
             this.iterator = ArrayIterator.call(inner)
           }
           return this.iterator.next()
