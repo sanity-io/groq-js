@@ -57,20 +57,65 @@ const EXECUTORS = {
     })
   },
 
-  Identifier({name}, scope) {
-    return new Value(name in scope.value ? scope.value[name] : null)
+  Slice({base, index}, scope) {
+    return new Value(async function() {
+      let array =  await execute(base, scope).get()
+      if (!Array.isArray(array)) return null
+      let idx = await execute(index, scope).get()
+      if (idx < 0) {
+        idx = array.length + idx
+      }
+      if (idx >= 0 && idx < array.length) {
+        return array[idx]
+      } else {
+        // Make sure we return `null` for out-of-bounds access
+        return null
+      }
+    })
   },
 
-  GetIdentifier({base, name}, scope) {
-    return new Value(async () => {
-      let obj = await execute(base, scope).get()
+  RangeSlice({base, left, right, isExclusive}, scope) {
+    return new Value(async function() {
+      let array =  await execute(base, scope).get()
+      if (!Array.isArray(array)) return null
 
-      if (obj && typeof obj === 'object') {
-        return obj[name]
+      let leftIdx = await execute(left, scope).get()
+      let rightIdx = await execute(right, scope).get()
+
+      if (typeof leftIdx != 'number' || typeof rightIdx != 'number') {
+        return null
+      }
+
+      // Handle negative index
+      if (leftIdx < 0) leftIdx = array.length + leftIdx
+      if (rightIdx < 0) rightIdx = array.length + rightIdx
+
+      // Convert from inclusive to exclusive index
+      if (!isExclusive) rightIdx++
+
+      if (leftIdx < 0) leftIdx = 0
+      if (rightIdx < 0) rightIdx = 0
+
+      // Note: At this point the indices might point out-of-bound, but
+      // .slice handles this correctly.
+
+      return array.slice(leftIdx, rightIdx)
+    })
+  },
+
+  Attribute({base, name}, scope) {
+    return new Value(async function() {
+      let baseValue =  await execute(base, scope).get()
+      if (typeof baseValue == 'object' && baseValue.hasOwnProperty(name)) {
+        return baseValue[name]
       } else {
         return null
       }
     })
+  },
+
+  Identifier({name}, scope) {
+    return new Value(name in scope.value ? scope.value[name] : null)
   },
 
   Value({value}) {
@@ -150,6 +195,14 @@ const EXECUTORS = {
       let rightData = await execute(right, scope).get()
       // TODO: Correct boolean semantics
       return rightData
+    })
+  },
+
+  Not({base}, scope) {
+    return new Value(async () => {
+      let value = await execute(base, scope).get()
+      // TODO: Correct boolean semantics
+      return value === false
     })
   }
 }
