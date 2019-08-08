@@ -36,30 +36,37 @@ const EXECUTORS = {
 
   OpCall({op, left, right}, scope) {
     let func = operators[op]
-    if (!func) throw new Error("Unknown operator: " + op)
+    if (!func) throw new Error('Unknown operator: ' + op)
     return func(left, right, scope, execute)
   },
 
   FuncCall({name, args}, scope) {
     let func = functions[name]
-    if (!func) throw new Error("Unknown function: " + name)
+    if (!func) throw new Error('Unknown function: ' + name)
     return func(args, scope, execute)
   },
 
   Filter({base, query}, scope) {
-    return new Value(async function*() {
-      let b = execute(base, scope)
-      for await (let value of b) {
+    return new Value(async function() {
+      let b = await execute(base, scope).get()
+
+      if (!Array.isArray(b)) return null
+
+      let result = []
+
+      for (let value of b) {
         let newScope = scope.createNested(value)
         let didMatch = await execute(query, newScope).get()
-        if (didMatch) yield value
+        if (didMatch) result.push(value)
       }
+
+      return result
     })
   },
 
   Slice({base, index}, scope) {
     return new Value(async function() {
-      let array =  await execute(base, scope).get()
+      let array = await execute(base, scope).get()
       if (!Array.isArray(array)) return null
       let idx = await execute(index, scope).get()
       if (idx < 0) {
@@ -76,7 +83,7 @@ const EXECUTORS = {
 
   RangeSlice({base, left, right, isExclusive}, scope) {
     return new Value(async function() {
-      let array =  await execute(base, scope).get()
+      let array = await execute(base, scope).get()
       if (!Array.isArray(array)) return null
 
       let leftIdx = await execute(left, scope).get()
@@ -105,8 +112,8 @@ const EXECUTORS = {
 
   Attribute({base, name}, scope) {
     return new Value(async function() {
-      let baseValue =  await execute(base, scope).get()
-      if (typeof baseValue == 'object' && baseValue.hasOwnProperty(name)) {
+      let baseValue = await execute(base, scope).get()
+      if (baseValue != null && typeof baseValue == 'object' && baseValue.hasOwnProperty(name)) {
         return baseValue[name]
       } else {
         return null
@@ -123,23 +130,34 @@ const EXECUTORS = {
   },
 
   Project({base, query}, scope) {
-    let b = execute(base, scope)
-    return new Value(async function*() {
-      for await (let data of b) {
-        let newScope = scope.createNested(data)
-        let newData = await execute(query, newScope).get()
-        yield newData
+    return new Value(async function() {
+      let baseValue = await execute(base, scope).get()
+      if (Array.isArray(baseValue)) {
+        let result = []
+        for await (let data of baseValue) {
+          let newScope = scope.createNested(data)
+          let newData = await execute(query, newScope).get()
+          result.push(newData)
+        }
+        return result
+      } else {
+        let newScope = scope.createNested(baseValue)
+        return await execute(query, newScope).get()
       }
     })
   },
 
-  ArrProject({base, query}, scope) {
+  Flatten({base}, scope) {
     let b = execute(base, scope)
     return new Value(async function*() {
       for await (let data of b) {
-        let newScope = scope.createNested(data)
-        let newData = await execute(query, newScope).get()
-        yield newData
+        if (Array.isArray(data)) {
+          for (let element of data) {
+            yield element
+          }
+        } else {
+          yield null
+        }
       }
     })
   },
@@ -147,13 +165,15 @@ const EXECUTORS = {
   Deref({base}, scope) {
     return new Value(async function() {
       let ref = await execute(base, scope).get()
-      if (!ref) return
+      if (!ref) return null
 
       for await (let doc of scope.source.createSink()) {
         if (typeof doc._id === 'string' && ref._ref === doc._id) {
           return doc
         }
       }
+
+      return null
     })
   },
 
@@ -173,7 +193,7 @@ const EXECUTORS = {
             break
 
           default:
-            throw new Error("Unknown node type: " + prop.type)
+            throw new Error('Unknown node type: ' + prop.type)
         }
       }
       return result
@@ -206,6 +226,8 @@ const EXECUTORS = {
     })
   }
 }
+
+EXECUTORS.ArrProject = EXECUTORS.Project
 
 class StaticSource {
   constructor(documents) {

@@ -586,6 +586,7 @@ var state375 = new State();
 var state376 = new State();
 var state377 = new State();
 var state378 = new State();
+var state379 = new State();
 state0.p = (function(step, frame) {
 var token = step.token;
 step.startCall("main").addReturn(frame.context, state1);
@@ -2562,7 +2563,7 @@ step.startCall("OBJECT").addReturn(frame.context, state352);
 step.addMark("star", frame.context, state353);
 step.addMark("this", frame.context, state354);
 step.startCall("PARENT").addReturn(frame.context, state355);
-if (token === 40) { frame.addNextState(state356); }
+step.addMark("paren", frame.context, state356);
 if (token === 36) { frame.addNextState(state357); }
 step.addMark("ident", frame.context, state358);
 step.startCall("FUNC_CALL").addReturn(frame.context, state359);
@@ -2607,18 +2608,17 @@ step.returnCall("EXPR^20", frame);
 state355.id = 355;
 state356.p = (function(step, frame) {
 var token = step.token;
-step.startCall("IGN").addReturn(frame.context, state364);
-step.startCall("EXPR^2").addReturn(frame.context, state365);
+if (token === 40) { frame.addNextState(state364); }
 });
 state356.id = 356;
 state357.p = (function(step, frame) {
 var token = step.token;
-step.addMark("param", frame.context, state368);
+step.addMark("param", frame.context, state369);
 });
 state357.id = 357;
 state358.p = (function(step, frame) {
 var token = step.token;
-step.startCall("IDENT").addReturn(frame.context, state371);
+step.startCall("IDENT").addReturn(frame.context, state372);
 });
 state358.id = 358;
 state359.p = (function(step, frame) {
@@ -2628,12 +2628,12 @@ step.returnCall("EXPR^20", frame);
 state359.id = 359;
 state360.p = (function(step, frame) {
 var token = step.token;
-if (token === 45) { frame.addNextState(state373); }
+if (token === 45) { frame.addNextState(state374); }
 });
 state360.id = 360;
 state361.p = (function(step, frame) {
 var token = step.token;
-if (token === 43) { frame.addNextState(state376); }
+if (token === 43) { frame.addNextState(state377); }
 });
 state361.id = 361;
 state362.p = (function(step, frame) {
@@ -2648,86 +2648,92 @@ step.returnCall("EXPR^20", frame);
 state363.id = 363;
 state364.p = (function(step, frame) {
 var token = step.token;
-step.startCall("IGN").addReturn(frame.context, state364);
-step.startCall("EXPR^2").addReturn(frame.context, state365);
+step.startCall("IGN").addReturn(frame.context, state365);
+step.startCall("EXPR^2").addReturn(frame.context, state366);
 });
 state364.id = 364;
 state365.p = (function(step, frame) {
 var token = step.token;
-step.startCall("IGN").addReturn(frame.context, state366);
-if (token === 41) { frame.addNextState(state367); }
+step.startCall("IGN").addReturn(frame.context, state365);
+step.startCall("EXPR^2").addReturn(frame.context, state366);
 });
 state365.id = 365;
 state366.p = (function(step, frame) {
 var token = step.token;
-step.startCall("IGN").addReturn(frame.context, state366);
-if (token === 41) { frame.addNextState(state367); }
+step.startCall("IGN").addReturn(frame.context, state367);
+if (token === 41) { frame.addNextState(state368); }
 });
 state366.id = 366;
 state367.p = (function(step, frame) {
 var token = step.token;
-step.returnCall("EXPR^20", frame);
+step.startCall("IGN").addReturn(frame.context, state367);
+if (token === 41) { frame.addNextState(state368); }
 });
 state367.id = 367;
 state368.p = (function(step, frame) {
 var token = step.token;
-step.startCall("IDENT").addReturn(frame.context, state369);
+step.returnCall("EXPR^20", frame);
 });
 state368.id = 368;
 state369.p = (function(step, frame) {
 var token = step.token;
-step.addMark("param_end", frame.context, state370);
+step.startCall("IDENT").addReturn(frame.context, state370);
 });
 state369.id = 369;
 state370.p = (function(step, frame) {
 var token = step.token;
-step.returnCall("EXPR^20", frame);
+step.addMark("param_end", frame.context, state371);
 });
 state370.id = 370;
 state371.p = (function(step, frame) {
 var token = step.token;
-step.addMark("ident_end", frame.context, state372);
+step.returnCall("EXPR^20", frame);
 });
 state371.id = 371;
 state372.p = (function(step, frame) {
 var token = step.token;
-step.returnCall("EXPR^20", frame);
+step.addMark("ident_end", frame.context, state373);
 });
 state372.id = 372;
 state373.p = (function(step, frame) {
 var token = step.token;
-step.startCall("IGN").addReturn(frame.context, state374);
-step.startCall("EXPR^20").addReturn(frame.context, state375);
+step.returnCall("EXPR^20", frame);
 });
 state373.id = 373;
 state374.p = (function(step, frame) {
 var token = step.token;
-step.startCall("IGN").addReturn(frame.context, state374);
-step.startCall("EXPR^20").addReturn(frame.context, state375);
+step.startCall("IGN").addReturn(frame.context, state375);
+step.startCall("EXPR^20").addReturn(frame.context, state376);
 });
 state374.id = 374;
 state375.p = (function(step, frame) {
 var token = step.token;
-step.returnCall("EXPR^20", frame);
+step.startCall("IGN").addReturn(frame.context, state375);
+step.startCall("EXPR^20").addReturn(frame.context, state376);
 });
 state375.id = 375;
 state376.p = (function(step, frame) {
 var token = step.token;
-step.startCall("IGN").addReturn(frame.context, state377);
-step.startCall("EXPR^20").addReturn(frame.context, state378);
+step.returnCall("EXPR^20", frame);
 });
 state376.id = 376;
 state377.p = (function(step, frame) {
 var token = step.token;
-step.startCall("IGN").addReturn(frame.context, state377);
-step.startCall("EXPR^20").addReturn(frame.context, state378);
+step.startCall("IGN").addReturn(frame.context, state378);
+step.startCall("EXPR^20").addReturn(frame.context, state379);
 });
 state377.id = 377;
 state378.p = (function(step, frame) {
 var token = step.token;
-step.returnCall("EXPR^20", frame);
+step.startCall("IGN").addReturn(frame.context, state378);
+step.startCall("EXPR^20").addReturn(frame.context, state379);
 });
 state378.id = 378;
+state379.p = (function(step, frame) {
+var token = step.token;
+step.returnCall("EXPR^20", frame);
+});
+state379.id = 379;
 var initialContext = new Context(null, null);
 var initialFrame = new Frame(initialContext);
 initialFrame.addNextState(state0);

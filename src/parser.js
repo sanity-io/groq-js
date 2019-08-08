@@ -10,41 +10,54 @@ function isString(node) {
 }
 
 const BUILDER = {
+  paren(p) {
+    let inner = p.process()
+    if (inner.type == 'ArrProject') {
+      inner = {
+        ...inner,
+        type: 'Project'
+      }
+    }
+    return inner
+  },
+
   filter(p, mark) {
     let base = p.process()
     let query = p.process()
 
-    if (isNumber(query)) {
-      return {
-        type: 'Slice',
-        base,
-        index: query
+    return unwrapArrProjection(base, base => {
+      if (isNumber(query)) {
+        return {
+          type: 'Slice',
+          base,
+          index: query
+        }
       }
-    }
 
-    if (isString(query)) {
-      return {
-        type: 'Attribute',
-        base,
-        name: query.value
+      if (isString(query)) {
+        return {
+          type: 'Attribute',
+          base,
+          name: query.value
+        }
       }
-    }
-    
-    if (query.type == 'Range') {
-      return {
-        type: 'RangeSlice',
-        base,
-        left: query.left,
-        right: query.right,
-        isExclusive: query.isExclusive
-      }
-    }
 
-    return unwrapArrProjection(base, base => ({
-      type: 'Filter',
-      base,
-      query
-    }))
+      if (query.type == 'Range') {
+        return {
+          type: 'RangeSlice',
+          base,
+          left: query.left,
+          right: query.right,
+          isExclusive: query.isExclusive
+        }
+      }
+
+      return {
+        type: 'Filter',
+        base,
+        query
+      }
+    })
   },
 
   project(p, mark) {
@@ -95,6 +108,9 @@ const BUILDER = {
 
   arr_expr(p, mark) {
     let base = p.process()
+    if (base.type == 'ArrProject') {
+      base = {type: 'Flatten', base}
+    }
     return {
       type: 'ArrProject',
       base,
@@ -143,16 +159,21 @@ const BUILDER = {
   deref(p, mark) {
     let base = p.process()
 
-    let nextMark = p.getMark()
+    return unwrapArrProjection(base, base => {
+      let nextMark = p.getMark()
+      let result = {type: 'Deref', base}
 
-    if (nextMark && nextMark.name === 'deref_field') {
-      throw new Error('TODO: Handle deref properly')
-    }
+      if (nextMark && nextMark.name === 'deref_field') {
+        let name = p.processString()
+        result = {
+          type: 'Attribute',
+          base: result,
+          name
+        }
+      }
 
-    return unwrapArrProjection(base, base => ({
-      type: 'Deref',
-      base
-    }))
+      return result
+    })
   },
 
   comp(p, mark) {
