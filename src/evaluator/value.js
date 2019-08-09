@@ -1,78 +1,70 @@
-const ArrayIterator = Array.prototype[Symbol.iterator]
-
-function isIterator(obj) {
-  return obj && typeof obj.next === 'function'
-}
-
-function isPromise(obj) {
-  return obj && typeof obj.then === 'function'
-}
-
-const EmptyIterator = {
-  next() {
-    return {done: true}
-  }
-}
-
-/** A Value represents a value that can be produced during execution of a query.
+/* A Value represents a value that can be produced during execution of a query.
  *
  * Value provides a `get()` method for returning the whole data, but also
  * implements the async iterator protocol for streaming data.
  */
-class Value {
-  /** Constructs a new Value.
-   *
-   * The `inner` parameter can take the following types:
-   *
-   * (a) JSON-data
-   * (b) Promise which resolves to JSON-data
-   * (c) Function which returns (a) or (b). This function will be invoked synchronously.
-   * (d) Generator function which yields JSON-data
-   */
-  constructor(inner) {
-    this.inner = typeof inner === 'function' ? inner() : inner
+
+class StaticValue {
+  constructor(data) {
+    this.data = data
   }
 
-  /** Returns the data inside the Value. */
+  getType() {
+    if (this.data == null) return 'null'
+    if (Array.isArray(this.data)) return 'array'
+    return typeof this.data
+  }
+
   async get() {
-    if (isIterator(this.inner)) {
-      let result = []
-      for await (let data of this.inner) {
-        result.push(data)
-      }
-      return result
+    return this.data
+  }
+
+  [Symbol.asyncIterator]() {
+    if (Array.isArray(this.data)) {
+      return (function*(data) {
+        for (let element of data) {
+          yield new StaticValue(element)
+        }
+      })(this.data)
     } else {
-      return this.inner
+      throw new Error('Cannot iterate over: ' + this.getType())
     }
   }
 
-  /** Iterates over every element in the Value. */
-  [Symbol.asyncIterator]() {
-    if (isIterator(this.inner)) {
-      return this.inner
-    } else if (isPromise(this.inner)) {
-      return {
-        iterator: null,
-        promise: this.inner,
-        async next() {
-          if (!this.iterator) {
-            let inner = await this.promise
-            if (!Array.isArray(inner)) {
-              return {done: true}
-            }
-            this.iterator = ArrayIterator.call(inner)
-          }
-          return this.iterator.next()
-        }
-      }
-    } else {
-      if (Array.isArray(this.inner)) {
-        return ArrayIterator.call(this.inner)
-      } else {
-        return EmptyIterator
-      }
-    }
+  getBoolean() {
+    return this.data === true
   }
 }
 
-module.exports = Value
+/** A StreamValue accepts a generator which yields values. */
+class StreamValue {
+  constructor(generator) {
+    this.iterator = generator()
+  }
+
+  getType() {
+    return 'array'
+  }
+
+  async get() {
+    let result = []
+    for await (let element of this.iterator) {
+      result.push(await element.get())
+    }
+    return result
+  }
+
+  [Symbol.asyncIterator]() {
+    return this.iterator
+  }
+
+  getBoolean() {
+    return false
+  }
+}
+
+exports.StaticValue = StaticValue
+exports.StreamValue = StreamValue
+exports.NULL_VALUE = new StaticValue(null)
+exports.TRUE_VALUE = new StaticValue(true)
+exports.FALSE_VALUE = new StaticValue(false)

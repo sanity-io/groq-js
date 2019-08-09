@@ -1,4 +1,4 @@
-const Value = require('./value')
+const {StaticValue, StreamValue, NULL_VALUE, TRUE_VALUE, FALSE_VALUE} = require('./value')
 const functions = require('./functions')
 const operators = require('./operators')
 
@@ -23,7 +23,7 @@ function execute(node, scope) {
 
 const EXECUTORS = {
   This(_, scope) {
-    return new Value(scope.value)
+    return scope.value
   },
 
   Star(_, scope) {
@@ -31,7 +31,7 @@ const EXECUTORS = {
   },
 
   Parent(_, scope) {
-    return new Value(scope.parent && scope.parent.value)
+    return scope.parent ? scope.parent.value : NULL_VALUE
   },
 
   OpCall({op, left, right}, scope) {
@@ -46,184 +46,198 @@ const EXECUTORS = {
     return func(args, scope, execute)
   },
 
-  Filter({base, query}, scope) {
-    return new Value(async function() {
-      let b = await execute(base, scope).get()
+  async Filter({base, query}, scope) {
+    let baseValue = await execute(base, scope)
+    if (baseValue.getType() != 'array') return NULL_VALUE
 
-      if (!Array.isArray(b)) return null
-
-      let result = []
-
-      for (let value of b) {
+    return new StreamValue(async function*() {
+      for await (let value of baseValue) {
         let newScope = scope.createNested(value)
-        let didMatch = await execute(query, newScope).get()
-        if (didMatch) result.push(value)
-      }
-
-      return result
-    })
-  },
-
-  Slice({base, index}, scope) {
-    return new Value(async function() {
-      let array = await execute(base, scope).get()
-      if (!Array.isArray(array)) return null
-      let idx = await execute(index, scope).get()
-      if (idx < 0) {
-        idx = array.length + idx
-      }
-      if (idx >= 0 && idx < array.length) {
-        return array[idx]
-      } else {
-        // Make sure we return `null` for out-of-bounds access
-        return null
+        let condValue = await execute(query, newScope)
+        if (condValue.getBoolean()) yield value
       }
     })
   },
 
-  RangeSlice({base, left, right, isExclusive}, scope) {
-    return new Value(async function() {
-      let array = await execute(base, scope).get()
-      if (!Array.isArray(array)) return null
+  async Slice({base, index}, scope) {
+    let arrayValue = await execute(base, scope)
+    if (arrayValue.getType() != 'array') return NULL_VALUE
 
-      let leftIdx = await execute(left, scope).get()
-      let rightIdx = await execute(right, scope).get()
+    let idxValue = await execute(index, scope)
+    if (idxValue.getType() != 'number') return NULL_VALUE
 
-      if (typeof leftIdx != 'number' || typeof rightIdx != 'number') {
-        return null
-      }
+    // OPT: Here we can optimize when idx >= 0
+    let array = await arrayValue.get()
+    let idx = await idxValue.get()
 
-      // Handle negative index
-      if (leftIdx < 0) leftIdx = array.length + leftIdx
-      if (rightIdx < 0) rightIdx = array.length + rightIdx
+    if (idx < 0) {
+      idx = array.length + idx
+    }
 
-      // Convert from inclusive to exclusive index
-      if (!isExclusive) rightIdx++
-
-      if (leftIdx < 0) leftIdx = 0
-      if (rightIdx < 0) rightIdx = 0
-
-      // Note: At this point the indices might point out-of-bound, but
-      // .slice handles this correctly.
-
-      return array.slice(leftIdx, rightIdx)
-    })
+    if (idx >= 0 && idx < array.length) {
+      return new StaticValue(array[idx])
+    } else {
+      // Make sure we return `null` for out-of-bounds access
+      return NULL_VALUE
+    }
   },
 
-  Attribute({base, name}, scope) {
-    return new Value(async function() {
-      let baseValue = await execute(base, scope).get()
-      if (baseValue != null && typeof baseValue == 'object' && baseValue.hasOwnProperty(name)) {
-        return baseValue[name]
-      } else {
-        return null
-      }
-    })
+  async RangeSlice({base, left, right, isExclusive}, scope) {
+    let arrayValue = await execute(base, scope)
+    if (arrayValue.getType() != 'array') return NULL_VALUE
+
+    let leftIdxValue = await execute(left, scope)
+    let rightIdxValue = await execute(right, scope)
+
+    if (leftIdxValue.getType() != 'number' || rightIdxValue.getType() != 'number') {
+      return null
+    }
+
+    // OPT: Here we can optimize when either indices are >= 0
+    let array = await arrayValue.get()
+    let leftIdx = await leftIdxValue.get()
+    let rightIdx = await rightIdxValue.get()
+
+    // Handle negative index
+    if (leftIdx < 0) leftIdx = array.length + leftIdx
+    if (rightIdx < 0) rightIdx = array.length + rightIdx
+
+    // Convert from inclusive to exclusive index
+    if (!isExclusive) rightIdx++
+
+    if (leftIdx < 0) leftIdx = 0
+    if (rightIdx < 0) rightIdx = 0
+
+    // Note: At this point the indices might point out-of-bound, but
+    // .slice handles this correctly.
+
+    return new StaticValue(array.slice(leftIdx, rightIdx))
   },
 
-  Identifier({name}, scope) {
-    return new Value(name in scope.value ? scope.value[name] : null)
+  async Attribute({base, name}, scope) {
+    let baseValue = await execute(base, scope)
+
+    if (baseValue.getType() == 'object') {
+      let baseData = await baseValue.get()
+      if (baseData.hasOwnProperty(name)) {
+        return new StaticValue(baseData[name])
+      }
+    }
+
+    return NULL_VALUE
+  },
+
+  async Identifier({name}, scope) {
+    if (scope.value.getType() == 'object') {
+      let data = await scope.value.get()
+      if (data.hasOwnProperty(name)) {
+        return new StaticValue(data[name])
+      }
+    }
+
+    return NULL_VALUE
   },
 
   Value({value}) {
-    return new Value(value)
+    return new StaticValue(value)
   },
 
-  Project({base, query}, scope) {
-    return new Value(async function() {
-      let baseValue = await execute(base, scope).get()
-      if (Array.isArray(baseValue)) {
-        let result = []
-        for await (let data of baseValue) {
-          let newScope = scope.createNested(data)
-          let newData = await execute(query, newScope).get()
-          result.push(newData)
+  async Project({base, query}, scope) {
+    let baseValue = await execute(base, scope)
+
+    if (baseValue.getType() == 'array') {
+      return new StreamValue(async function*() {
+        for await (let value of baseValue) {
+          let newScope = scope.createNested(value)
+          let newValue = await execute(query, newScope)
+          yield newValue
         }
-        return result
-      } else {
-        let newScope = scope.createNested(baseValue)
-        return await execute(query, newScope).get()
-      }
-    })
+      })
+    } else {
+      let newScope = scope.createNested(baseValue)
+      return await execute(query, newScope)
+    }
   },
 
-  Flatten({base}, scope) {
-    let b = execute(base, scope)
-    return new Value(async function*() {
-      for await (let data of b) {
-        if (Array.isArray(data)) {
-          for (let element of data) {
+  async Flatten({base}, scope) {
+    let baseValue = await execute(base, scope)
+    if (baseValue.getType() != 'array') return NULL_VALUE
+
+    return new StreamValue(async function*() {
+      for await (let value of baseValue) {
+        if (value.getType() == 'array') {
+          for await (let element of value) {
             yield element
           }
         } else {
-          yield null
+          yield NULL_VALUE
         }
       }
     })
   },
 
-  Deref({base}, scope) {
-    return new Value(async function() {
-      let ref = await execute(base, scope).get()
-      if (!ref) return null
+  async Deref({base}, scope) {
+    let baseValue = await execute(base, scope)
+    if (baseValue.getType() != 'object') return NULL_VALUE
 
-      for await (let doc of scope.source.createSink()) {
-        if (typeof doc._id === 'string' && ref._ref === doc._id) {
-          return doc
-        }
+    let id = (await baseValue.get())._ref
+    if (typeof id != 'string') return NULL_VALUE
+
+    for await (let doc of scope.source.createSink()) {
+      if (id === doc.data._id) {
+        return doc
       }
+    }
 
-      return null
-    })
+    return NULL_VALUE
   },
 
-  Object({properties}, scope) {
-    return new Value(async () => {
-      let result = {}
-      for (let prop of properties) {
-        switch (prop.type) {
-          case 'ObjectSplat':
-            Object.assign(result, scope.value)
-            break
+  async Object({properties}, scope) {
+    let result = {}
+    for (let prop of properties) {
+      switch (prop.type) {
+        case 'ObjectSplat':
+          Object.assign(result, scope.value)
+          break
 
-          case 'Property':
-            let key = await execute(prop.key, scope).get()
-            let value = await execute(prop.value, scope).get()
-            result[key] = value
-            break
+        case 'Property':
+          let key = await execute(prop.key, scope)
+          if (key.getType() != 'string') continue
 
-          default:
-            throw new Error('Unknown node type: ' + prop.type)
-        }
+          let value = await execute(prop.value, scope)
+          if (value.getType() == 'null') continue
+
+          result[key.data] = await value.get()
+          break
+
+        default:
+          throw new Error('Unknown node type: ' + prop.type)
       }
-      return result
-    })
+    }
+    return new StaticValue(result)
   },
 
   Array({elements}, scope) {
-    return new Value(async function*() {
+    return new StreamValue(async function*() {
       for (let element of elements) {
-        yield await execute(element, scope).get()
+        yield await execute(element, scope)
       }
     })
   },
 
-  And({left, right}, scope) {
-    return new Value(async () => {
-      let leftData = await execute(left, scope).get()
-      if (leftData === false) return false
-      let rightData = await execute(right, scope).get()
-      // TODO: Correct boolean semantics
-      return rightData
-    })
+  async And({left, right}, scope) {
+    let leftValue = await execute(left, scope)
+    if (!leftValue.getBoolean()) return FALSE_VALUE
+
+    let rightValue = await execute(right, scope)
+    if (!rightValue.getBoolean()) return FALSE_VALUE
+
+    return TRUE_VALUE
   },
 
-  Not({base}, scope) {
-    return new Value(async () => {
-      let value = await execute(base, scope).get()
-      // TODO: Correct boolean semantics
-      return value === false
-    })
+  async Not({base}, scope) {
+    let value = await execute(base, scope)
+    return value.getBoolean() ? FALSE_VALUE : TRUE_VALUE
   }
 }
 
@@ -235,11 +249,11 @@ class StaticSource {
   }
 
   createSink() {
-    return new Value(this.documents)
+    return new StaticValue(this.documents)
   }
 }
 
-function evaluate(tree, options = {}) {
+async function evaluate(tree, options = {}) {
   let source
   let params = {identity: 'groot'}
 
@@ -257,8 +271,8 @@ function evaluate(tree, options = {}) {
     Object.assign(params, options.params)
   }
 
-  let scope = new Scope(params, source, null, null)
-  return execute(tree, scope)
+  let scope = new Scope(params, source, NULL_VALUE, null)
+  return await execute(tree, scope)
 }
 
 exports.evaluate = evaluate
