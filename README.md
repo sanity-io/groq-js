@@ -16,7 +16,12 @@ let documents = [
 ]
 
 // Evaluate a tree against a set of documents
-let result = await evaluate(tree, {documents}).get()
+let value = await evaluate(tree, {documents})
+
+// Gather everything into one JavaScript object
+let result = await value.get()
+
+console.log(result)
 ```
 
 Table of contents:

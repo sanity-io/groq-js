@@ -1,23 +1,20 @@
-const Value = require('./value')
+const {StaticValue, TRUE_VALUE, FALSE_VALUE} = require('./value')
 
-exports.count = function count(args, scope, execute) {
-  if (args.length !== 1) throw new Error("count: 1 argument required")
+exports.count = async function count(args, scope, execute) {
+  if (args.length !== 1) throw new Error('count: 1 argument required')
 
-  return new Value(async () => {
-    let num = 0
-    let inner = execute(args[0], scope)
-    for await (let _ of inner) {
-      num++
-    }
-    return  num
-  })
+  let inner = await execute(args[0], scope)
+
+  let num = 0
+  for await (let _ of inner) {
+    num++
+  }
+  return new StaticValue(num)
 }
 
-exports.defined = function defined(args, scope, execute) {
-  if (args.length !== 1) throw new Error("defined: 1 argument required")
+exports.defined = async function defined(args, scope, execute) {
+  if (args.length !== 1) throw new Error('defined: 1 argument required')
 
-  return new Value(async () => {
-    let inner = await execute(args[0], scope).get()
-    return inner != null
-  })
+  let inner = await execute(args[0], scope)
+  return inner.getType() == 'null' ? FALSE_VALUE : TRUE_VALUE
 }

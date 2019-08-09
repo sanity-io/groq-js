@@ -10,7 +10,8 @@ describe('Basic parsing', () => {
     let query = `*[_type == "product"]{name}`
     let tree = parse(query)
 
-    let data = await evaluate(tree, {documents}).get()
+    let value = await evaluate(tree, {documents})
+    let data = await value.get()
     expect(data).toStrictEqual([{name: 'T-shirt'}, {name: 'Pants'}])
   })
 })
