@@ -20,14 +20,15 @@ Object {
     },
     "type": "Filter",
   },
+  "chained": false,
   "query": Object {
-    "properties": Array [
+    "attributes": Array [
       Object {
         "key": Object {
           "type": "Value",
           "value": "name",
         },
-        "type": "Property",
+        "type": "ObjectAttribute",
         "value": Object {
           "name": "name",
           "type": "Identifier",
@@ -36,6 +37,6 @@ Object {
     ],
     "type": "Object",
   },
-  "type": "Project",
+  "type": "Projection",
 }
 `;
