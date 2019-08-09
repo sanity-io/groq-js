@@ -144,6 +144,7 @@ const EXECUTORS = {
 
   async Projection({base, query}, scope) {
     let baseValue = await execute(base, scope)
+    if (baseValue.getType() == 'null') return NULL_VALUE
 
     if (baseValue.getType() == 'array') {
       return new StreamValue(async function*() {
@@ -196,11 +197,7 @@ const EXECUTORS = {
     let result = {}
     for (let attr of attributes) {
       switch (attr.type) {
-        case 'ObjectSplat':
-          Object.assign(result, scope.value)
-          break
-
-        case 'ObjectAttribute':
+        case 'ObjectAttribute': {
           let key = await execute(attr.key, scope)
           if (key.getType() != 'string') continue
 
@@ -209,6 +206,25 @@ const EXECUTORS = {
 
           result[key.data] = await value.get()
           break
+        }
+
+        case 'ObjectConditionalSplat': {
+          let cond = await execute(attr.condition, scope)
+          if (!cond.getBoolean()) continue
+
+          let value = await execute(attr.value, scope)
+          if (value.getType() != 'object') continue
+          Object.assign(result, value.data)
+          break
+        }
+
+        case 'ObjectSplat': {
+          let value = await execute(attr.value, scope)
+          if (value.getType('object')) {
+            Object.assign(result, value.data)
+          }
+          break
+        }
 
         default:
           throw new Error('Unknown node type: ' + attr.type)

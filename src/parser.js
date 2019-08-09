@@ -214,6 +214,16 @@ const BUILDER = {
     }
   },
 
+  pair(p, mark) {
+    let left = p.process()
+    let right = p.process()
+    return {
+      type: 'Pair',
+      left,
+      right
+    }
+  },
+
   object(p, mark) {
     let attributes = []
     while (p.getMark().name !== 'object_end') {
@@ -228,6 +238,15 @@ const BUILDER = {
 
   object_expr(p, mark) {
     let value = p.process()
+
+    if (value.type == 'Pair') {
+      return {
+        type: 'ObjectConditionalSplat',
+        condition: value.left,
+        value: value.right
+      }
+    }
+
     return {
       type: 'ObjectAttribute',
       key: {
@@ -249,8 +268,18 @@ const BUILDER = {
   },
 
   object_splat(p, mark) {
+    let value = p.process()
+
     return {
-      type: 'ObjectSplat'
+      type: 'ObjectSplat',
+      value
+    }
+  },
+
+  object_splat_this(p, mark) {
+    return {
+      type: 'ObjectSplat',
+      value: {type: 'This'}
     }
   },
 
