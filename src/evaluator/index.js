@@ -59,7 +59,7 @@ const EXECUTORS = {
     })
   },
 
-  async Slice({base, index}, scope) {
+  async Element({base, index}, scope) {
     let arrayValue = await execute(base, scope)
     if (arrayValue.getType() != 'array') return NULL_VALUE
 
@@ -82,7 +82,7 @@ const EXECUTORS = {
     }
   },
 
-  async RangeSlice({base, left, right, isExclusive}, scope) {
+  async Slice({base, left, right, isExclusive}, scope) {
     let arrayValue = await execute(base, scope)
     if (arrayValue.getType() != 'array') return NULL_VALUE
 
@@ -142,7 +142,7 @@ const EXECUTORS = {
     return new StaticValue(value)
   },
 
-  async Project({base, query}, scope) {
+  async Projection({base, query}, scope) {
     let baseValue = await execute(base, scope)
 
     if (baseValue.getType() == 'array') {
@@ -192,26 +192,26 @@ const EXECUTORS = {
     return NULL_VALUE
   },
 
-  async Object({properties}, scope) {
+  async Object({attributes}, scope) {
     let result = {}
-    for (let prop of properties) {
-      switch (prop.type) {
+    for (let attr of attributes) {
+      switch (attr.type) {
         case 'ObjectSplat':
           Object.assign(result, scope.value)
           break
 
-        case 'Property':
-          let key = await execute(prop.key, scope)
+        case 'ObjectAttribute':
+          let key = await execute(attr.key, scope)
           if (key.getType() != 'string') continue
 
-          let value = await execute(prop.value, scope)
+          let value = await execute(attr.value, scope)
           if (value.getType() == 'null') continue
 
           result[key.data] = await value.get()
           break
 
         default:
-          throw new Error('Unknown node type: ' + prop.type)
+          throw new Error('Unknown node type: ' + attr.type)
       }
     }
     return new StaticValue(result)
@@ -240,8 +240,6 @@ const EXECUTORS = {
     return value.getBoolean() ? FALSE_VALUE : TRUE_VALUE
   }
 }
-
-EXECUTORS.ArrProject = EXECUTORS.Project
 
 class StaticSource {
   constructor(documents) {

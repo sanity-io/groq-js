@@ -12,10 +12,10 @@ function isString(node) {
 const BUILDER = {
   paren(p) {
     let inner = p.process()
-    if (inner.type == 'ArrProject') {
+    if (inner.type == 'Projection') {
       inner = {
         ...inner,
-        type: 'Project'
+        chained: false,
       }
     }
     return inner
@@ -25,10 +25,10 @@ const BUILDER = {
     let base = p.process()
     let query = p.process()
 
-    return unwrapArrProjection(base, base => {
+    return chainedProjection(base, base => {
       if (isNumber(query)) {
         return {
-          type: 'Slice',
+          type: 'Element',
           base,
           index: query
         }
@@ -44,7 +44,7 @@ const BUILDER = {
 
       if (query.type == 'Range') {
         return {
-          type: 'RangeSlice',
+          type: 'Slice',
           base,
           left: query.left,
           right: query.right,
@@ -63,8 +63,9 @@ const BUILDER = {
   project(p, mark) {
     let base = p.process()
     let query = p.process()
-    return unwrapArrProjection(base, base => ({
-      type: 'Project',
+    return chainedProjection(base, base => ({
+      type: 'Projection',
+      chained: false,
       base,
       query
     }))
@@ -99,7 +100,7 @@ const BUILDER = {
     let base = p.process()
     let name = p.processString()
 
-    return unwrapArrProjection(base, base => ({
+    return chainedProjection(base, base => ({
       type: 'Attribute',
       base,
       name
@@ -108,11 +109,12 @@ const BUILDER = {
 
   arr_expr(p, mark) {
     let base = p.process()
-    if (base.type == 'ArrProject') {
+    if (base.type == 'Projection' && base.chained) {
       base = {type: 'Flatten', base}
     }
     return {
-      type: 'ArrProject',
+      type: 'Projection',
+      chained: true,
       base,
       query: {type: 'This'}
     }
@@ -159,7 +161,7 @@ const BUILDER = {
   deref(p, mark) {
     let base = p.process()
 
-    return unwrapArrProjection(base, base => {
+    return chainedProjection(base, base => {
       let nextMark = p.getMark()
       let result = {type: 'Deref', base}
 
@@ -213,21 +215,21 @@ const BUILDER = {
   },
 
   object(p, mark) {
-    let properties = []
+    let attributes = []
     while (p.getMark().name !== 'object_end') {
-      properties.push(p.process())
+      attributes.push(p.process())
     }
     p.shift()
     return {
       type: 'Object',
-      properties: properties
+      attributes
     }
   },
 
   object_expr(p, mark) {
     let value = p.process()
     return {
-      type: 'Property',
+      type: 'ObjectAttribute',
       key: {
         type: 'Value',
         value: extractPropertyKey(value)
@@ -240,7 +242,7 @@ const BUILDER = {
     let key = p.process()
     let value = p.process()
     return {
-      type: 'Property',
+      type: 'ObjectAttribute',
       key: key,
       value: value
     }
@@ -302,17 +304,18 @@ function extractPropertyKey(node) {
     return node.name
   }
 
-  if (node.type === 'Deref' || node.type === 'ArrProject') {
+  if (node.type === 'Deref' || node.type === 'Projection') {
     return extractPropertyKey(node.base)
   }
 
   throw new Error('Cannot determine property key for type: ' + node.type)
 }
 
-function unwrapArrProjection(base, func) {
-  if (base.type === 'ArrProject') {
+function chainedProjection(base, func) {
+  if (base.type === 'Projection' && base.chained) {
     return {
-      type: 'ArrProject',
+      type: 'Projection',
+      chained: true,
       base: base.base,
       query: func(base.query)
     }
