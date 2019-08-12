@@ -1,3 +1,9 @@
+const getType = (exports.getType = function getType(data) {
+  if (data == null) return 'null'
+  if (Array.isArray(data)) return 'array'
+  return typeof data
+})
+
 /* A Value represents a value that can be produced during execution of a query.
  *
  * Value provides a `get()` method for returning the whole data, but also
@@ -10,9 +16,7 @@ class StaticValue {
   }
 
   getType() {
-    if (this.data == null) return 'null'
-    if (Array.isArray(this.data)) return 'array'
-    return typeof this.data
+    return getType(this.data)
   }
 
   async get() {

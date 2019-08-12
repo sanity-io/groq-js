@@ -309,6 +309,16 @@ const BUILDER = {
     }
   },
 
+  pipecall(p, mark) {
+    let base = p.process()
+    let func = p.process()
+    return {
+      ...func,
+      type: 'PipeFuncCall',
+      base
+    }
+  },
+
   and(p, mark) {
     let left = p.process()
     let right = p.process()
@@ -323,6 +333,24 @@ const BUILDER = {
     let base = p.process()
     return {
       type: 'Not',
+      base
+    }
+  },
+
+  asc(p, mark) {
+    let base = p.process()
+
+    return {
+      type: 'Asc',
+      base
+    }
+  },
+
+  desc(p, mark) {
+    let base = p.process()
+
+    return {
+      type: 'Desc',
       base
     }
   }
