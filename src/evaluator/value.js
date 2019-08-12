@@ -67,8 +67,31 @@ class StreamValue {
   }
 }
 
+class MapperValue {
+  constructor(value) {
+    this.value = value
+  }
+
+  getType() {
+    return 'array'
+  }
+
+  async get() {
+    return await this.value.get()
+  }
+
+  [Symbol.asyncIterator]() {
+    return this.value[Symbol.asyncIterator].call(this.value)
+  }
+
+  getBoolean() {
+    return false
+  }
+}
+
 exports.StaticValue = StaticValue
 exports.StreamValue = StreamValue
+exports.MapperValue = MapperValue
 exports.NULL_VALUE = new StaticValue(null)
 exports.TRUE_VALUE = new StaticValue(true)
 exports.FALSE_VALUE = new StaticValue(false)
