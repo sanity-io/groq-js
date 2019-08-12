@@ -15,7 +15,7 @@ const BUILDER = {
     if (inner.type == 'Projection') {
       inner = {
         ...inner,
-        chained: false,
+        chained: false
       }
     }
     return inner
