@@ -316,6 +316,16 @@ const BUILDER = {
     }
   },
 
+  or(p, mark) {
+    let left = p.process()
+    let right = p.process()
+    return {
+      type: 'Or',
+      left,
+      right
+    }
+  },
+
   not(p, mark) {
     let base = p.process()
     return {

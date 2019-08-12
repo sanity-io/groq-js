@@ -298,12 +298,38 @@ const EXECUTORS = {
     })
   },
 
+  async Or({left, right}, scope) {
+    let leftValue = await execute(left, scope)
+    let rightValue = await execute(right, scope)
+
+    if (leftValue.getType() == 'boolean') {
+      if (leftValue.data == true) return TRUE_VALUE
+    }
+
+    if (rightValue.getType() == 'boolean') {
+      if (rightValue.data == true) return TRUE_VALUE
+    }
+
+    if (leftValue.getType() != 'boolean') return NULL_VALUE
+    if (rightValue.getType() != 'boolean') return NULL_VALUE
+
+    return FALSE_VALUE
+  },
+
   async And({left, right}, scope) {
     let leftValue = await execute(left, scope)
-    if (!leftValue.getBoolean()) return FALSE_VALUE
-
     let rightValue = await execute(right, scope)
-    if (!rightValue.getBoolean()) return FALSE_VALUE
+
+    if (leftValue.getType() == 'boolean') {
+      if (leftValue.data == false) return FALSE_VALUE
+    }
+
+    if (rightValue.getType() == 'boolean') {
+      if (rightValue.data == false) return FALSE_VALUE
+    }
+
+    if (leftValue.getType() != 'boolean') return NULL_VALUE
+    if (rightValue.getType() != 'boolean') return NULL_VALUE
 
     return TRUE_VALUE
   },
