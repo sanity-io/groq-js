@@ -1,5 +1,5 @@
 const {StaticValue, StreamValue, NULL_VALUE, TRUE_VALUE, FALSE_VALUE} = require('./value')
-const functions = require('./functions')
+const {functions, pipeFunctions} = require('./functions')
 const operators = require('./operators')
 
 class Scope {
@@ -44,6 +44,13 @@ const EXECUTORS = {
     let func = functions[name]
     if (!func) throw new Error('Unknown function: ' + name)
     return func(args, scope, execute)
+  },
+
+  async PipeFuncCall({base, name, args}, scope) {
+    let func = pipeFunctions[name]
+    if (!func) throw new Error('Unknown function: ' + name)
+    let baseValue = await execute(base, scope)
+    return func(baseValue, args, scope, execute)
   },
 
   async Filter({base, query}, scope) {
