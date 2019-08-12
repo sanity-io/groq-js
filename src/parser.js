@@ -12,63 +12,57 @@ function isString(node) {
 const BUILDER = {
   paren(p) {
     let inner = p.process()
-    if (inner.type == 'Projection') {
-      inner = {
-        ...inner,
-        chained: false
-      }
+    return {
+      type: 'Parenthesis',
+      base: inner
     }
-    return inner
   },
 
   filter(p, mark) {
     let base = p.process()
     let query = p.process()
 
-    return chainedProjection(base, base => {
-      if (isNumber(query)) {
-        return {
-          type: 'Element',
-          base,
-          index: query
-        }
-      }
-
-      if (isString(query)) {
-        return {
-          type: 'Attribute',
-          base,
-          name: query.value
-        }
-      }
-
-      if (query.type == 'Range') {
-        return {
-          type: 'Slice',
-          base,
-          left: query.left,
-          right: query.right,
-          isExclusive: query.isExclusive
-        }
-      }
-
+    if (isNumber(query)) {
       return {
-        type: 'Filter',
+        type: 'Element',
         base,
-        query
+        index: query
       }
-    })
+    }
+
+    if (isString(query)) {
+      return {
+        type: 'Attribute',
+        base,
+        name: query.value
+      }
+    }
+
+    if (query.type == 'Range') {
+      return {
+        type: 'Slice',
+        base,
+        left: query.left,
+        right: query.right,
+        isExclusive: query.isExclusive
+      }
+    }
+
+    return {
+      type: 'Filter',
+      base,
+      query
+    }
   },
 
   project(p, mark) {
     let base = p.process()
     let query = p.process()
-    return chainedProjection(base, base => ({
+    return {
       type: 'Projection',
-      chained: false,
       base,
       query
-    }))
+    }
   },
 
   star(p, mark) {
@@ -100,23 +94,18 @@ const BUILDER = {
     let base = p.process()
     let name = p.processString()
 
-    return chainedProjection(base, base => ({
+    return {
       type: 'Attribute',
       base,
       name
-    }))
+    }
   },
 
   arr_expr(p, mark) {
     let base = p.process()
-    if (base.type == 'Projection' && base.chained) {
-      base = {type: 'Flatten', base}
-    }
     return {
-      type: 'Projection',
-      chained: true,
-      base,
-      query: {type: 'This'}
+      type: 'Mapper',
+      base
     }
   },
 
@@ -161,21 +150,19 @@ const BUILDER = {
   deref(p, mark) {
     let base = p.process()
 
-    return chainedProjection(base, base => {
-      let nextMark = p.getMark()
-      let result = {type: 'Deref', base}
+    let nextMark = p.getMark()
+    let result = {type: 'Deref', base}
 
-      if (nextMark && nextMark.name === 'deref_field') {
-        let name = p.processString()
-        result = {
-          type: 'Attribute',
-          base: result,
-          name
-        }
+    if (nextMark && nextMark.name === 'deref_field') {
+      let name = p.processString()
+      result = {
+        type: 'Attribute',
+        base: result,
+        name
       }
+    }
 
-      return result
-    })
+    return result
   },
 
   comp(p, mark) {
@@ -361,24 +348,11 @@ function extractPropertyKey(node) {
     return node.name
   }
 
-  if (node.type === 'Deref' || node.type === 'Projection') {
+  if (node.type === 'Deref' || node.type === 'Projection' || node.type == 'Mapper') {
     return extractPropertyKey(node.base)
   }
 
   throw new Error('Cannot determine property key for type: ' + node.type)
-}
-
-function chainedProjection(base, func) {
-  if (base.type === 'Projection' && base.chained) {
-    return {
-      type: 'Projection',
-      chained: true,
-      base: base.base,
-      query: func(base.query)
-    }
-  } else {
-    return func(base)
-  }
 }
 
 function parse(input) {

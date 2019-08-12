@@ -1,6 +1,27 @@
-const {StaticValue, StreamValue, NULL_VALUE, TRUE_VALUE, FALSE_VALUE} = require('./value')
+const {
+  StaticValue,
+  StreamValue,
+  MapperValue,
+  NULL_VALUE,
+  TRUE_VALUE,
+  FALSE_VALUE
+} = require('./value')
 const {functions, pipeFunctions} = require('./functions')
 const operators = require('./operators')
+
+function inMapper(value, fn) {
+  if (value instanceof MapperValue) {
+    return new MapperValue(
+      new StreamValue(async function*() {
+        for await (let elementValue of value) {
+          yield await fn(elementValue)
+        }
+      })
+    )
+  } else {
+    return fn(value)
+  }
+}
 
 class Scope {
   constructor(params, source, value, parent) {
@@ -55,83 +76,94 @@ const EXECUTORS = {
 
   async Filter({base, query}, scope) {
     let baseValue = await execute(base, scope)
-    if (baseValue.getType() != 'array') return NULL_VALUE
 
-    return new StreamValue(async function*() {
-      for await (let value of baseValue) {
-        let newScope = scope.createNested(value)
-        let condValue = await execute(query, newScope)
-        if (condValue.getBoolean()) yield value
-      }
+    return inMapper(baseValue, async value => {
+      if (value.getType() != 'array') return NULL_VALUE
+
+      return new StreamValue(async function*() {
+        for await (let element of value) {
+          let newScope = scope.createNested(element)
+          let condValue = await execute(query, newScope)
+          if (condValue.getBoolean()) yield element
+        }
+      })
     })
   },
 
   async Element({base, index}, scope) {
-    let arrayValue = await execute(base, scope)
-    if (arrayValue.getType() != 'array') return NULL_VALUE
+    let baseValue = await execute(base, scope)
 
-    let idxValue = await execute(index, scope)
-    if (idxValue.getType() != 'number') return NULL_VALUE
+    return inMapper(baseValue, async arrayValue => {
+      if (arrayValue.getType() != 'array') return NULL_VALUE
 
-    // OPT: Here we can optimize when idx >= 0
-    let array = await arrayValue.get()
-    let idx = await idxValue.get()
+      let idxValue = await execute(index, scope)
+      if (idxValue.getType() != 'number') return NULL_VALUE
 
-    if (idx < 0) {
-      idx = array.length + idx
-    }
+      // OPT: Here we can optimize when idx >= 0
+      let array = await arrayValue.get()
+      let idx = await idxValue.get()
 
-    if (idx >= 0 && idx < array.length) {
-      return new StaticValue(array[idx])
-    } else {
-      // Make sure we return `null` for out-of-bounds access
-      return NULL_VALUE
-    }
+      if (idx < 0) {
+        idx = array.length + idx
+      }
+
+      if (idx >= 0 && idx < array.length) {
+        return new StaticValue(array[idx])
+      } else {
+        // Make sure we return `null` for out-of-bounds access
+        return NULL_VALUE
+      }
+    })
   },
 
   async Slice({base, left, right, isExclusive}, scope) {
-    let arrayValue = await execute(base, scope)
-    if (arrayValue.getType() != 'array') return NULL_VALUE
+    let baseValue = await execute(base, scope)
 
-    let leftIdxValue = await execute(left, scope)
-    let rightIdxValue = await execute(right, scope)
+    return inMapper(baseValue, async arrayValue => {
+      if (arrayValue.getType() != 'array') return NULL_VALUE
 
-    if (leftIdxValue.getType() != 'number' || rightIdxValue.getType() != 'number') {
-      return null
-    }
+      let leftIdxValue = await execute(left, scope)
+      let rightIdxValue = await execute(right, scope)
 
-    // OPT: Here we can optimize when either indices are >= 0
-    let array = await arrayValue.get()
-    let leftIdx = await leftIdxValue.get()
-    let rightIdx = await rightIdxValue.get()
+      if (leftIdxValue.getType() != 'number' || rightIdxValue.getType() != 'number') {
+        return NULL_VALUE
+      }
 
-    // Handle negative index
-    if (leftIdx < 0) leftIdx = array.length + leftIdx
-    if (rightIdx < 0) rightIdx = array.length + rightIdx
+      // OPT: Here we can optimize when either indices are >= 0
+      let array = await arrayValue.get()
+      let leftIdx = await leftIdxValue.get()
+      let rightIdx = await rightIdxValue.get()
 
-    // Convert from inclusive to exclusive index
-    if (!isExclusive) rightIdx++
+      // Handle negative index
+      if (leftIdx < 0) leftIdx = array.length + leftIdx
+      if (rightIdx < 0) rightIdx = array.length + rightIdx
 
-    if (leftIdx < 0) leftIdx = 0
-    if (rightIdx < 0) rightIdx = 0
+      // Convert from inclusive to exclusive index
+      if (!isExclusive) rightIdx++
 
-    // Note: At this point the indices might point out-of-bound, but
-    // .slice handles this correctly.
+      if (leftIdx < 0) leftIdx = 0
+      if (rightIdx < 0) rightIdx = 0
 
-    return new StaticValue(array.slice(leftIdx, rightIdx))
+      // Note: At this point the indices might point out-of-bound, but
+      // .slice handles this correctly.
+
+      return new StaticValue(array.slice(leftIdx, rightIdx))
+    })
   },
 
   async Attribute({base, name}, scope) {
     let baseValue = await execute(base, scope)
 
-    if (baseValue.getType() == 'object') {
-      let baseData = await baseValue.get()
-      if (baseData.hasOwnProperty(name)) {
-        return new StaticValue(baseData[name])
+    return inMapper(baseValue, async value => {
+      if (value.getType() == 'object') {
+        let data = await value.get()
+        if (data.hasOwnProperty(name)) {
+          return new StaticValue(data[name])
+        }
       }
-    }
 
-    return NULL_VALUE
+      return NULL_VALUE
+    })
   },
 
   async Identifier({name}, scope) {
@@ -149,55 +181,73 @@ const EXECUTORS = {
     return new StaticValue(value)
   },
 
-  async Projection({base, query}, scope) {
+  async Mapper({base}, scope) {
     let baseValue = await execute(base, scope)
-    if (baseValue.getType() == 'null') return NULL_VALUE
+    if (baseValue.getType() != 'array') return baseValue
 
-    if (baseValue.getType() == 'array') {
-      return new StreamValue(async function*() {
-        for await (let value of baseValue) {
-          let newScope = scope.createNested(value)
-          let newValue = await execute(query, newScope)
-          yield newValue
-        }
-      })
+    if (baseValue instanceof MapperValue) {
+      return new MapperValue(
+        new StreamValue(async function*() {
+          for await (let element of baseValue) {
+            if (element.getType() == 'array') {
+              for await (let subelement of element) {
+                yield subelement
+              }
+            } else {
+              yield NULL_VALUE
+            }
+          }
+        })
+      )
     } else {
-      let newScope = scope.createNested(baseValue)
-      return await execute(query, newScope)
+      return new MapperValue(baseValue)
     }
   },
 
-  async Flatten({base}, scope) {
+  async Parenthesis({base}, scope) {
     let baseValue = await execute(base, scope)
-    if (baseValue.getType() != 'array') return NULL_VALUE
+    if (baseValue instanceof MapperValue) {
+      baseValue = baseValue.value
+    }
+    return baseValue
+  },
 
-    return new StreamValue(async function*() {
-      for await (let value of baseValue) {
-        if (value.getType() == 'array') {
-          for await (let element of value) {
-            yield element
+  async Projection({base, query}, scope) {
+    let baseValue = await execute(base, scope)
+    return inMapper(baseValue, async baseValue => {
+      if (baseValue.getType() == 'null') return NULL_VALUE
+
+      if (baseValue.getType() == 'array') {
+        return new StreamValue(async function*() {
+          for await (let value of baseValue) {
+            let newScope = scope.createNested(value)
+            let newValue = await execute(query, newScope)
+            yield newValue
           }
-        } else {
-          yield NULL_VALUE
-        }
+        })
+      } else {
+        let newScope = scope.createNested(baseValue)
+        return await execute(query, newScope)
       }
     })
   },
 
   async Deref({base}, scope) {
     let baseValue = await execute(base, scope)
-    if (baseValue.getType() != 'object') return NULL_VALUE
+    return inMapper(baseValue, async baseValue => {
+      if (baseValue.getType() != 'object') return NULL_VALUE
 
-    let id = (await baseValue.get())._ref
-    if (typeof id != 'string') return NULL_VALUE
+      let id = (await baseValue.get())._ref
+      if (typeof id != 'string') return NULL_VALUE
 
-    for await (let doc of scope.source.createSink()) {
-      if (id === doc.data._id) {
-        return doc
+      for await (let doc of scope.source.createSink()) {
+        if (id === doc.data._id) {
+          return doc
+        }
       }
-    }
 
-    return NULL_VALUE
+      return NULL_VALUE
+    })
   },
 
   async Object({attributes}, scope) {
