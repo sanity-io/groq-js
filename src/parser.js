@@ -74,7 +74,18 @@ const BUILDER = {
   },
 
   parent(p, mark) {
-    return {type: 'Parent'}
+    return {
+      type: 'Parent',
+      n: 1,
+    }
+  },
+
+  dblparent(p, mark) {
+    let next = p.process()
+    return {
+      type: 'Parent',
+      n: next.n + 1
+    }
   },
 
   ident(p, mark) {

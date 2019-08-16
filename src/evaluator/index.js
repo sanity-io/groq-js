@@ -51,8 +51,12 @@ const EXECUTORS = {
     return scope.source.createSink()
   },
 
-  Parent(_, scope) {
-    return scope.parent ? scope.parent.value : NULL_VALUE
+  Parent({n}, scope) {
+    for (let i = 0; i < n; i++) {
+      scope = scope.parent
+      if (!scope) return NULL_VALUE
+    }
+    return scope.value
   },
 
   OpCall({op, left, right}, scope) {
