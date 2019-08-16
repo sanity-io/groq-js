@@ -16,7 +16,7 @@ let documents = [
 ]
 
 // Evaluate a tree against a set of documents
-let result = await evaluate(tree, {documents})
+let result = await evaluate(tree, {documents}).get()
 ```
 
 Table of contents:
