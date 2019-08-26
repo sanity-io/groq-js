@@ -364,12 +364,21 @@ const BUILDER = {
   }
 }
 
+const NESTED_PROPERTY_TYPES = [
+  'Deref',
+  'Projection',
+  'Mapper',
+  'Filter',
+  'Element',
+  'Slice',
+]
+
 function extractPropertyKey(node) {
   if (node.type === 'Identifier') {
     return node.name
   }
 
-  if (node.type === 'Deref' || node.type === 'Projection' || node.type == 'Mapper') {
+  if (NESTED_PROPERTY_TYPES.includes(node.type)) {
     return extractPropertyKey(node.base)
   }
 
