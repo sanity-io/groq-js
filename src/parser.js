@@ -158,6 +158,22 @@ const BUILDER = {
     }
   },
 
+  pos(p, mark) {
+    let base = p.process()
+
+    if (base.type === 'Value') {
+      return {
+        type: 'Value',
+        value: +base.value
+      }
+    }
+
+    return {
+      type: 'Pos',
+      base
+    }
+  },
+
   deref(p, mark) {
     let base = p.process()
 
@@ -205,6 +221,14 @@ const BUILDER = {
   },
 
   float(p, mark) {
+    let strValue = p.processStringEnd()
+    return {
+      type: 'Value',
+      value: Number(strValue)
+    }
+  },
+
+  sci(p, mark) {
     let strValue = p.processStringEnd()
     return {
       type: 'Value',
