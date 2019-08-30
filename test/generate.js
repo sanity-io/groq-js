@@ -4,6 +4,8 @@
 // This is needed because Jest doesn't support asynchronously defined tests.
 
 const ndjson = require('ndjson')
+const fs = require('fs')
+const https = require('https')
 
 const OUTPUT = process.stdout
 const STACK = []
@@ -31,23 +33,79 @@ function space() {
 }
 
 write(`const {evaluate, parse} = require('../src')`)
+write(`const fs = require('fs')`)
+write(`const ndjson = require('ndjson')`)
 space()
 write(`const DATASETS = new Map();`)
 openStack(`describe("groq-test-suite", () => {BODY})`)
+
+write(`
+const LOADERS = new Map();
+
+async function loadDocuments(id) {
+  let entry = DATASETS.get(id)
+
+  if (entry.documents != null) {
+    return entry.documents
+  }
+
+  if (!LOADERS.has(id)) {
+    LOADERS.set(id, new Promise((resolve, reject) => {
+      let filename = __dirname + "/datasets/" + entry._id + ".ndjson"
+      let documents = []
+      fs.createReadStream(filename)
+        .pipe(ndjson.parse())
+        .on('data', doc => documents.push(doc))
+        .on('end', () => resolve(documents))
+        .on('error', err => reject(err))
+    }))
+  }
+
+  return LOADERS.get(id)
+}
+`)
+
+const DOWNLOADING = new Set()
+
+function download(id, url) {
+  if (DOWNLOADING.has(id)) return
+  DOWNLOADING.add(id)
+
+  let dir = `${__dirname}/datasets`
+  let filename = `${dir}/${id}.ndjson`
+
+  // File already exists
+  if (fs.existsSync(filename)) return
+
+  if (!fs.existsSync(dir)) fs.mkdirSync(dir)
+
+  process.stderr.write(`Downloading ${url}\n`)
+  https.request(url, res => {
+    res.pipe(fs.createWriteStream(filename))
+  }).end()
+}
 
 process.stdin
   .pipe(ndjson.parse())
   .on('data', entry => {
     if (entry._type == "dataset") {
-      write(`DATASETS.set(${JSON.stringify(entry._id)}, ${JSON.stringify(entry.documents)})`)
+      if (entry.documents == null) {
+        download(entry._id, entry.url)
+      }
+
+      write(`DATASETS.set(${JSON.stringify(entry._id)}, ${JSON.stringify(entry)})`)
       space()
     }
 
     if (entry._type == "test") {
-      openStack(`test("${entry.name}", async () => {BODY})`)
+      openStack(`test("${entry.name}", async () => {BODY}, 20000)`)
       write(`let query = ${JSON.stringify(entry.query)}`)
       write(`let result = ${JSON.stringify(entry.result)}`)
-      write(`let documents = DATASETS.get(${JSON.stringify(entry.dataset)})`)
+      if (entry.dataset != null) {
+        write(`let documents = await loadDocuments(${JSON.stringify(entry.dataset._ref)})`)
+      } else {
+        write(`let documents = []`)
+      }
       write(`let tree = parse(query)`)
       write(`let value = await evaluate(tree, {documents})`)
       write(`let data = await value.get()`)
