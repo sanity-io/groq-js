@@ -592,7 +592,6 @@ var state381 = new State();
 var state382 = new State();
 var state383 = new State();
 var state384 = new State();
-var state385 = new State();
 state0.p = (function(step, frame) {
 var token = step.token;
 step.startCall("main").addReturn(frame.context, state1);
@@ -1069,12 +1068,12 @@ step.startCall("DIGIT").addReturn(frame.context, state87);
 state84.id = 84;
 state85.p = (function(step, frame) {
 var token = step.token;
-step.startCall("DIGIT").addReturn(frame.context, state94);
+step.startCall("DIGIT").addReturn(frame.context, state95);
 });
 state85.id = 85;
 state86.p = (function(step, frame) {
 var token = step.token;
-step.startCall("DIGIT").addReturn(frame.context, state98);
+step.startCall("DIGIT").addReturn(frame.context, state99);
 });
 state86.id = 86;
 state87.p = (function(step, frame) {
@@ -1117,66 +1116,66 @@ state92.id = 92;
 state93.p = (function(step, frame) {
 var token = step.token;
 step.startCall("DIGIT").addReturn(frame.context, state93);
-step.returnCall("NUMBER", frame);
+step.addMark("sci_end", frame.context, state94);
 });
 state93.id = 93;
 state94.p = (function(step, frame) {
 var token = step.token;
-step.startCall("DIGIT").addReturn(frame.context, state94);
-if (token === 46) { frame.addNextState(state95); }
+step.returnCall("NUMBER", frame);
 });
 state94.id = 94;
 state95.p = (function(step, frame) {
 var token = step.token;
-step.startCall("DIGIT").addReturn(frame.context, state96);
+step.startCall("DIGIT").addReturn(frame.context, state95);
+if (token === 46) { frame.addNextState(state96); }
 });
 state95.id = 95;
 state96.p = (function(step, frame) {
 var token = step.token;
-step.startCall("DIGIT").addReturn(frame.context, state96);
-step.addMark("float_end", frame.context, state97);
+step.startCall("DIGIT").addReturn(frame.context, state97);
 });
 state96.id = 96;
 state97.p = (function(step, frame) {
 var token = step.token;
-step.returnCall("NUMBER", frame);
+step.startCall("DIGIT").addReturn(frame.context, state97);
+step.addMark("float_end", frame.context, state98);
 });
 state97.id = 97;
 state98.p = (function(step, frame) {
 var token = step.token;
-step.startCall("DIGIT").addReturn(frame.context, state98);
-step.addMark("integer_end", frame.context, state99);
+step.returnCall("NUMBER", frame);
 });
 state98.id = 98;
 state99.p = (function(step, frame) {
 var token = step.token;
-step.returnCall("NUMBER", frame);
+step.startCall("DIGIT").addReturn(frame.context, state99);
+step.addMark("integer_end", frame.context, state100);
 });
 state99.id = 99;
 state100.p = (function(step, frame) {
 var token = step.token;
-if ((token >= 48 && token <= 57)) { frame.addNextState(state101); }
+step.returnCall("NUMBER", frame);
 });
 state100.id = 100;
 state101.p = (function(step, frame) {
 var token = step.token;
-step.returnCall("DIGIT", frame);
+if ((token >= 48 && token <= 57)) { frame.addNextState(state102); }
 });
 state101.id = 101;
 state102.p = (function(step, frame) {
 var token = step.token;
-step.addMark("plus", frame.context, state103);
-step.addMark("minus", frame.context, state104);
+step.returnCall("DIGIT", frame);
 });
 state102.id = 102;
 state103.p = (function(step, frame) {
 var token = step.token;
-if (token === 43) { frame.addNextState(state105); }
+if (token === 43) { frame.addNextState(state104); }
+if (token === 45) { frame.addNextState(state105); }
 });
 state103.id = 103;
 state104.p = (function(step, frame) {
 var token = step.token;
-if (token === 45) { frame.addNextState(state106); }
+step.returnCall("SIGN", frame);
 });
 state104.id = 104;
 state105.p = (function(step, frame) {
@@ -1186,78 +1185,78 @@ step.returnCall("SIGN", frame);
 state105.id = 105;
 state106.p = (function(step, frame) {
 var token = step.token;
-step.returnCall("SIGN", frame);
+if (token === 34) { frame.addNextState(state107); }
+if (token === 39) { frame.addNextState(state108); }
 });
 state106.id = 106;
 state107.p = (function(step, frame) {
 var token = step.token;
-if (token === 34) { frame.addNextState(state108); }
-if (token === 39) { frame.addNextState(state109); }
+step.addMark("str_begin", frame.context, state109);
 });
 state107.id = 107;
 state108.p = (function(step, frame) {
 var token = step.token;
-step.addMark("str_begin", frame.context, state110);
+step.addMark("str_begin", frame.context, state113);
 });
 state108.id = 108;
 state109.p = (function(step, frame) {
 var token = step.token;
-step.addMark("str_begin", frame.context, state114);
+step.startCall("DSTRING_CHAR").addReturn(frame.context, state110);
+step.addMark("str_end", frame.context, state111);
 });
 state109.id = 109;
 state110.p = (function(step, frame) {
 var token = step.token;
-step.startCall("DSTRING_CHAR").addReturn(frame.context, state111);
-step.addMark("str_end", frame.context, state112);
+step.startCall("DSTRING_CHAR").addReturn(frame.context, state110);
+step.addMark("str_end", frame.context, state111);
 });
 state110.id = 110;
 state111.p = (function(step, frame) {
 var token = step.token;
-step.startCall("DSTRING_CHAR").addReturn(frame.context, state111);
-step.addMark("str_end", frame.context, state112);
+if (token === 34) { frame.addNextState(state112); }
 });
 state111.id = 111;
 state112.p = (function(step, frame) {
 var token = step.token;
-if (token === 34) { frame.addNextState(state113); }
+step.returnCall("STRING", frame);
 });
 state112.id = 112;
 state113.p = (function(step, frame) {
 var token = step.token;
-step.returnCall("STRING", frame);
+step.startCall("SSTRING_CHAR").addReturn(frame.context, state114);
+step.addMark("str_end", frame.context, state115);
 });
 state113.id = 113;
 state114.p = (function(step, frame) {
 var token = step.token;
-step.startCall("SSTRING_CHAR").addReturn(frame.context, state115);
-step.addMark("str_end", frame.context, state116);
+step.startCall("SSTRING_CHAR").addReturn(frame.context, state114);
+step.addMark("str_end", frame.context, state115);
 });
 state114.id = 114;
 state115.p = (function(step, frame) {
 var token = step.token;
-step.startCall("SSTRING_CHAR").addReturn(frame.context, state115);
-step.addMark("str_end", frame.context, state116);
+if (token === 39) { frame.addNextState(state116); }
 });
 state115.id = 115;
 state116.p = (function(step, frame) {
 var token = step.token;
-if (token === 39) { frame.addNextState(state117); }
+step.returnCall("STRING", frame);
 });
 state116.id = 116;
 state117.p = (function(step, frame) {
 var token = step.token;
-step.returnCall("STRING", frame);
+if (token === 92) { frame.addNextState(state118); }
+if (((token <= 33 || token >= 35) && (token <= 91 || token >= 93))) { frame.addNextState(state119); }
 });
 state117.id = 117;
 state118.p = (function(step, frame) {
 var token = step.token;
-if (token === 92) { frame.addNextState(state119); }
-if (((token <= 33 || token >= 35) && (token <= 91 || token >= 93))) { frame.addNextState(state120); }
+if (true) { frame.addNextState(state120); }
 });
 state118.id = 118;
 state119.p = (function(step, frame) {
 var token = step.token;
-if (true) { frame.addNextState(state121); }
+step.returnCall("DSTRING_CHAR", frame);
 });
 state119.id = 119;
 state120.p = (function(step, frame) {
@@ -1267,18 +1266,18 @@ step.returnCall("DSTRING_CHAR", frame);
 state120.id = 120;
 state121.p = (function(step, frame) {
 var token = step.token;
-step.returnCall("DSTRING_CHAR", frame);
+if (token === 92) { frame.addNextState(state122); }
+if (((token <= 38 || token >= 40) && (token <= 91 || token >= 93))) { frame.addNextState(state123); }
 });
 state121.id = 121;
 state122.p = (function(step, frame) {
 var token = step.token;
-if (token === 92) { frame.addNextState(state123); }
-if (((token <= 38 || token >= 40) && (token <= 91 || token >= 93))) { frame.addNextState(state124); }
+if (true) { frame.addNextState(state124); }
 });
 state122.id = 122;
 state123.p = (function(step, frame) {
 var token = step.token;
-if (true) { frame.addNextState(state125); }
+step.returnCall("SSTRING_CHAR", frame);
 });
 state123.id = 123;
 state124.p = (function(step, frame) {
@@ -1288,113 +1287,113 @@ step.returnCall("SSTRING_CHAR", frame);
 state124.id = 124;
 state125.p = (function(step, frame) {
 var token = step.token;
-step.returnCall("SSTRING_CHAR", frame);
+step.addMark("array", frame.context, state126);
 });
 state125.id = 125;
 state126.p = (function(step, frame) {
 var token = step.token;
-step.addMark("array", frame.context, state127);
+if (token === 91) { frame.addNextState(state127); }
 });
 state126.id = 126;
 state127.p = (function(step, frame) {
 var token = step.token;
-if (token === 91) { frame.addNextState(state128); }
+step.startCall("IGN").addReturn(frame.context, state128);
+step.startCall("ARRAY_ELEMENT").addReturn(frame.context, state130);
+if (token === 93) { frame.addNextState(state137); }
 });
 state127.id = 127;
 state128.p = (function(step, frame) {
 var token = step.token;
-step.startCall("IGN").addReturn(frame.context, state129);
-step.startCall("ARRAY_ELEMENT").addReturn(frame.context, state131);
-if (token === 93) { frame.addNextState(state138); }
+step.startCall("IGN").addReturn(frame.context, state128);
+step.startCall("ARRAY_ELEMENT").addReturn(frame.context, state130);
+if (token === 93) { frame.addNextState(state137); }
 });
 state128.id = 128;
 state129.p = (function(step, frame) {
 var token = step.token;
 step.startCall("IGN").addReturn(frame.context, state129);
-step.startCall("ARRAY_ELEMENT").addReturn(frame.context, state131);
-if (token === 93) { frame.addNextState(state138); }
+if (token === 44) { frame.addNextState(state132); }
+if (token === 44) { frame.addNextState(state136); }
+if (token === 93) { frame.addNextState(state137); }
 });
 state129.id = 129;
 state130.p = (function(step, frame) {
 var token = step.token;
-step.startCall("IGN").addReturn(frame.context, state130);
-if (token === 44) { frame.addNextState(state133); }
-if (token === 44) { frame.addNextState(state137); }
-if (token === 93) { frame.addNextState(state138); }
+step.startCall("IGN").addReturn(frame.context, state129);
+if (token === 44) { frame.addNextState(state132); }
+if (token === 44) { frame.addNextState(state136); }
+if (token === 93) { frame.addNextState(state137); }
 });
 state130.id = 130;
 state131.p = (function(step, frame) {
 var token = step.token;
-step.startCall("IGN").addReturn(frame.context, state130);
-if (token === 44) { frame.addNextState(state133); }
-if (token === 44) { frame.addNextState(state137); }
-if (token === 93) { frame.addNextState(state138); }
+step.startCall("IGN").addReturn(frame.context, state131);
+step.startCall("ARRAY_ELEMENT").addReturn(frame.context, state133);
 });
 state131.id = 131;
 state132.p = (function(step, frame) {
 var token = step.token;
-step.startCall("IGN").addReturn(frame.context, state132);
-step.startCall("ARRAY_ELEMENT").addReturn(frame.context, state134);
+step.startCall("IGN").addReturn(frame.context, state131);
+step.startCall("ARRAY_ELEMENT").addReturn(frame.context, state133);
 });
 state132.id = 132;
 state133.p = (function(step, frame) {
 var token = step.token;
-step.startCall("IGN").addReturn(frame.context, state132);
-step.startCall("ARRAY_ELEMENT").addReturn(frame.context, state134);
+step.startCall("IGN").addReturn(frame.context, state134);
+if (token === 44) { frame.addNextState(state132); }
+if (token === 44) { frame.addNextState(state136); }
+if (token === 93) { frame.addNextState(state137); }
 });
 state133.id = 133;
 state134.p = (function(step, frame) {
 var token = step.token;
-step.startCall("IGN").addReturn(frame.context, state135);
-if (token === 44) { frame.addNextState(state133); }
-if (token === 44) { frame.addNextState(state137); }
-if (token === 93) { frame.addNextState(state138); }
+step.startCall("IGN").addReturn(frame.context, state134);
+if (token === 44) { frame.addNextState(state132); }
+if (token === 44) { frame.addNextState(state136); }
+if (token === 93) { frame.addNextState(state137); }
 });
 state134.id = 134;
 state135.p = (function(step, frame) {
 var token = step.token;
 step.startCall("IGN").addReturn(frame.context, state135);
-if (token === 44) { frame.addNextState(state133); }
-if (token === 44) { frame.addNextState(state137); }
-if (token === 93) { frame.addNextState(state138); }
+if (token === 93) { frame.addNextState(state137); }
 });
 state135.id = 135;
 state136.p = (function(step, frame) {
 var token = step.token;
-step.startCall("IGN").addReturn(frame.context, state136);
-if (token === 93) { frame.addNextState(state138); }
+step.startCall("IGN").addReturn(frame.context, state135);
+if (token === 93) { frame.addNextState(state137); }
 });
 state136.id = 136;
 state137.p = (function(step, frame) {
 var token = step.token;
-step.startCall("IGN").addReturn(frame.context, state136);
-if (token === 93) { frame.addNextState(state138); }
+step.addMark("array_end", frame.context, state138);
 });
 state137.id = 137;
 state138.p = (function(step, frame) {
 var token = step.token;
-step.addMark("array_end", frame.context, state139);
+step.returnCall("ARRAY", frame);
 });
 state138.id = 138;
 state139.p = (function(step, frame) {
 var token = step.token;
-step.returnCall("ARRAY", frame);
+step.addMark("array_splat", frame.context, state140);
+step.startCall("EXPR^2").addReturn(frame.context, state141);
 });
 state139.id = 139;
 state140.p = (function(step, frame) {
 var token = step.token;
-step.addMark("array_splat", frame.context, state141);
-step.startCall("EXPR^2").addReturn(frame.context, state142);
+if (token === 46) { frame.addNextState(state142); }
 });
 state140.id = 140;
 state141.p = (function(step, frame) {
 var token = step.token;
-if (token === 46) { frame.addNextState(state143); }
+step.returnCall("ARRAY_ELEMENT", frame);
 });
 state141.id = 141;
 state142.p = (function(step, frame) {
 var token = step.token;
-step.returnCall("ARRAY_ELEMENT", frame);
+if (token === 46) { frame.addNextState(state143); }
 });
 state142.id = 142;
 state143.p = (function(step, frame) {
@@ -1404,161 +1403,161 @@ if (token === 46) { frame.addNextState(state144); }
 state143.id = 143;
 state144.p = (function(step, frame) {
 var token = step.token;
-if (token === 46) { frame.addNextState(state145); }
+step.startCall("IGN").addReturn(frame.context, state145);
+step.startCall("EXPR^2").addReturn(frame.context, state141);
 });
 state144.id = 144;
 state145.p = (function(step, frame) {
 var token = step.token;
-step.startCall("IGN").addReturn(frame.context, state146);
-step.startCall("EXPR^2").addReturn(frame.context, state142);
+step.startCall("IGN").addReturn(frame.context, state145);
+step.startCall("EXPR^2").addReturn(frame.context, state141);
 });
 state145.id = 145;
 state146.p = (function(step, frame) {
 var token = step.token;
-step.startCall("IGN").addReturn(frame.context, state146);
-step.startCall("EXPR^2").addReturn(frame.context, state142);
+step.addMark("object", frame.context, state147);
 });
 state146.id = 146;
 state147.p = (function(step, frame) {
 var token = step.token;
-step.addMark("object", frame.context, state148);
+if (token === 123) { frame.addNextState(state148); }
 });
 state147.id = 147;
 state148.p = (function(step, frame) {
 var token = step.token;
-if (token === 123) { frame.addNextState(state149); }
+step.startCall("IGN").addReturn(frame.context, state149);
+step.startCall("OBJECT_PAIR").addReturn(frame.context, state151);
+if (token === 125) { frame.addNextState(state158); }
 });
 state148.id = 148;
 state149.p = (function(step, frame) {
 var token = step.token;
-step.startCall("IGN").addReturn(frame.context, state150);
-step.startCall("OBJECT_PAIR").addReturn(frame.context, state152);
-if (token === 125) { frame.addNextState(state159); }
+step.startCall("IGN").addReturn(frame.context, state149);
+step.startCall("OBJECT_PAIR").addReturn(frame.context, state151);
+if (token === 125) { frame.addNextState(state158); }
 });
 state149.id = 149;
 state150.p = (function(step, frame) {
 var token = step.token;
 step.startCall("IGN").addReturn(frame.context, state150);
-step.startCall("OBJECT_PAIR").addReturn(frame.context, state152);
-if (token === 125) { frame.addNextState(state159); }
+if (token === 44) { frame.addNextState(state153); }
+if (token === 44) { frame.addNextState(state157); }
+if (token === 125) { frame.addNextState(state158); }
 });
 state150.id = 150;
 state151.p = (function(step, frame) {
 var token = step.token;
-step.startCall("IGN").addReturn(frame.context, state151);
-if (token === 44) { frame.addNextState(state154); }
-if (token === 44) { frame.addNextState(state158); }
-if (token === 125) { frame.addNextState(state159); }
+step.startCall("IGN").addReturn(frame.context, state150);
+if (token === 44) { frame.addNextState(state153); }
+if (token === 44) { frame.addNextState(state157); }
+if (token === 125) { frame.addNextState(state158); }
 });
 state151.id = 151;
 state152.p = (function(step, frame) {
 var token = step.token;
-step.startCall("IGN").addReturn(frame.context, state151);
-if (token === 44) { frame.addNextState(state154); }
-if (token === 44) { frame.addNextState(state158); }
-if (token === 125) { frame.addNextState(state159); }
+step.startCall("IGN").addReturn(frame.context, state152);
+step.startCall("OBJECT_PAIR").addReturn(frame.context, state154);
 });
 state152.id = 152;
 state153.p = (function(step, frame) {
 var token = step.token;
-step.startCall("IGN").addReturn(frame.context, state153);
-step.startCall("OBJECT_PAIR").addReturn(frame.context, state155);
+step.startCall("IGN").addReturn(frame.context, state152);
+step.startCall("OBJECT_PAIR").addReturn(frame.context, state154);
 });
 state153.id = 153;
 state154.p = (function(step, frame) {
 var token = step.token;
-step.startCall("IGN").addReturn(frame.context, state153);
-step.startCall("OBJECT_PAIR").addReturn(frame.context, state155);
+step.startCall("IGN").addReturn(frame.context, state155);
+if (token === 44) { frame.addNextState(state153); }
+if (token === 44) { frame.addNextState(state157); }
+if (token === 125) { frame.addNextState(state158); }
 });
 state154.id = 154;
 state155.p = (function(step, frame) {
 var token = step.token;
-step.startCall("IGN").addReturn(frame.context, state156);
-if (token === 44) { frame.addNextState(state154); }
-if (token === 44) { frame.addNextState(state158); }
-if (token === 125) { frame.addNextState(state159); }
+step.startCall("IGN").addReturn(frame.context, state155);
+if (token === 44) { frame.addNextState(state153); }
+if (token === 44) { frame.addNextState(state157); }
+if (token === 125) { frame.addNextState(state158); }
 });
 state155.id = 155;
 state156.p = (function(step, frame) {
 var token = step.token;
 step.startCall("IGN").addReturn(frame.context, state156);
-if (token === 44) { frame.addNextState(state154); }
-if (token === 44) { frame.addNextState(state158); }
-if (token === 125) { frame.addNextState(state159); }
+if (token === 125) { frame.addNextState(state158); }
 });
 state156.id = 156;
 state157.p = (function(step, frame) {
 var token = step.token;
-step.startCall("IGN").addReturn(frame.context, state157);
-if (token === 125) { frame.addNextState(state159); }
+step.startCall("IGN").addReturn(frame.context, state156);
+if (token === 125) { frame.addNextState(state158); }
 });
 state157.id = 157;
 state158.p = (function(step, frame) {
 var token = step.token;
-step.startCall("IGN").addReturn(frame.context, state157);
-if (token === 125) { frame.addNextState(state159); }
+step.addMark("object_end", frame.context, state159);
 });
 state158.id = 158;
 state159.p = (function(step, frame) {
 var token = step.token;
-step.addMark("object_end", frame.context, state160);
+step.returnCall("OBJECT", frame);
 });
 state159.id = 159;
 state160.p = (function(step, frame) {
 var token = step.token;
-step.returnCall("OBJECT", frame);
+step.addMark("object_pair", frame.context, state161);
+step.addMark("object_expr", frame.context, state162);
+step.addMark("object_splat_this", frame.context, state163);
+step.addMark("object_splat", frame.context, state164);
 });
 state160.id = 160;
 state161.p = (function(step, frame) {
 var token = step.token;
-step.addMark("object_pair", frame.context, state162);
-step.addMark("object_expr", frame.context, state163);
-step.addMark("object_splat_this", frame.context, state164);
-step.addMark("object_splat", frame.context, state165);
+step.startCall("STRING").addReturn(frame.context, state165);
 });
 state161.id = 161;
 state162.p = (function(step, frame) {
 var token = step.token;
-step.startCall("STRING").addReturn(frame.context, state166);
+step.startCall("EXPR^2").addReturn(frame.context, state170);
 });
 state162.id = 162;
 state163.p = (function(step, frame) {
 var token = step.token;
-step.startCall("EXPR^2").addReturn(frame.context, state171);
+if (token === 46) { frame.addNextState(state171); }
 });
 state163.id = 163;
 state164.p = (function(step, frame) {
 var token = step.token;
-if (token === 46) { frame.addNextState(state172); }
+if (token === 46) { frame.addNextState(state174); }
 });
 state164.id = 164;
 state165.p = (function(step, frame) {
 var token = step.token;
-if (token === 46) { frame.addNextState(state175); }
+step.startCall("IGN").addReturn(frame.context, state166);
+if (token === 58) { frame.addNextState(state167); }
 });
 state165.id = 165;
 state166.p = (function(step, frame) {
 var token = step.token;
-step.startCall("IGN").addReturn(frame.context, state167);
-if (token === 58) { frame.addNextState(state168); }
+step.startCall("IGN").addReturn(frame.context, state166);
+if (token === 58) { frame.addNextState(state167); }
 });
 state166.id = 166;
 state167.p = (function(step, frame) {
 var token = step.token;
-step.startCall("IGN").addReturn(frame.context, state167);
-if (token === 58) { frame.addNextState(state168); }
+step.startCall("IGN").addReturn(frame.context, state168);
+step.startCall("EXPR^2").addReturn(frame.context, state169);
 });
 state167.id = 167;
 state168.p = (function(step, frame) {
 var token = step.token;
-step.startCall("IGN").addReturn(frame.context, state169);
-step.startCall("EXPR^2").addReturn(frame.context, state170);
+step.startCall("IGN").addReturn(frame.context, state168);
+step.startCall("EXPR^2").addReturn(frame.context, state169);
 });
 state168.id = 168;
 state169.p = (function(step, frame) {
 var token = step.token;
-step.startCall("IGN").addReturn(frame.context, state169);
-step.startCall("EXPR^2").addReturn(frame.context, state170);
+step.returnCall("OBJECT_PAIR", frame);
 });
 state169.id = 169;
 state170.p = (function(step, frame) {
@@ -1568,7 +1567,7 @@ step.returnCall("OBJECT_PAIR", frame);
 state170.id = 170;
 state171.p = (function(step, frame) {
 var token = step.token;
-step.returnCall("OBJECT_PAIR", frame);
+if (token === 46) { frame.addNextState(state172); }
 });
 state171.id = 171;
 state172.p = (function(step, frame) {
@@ -1578,12 +1577,12 @@ if (token === 46) { frame.addNextState(state173); }
 state172.id = 172;
 state173.p = (function(step, frame) {
 var token = step.token;
-if (token === 46) { frame.addNextState(state174); }
+step.returnCall("OBJECT_PAIR", frame);
 });
 state173.id = 173;
 state174.p = (function(step, frame) {
 var token = step.token;
-step.returnCall("OBJECT_PAIR", frame);
+if (token === 46) { frame.addNextState(state175); }
 });
 state174.id = 174;
 state175.p = (function(step, frame) {
@@ -1593,296 +1592,296 @@ if (token === 46) { frame.addNextState(state176); }
 state175.id = 175;
 state176.p = (function(step, frame) {
 var token = step.token;
-if (token === 46) { frame.addNextState(state177); }
+step.startCall("IGN").addReturn(frame.context, state177);
+step.startCall("EXPR^2").addReturn(frame.context, state178);
 });
 state176.id = 176;
 state177.p = (function(step, frame) {
 var token = step.token;
-step.startCall("IGN").addReturn(frame.context, state178);
-step.startCall("EXPR^2").addReturn(frame.context, state179);
+step.startCall("IGN").addReturn(frame.context, state177);
+step.startCall("EXPR^2").addReturn(frame.context, state178);
 });
 state177.id = 177;
 state178.p = (function(step, frame) {
 var token = step.token;
-step.startCall("IGN").addReturn(frame.context, state178);
-step.startCall("EXPR^2").addReturn(frame.context, state179);
+step.returnCall("OBJECT_PAIR", frame);
 });
 state178.id = 178;
 state179.p = (function(step, frame) {
 var token = step.token;
-step.returnCall("OBJECT_PAIR", frame);
+step.addMark("pair", frame.context, state180);
+step.startCall("EXPR^3").addReturn(frame.context, state181);
 });
 state179.id = 179;
 state180.p = (function(step, frame) {
 var token = step.token;
-step.addMark("pair", frame.context, state181);
-step.startCall("EXPR^3").addReturn(frame.context, state182);
+step.startCall("EXPR^2").addReturn(frame.context, state182);
 });
 state180.id = 180;
 state181.p = (function(step, frame) {
 var token = step.token;
-step.startCall("EXPR^2").addReturn(frame.context, state183);
+step.returnCall("EXPR^2", frame);
 });
 state181.id = 181;
 state182.p = (function(step, frame) {
 var token = step.token;
-step.returnCall("EXPR^2", frame);
+step.startCall("IGN").addReturn(frame.context, state183);
+if (token === 61) { frame.addNextState(state184); }
 });
 state182.id = 182;
 state183.p = (function(step, frame) {
 var token = step.token;
-step.startCall("IGN").addReturn(frame.context, state184);
-if (token === 61) { frame.addNextState(state185); }
+step.startCall("IGN").addReturn(frame.context, state183);
+if (token === 61) { frame.addNextState(state184); }
 });
 state183.id = 183;
 state184.p = (function(step, frame) {
 var token = step.token;
-step.startCall("IGN").addReturn(frame.context, state184);
-if (token === 61) { frame.addNextState(state185); }
+if (token === 62) { frame.addNextState(state185); }
 });
 state184.id = 184;
 state185.p = (function(step, frame) {
 var token = step.token;
-if (token === 62) { frame.addNextState(state186); }
+step.startCall("IGN").addReturn(frame.context, state186);
+step.startCall("EXPR^3").addReturn(frame.context, state187);
 });
 state185.id = 185;
 state186.p = (function(step, frame) {
 var token = step.token;
-step.startCall("IGN").addReturn(frame.context, state187);
-step.startCall("EXPR^3").addReturn(frame.context, state188);
+step.startCall("IGN").addReturn(frame.context, state186);
+step.startCall("EXPR^3").addReturn(frame.context, state187);
 });
 state186.id = 186;
 state187.p = (function(step, frame) {
 var token = step.token;
-step.startCall("IGN").addReturn(frame.context, state187);
-step.startCall("EXPR^3").addReturn(frame.context, state188);
+step.returnCall("EXPR^2", frame);
 });
 state187.id = 187;
 state188.p = (function(step, frame) {
 var token = step.token;
-step.returnCall("EXPR^2", frame);
+step.addMark("or", frame.context, state189);
+step.startCall("EXPR^4").addReturn(frame.context, state190);
 });
 state188.id = 188;
 state189.p = (function(step, frame) {
 var token = step.token;
-step.addMark("or", frame.context, state190);
-step.startCall("EXPR^4").addReturn(frame.context, state191);
+step.startCall("EXPR^3").addReturn(frame.context, state191);
 });
 state189.id = 189;
 state190.p = (function(step, frame) {
 var token = step.token;
-step.startCall("EXPR^3").addReturn(frame.context, state192);
+step.returnCall("EXPR^3", frame);
 });
 state190.id = 190;
 state191.p = (function(step, frame) {
 var token = step.token;
-step.returnCall("EXPR^3", frame);
+step.startCall("IGN").addReturn(frame.context, state192);
+if (token === 124) { frame.addNextState(state193); }
 });
 state191.id = 191;
 state192.p = (function(step, frame) {
 var token = step.token;
-step.startCall("IGN").addReturn(frame.context, state193);
-if (token === 124) { frame.addNextState(state194); }
+step.startCall("IGN").addReturn(frame.context, state192);
+if (token === 124) { frame.addNextState(state193); }
 });
 state192.id = 192;
 state193.p = (function(step, frame) {
 var token = step.token;
-step.startCall("IGN").addReturn(frame.context, state193);
 if (token === 124) { frame.addNextState(state194); }
 });
 state193.id = 193;
 state194.p = (function(step, frame) {
 var token = step.token;
-if (token === 124) { frame.addNextState(state195); }
+step.startCall("IGN").addReturn(frame.context, state195);
+step.startCall("EXPR^4").addReturn(frame.context, state196);
 });
 state194.id = 194;
 state195.p = (function(step, frame) {
 var token = step.token;
-step.startCall("IGN").addReturn(frame.context, state196);
-step.startCall("EXPR^4").addReturn(frame.context, state197);
+step.startCall("IGN").addReturn(frame.context, state195);
+step.startCall("EXPR^4").addReturn(frame.context, state196);
 });
 state195.id = 195;
 state196.p = (function(step, frame) {
 var token = step.token;
-step.startCall("IGN").addReturn(frame.context, state196);
-step.startCall("EXPR^4").addReturn(frame.context, state197);
+step.returnCall("EXPR^3", frame);
 });
 state196.id = 196;
 state197.p = (function(step, frame) {
 var token = step.token;
-step.returnCall("EXPR^3", frame);
+step.addMark("and", frame.context, state198);
+step.startCall("EXPR^5").addReturn(frame.context, state199);
 });
 state197.id = 197;
 state198.p = (function(step, frame) {
 var token = step.token;
-step.addMark("and", frame.context, state199);
-step.startCall("EXPR^5").addReturn(frame.context, state200);
+step.startCall("EXPR^4").addReturn(frame.context, state200);
 });
 state198.id = 198;
 state199.p = (function(step, frame) {
 var token = step.token;
-step.startCall("EXPR^4").addReturn(frame.context, state201);
+step.returnCall("EXPR^4", frame);
 });
 state199.id = 199;
 state200.p = (function(step, frame) {
 var token = step.token;
-step.returnCall("EXPR^4", frame);
+step.startCall("IGN").addReturn(frame.context, state201);
+if (token === 38) { frame.addNextState(state202); }
 });
 state200.id = 200;
 state201.p = (function(step, frame) {
 var token = step.token;
-step.startCall("IGN").addReturn(frame.context, state202);
-if (token === 38) { frame.addNextState(state203); }
+step.startCall("IGN").addReturn(frame.context, state201);
+if (token === 38) { frame.addNextState(state202); }
 });
 state201.id = 201;
 state202.p = (function(step, frame) {
 var token = step.token;
-step.startCall("IGN").addReturn(frame.context, state202);
 if (token === 38) { frame.addNextState(state203); }
 });
 state202.id = 202;
 state203.p = (function(step, frame) {
 var token = step.token;
-if (token === 38) { frame.addNextState(state204); }
+step.startCall("IGN").addReturn(frame.context, state204);
+step.startCall("EXPR^5").addReturn(frame.context, state205);
 });
 state203.id = 203;
 state204.p = (function(step, frame) {
 var token = step.token;
-step.startCall("IGN").addReturn(frame.context, state205);
-step.startCall("EXPR^5").addReturn(frame.context, state206);
+step.startCall("IGN").addReturn(frame.context, state204);
+step.startCall("EXPR^5").addReturn(frame.context, state205);
 });
 state204.id = 204;
 state205.p = (function(step, frame) {
 var token = step.token;
-step.startCall("IGN").addReturn(frame.context, state205);
-step.startCall("EXPR^5").addReturn(frame.context, state206);
+step.returnCall("EXPR^4", frame);
 });
 state205.id = 205;
 state206.p = (function(step, frame) {
 var token = step.token;
-step.returnCall("EXPR^4", frame);
+step.addMark("comp", frame.context, state207);
+step.startCall("EXPR^6").addReturn(frame.context, state208);
 });
 state206.id = 206;
 state207.p = (function(step, frame) {
 var token = step.token;
-step.addMark("comp", frame.context, state208);
-step.startCall("EXPR^6").addReturn(frame.context, state209);
+step.startCall("EXPR^5").addReturn(frame.context, state209);
 });
 state207.id = 207;
 state208.p = (function(step, frame) {
 var token = step.token;
-step.startCall("EXPR^5").addReturn(frame.context, state210);
+step.returnCall("EXPR^5", frame);
 });
 state208.id = 208;
 state209.p = (function(step, frame) {
 var token = step.token;
-step.returnCall("EXPR^5", frame);
+step.startCall("IGN").addReturn(frame.context, state210);
+step.addMark("op", frame.context, state211);
 });
 state209.id = 209;
 state210.p = (function(step, frame) {
 var token = step.token;
-step.startCall("IGN").addReturn(frame.context, state211);
-step.addMark("op", frame.context, state212);
+step.startCall("IGN").addReturn(frame.context, state210);
+step.addMark("op", frame.context, state211);
 });
 state210.id = 210;
 state211.p = (function(step, frame) {
 var token = step.token;
-step.startCall("IGN").addReturn(frame.context, state211);
-step.addMark("op", frame.context, state212);
+step.startCall("COMP_OP").addReturn(frame.context, state212);
 });
 state211.id = 211;
 state212.p = (function(step, frame) {
 var token = step.token;
-step.startCall("COMP_OP").addReturn(frame.context, state213);
+step.addMark("end", frame.context, state213);
 });
 state212.id = 212;
 state213.p = (function(step, frame) {
 var token = step.token;
-step.addMark("end", frame.context, state214);
+step.startCall("IGN").addReturn(frame.context, state214);
+step.startCall("EXPR^6").addReturn(frame.context, state215);
 });
 state213.id = 213;
 state214.p = (function(step, frame) {
 var token = step.token;
-step.startCall("IGN").addReturn(frame.context, state215);
-step.startCall("EXPR^6").addReturn(frame.context, state216);
+step.startCall("IGN").addReturn(frame.context, state214);
+step.startCall("EXPR^6").addReturn(frame.context, state215);
 });
 state214.id = 214;
 state215.p = (function(step, frame) {
 var token = step.token;
-step.startCall("IGN").addReturn(frame.context, state215);
-step.startCall("EXPR^6").addReturn(frame.context, state216);
+step.returnCall("EXPR^5", frame);
 });
 state215.id = 215;
 state216.p = (function(step, frame) {
 var token = step.token;
-step.returnCall("EXPR^5", frame);
+step.addMark("inc_range", frame.context, state217);
+step.addMark("exc_range", frame.context, state218);
+step.startCall("EXPR^7").addReturn(frame.context, state219);
 });
 state216.id = 216;
 state217.p = (function(step, frame) {
 var token = step.token;
-step.addMark("inc_range", frame.context, state218);
-step.addMark("exc_range", frame.context, state219);
-step.startCall("EXPR^7").addReturn(frame.context, state220);
+step.startCall("EXPR^6").addReturn(frame.context, state220);
 });
 state217.id = 217;
 state218.p = (function(step, frame) {
 var token = step.token;
-step.startCall("EXPR^6").addReturn(frame.context, state221);
+step.startCall("EXPR^6").addReturn(frame.context, state226);
 });
 state218.id = 218;
 state219.p = (function(step, frame) {
 var token = step.token;
-step.startCall("EXPR^6").addReturn(frame.context, state227);
+step.returnCall("EXPR^6", frame);
 });
 state219.id = 219;
 state220.p = (function(step, frame) {
 var token = step.token;
-step.returnCall("EXPR^6", frame);
+step.startCall("IGN").addReturn(frame.context, state221);
+if (token === 46) { frame.addNextState(state222); }
 });
 state220.id = 220;
 state221.p = (function(step, frame) {
 var token = step.token;
-step.startCall("IGN").addReturn(frame.context, state222);
-if (token === 46) { frame.addNextState(state223); }
+step.startCall("IGN").addReturn(frame.context, state221);
+if (token === 46) { frame.addNextState(state222); }
 });
 state221.id = 221;
 state222.p = (function(step, frame) {
 var token = step.token;
-step.startCall("IGN").addReturn(frame.context, state222);
 if (token === 46) { frame.addNextState(state223); }
 });
 state222.id = 222;
 state223.p = (function(step, frame) {
 var token = step.token;
-if (token === 46) { frame.addNextState(state224); }
+step.startCall("IGN").addReturn(frame.context, state224);
+step.startCall("EXPR^7").addReturn(frame.context, state225);
 });
 state223.id = 223;
 state224.p = (function(step, frame) {
 var token = step.token;
-step.startCall("IGN").addReturn(frame.context, state225);
-step.startCall("EXPR^7").addReturn(frame.context, state226);
+step.startCall("IGN").addReturn(frame.context, state224);
+step.startCall("EXPR^7").addReturn(frame.context, state225);
 });
 state224.id = 224;
 state225.p = (function(step, frame) {
 var token = step.token;
-step.startCall("IGN").addReturn(frame.context, state225);
-step.startCall("EXPR^7").addReturn(frame.context, state226);
+step.returnCall("EXPR^6", frame);
 });
 state225.id = 225;
 state226.p = (function(step, frame) {
 var token = step.token;
-step.returnCall("EXPR^6", frame);
+step.startCall("IGN").addReturn(frame.context, state227);
+if (token === 46) { frame.addNextState(state228); }
 });
 state226.id = 226;
 state227.p = (function(step, frame) {
 var token = step.token;
-step.startCall("IGN").addReturn(frame.context, state228);
-if (token === 46) { frame.addNextState(state229); }
+step.startCall("IGN").addReturn(frame.context, state227);
+if (token === 46) { frame.addNextState(state228); }
 });
 state227.id = 227;
 state228.p = (function(step, frame) {
 var token = step.token;
-step.startCall("IGN").addReturn(frame.context, state228);
 if (token === 46) { frame.addNextState(state229); }
 });
 state228.id = 228;
@@ -1893,721 +1892,721 @@ if (token === 46) { frame.addNextState(state230); }
 state229.id = 229;
 state230.p = (function(step, frame) {
 var token = step.token;
-if (token === 46) { frame.addNextState(state231); }
+step.startCall("IGN").addReturn(frame.context, state231);
+step.startCall("EXPR^7").addReturn(frame.context, state232);
 });
 state230.id = 230;
 state231.p = (function(step, frame) {
 var token = step.token;
-step.startCall("IGN").addReturn(frame.context, state232);
-step.startCall("EXPR^7").addReturn(frame.context, state233);
+step.startCall("IGN").addReturn(frame.context, state231);
+step.startCall("EXPR^7").addReturn(frame.context, state232);
 });
 state231.id = 231;
 state232.p = (function(step, frame) {
 var token = step.token;
-step.startCall("IGN").addReturn(frame.context, state232);
-step.startCall("EXPR^7").addReturn(frame.context, state233);
+step.returnCall("EXPR^6", frame);
 });
 state232.id = 232;
 state233.p = (function(step, frame) {
 var token = step.token;
-step.returnCall("EXPR^6", frame);
+step.addMark("not", frame.context, state234);
+step.addMark("add", frame.context, state235);
+step.addMark("sub", frame.context, state236);
+step.startCall("EXPR^8").addReturn(frame.context, state237);
 });
 state233.id = 233;
 state234.p = (function(step, frame) {
 var token = step.token;
-step.addMark("not", frame.context, state235);
-step.addMark("add", frame.context, state236);
-step.addMark("sub", frame.context, state237);
-step.startCall("EXPR^8").addReturn(frame.context, state238);
+if (token === 33) { frame.addNextState(state238); }
 });
 state234.id = 234;
 state235.p = (function(step, frame) {
 var token = step.token;
-if (token === 33) { frame.addNextState(state239); }
+step.startCall("EXPR^7").addReturn(frame.context, state241);
 });
 state235.id = 235;
 state236.p = (function(step, frame) {
 var token = step.token;
-step.startCall("EXPR^7").addReturn(frame.context, state242);
+step.startCall("EXPR^7").addReturn(frame.context, state246);
 });
 state236.id = 236;
 state237.p = (function(step, frame) {
 var token = step.token;
-step.startCall("EXPR^7").addReturn(frame.context, state247);
+step.returnCall("EXPR^7", frame);
 });
 state237.id = 237;
 state238.p = (function(step, frame) {
 var token = step.token;
-step.returnCall("EXPR^7", frame);
+step.startCall("IGN").addReturn(frame.context, state239);
+step.startCall("EXPR^7").addReturn(frame.context, state240);
 });
 state238.id = 238;
 state239.p = (function(step, frame) {
 var token = step.token;
-step.startCall("IGN").addReturn(frame.context, state240);
-step.startCall("EXPR^7").addReturn(frame.context, state241);
+step.startCall("IGN").addReturn(frame.context, state239);
+step.startCall("EXPR^7").addReturn(frame.context, state240);
 });
 state239.id = 239;
 state240.p = (function(step, frame) {
 var token = step.token;
-step.startCall("IGN").addReturn(frame.context, state240);
-step.startCall("EXPR^7").addReturn(frame.context, state241);
+step.returnCall("EXPR^7", frame);
 });
 state240.id = 240;
 state241.p = (function(step, frame) {
 var token = step.token;
-step.returnCall("EXPR^7", frame);
+step.startCall("IGN").addReturn(frame.context, state242);
+if (token === 43) { frame.addNextState(state243); }
 });
 state241.id = 241;
 state242.p = (function(step, frame) {
 var token = step.token;
-step.startCall("IGN").addReturn(frame.context, state243);
-if (token === 43) { frame.addNextState(state244); }
+step.startCall("IGN").addReturn(frame.context, state242);
+if (token === 43) { frame.addNextState(state243); }
 });
 state242.id = 242;
 state243.p = (function(step, frame) {
 var token = step.token;
-step.startCall("IGN").addReturn(frame.context, state243);
-if (token === 43) { frame.addNextState(state244); }
+step.startCall("IGN").addReturn(frame.context, state244);
+step.startCall("EXPR^8").addReturn(frame.context, state245);
 });
 state243.id = 243;
 state244.p = (function(step, frame) {
 var token = step.token;
-step.startCall("IGN").addReturn(frame.context, state245);
-step.startCall("EXPR^8").addReturn(frame.context, state246);
+step.startCall("IGN").addReturn(frame.context, state244);
+step.startCall("EXPR^8").addReturn(frame.context, state245);
 });
 state244.id = 244;
 state245.p = (function(step, frame) {
 var token = step.token;
-step.startCall("IGN").addReturn(frame.context, state245);
-step.startCall("EXPR^8").addReturn(frame.context, state246);
+step.returnCall("EXPR^7", frame);
 });
 state245.id = 245;
 state246.p = (function(step, frame) {
 var token = step.token;
-step.returnCall("EXPR^7", frame);
+step.startCall("IGN").addReturn(frame.context, state247);
+if (token === 45) { frame.addNextState(state248); }
 });
 state246.id = 246;
 state247.p = (function(step, frame) {
 var token = step.token;
-step.startCall("IGN").addReturn(frame.context, state248);
-if (token === 45) { frame.addNextState(state249); }
+step.startCall("IGN").addReturn(frame.context, state247);
+if (token === 45) { frame.addNextState(state248); }
 });
 state247.id = 247;
 state248.p = (function(step, frame) {
 var token = step.token;
-step.startCall("IGN").addReturn(frame.context, state248);
-if (token === 45) { frame.addNextState(state249); }
+step.startCall("IGN").addReturn(frame.context, state249);
+step.startCall("EXPR^8").addReturn(frame.context, state250);
 });
 state248.id = 248;
 state249.p = (function(step, frame) {
 var token = step.token;
-step.startCall("IGN").addReturn(frame.context, state250);
-step.startCall("EXPR^8").addReturn(frame.context, state251);
+step.startCall("IGN").addReturn(frame.context, state249);
+step.startCall("EXPR^8").addReturn(frame.context, state250);
 });
 state249.id = 249;
 state250.p = (function(step, frame) {
 var token = step.token;
-step.startCall("IGN").addReturn(frame.context, state250);
-step.startCall("EXPR^8").addReturn(frame.context, state251);
+step.returnCall("EXPR^7", frame);
 });
 state250.id = 250;
 state251.p = (function(step, frame) {
 var token = step.token;
-step.returnCall("EXPR^7", frame);
+if (token === 105) { frame.addNextState(state252); }
+step.startCall("EXPR^9").addReturn(frame.context, state253);
 });
 state251.id = 251;
 state252.p = (function(step, frame) {
 var token = step.token;
-if (token === 105) { frame.addNextState(state253); }
-step.startCall("EXPR^9").addReturn(frame.context, state254);
+if (token === 115) { frame.addNextState(state254); }
 });
 state252.id = 252;
 state253.p = (function(step, frame) {
 var token = step.token;
-if (token === 115) { frame.addNextState(state255); }
+step.returnCall("EXPR^8", frame);
 });
 state253.id = 253;
 state254.p = (function(step, frame) {
 var token = step.token;
-step.returnCall("EXPR^8", frame);
+step.startCall("IGN").addReturn(frame.context, state255);
+step.startCall("EXPR^8").addReturn(frame.context, state256);
 });
 state254.id = 254;
 state255.p = (function(step, frame) {
 var token = step.token;
-step.startCall("IGN").addReturn(frame.context, state256);
-step.startCall("EXPR^8").addReturn(frame.context, state257);
+step.startCall("IGN").addReturn(frame.context, state255);
+step.startCall("EXPR^8").addReturn(frame.context, state256);
 });
 state255.id = 255;
 state256.p = (function(step, frame) {
 var token = step.token;
-step.startCall("IGN").addReturn(frame.context, state256);
-step.startCall("EXPR^8").addReturn(frame.context, state257);
+step.returnCall("EXPR^8", frame);
 });
 state256.id = 256;
 state257.p = (function(step, frame) {
 var token = step.token;
-step.returnCall("EXPR^8", frame);
+step.addMark("mul", frame.context, state258);
+step.addMark("div", frame.context, state259);
+step.addMark("mod", frame.context, state260);
+step.startCall("EXPR^10").addReturn(frame.context, state261);
 });
 state257.id = 257;
 state258.p = (function(step, frame) {
 var token = step.token;
-step.addMark("mul", frame.context, state259);
-step.addMark("div", frame.context, state260);
-step.addMark("mod", frame.context, state261);
-step.startCall("EXPR^10").addReturn(frame.context, state262);
+step.startCall("EXPR^9").addReturn(frame.context, state262);
 });
 state258.id = 258;
 state259.p = (function(step, frame) {
 var token = step.token;
-step.startCall("EXPR^9").addReturn(frame.context, state263);
+step.startCall("EXPR^9").addReturn(frame.context, state267);
 });
 state259.id = 259;
 state260.p = (function(step, frame) {
 var token = step.token;
-step.startCall("EXPR^9").addReturn(frame.context, state268);
+step.startCall("EXPR^9").addReturn(frame.context, state272);
 });
 state260.id = 260;
 state261.p = (function(step, frame) {
 var token = step.token;
-step.startCall("EXPR^9").addReturn(frame.context, state273);
+step.returnCall("EXPR^9", frame);
 });
 state261.id = 261;
 state262.p = (function(step, frame) {
 var token = step.token;
-step.returnCall("EXPR^9", frame);
+step.startCall("IGN").addReturn(frame.context, state263);
+step.startCall("STAR").addReturn(frame.context, state264);
 });
 state262.id = 262;
 state263.p = (function(step, frame) {
 var token = step.token;
-step.startCall("IGN").addReturn(frame.context, state264);
-step.startCall("STAR").addReturn(frame.context, state265);
+step.startCall("IGN").addReturn(frame.context, state263);
+step.startCall("STAR").addReturn(frame.context, state264);
 });
 state263.id = 263;
 state264.p = (function(step, frame) {
 var token = step.token;
-step.startCall("IGN").addReturn(frame.context, state264);
-step.startCall("STAR").addReturn(frame.context, state265);
+step.startCall("IGN").addReturn(frame.context, state265);
+step.startCall("EXPR^10").addReturn(frame.context, state266);
 });
 state264.id = 264;
 state265.p = (function(step, frame) {
 var token = step.token;
-step.startCall("IGN").addReturn(frame.context, state266);
-step.startCall("EXPR^10").addReturn(frame.context, state267);
+step.startCall("IGN").addReturn(frame.context, state265);
+step.startCall("EXPR^10").addReturn(frame.context, state266);
 });
 state265.id = 265;
 state266.p = (function(step, frame) {
 var token = step.token;
-step.startCall("IGN").addReturn(frame.context, state266);
-step.startCall("EXPR^10").addReturn(frame.context, state267);
+step.returnCall("EXPR^9", frame);
 });
 state266.id = 266;
 state267.p = (function(step, frame) {
 var token = step.token;
-step.returnCall("EXPR^9", frame);
+step.startCall("IGN").addReturn(frame.context, state268);
+if (token === 47) { frame.addNextState(state269); }
 });
 state267.id = 267;
 state268.p = (function(step, frame) {
 var token = step.token;
-step.startCall("IGN").addReturn(frame.context, state269);
-if (token === 47) { frame.addNextState(state270); }
+step.startCall("IGN").addReturn(frame.context, state268);
+if (token === 47) { frame.addNextState(state269); }
 });
 state268.id = 268;
 state269.p = (function(step, frame) {
 var token = step.token;
-step.startCall("IGN").addReturn(frame.context, state269);
-if (token === 47) { frame.addNextState(state270); }
+step.startCall("IGN").addReturn(frame.context, state270);
+step.startCall("EXPR^10").addReturn(frame.context, state271);
 });
 state269.id = 269;
 state270.p = (function(step, frame) {
 var token = step.token;
-step.startCall("IGN").addReturn(frame.context, state271);
-step.startCall("EXPR^10").addReturn(frame.context, state272);
+step.startCall("IGN").addReturn(frame.context, state270);
+step.startCall("EXPR^10").addReturn(frame.context, state271);
 });
 state270.id = 270;
 state271.p = (function(step, frame) {
 var token = step.token;
-step.startCall("IGN").addReturn(frame.context, state271);
-step.startCall("EXPR^10").addReturn(frame.context, state272);
+step.returnCall("EXPR^9", frame);
 });
 state271.id = 271;
 state272.p = (function(step, frame) {
 var token = step.token;
-step.returnCall("EXPR^9", frame);
+step.startCall("IGN").addReturn(frame.context, state273);
+if (token === 37) { frame.addNextState(state274); }
 });
 state272.id = 272;
 state273.p = (function(step, frame) {
 var token = step.token;
-step.startCall("IGN").addReturn(frame.context, state274);
-if (token === 37) { frame.addNextState(state275); }
+step.startCall("IGN").addReturn(frame.context, state273);
+if (token === 37) { frame.addNextState(state274); }
 });
 state273.id = 273;
 state274.p = (function(step, frame) {
 var token = step.token;
-step.startCall("IGN").addReturn(frame.context, state274);
-if (token === 37) { frame.addNextState(state275); }
+step.startCall("IGN").addReturn(frame.context, state275);
+step.startCall("EXPR^10").addReturn(frame.context, state276);
 });
 state274.id = 274;
 state275.p = (function(step, frame) {
 var token = step.token;
-step.startCall("IGN").addReturn(frame.context, state276);
-step.startCall("EXPR^10").addReturn(frame.context, state277);
+step.startCall("IGN").addReturn(frame.context, state275);
+step.startCall("EXPR^10").addReturn(frame.context, state276);
 });
 state275.id = 275;
 state276.p = (function(step, frame) {
 var token = step.token;
-step.startCall("IGN").addReturn(frame.context, state276);
-step.startCall("EXPR^10").addReturn(frame.context, state277);
+step.returnCall("EXPR^9", frame);
 });
 state276.id = 276;
 state277.p = (function(step, frame) {
 var token = step.token;
-step.returnCall("EXPR^9", frame);
+step.addMark("pow", frame.context, state278);
+step.startCall("EXPR^11").addReturn(frame.context, state279);
 });
 state277.id = 277;
 state278.p = (function(step, frame) {
 var token = step.token;
-step.addMark("pow", frame.context, state279);
 step.startCall("EXPR^11").addReturn(frame.context, state280);
 });
 state278.id = 278;
 state279.p = (function(step, frame) {
 var token = step.token;
-step.startCall("EXPR^11").addReturn(frame.context, state281);
+step.returnCall("EXPR^10", frame);
 });
 state279.id = 279;
 state280.p = (function(step, frame) {
 var token = step.token;
-step.returnCall("EXPR^10", frame);
+step.startCall("IGN").addReturn(frame.context, state281);
+if (token === 42) { frame.addNextState(state282); }
 });
 state280.id = 280;
 state281.p = (function(step, frame) {
 var token = step.token;
-step.startCall("IGN").addReturn(frame.context, state282);
-if (token === 42) { frame.addNextState(state283); }
+step.startCall("IGN").addReturn(frame.context, state281);
+if (token === 42) { frame.addNextState(state282); }
 });
 state281.id = 281;
 state282.p = (function(step, frame) {
 var token = step.token;
-step.startCall("IGN").addReturn(frame.context, state282);
 if (token === 42) { frame.addNextState(state283); }
 });
 state282.id = 282;
 state283.p = (function(step, frame) {
 var token = step.token;
-if (token === 42) { frame.addNextState(state284); }
+step.startCall("IGN").addReturn(frame.context, state284);
+step.startCall("EXPR^10").addReturn(frame.context, state285);
 });
 state283.id = 283;
 state284.p = (function(step, frame) {
 var token = step.token;
-step.startCall("IGN").addReturn(frame.context, state285);
-step.startCall("EXPR^10").addReturn(frame.context, state286);
+step.startCall("IGN").addReturn(frame.context, state284);
+step.startCall("EXPR^10").addReturn(frame.context, state285);
 });
 state284.id = 284;
 state285.p = (function(step, frame) {
 var token = step.token;
-step.startCall("IGN").addReturn(frame.context, state285);
-step.startCall("EXPR^10").addReturn(frame.context, state286);
+step.returnCall("EXPR^10", frame);
 });
 state285.id = 285;
 state286.p = (function(step, frame) {
 var token = step.token;
-step.returnCall("EXPR^10", frame);
+step.addMark("asc", frame.context, state287);
+step.addMark("desc", frame.context, state288);
+step.startCall("EXPR^12").addReturn(frame.context, state289);
 });
 state286.id = 286;
 state287.p = (function(step, frame) {
 var token = step.token;
-step.addMark("asc", frame.context, state288);
-step.addMark("desc", frame.context, state289);
-step.startCall("EXPR^12").addReturn(frame.context, state290);
+step.startCall("EXPR^11").addReturn(frame.context, state290);
 });
 state287.id = 287;
 state288.p = (function(step, frame) {
 var token = step.token;
-step.startCall("EXPR^11").addReturn(frame.context, state291);
+step.startCall("EXPR^11").addReturn(frame.context, state295);
 });
 state288.id = 288;
 state289.p = (function(step, frame) {
 var token = step.token;
-step.startCall("EXPR^11").addReturn(frame.context, state296);
+step.returnCall("EXPR^11", frame);
 });
 state289.id = 289;
 state290.p = (function(step, frame) {
 var token = step.token;
-step.returnCall("EXPR^11", frame);
+step.startCall("IGN").addReturn(frame.context, state291);
+if (token === 97) { frame.addNextState(state292); }
 });
 state290.id = 290;
 state291.p = (function(step, frame) {
 var token = step.token;
-step.startCall("IGN").addReturn(frame.context, state292);
-if (token === 97) { frame.addNextState(state293); }
+step.startCall("IGN").addReturn(frame.context, state291);
+if (token === 97) { frame.addNextState(state292); }
 });
 state291.id = 291;
 state292.p = (function(step, frame) {
 var token = step.token;
-step.startCall("IGN").addReturn(frame.context, state292);
-if (token === 97) { frame.addNextState(state293); }
+if (token === 115) { frame.addNextState(state293); }
 });
 state292.id = 292;
 state293.p = (function(step, frame) {
 var token = step.token;
-if (token === 115) { frame.addNextState(state294); }
+if (token === 99) { frame.addNextState(state294); }
 });
 state293.id = 293;
 state294.p = (function(step, frame) {
 var token = step.token;
-if (token === 99) { frame.addNextState(state295); }
+step.returnCall("EXPR^11", frame);
 });
 state294.id = 294;
 state295.p = (function(step, frame) {
 var token = step.token;
-step.returnCall("EXPR^11", frame);
+step.startCall("IGN").addReturn(frame.context, state296);
+if (token === 100) { frame.addNextState(state297); }
 });
 state295.id = 295;
 state296.p = (function(step, frame) {
 var token = step.token;
-step.startCall("IGN").addReturn(frame.context, state297);
-if (token === 100) { frame.addNextState(state298); }
+step.startCall("IGN").addReturn(frame.context, state296);
+if (token === 100) { frame.addNextState(state297); }
 });
 state296.id = 296;
 state297.p = (function(step, frame) {
 var token = step.token;
-step.startCall("IGN").addReturn(frame.context, state297);
-if (token === 100) { frame.addNextState(state298); }
+if (token === 101) { frame.addNextState(state298); }
 });
 state297.id = 297;
 state298.p = (function(step, frame) {
 var token = step.token;
-if (token === 101) { frame.addNextState(state299); }
+if (token === 115) { frame.addNextState(state299); }
 });
 state298.id = 298;
 state299.p = (function(step, frame) {
 var token = step.token;
-if (token === 115) { frame.addNextState(state300); }
+if (token === 99) { frame.addNextState(state300); }
 });
 state299.id = 299;
 state300.p = (function(step, frame) {
 var token = step.token;
-if (token === 99) { frame.addNextState(state301); }
+step.returnCall("EXPR^11", frame);
 });
 state300.id = 300;
 state301.p = (function(step, frame) {
 var token = step.token;
-step.returnCall("EXPR^11", frame);
+step.addMark("deref", frame.context, state302);
+step.addMark("attr_cond", frame.context, state303);
+step.addMark("attr_ident", frame.context, state304);
+step.addMark("pipecall", frame.context, state305);
+step.addMark("project", frame.context, state306);
+step.addMark("filter", frame.context, state307);
+step.addMark("arr_expr", frame.context, state308);
+step.startCall("EXPR^20").addReturn(frame.context, state309);
 });
 state301.id = 301;
 state302.p = (function(step, frame) {
 var token = step.token;
-step.addMark("deref", frame.context, state303);
-step.addMark("attr_cond", frame.context, state304);
-step.addMark("attr_ident", frame.context, state305);
-step.addMark("pipecall", frame.context, state306);
-step.addMark("project", frame.context, state307);
-step.addMark("filter", frame.context, state308);
-step.addMark("arr_expr", frame.context, state309);
-step.startCall("EXPR^20").addReturn(frame.context, state310);
+step.startCall("EXPR^12").addReturn(frame.context, state310);
 });
 state302.id = 302;
 state303.p = (function(step, frame) {
 var token = step.token;
-step.startCall("EXPR^12").addReturn(frame.context, state311);
+step.startCall("EXPR^12").addReturn(frame.context, state317);
 });
 state303.id = 303;
 state304.p = (function(step, frame) {
 var token = step.token;
-step.startCall("EXPR^12").addReturn(frame.context, state318);
+step.startCall("EXPR^12").addReturn(frame.context, state326);
 });
 state304.id = 304;
 state305.p = (function(step, frame) {
 var token = step.token;
-step.startCall("EXPR^12").addReturn(frame.context, state327);
+step.startCall("EXPR^12").addReturn(frame.context, state332);
 });
 state305.id = 305;
 state306.p = (function(step, frame) {
 var token = step.token;
-step.startCall("EXPR^12").addReturn(frame.context, state333);
+step.startCall("EXPR^12").addReturn(frame.context, state336);
 });
 state306.id = 306;
 state307.p = (function(step, frame) {
 var token = step.token;
-step.startCall("EXPR^12").addReturn(frame.context, state337);
+step.startCall("EXPR^12").addReturn(frame.context, state340);
 });
 state307.id = 307;
 state308.p = (function(step, frame) {
 var token = step.token;
-step.startCall("EXPR^12").addReturn(frame.context, state341);
+step.startCall("EXPR^12").addReturn(frame.context, state348);
 });
 state308.id = 308;
 state309.p = (function(step, frame) {
 var token = step.token;
-step.startCall("EXPR^12").addReturn(frame.context, state349);
+step.returnCall("EXPR^12", frame);
 });
 state309.id = 309;
 state310.p = (function(step, frame) {
 var token = step.token;
-step.returnCall("EXPR^12", frame);
+if (token === 45) { frame.addNextState(state311); }
 });
 state310.id = 310;
 state311.p = (function(step, frame) {
 var token = step.token;
-if (token === 45) { frame.addNextState(state312); }
+if (token === 62) { frame.addNextState(state312); }
 });
 state311.id = 311;
 state312.p = (function(step, frame) {
 var token = step.token;
-if (token === 62) { frame.addNextState(state313); }
+step.startCall("IGN").addReturn(frame.context, state313);
+step.addMark("deref_field", frame.context, state314);
+step.returnCall("EXPR^12", frame);
 });
 state312.id = 312;
 state313.p = (function(step, frame) {
 var token = step.token;
-step.startCall("IGN").addReturn(frame.context, state314);
-step.addMark("deref_field", frame.context, state315);
-step.returnCall("EXPR^12", frame);
+step.startCall("IGN").addReturn(frame.context, state313);
+step.addMark("deref_field", frame.context, state314);
 });
 state313.id = 313;
 state314.p = (function(step, frame) {
 var token = step.token;
-step.startCall("IGN").addReturn(frame.context, state314);
-step.addMark("deref_field", frame.context, state315);
+step.startCall("IDENT").addReturn(frame.context, state315);
 });
 state314.id = 314;
 state315.p = (function(step, frame) {
 var token = step.token;
-step.startCall("IDENT").addReturn(frame.context, state316);
+step.addMark("end", frame.context, state316);
 });
 state315.id = 315;
 state316.p = (function(step, frame) {
 var token = step.token;
-step.addMark("end", frame.context, state317);
+step.returnCall("EXPR^12", frame);
 });
 state316.id = 316;
 state317.p = (function(step, frame) {
 var token = step.token;
-step.returnCall("EXPR^12", frame);
+step.startCall("IGN").addReturn(frame.context, state318);
+if (token === 46) { frame.addNextState(state319); }
 });
 state317.id = 317;
 state318.p = (function(step, frame) {
 var token = step.token;
-step.startCall("IGN").addReturn(frame.context, state319);
-if (token === 46) { frame.addNextState(state320); }
+step.startCall("IGN").addReturn(frame.context, state318);
+if (token === 46) { frame.addNextState(state319); }
 });
 state318.id = 318;
 state319.p = (function(step, frame) {
 var token = step.token;
-step.startCall("IGN").addReturn(frame.context, state319);
-if (token === 46) { frame.addNextState(state320); }
+step.startCall("IGN").addReturn(frame.context, state320);
+if (token === 91) { frame.addNextState(state321); }
 });
 state319.id = 319;
 state320.p = (function(step, frame) {
 var token = step.token;
-step.startCall("IGN").addReturn(frame.context, state321);
-if (token === 91) { frame.addNextState(state322); }
+step.startCall("IGN").addReturn(frame.context, state320);
+if (token === 91) { frame.addNextState(state321); }
 });
 state320.id = 320;
 state321.p = (function(step, frame) {
 var token = step.token;
-step.startCall("IGN").addReturn(frame.context, state321);
-if (token === 91) { frame.addNextState(state322); }
+step.startCall("IGN").addReturn(frame.context, state322);
+step.startCall("EXPR^2").addReturn(frame.context, state323);
 });
 state321.id = 321;
 state322.p = (function(step, frame) {
 var token = step.token;
-step.startCall("IGN").addReturn(frame.context, state323);
-step.startCall("EXPR^2").addReturn(frame.context, state324);
+step.startCall("IGN").addReturn(frame.context, state322);
+step.startCall("EXPR^2").addReturn(frame.context, state323);
 });
 state322.id = 322;
 state323.p = (function(step, frame) {
 var token = step.token;
-step.startCall("IGN").addReturn(frame.context, state323);
-step.startCall("EXPR^2").addReturn(frame.context, state324);
+step.startCall("IGN").addReturn(frame.context, state324);
+if (token === 93) { frame.addNextState(state325); }
 });
 state323.id = 323;
 state324.p = (function(step, frame) {
 var token = step.token;
-step.startCall("IGN").addReturn(frame.context, state325);
-if (token === 93) { frame.addNextState(state326); }
+step.startCall("IGN").addReturn(frame.context, state324);
+if (token === 93) { frame.addNextState(state325); }
 });
 state324.id = 324;
 state325.p = (function(step, frame) {
 var token = step.token;
-step.startCall("IGN").addReturn(frame.context, state325);
-if (token === 93) { frame.addNextState(state326); }
+step.returnCall("EXPR^12", frame);
 });
 state325.id = 325;
 state326.p = (function(step, frame) {
 var token = step.token;
-step.returnCall("EXPR^12", frame);
+step.startCall("IGN").addReturn(frame.context, state327);
+if (token === 46) { frame.addNextState(state328); }
 });
 state326.id = 326;
 state327.p = (function(step, frame) {
 var token = step.token;
-step.startCall("IGN").addReturn(frame.context, state328);
-if (token === 46) { frame.addNextState(state329); }
+step.startCall("IGN").addReturn(frame.context, state327);
+if (token === 46) { frame.addNextState(state328); }
 });
 state327.id = 327;
 state328.p = (function(step, frame) {
 var token = step.token;
-step.startCall("IGN").addReturn(frame.context, state328);
-if (token === 46) { frame.addNextState(state329); }
+step.addMark("ident", frame.context, state329);
 });
 state328.id = 328;
 state329.p = (function(step, frame) {
 var token = step.token;
-step.addMark("ident", frame.context, state330);
+step.startCall("IDENT").addReturn(frame.context, state330);
 });
 state329.id = 329;
 state330.p = (function(step, frame) {
 var token = step.token;
-step.startCall("IDENT").addReturn(frame.context, state331);
+step.addMark("ident_end", frame.context, state331);
 });
 state330.id = 330;
 state331.p = (function(step, frame) {
 var token = step.token;
-step.addMark("ident_end", frame.context, state332);
+step.returnCall("EXPR^12", frame);
 });
 state331.id = 331;
 state332.p = (function(step, frame) {
 var token = step.token;
-step.returnCall("EXPR^12", frame);
+step.startCall("IGN").addReturn(frame.context, state333);
+step.startCall("PIPE").addReturn(frame.context, state334);
 });
 state332.id = 332;
 state333.p = (function(step, frame) {
 var token = step.token;
-step.startCall("IGN").addReturn(frame.context, state334);
-step.startCall("PIPE").addReturn(frame.context, state335);
+step.startCall("IGN").addReturn(frame.context, state333);
+step.startCall("PIPE").addReturn(frame.context, state334);
 });
 state333.id = 333;
 state334.p = (function(step, frame) {
 var token = step.token;
-step.startCall("IGN").addReturn(frame.context, state334);
-step.startCall("PIPE").addReturn(frame.context, state335);
+step.startCall("FUNC_CALL").addReturn(frame.context, state335);
 });
 state334.id = 334;
 state335.p = (function(step, frame) {
 var token = step.token;
-step.startCall("FUNC_CALL").addReturn(frame.context, state336);
+step.returnCall("EXPR^12", frame);
 });
 state335.id = 335;
 state336.p = (function(step, frame) {
 var token = step.token;
-step.returnCall("EXPR^12", frame);
+step.startCall("IGN").addReturn(frame.context, state337);
+step.startCall("PIPE").addReturn(frame.context, state338);
+step.startCall("OBJECT").addReturn(frame.context, state339);
 });
 state336.id = 336;
 state337.p = (function(step, frame) {
 var token = step.token;
-step.startCall("IGN").addReturn(frame.context, state338);
-step.startCall("PIPE").addReturn(frame.context, state339);
-step.startCall("OBJECT").addReturn(frame.context, state340);
+step.startCall("IGN").addReturn(frame.context, state337);
+step.startCall("PIPE").addReturn(frame.context, state338);
+step.startCall("OBJECT").addReturn(frame.context, state339);
 });
 state337.id = 337;
 state338.p = (function(step, frame) {
 var token = step.token;
-step.startCall("IGN").addReturn(frame.context, state338);
-step.startCall("PIPE").addReturn(frame.context, state339);
-step.startCall("OBJECT").addReturn(frame.context, state340);
+step.startCall("OBJECT").addReturn(frame.context, state339);
 });
 state338.id = 338;
 state339.p = (function(step, frame) {
 var token = step.token;
-step.startCall("OBJECT").addReturn(frame.context, state340);
+step.returnCall("EXPR^12", frame);
 });
 state339.id = 339;
 state340.p = (function(step, frame) {
 var token = step.token;
-step.returnCall("EXPR^12", frame);
+step.startCall("IGN").addReturn(frame.context, state341);
+step.startCall("PIPE").addReturn(frame.context, state342);
+if (token === 91) { frame.addNextState(state343); }
 });
 state340.id = 340;
 state341.p = (function(step, frame) {
 var token = step.token;
-step.startCall("IGN").addReturn(frame.context, state342);
-step.startCall("PIPE").addReturn(frame.context, state343);
-if (token === 91) { frame.addNextState(state344); }
+step.startCall("IGN").addReturn(frame.context, state341);
+step.startCall("PIPE").addReturn(frame.context, state342);
+if (token === 91) { frame.addNextState(state343); }
 });
 state341.id = 341;
 state342.p = (function(step, frame) {
 var token = step.token;
-step.startCall("IGN").addReturn(frame.context, state342);
-step.startCall("PIPE").addReturn(frame.context, state343);
-if (token === 91) { frame.addNextState(state344); }
+if (token === 91) { frame.addNextState(state343); }
 });
 state342.id = 342;
 state343.p = (function(step, frame) {
 var token = step.token;
-if (token === 91) { frame.addNextState(state344); }
+step.startCall("IGN").addReturn(frame.context, state344);
+step.startCall("EXPR^2").addReturn(frame.context, state345);
 });
 state343.id = 343;
 state344.p = (function(step, frame) {
 var token = step.token;
-step.startCall("IGN").addReturn(frame.context, state345);
-step.startCall("EXPR^2").addReturn(frame.context, state346);
+step.startCall("IGN").addReturn(frame.context, state344);
+step.startCall("EXPR^2").addReturn(frame.context, state345);
 });
 state344.id = 344;
 state345.p = (function(step, frame) {
 var token = step.token;
-step.startCall("IGN").addReturn(frame.context, state345);
-step.startCall("EXPR^2").addReturn(frame.context, state346);
+step.startCall("IGN").addReturn(frame.context, state346);
+if (token === 93) { frame.addNextState(state347); }
 });
 state345.id = 345;
 state346.p = (function(step, frame) {
 var token = step.token;
-step.startCall("IGN").addReturn(frame.context, state347);
-if (token === 93) { frame.addNextState(state348); }
+step.startCall("IGN").addReturn(frame.context, state346);
+if (token === 93) { frame.addNextState(state347); }
 });
 state346.id = 346;
 state347.p = (function(step, frame) {
 var token = step.token;
-step.startCall("IGN").addReturn(frame.context, state347);
-if (token === 93) { frame.addNextState(state348); }
+step.returnCall("EXPR^12", frame);
 });
 state347.id = 347;
 state348.p = (function(step, frame) {
 var token = step.token;
-step.returnCall("EXPR^12", frame);
+step.startCall("IGN").addReturn(frame.context, state349);
+step.startCall("PIPE").addReturn(frame.context, state350);
+if (token === 91) { frame.addNextState(state351); }
 });
 state348.id = 348;
 state349.p = (function(step, frame) {
 var token = step.token;
-step.startCall("IGN").addReturn(frame.context, state350);
-step.startCall("PIPE").addReturn(frame.context, state351);
-if (token === 91) { frame.addNextState(state352); }
+step.startCall("IGN").addReturn(frame.context, state349);
+step.startCall("PIPE").addReturn(frame.context, state350);
+if (token === 91) { frame.addNextState(state351); }
 });
 state349.id = 349;
 state350.p = (function(step, frame) {
 var token = step.token;
-step.startCall("IGN").addReturn(frame.context, state350);
-step.startCall("PIPE").addReturn(frame.context, state351);
-if (token === 91) { frame.addNextState(state352); }
+if (token === 91) { frame.addNextState(state351); }
 });
 state350.id = 350;
 state351.p = (function(step, frame) {
 var token = step.token;
-if (token === 91) { frame.addNextState(state352); }
+if (token === 93) { frame.addNextState(state352); }
 });
 state351.id = 351;
 state352.p = (function(step, frame) {
 var token = step.token;
-if (token === 93) { frame.addNextState(state353); }
+step.returnCall("EXPR^12", frame);
 });
 state352.id = 352;
 state353.p = (function(step, frame) {
 var token = step.token;
-step.returnCall("EXPR^12", frame);
+step.startCall("NUMBER").addReturn(frame.context, state354);
+step.startCall("STRING").addReturn(frame.context, state355);
+step.startCall("ARRAY").addReturn(frame.context, state356);
+step.startCall("OBJECT").addReturn(frame.context, state357);
+step.addMark("star", frame.context, state358);
+step.addMark("this", frame.context, state359);
+step.startCall("PARENT").addReturn(frame.context, state360);
+step.addMark("paren", frame.context, state361);
+if (token === 36) { frame.addNextState(state362); }
+step.addMark("ident", frame.context, state363);
+step.startCall("FUNC_CALL").addReturn(frame.context, state364);
+step.addMark("neg", frame.context, state365);
+step.addMark("pos", frame.context, state366);
 });
 state353.id = 353;
 state354.p = (function(step, frame) {
 var token = step.token;
-step.startCall("NUMBER").addReturn(frame.context, state355);
-step.startCall("STRING").addReturn(frame.context, state356);
-step.startCall("ARRAY").addReturn(frame.context, state357);
-step.startCall("OBJECT").addReturn(frame.context, state358);
-step.addMark("star", frame.context, state359);
-step.addMark("this", frame.context, state360);
-step.startCall("PARENT").addReturn(frame.context, state361);
-step.addMark("paren", frame.context, state362);
-if (token === 36) { frame.addNextState(state363); }
-step.addMark("ident", frame.context, state364);
-step.startCall("FUNC_CALL").addReturn(frame.context, state365);
-step.addMark("neg", frame.context, state366);
-step.addMark("pos", frame.context, state367);
+step.returnCall("EXPR^20", frame);
 });
 state354.id = 354;
 state355.p = (function(step, frame) {
@@ -2627,52 +2626,52 @@ step.returnCall("EXPR^20", frame);
 state357.id = 357;
 state358.p = (function(step, frame) {
 var token = step.token;
-step.returnCall("EXPR^20", frame);
+step.startCall("STAR").addReturn(frame.context, state367);
 });
 state358.id = 358;
 state359.p = (function(step, frame) {
 var token = step.token;
-step.startCall("STAR").addReturn(frame.context, state368);
+if (token === 64) { frame.addNextState(state368); }
 });
 state359.id = 359;
 state360.p = (function(step, frame) {
 var token = step.token;
-if (token === 64) { frame.addNextState(state369); }
+step.returnCall("EXPR^20", frame);
 });
 state360.id = 360;
 state361.p = (function(step, frame) {
 var token = step.token;
-step.returnCall("EXPR^20", frame);
+if (token === 40) { frame.addNextState(state369); }
 });
 state361.id = 361;
 state362.p = (function(step, frame) {
 var token = step.token;
-if (token === 40) { frame.addNextState(state370); }
+step.addMark("param", frame.context, state374);
 });
 state362.id = 362;
 state363.p = (function(step, frame) {
 var token = step.token;
-step.addMark("param", frame.context, state375);
+step.startCall("IDENT").addReturn(frame.context, state377);
 });
 state363.id = 363;
 state364.p = (function(step, frame) {
 var token = step.token;
-step.startCall("IDENT").addReturn(frame.context, state378);
+step.returnCall("EXPR^20", frame);
 });
 state364.id = 364;
 state365.p = (function(step, frame) {
 var token = step.token;
-step.returnCall("EXPR^20", frame);
+if (token === 45) { frame.addNextState(state379); }
 });
 state365.id = 365;
 state366.p = (function(step, frame) {
 var token = step.token;
-if (token === 45) { frame.addNextState(state380); }
+if (token === 43) { frame.addNextState(state382); }
 });
 state366.id = 366;
 state367.p = (function(step, frame) {
 var token = step.token;
-if (token === 43) { frame.addNextState(state383); }
+step.returnCall("EXPR^20", frame);
 });
 state367.id = 367;
 state368.p = (function(step, frame) {
@@ -2682,97 +2681,92 @@ step.returnCall("EXPR^20", frame);
 state368.id = 368;
 state369.p = (function(step, frame) {
 var token = step.token;
-step.returnCall("EXPR^20", frame);
+step.startCall("IGN").addReturn(frame.context, state370);
+step.startCall("EXPR^2").addReturn(frame.context, state371);
 });
 state369.id = 369;
 state370.p = (function(step, frame) {
 var token = step.token;
-step.startCall("IGN").addReturn(frame.context, state371);
-step.startCall("EXPR^2").addReturn(frame.context, state372);
+step.startCall("IGN").addReturn(frame.context, state370);
+step.startCall("EXPR^2").addReturn(frame.context, state371);
 });
 state370.id = 370;
 state371.p = (function(step, frame) {
 var token = step.token;
-step.startCall("IGN").addReturn(frame.context, state371);
-step.startCall("EXPR^2").addReturn(frame.context, state372);
+step.startCall("IGN").addReturn(frame.context, state372);
+if (token === 41) { frame.addNextState(state373); }
 });
 state371.id = 371;
 state372.p = (function(step, frame) {
 var token = step.token;
-step.startCall("IGN").addReturn(frame.context, state373);
-if (token === 41) { frame.addNextState(state374); }
+step.startCall("IGN").addReturn(frame.context, state372);
+if (token === 41) { frame.addNextState(state373); }
 });
 state372.id = 372;
 state373.p = (function(step, frame) {
 var token = step.token;
-step.startCall("IGN").addReturn(frame.context, state373);
-if (token === 41) { frame.addNextState(state374); }
+step.returnCall("EXPR^20", frame);
 });
 state373.id = 373;
 state374.p = (function(step, frame) {
 var token = step.token;
-step.returnCall("EXPR^20", frame);
+step.startCall("IDENT").addReturn(frame.context, state375);
 });
 state374.id = 374;
 state375.p = (function(step, frame) {
 var token = step.token;
-step.startCall("IDENT").addReturn(frame.context, state376);
+step.addMark("param_end", frame.context, state376);
 });
 state375.id = 375;
 state376.p = (function(step, frame) {
 var token = step.token;
-step.addMark("param_end", frame.context, state377);
+step.returnCall("EXPR^20", frame);
 });
 state376.id = 376;
 state377.p = (function(step, frame) {
 var token = step.token;
-step.returnCall("EXPR^20", frame);
+step.addMark("ident_end", frame.context, state378);
 });
 state377.id = 377;
 state378.p = (function(step, frame) {
 var token = step.token;
-step.addMark("ident_end", frame.context, state379);
+step.returnCall("EXPR^20", frame);
 });
 state378.id = 378;
 state379.p = (function(step, frame) {
 var token = step.token;
-step.returnCall("EXPR^20", frame);
+step.startCall("IGN").addReturn(frame.context, state380);
+step.startCall("EXPR^20").addReturn(frame.context, state381);
 });
 state379.id = 379;
 state380.p = (function(step, frame) {
 var token = step.token;
-step.startCall("IGN").addReturn(frame.context, state381);
-step.startCall("EXPR^20").addReturn(frame.context, state382);
+step.startCall("IGN").addReturn(frame.context, state380);
+step.startCall("EXPR^20").addReturn(frame.context, state381);
 });
 state380.id = 380;
 state381.p = (function(step, frame) {
 var token = step.token;
-step.startCall("IGN").addReturn(frame.context, state381);
-step.startCall("EXPR^20").addReturn(frame.context, state382);
+step.returnCall("EXPR^20", frame);
 });
 state381.id = 381;
 state382.p = (function(step, frame) {
 var token = step.token;
-step.returnCall("EXPR^20", frame);
+step.startCall("IGN").addReturn(frame.context, state383);
+step.startCall("EXPR^20").addReturn(frame.context, state384);
 });
 state382.id = 382;
 state383.p = (function(step, frame) {
 var token = step.token;
-step.startCall("IGN").addReturn(frame.context, state384);
-step.startCall("EXPR^20").addReturn(frame.context, state385);
+step.startCall("IGN").addReturn(frame.context, state383);
+step.startCall("EXPR^20").addReturn(frame.context, state384);
 });
 state383.id = 383;
 state384.p = (function(step, frame) {
 var token = step.token;
-step.startCall("IGN").addReturn(frame.context, state384);
-step.startCall("EXPR^20").addReturn(frame.context, state385);
-});
-state384.id = 384;
-state385.p = (function(step, frame) {
-var token = step.token;
 step.returnCall("EXPR^20", frame);
 });
-state385.id = 385;
+state384.id = 384;
 var initialContext = new Context(null, null);
 var initialFrame = new Frame(initialContext);
 initialFrame.addNextState(state0);
@@ -2793,27 +2787,27 @@ ruleInitialStates["COMP_OP"] = [state48];
 ruleInitialStates["FUNC_CALL"] = [state66];
 ruleInitialStates["FUNC_ARGS"] = [state75];
 ruleInitialStates["NUMBER"] = [state83];
-ruleInitialStates["DIGIT"] = [state100];
-ruleInitialStates["SIGN"] = [state102];
-ruleInitialStates["STRING"] = [state107];
-ruleInitialStates["DSTRING_CHAR"] = [state118];
-ruleInitialStates["SSTRING_CHAR"] = [state122];
-ruleInitialStates["ARRAY"] = [state126];
-ruleInitialStates["ARRAY_ELEMENT"] = [state140];
-ruleInitialStates["OBJECT"] = [state147];
-ruleInitialStates["OBJECT_PAIR"] = [state161];
-ruleInitialStates["EXPR^2"] = [state180];
-ruleInitialStates["EXPR^3"] = [state189];
-ruleInitialStates["EXPR^4"] = [state198];
-ruleInitialStates["EXPR^5"] = [state207];
-ruleInitialStates["EXPR^6"] = [state217];
-ruleInitialStates["EXPR^7"] = [state234];
-ruleInitialStates["EXPR^8"] = [state252];
-ruleInitialStates["EXPR^9"] = [state258];
-ruleInitialStates["EXPR^10"] = [state278];
-ruleInitialStates["EXPR^11"] = [state287];
-ruleInitialStates["EXPR^12"] = [state302];
-ruleInitialStates["EXPR^20"] = [state354];
+ruleInitialStates["DIGIT"] = [state101];
+ruleInitialStates["SIGN"] = [state103];
+ruleInitialStates["STRING"] = [state106];
+ruleInitialStates["DSTRING_CHAR"] = [state117];
+ruleInitialStates["SSTRING_CHAR"] = [state121];
+ruleInitialStates["ARRAY"] = [state125];
+ruleInitialStates["ARRAY_ELEMENT"] = [state139];
+ruleInitialStates["OBJECT"] = [state146];
+ruleInitialStates["OBJECT_PAIR"] = [state160];
+ruleInitialStates["EXPR^2"] = [state179];
+ruleInitialStates["EXPR^3"] = [state188];
+ruleInitialStates["EXPR^4"] = [state197];
+ruleInitialStates["EXPR^5"] = [state206];
+ruleInitialStates["EXPR^6"] = [state216];
+ruleInitialStates["EXPR^7"] = [state233];
+ruleInitialStates["EXPR^8"] = [state251];
+ruleInitialStates["EXPR^9"] = [state257];
+ruleInitialStates["EXPR^10"] = [state277];
+ruleInitialStates["EXPR^11"] = [state286];
+ruleInitialStates["EXPR^12"] = [state301];
+ruleInitialStates["EXPR^20"] = [state353];
 
 exports.recognize = recognize;
 exports.parse = parse;
