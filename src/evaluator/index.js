@@ -316,7 +316,7 @@ const EXECUTORS = {
     })
   },
 
-  async Range({left, right}, scope) {
+  async Range({left, right, isExclusive}, scope) {
     let leftValue = await execute(left, scope)
     let rightValue = await execute(right, scope)
 
@@ -324,7 +324,7 @@ const EXECUTORS = {
       return NULL_VALUE
     }
 
-    let range = new Range(await leftValue.get(), await rightValue.get())
+    let range = new Range(await leftValue.get(), await rightValue.get(), isExclusive)
     return new StaticValue(range)
   },
 

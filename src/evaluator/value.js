@@ -99,9 +99,14 @@ class Range {
     return false
   }
 
-  constructor(left, right) {
+  constructor(left, right, exclusive) {
     this.left = left
     this.right = right
+    this.exclusive = exclusive
+  }
+
+  isExclusive() {
+    return this.exclusive
   }
 
   toJSON() {
