@@ -1,5 +1,6 @@
 const {TRUE_VALUE, FALSE_VALUE, NULL_VALUE} = require('./value')
 const isEqual = require('./equality')
+const {partialCompare} = require('./ordering')
 
 function isComparable(a, b) {
   let aType = a.getType()
@@ -22,46 +23,50 @@ exports['!='] = async function neq(left, right, scope, execute) {
 }
 
 exports['>'] = async function gt(left, right, scope, execute) {
-  let a = await execute(left, scope)
-  let b = await execute(right, scope)
+  let a = await (await execute(left, scope)).get()
+  let b = await (await execute(right, scope)).get()
+  let result = partialCompare(a, b)
 
-  if (isComparable(a, b)) {
-    return a.data > b.data ? TRUE_VALUE : FALSE_VALUE
-  } else {
+  if (result == null) {
     return NULL_VALUE
+  } else {
+    return result > 0 ? TRUE_VALUE : FALSE_VALUE
   }
 }
 
 exports['>='] = async function gte(left, right, scope, execute) {
-  let a = await execute(left, scope)
-  let b = await execute(right, scope)
+  let a = await (await execute(left, scope)).get()
+  let b = await (await execute(right, scope)).get()
+  let result = partialCompare(a, b)
 
-  if (isComparable(a, b)) {
-    return a.data >= b.data ? TRUE_VALUE : FALSE_VALUE
-  } else {
+  if (result == null) {
     return NULL_VALUE
+  } else {
+    return result >= 0 ? TRUE_VALUE : FALSE_VALUE
   }
 }
 
 exports['<'] = async function lt(left, right, scope, execute) {
-  let a = await execute(left, scope)
-  let b = await execute(right, scope)
+  let a = await (await execute(left, scope)).get()
+  let b = await (await execute(right, scope)).get()
+  let result = partialCompare(a, b)
 
-  if (isComparable(a, b)) {
-    return a.data < b.data ? TRUE_VALUE : FALSE_VALUE
-  } else {
+  if (result == null) {
     return NULL_VALUE
+  } else {
+    return result < 0 ? TRUE_VALUE : FALSE_VALUE
   }
 }
 
 exports['<='] = async function lte(left, right, scope, execute) {
-  let a = await execute(left, scope)
-  let b = await execute(right, scope)
+  let a = await (await execute(left, scope)).get()
+  let b = await (await execute(right, scope)).get()
+  let result = partialCompare(a, b)
 
-  if (isComparable(a, b)) {
-    return a.data <= b.data ? TRUE_VALUE : FALSE_VALUE
-  } else {
+  if (result == null) {
     return NULL_VALUE
+  } else {
+    return result <= 0 ? TRUE_VALUE : FALSE_VALUE
   }
 }
 

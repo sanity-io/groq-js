@@ -1,4 +1,5 @@
 const {StaticValue, getType, TRUE_VALUE, FALSE_VALUE, NULL_VALUE} = require('./value')
+const {totalCompare} = require('./ordering')
 
 const functions = (exports.functions = {})
 const pipeFunctions = (exports.pipeFunctions = {})
@@ -20,32 +21,6 @@ functions.defined = async function defined(args, scope, execute) {
 
   let inner = await execute(args[0], scope)
   return inner.getType() == 'null' ? FALSE_VALUE : TRUE_VALUE
-}
-
-const TYPE_ORDER = {
-  number: 0,
-  string: 1,
-  boolean: 2,
-  null: 3
-}
-
-function compare(a, b) {
-  let aType = getType(a)
-  let bType = getType(b)
-
-  if (aType != bType) {
-    return TYPE_ORDER[aType] - TYPE_ORDER[bType]
-  }
-
-  switch (aType) {
-    case 'number':
-    case 'boolean':
-      return a - b
-    case 'string':
-      return a < b ? -1 : a > b ? 1 : 0
-  }
-
-  return 0
 }
 
 pipeFunctions.order = async function order(base, args, scope, execute) {
@@ -85,7 +60,7 @@ pipeFunctions.order = async function order(base, args, scope, execute) {
 
   aux.sort((aTuple, bTuple) => {
     for (let i = 0; i < n; i++) {
-      let c = compare(aTuple[i + 1], bTuple[i + 1])
+      let c = totalCompare(aTuple[i + 1], bTuple[i + 1])
       if (directions[i] == 'desc') c = -c
       if (c != 0) return c
     }
