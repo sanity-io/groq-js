@@ -300,7 +300,16 @@ const EXECUTORS = {
   Array({elements}, scope) {
     return new StreamValue(async function*() {
       for (let element of elements) {
-        yield await execute(element, scope)
+        let value = await execute(element.value, scope)
+        if (element.isSplat) {
+          if (value.getType() == 'array') {
+            for await (let v of value) {
+              yield v
+            }
+          }
+        } else {
+          yield value
+        }
       }
     })
   },
