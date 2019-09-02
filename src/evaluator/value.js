@@ -120,11 +120,20 @@ class Pair {
   }
 }
 
+function fromNumber(num) {
+  if (Number.isFinite(num)) {
+    return new StaticValue(num)
+  } else {
+    return exports.NULL_VALUE
+  }
+}
+
 exports.StaticValue = StaticValue
 exports.Range = Range
 exports.Pair = Pair
 exports.StreamValue = StreamValue
 exports.MapperValue = MapperValue
+exports.fromNumber = fromNumber
 exports.NULL_VALUE = new StaticValue(null)
 exports.TRUE_VALUE = new StaticValue(true)
 exports.FALSE_VALUE = new StaticValue(false)

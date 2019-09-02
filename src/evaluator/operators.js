@@ -1,4 +1,4 @@
-const {TRUE_VALUE, FALSE_VALUE, NULL_VALUE} = require('./value')
+const {StaticValue, TRUE_VALUE, FALSE_VALUE, NULL_VALUE, fromNumber} = require('./value')
 const isEqual = require('./equality')
 const {partialCompare} = require('./ordering')
 
@@ -92,3 +92,38 @@ exports['match'] = async function match(left, right, scope, execute) {
   let regex = b.data.replace('*', '.*')
   return new RegExp(regex).test(a.data) ? TRUE_VALUE : FALSE_VALUE
 }
+
+exports['+'] = async function plus(left, right, scope, execute) {
+  let a = await execute(left, scope)
+  let b = await execute(right, scope)
+  let aType = a.getType()
+  let bType = b.getType()
+
+  if ((aType == 'number' && bType == 'number') || (aType == 'string' && bType == 'string')) {
+    return new StaticValue((await a.get()) + (await b.get()))
+  }
+
+  return NULL_VALUE
+}
+
+function numericOperator(impl) {
+  return async function(left, right, scope, execute) {
+    let a = await execute(left, scope)
+    let b = await execute(right, scope)
+    let aType = a.getType()
+    let bType = b.getType()
+
+    if (aType == 'number' && bType == 'number') {
+      let result = impl(await a.get(), await b.get())
+      return fromNumber(result)
+    }
+
+    return NULL_VALUE
+  }
+}
+
+exports['-'] = numericOperator((a, b) => a - b)
+exports['*'] = numericOperator((a, b) => a * b)
+exports['/'] = numericOperator((a, b) => a / b)
+exports['%'] = numericOperator((a, b) => a % b)
+exports['**'] = numericOperator((a, b) => Math.pow(a, b))
