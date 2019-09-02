@@ -308,7 +308,17 @@ const BUILDER = {
   array(p, mark) {
     let elements = []
     while (p.getMark().name !== 'array_end') {
-      elements.push(p.process())
+      let isSplat = false
+      if (p.getMark().name == 'array_splat') {
+        isSplat = true
+        p.shift()
+      }
+      let value = p.process()
+      elements.push({
+        type: 'ArrayElement',
+        value,
+        isSplat
+      })
     }
     p.shift()
     return {
