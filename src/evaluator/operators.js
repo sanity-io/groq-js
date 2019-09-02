@@ -83,14 +83,49 @@ exports['in'] = async function inop(left, right, scope, execute) {
   return FALSE_VALUE
 }
 
-exports['match'] = async function match(left, right, scope, execute) {
-  let a = await execute(left, scope)
-  let b = await execute(right, scope)
-  if (a.getType() != 'string' || b.getType() == 'string') return NULL_VALUE
+async function gatherText(value, cb) {
+  switch (value.getType()) {
+    case 'string':
+      cb(await value.get())
+      return true
 
-  // TODO: More correct semantics
-  let regex = b.data.replace('*', '.*')
-  return new RegExp(regex).test(a.data) ? TRUE_VALUE : FALSE_VALUE
+    case 'array':
+      for await (let part of value) {
+        if (part.getType() == 'string') {
+          cb(await part.get())
+        } else {
+          return false
+        }
+      }
+      return true
+  }
+
+  return false
+}
+
+exports['match'] = async function match(left, right, scope, execute) {
+  let text = await execute(left, scope)
+  let pattern = await execute(right, scope)
+
+  let tokens = []
+  let patterns = []
+
+  let didSucceed = await gatherText(text, part => {
+    tokens = tokens.concat(part.match(/[A-Za-z0-9]+/g))
+  })
+  if (!didSucceed) return NULL_VALUE
+  
+  didSucceed = await gatherText(pattern, part => {
+    patterns = patterns.concat(part.match(/[A-Za-z0-9*]+/g))
+  })
+  if (!didSucceed) return NULL_VALUE
+
+  let matched = patterns.every(p => {
+    let regexp = new RegExp("^" + p.replace('*', '.*') + "$", 'i')
+    return tokens.some(token => regexp.test(token))
+  })
+
+  return matched ? TRUE_VALUE : FALSE_VALUE
 }
 
 exports['+'] = async function plus(left, right, scope, execute) {
