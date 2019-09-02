@@ -174,6 +174,72 @@ const BUILDER = {
     }
   },
 
+  add(p, mark) {
+    let left = p.process()
+    let right = p.process()
+    return {
+      type: 'OpCall',
+      op: '+',
+      left,
+      right,
+    }
+  },
+
+  sub(p, mark) {
+    let left = p.process()
+    let right = p.process()
+    return {
+      type: 'OpCall',
+      op: '-',
+      left,
+      right,
+    }
+  },
+
+  mul(p, mark) {
+    let left = p.process()
+    let right = p.process()
+    return {
+      type: 'OpCall',
+      op: '*',
+      left,
+      right,
+    }
+  },
+
+  div(p, mark) {
+    let left = p.process()
+    let right = p.process()
+    return {
+      type: 'OpCall',
+      op: '/',
+      left,
+      right,
+    }
+  },
+
+  mod(p, mark) {
+    let left = p.process()
+    let right = p.process()
+    return {
+      type: 'OpCall',
+      op: '%',
+      left,
+      right,
+    }
+  },
+
+  pow(p, mark) {
+    let left = p.process()
+    let right = p.process()
+    return {
+      type: 'OpCall',
+      op: '**',
+      left,
+      right,
+    }
+  },
+  
   deref(p, mark) {
     let base = p.process()
 
