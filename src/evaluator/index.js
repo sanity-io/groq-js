@@ -6,6 +6,7 @@ const {
   TRUE_VALUE,
   FALSE_VALUE,
   Range,
+  Pair,
 } = require('./value')
 const {functions, pipeFunctions} = require('./functions')
 const operators = require('./operators')
@@ -327,6 +328,14 @@ const EXECUTORS = {
     return new StaticValue(range)
   },
 
+  async Pair({left, right}, scope) {
+    let leftValue = await execute(left, scope)
+    let rightValue = await execute(right, scope)
+
+    let pair = new Pair(await leftValue.get(), await rightValue.get())
+    return new StaticValue(pair)
+  },
+  
   async Or({left, right}, scope) {
     let leftValue = await execute(left, scope)
     let rightValue = await execute(right, scope)
