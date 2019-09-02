@@ -374,6 +374,9 @@ const EXECUTORS = {
 
   async Not({base}, scope) {
     let value = await execute(base, scope)
+    if (value.getType() != 'boolean') {
+      return NULL_VALUE
+    }
     return value.getBoolean() ? FALSE_VALUE : TRUE_VALUE
   }
 }

@@ -1,4 +1,5 @@
 const {TRUE_VALUE, FALSE_VALUE, NULL_VALUE} = require('./value')
+const isEqual = require('./equality')
 
 function isComparable(a, b) {
   let aType = a.getType()
@@ -9,23 +10,15 @@ function isComparable(a, b) {
 exports['=='] = async function eq(left, right, scope, execute) {
   let a = await execute(left, scope)
   let b = await execute(right, scope)
-
-  if (isComparable(a, b)) {
-    return a.data == b.data ? TRUE_VALUE : FALSE_VALUE
-  } else {
-    return NULL_VALUE
-  }
+  let result = await isEqual(a, b)
+  return result ? TRUE_VALUE : FALSE_VALUE
 }
 
 exports['!='] = async function neq(left, right, scope, execute) {
   let a = await execute(left, scope)
   let b = await execute(right, scope)
-
-  if (isComparable(a, b)) {
-    return a.data != b.data ? TRUE_VALUE : FALSE_VALUE
-  } else {
-    return NULL_VALUE
-  }
+  let result = await isEqual(a, b)
+  return result ? FALSE_VALUE : TRUE_VALUE
 }
 
 exports['>'] = async function gt(left, right, scope, execute) {
