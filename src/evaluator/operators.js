@@ -74,13 +74,30 @@ exports['in'] = async function inop(left, right, scope, execute) {
   let a = await execute(left, scope)
   let choices = await execute(right, scope)
 
-  for await (let b of choices) {
-    if (isComparable(a, b) && a.data == b.data) {
-      return TRUE_VALUE
+  switch (choices.getType()) {
+    case 'array':
+      for await (let b of choices) {
+        if (await isEqual(a, b)) {
+          return TRUE_VALUE
+        }
+      }
+      return FALSE_VALUE
+    case 'range':
+      let value = await a.get()
+      let range = await choices.get()
+      let leftCmp = partialCompare(value, range.left)
+      if (leftCmp == null) return NULL_VALUE
+      let rightCmp = partialCompare(value, range.right)
+      if (rightCmp == null) return NULL_VALUE
+      
+      if (range.isExclusive()) {
+        return (leftCmp >= 0 && rightCmp < 0) ? TRUE_VALUE : FALSE_VALUE
+      } else {
+        return (leftCmp >= 0 && rightCmp <= 0) ? TRUE_VALUE : FALSE_VALUE
+      }
     }
-  }
 
-  return FALSE_VALUE
+  return NULL_VALUE
 }
 
 async function gatherText(value, cb) {
