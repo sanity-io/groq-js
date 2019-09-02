@@ -109,8 +109,20 @@ class Range {
   }
 }
 
+class Pair {
+  constructor(first, second) {
+    this.first = first
+    this.second = second
+  }
+
+  toJSON() {
+    return [this.first, this.second]
+  }
+}
+
 exports.StaticValue = StaticValue
 exports.Range = Range
+exports.Pair = Pair
 exports.StreamValue = StreamValue
 exports.MapperValue = MapperValue
 exports.NULL_VALUE = new StaticValue(null)
