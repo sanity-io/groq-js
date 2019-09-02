@@ -109,6 +109,7 @@ process.stdin
       write(`let tree = parse(query)`)
       write(`let value = await evaluate(tree, {documents})`)
       write(`let data = await value.get()`)
+      write(`data = JSON.parse(JSON.stringify(data))`)
       write(`expect(data).toStrictEqual(result)`)
       closeStack()
       space()
