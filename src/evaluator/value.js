@@ -1,6 +1,7 @@
 const getType = (exports.getType = function getType(data) {
   if (data == null) return 'null'
   if (Array.isArray(data)) return 'array'
+  if (data instanceof Range) return 'range'
   return typeof data
 })
 
@@ -89,7 +90,27 @@ class MapperValue {
   }
 }
 
+class Range {
+  static isConstructible(leftType, rightType) {
+    if (leftType == rightType) {
+      if (leftType == 'number') return true
+      if (leftType == 'string') return true
+    }
+    return false
+  }
+
+  constructor(left, right) {
+    this.left = left
+    this.right = right
+  }
+
+  toJSON() {
+    return [this.left, this.right]
+  }
+}
+
 exports.StaticValue = StaticValue
+exports.Range = Range
 exports.StreamValue = StreamValue
 exports.MapperValue = MapperValue
 exports.NULL_VALUE = new StaticValue(null)

@@ -4,7 +4,8 @@ const {
   MapperValue,
   NULL_VALUE,
   TRUE_VALUE,
-  FALSE_VALUE
+  FALSE_VALUE,
+  Range,
 } = require('./value')
 const {functions, pipeFunctions} = require('./functions')
 const operators = require('./operators')
@@ -312,6 +313,18 @@ const EXECUTORS = {
         }
       }
     })
+  },
+
+  async Range({left, right}, scope) {
+    let leftValue = await execute(left, scope)
+    let rightValue = await execute(right, scope)
+
+    if (!Range.isConstructible(leftValue.getType(), rightValue.getType())) {
+      return NULL_VALUE
+    }
+
+    let range = new Range(await leftValue.get(), await rightValue.get())
+    return new StaticValue(range)
   },
 
   async Or({left, right}, scope) {
