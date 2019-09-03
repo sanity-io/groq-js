@@ -1,4 +1,4 @@
-const {StaticValue, fromNumber, TRUE_VALUE, FALSE_VALUE, NULL_VALUE} = require('./value')
+const {StaticValue, getType, fromNumber, TRUE_VALUE, FALSE_VALUE, NULL_VALUE} = require('./value')
 const {totalCompare} = require('./ordering')
 
 const functions = (exports.functions = {})
@@ -98,6 +98,34 @@ functions.select = async function select(args, scope, execute) {
   }
 
   return NULL_VALUE
+}
+
+function hasReference(value, id) {
+  switch (getType(value)) {
+    case 'array':
+      for (let v of value) {
+        if (hasReference(v, id)) return true
+      }
+      break
+    case 'object':
+      if (value._ref === id) return true
+      for (let v of Object.values(value)) {
+        if (hasReference(v, id)) return true
+      }
+      break
+  }
+  return false
+}
+
+functions.references = async function references(args, scope, execute) {
+  if (args.length != 1) return NULL_VALUE
+  
+  let idValue = await execute(args[0], scope)
+  if (idValue.getType() != 'string') return NULL_VALUE
+
+  let id = await idValue.get()
+  let scopeValue = scope.value
+  return hasReference(scopeValue, id) ? TRUE_VALUE : FALSE_VALUE
 }
 
 pipeFunctions.order = async function order(base, args, scope, execute) {
