@@ -1,4 +1,4 @@
-const {StaticValue, getType, TRUE_VALUE, FALSE_VALUE, NULL_VALUE} = require('./value')
+const {StaticValue, fromNumber, TRUE_VALUE, FALSE_VALUE, NULL_VALUE} = require('./value')
 const {totalCompare} = require('./ordering')
 
 const functions = (exports.functions = {})
@@ -27,6 +27,42 @@ functions.defined = async function defined(args, scope, execute) {
 functions.identity = async function identity(args, scope, execute) {
   if (args.length !== 0) return NULL_VALUE
   return new StaticValue("me")
+}
+
+function countUTF8(str) {
+  let count = 0
+  for (let i = 0; i < str.length; i++) {
+    let code = str.charCodeAt(i)
+    if (code >= 0xD800 && code <= 0xDBFF) {
+      // High surrogate. Don't count this.
+      // By only counting the low surrogate we will correctly
+      // count the number of UTF-8 code points.
+      continue
+    }
+    count++
+  }
+  return count
+}
+
+functions.length = async function length(args, scope, execute) {
+  if (args.length !== 1) return NULL_VALUE
+
+  let inner = await execute(args[0], scope)
+
+  if (inner.getType() == 'string') {
+    let data = await inner.get()
+    return fromNumber(countUTF8(data))
+  }
+
+  if (inner.getType() == 'array') {
+    let num = 0
+    for await (let _ of inner) {
+      num++
+    }
+    return fromNumber(num)
+  }
+
+  return NULL_VALUE
 }
 
 pipeFunctions.order = async function order(base, args, scope, execute) {
