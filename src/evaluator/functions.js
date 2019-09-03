@@ -65,6 +65,33 @@ functions.length = async function length(args, scope, execute) {
   return NULL_VALUE
 }
 
+functions.select = async function select(args, scope, execute) {
+  // First check if everything is valid:
+  let seenFallback = false
+  for (let arg of args) {
+    if (seenFallback) return NULL_VALUE
+
+    if (arg.type == 'Pair') {
+      // This is fine.
+    } else {
+      seenFallback = true
+    }
+  }
+
+  for (let arg of args) {
+    if (arg.type == 'Pair') {
+      let cond = await execute(arg.left, scope)
+      if (cond.getBoolean()) {
+        return await execute(arg.right, scope)
+      }
+    } else {
+      return await execute(arg, scope)
+    }
+  }
+
+  return NULL_VALUE
+}
+
 pipeFunctions.order = async function order(base, args, scope, execute) {
   if (args.length == 0) throw new Error('order: at least one argument required')
   if (base.getType() != 'array') return NULL_VALUE
