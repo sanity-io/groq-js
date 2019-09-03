@@ -5,9 +5,10 @@ const functions = (exports.functions = {})
 const pipeFunctions = (exports.pipeFunctions = {})
 
 functions.count = async function count(args, scope, execute) {
-  if (args.length !== 1) throw new Error('count: 1 argument required')
+  if (args.length !== 1) return NULL_VALUE
 
   let inner = await execute(args[0], scope)
+  if (inner.getType() != 'array') return NULL_VALUE
 
   let num = 0
   for await (let _ of inner) {
