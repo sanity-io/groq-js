@@ -18,7 +18,7 @@ functions.count = async function count(args, scope, execute) {
 }
 
 functions.defined = async function defined(args, scope, execute) {
-  if (args.length !== 1) throw new Error('defined: 1 argument required')
+  if (args.length !== 1) return NULL_VALUE
 
   let inner = await execute(args[0], scope)
   return inner.getType() == 'null' ? FALSE_VALUE : TRUE_VALUE
