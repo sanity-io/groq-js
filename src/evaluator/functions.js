@@ -119,13 +119,35 @@ function hasReference(value, id) {
 
 functions.references = async function references(args, scope, execute) {
   if (args.length != 1) return NULL_VALUE
-  
+
   let idValue = await execute(args[0], scope)
   if (idValue.getType() != 'string') return NULL_VALUE
 
   let id = await idValue.get()
   let scopeValue = scope.value
   return hasReference(scopeValue, id) ? TRUE_VALUE : FALSE_VALUE
+}
+
+functions.round = async function round(args, scope, execute) {
+  if (args.length < 1 || args.length > 2) return NULL_VALUE
+
+  let value = await execute(args[0], scope)
+  if (value.getType() != 'number') return NULL_VALUE
+
+  let num = await value.get()
+  let prec = 0
+
+  if (args.length == 2) {
+    let precValue = await execute(args[1], scope)
+    if (precValue.getType() != 'number') return NULL_VALUE
+    prec = await precValue.get()
+  }
+
+  if (prec == 0) {
+    return fromNumber(Math.round(num))
+  } else {
+    return fromNumber(Number(num.toFixed(prec)))
+  }
 }
 
 pipeFunctions.order = async function order(base, args, scope, execute) {
