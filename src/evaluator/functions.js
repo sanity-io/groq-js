@@ -4,6 +4,14 @@ const {totalCompare} = require('./ordering')
 const functions = (exports.functions = {})
 const pipeFunctions = (exports.pipeFunctions = {})
 
+functions.coalesce = async function coalesce(args, scope, execute) {
+  for (let arg of args) {
+    let value = await execute(arg, scope)
+    if (value.getType() != 'null') return value
+  }
+  return NULL_VALUE
+}
+
 functions.count = async function count(args, scope, execute) {
   if (args.length !== 1) return NULL_VALUE
 
