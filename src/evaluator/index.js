@@ -414,6 +414,7 @@ class StaticSource {
 
 async function evaluate(tree, options = {}) {
   let source
+  let root = NULL_VALUE
   let params = {identity: 'groot'}
 
   if (options.documents != null) {
@@ -426,11 +427,15 @@ async function evaluate(tree, options = {}) {
     source = new StaticSource([])
   }
 
+  if (options.root != null) {
+    root = new StaticValue(options.root)
+  }
+
   if (options.params) {
     Object.assign(params, options.params)
   }
 
-  let scope = new Scope(params, source, NULL_VALUE, null)
+  let scope = new Scope(params, source, root, null)
   return await execute(tree, scope)
 }
 

@@ -14,4 +14,15 @@ describe('Basic parsing', () => {
     let data = await value.get()
     expect(data).toStrictEqual([{name: 'T-shirt'}, {name: 'Pants'}])
   })
+
+  test('Controlling this', async () => {
+    let query = `@`
+    let tree = parse(query)
+
+    for (let root of [1, [1, 2], {"a": "b"}]) {
+      let value = await evaluate(tree, {root})
+      let data = await value.get()
+      expect(data).toStrictEqual(root)
+    }
+  })
 })
