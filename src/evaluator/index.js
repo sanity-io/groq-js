@@ -51,7 +51,7 @@ const EXECUTORS = {
   },
 
   Star(_, scope) {
-    return scope.source.createSink()
+    return scope.source
   },
 
   Parent({n}, scope) {
@@ -247,7 +247,7 @@ const EXECUTORS = {
       let id = (await baseValue.get())._ref
       if (typeof id != 'string') return NULL_VALUE
 
-      for await (let doc of scope.source.createSink()) {
+      for await (let doc of scope.source) {
         if (id === doc.data._id) {
           return doc
         }
@@ -402,14 +402,8 @@ const EXECUTORS = {
   }
 }
 
-class StaticSource {
-  constructor(documents) {
-    this.documents = documents
-  }
-
-  createSink() {
-    return new StaticValue(this.documents)
-  }
+function isIterator(obj) {
+  return obj != null && typeof obj.next == 'function'
 }
 
 async function evaluate(tree, options = {}) {
@@ -417,14 +411,19 @@ async function evaluate(tree, options = {}) {
   let root = NULL_VALUE
   let params = {}
 
-  if (options.documents != null) {
-    if (!Array.isArray(options.documents)) {
-      throw new Error('documents must be an array')
-    }
-
-    source = new StaticSource(options.documents)
+  if (options.documents == null) {
+    source = new StaticValue([])
+  } else if (Array.isArray(options.documents)) {
+    source = new StaticValue(options.documents)
+  } else if (isIterator(options.documents)) {
+    let iter = options.documents
+    source = new StreamValue(async function* () {
+      for await (let value of iter) {
+        yield new StaticValue(value)
+      }
+    })
   } else {
-    source = new StaticSource([])
+    throw new Error('documents must be an array or an iterable')
   }
 
   if (options.root != null) {

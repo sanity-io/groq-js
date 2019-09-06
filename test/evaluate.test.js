@@ -33,4 +33,17 @@ describe('Basic parsing', () => {
     let data = await value.get()
     expect(data).toStrictEqual([[1, 4], [1, 2]])
   })
+
+  test('Async documents', async () => {
+    let documents = (async function*() {
+      yield {_id: "a", name: "Michael"}
+      yield {_id: "b", name: "George Michael", father: {_ref: "a"}}
+    })()
+
+    let query = `*[father->name == "Michael"][0].name`
+    let tree = parse(query)
+    let value = await evaluate(tree, {documents})
+    let data = await value.get()
+    expect(data).toStrictEqual("George Michael")
+  })
 })
