@@ -145,7 +145,7 @@ const BUILDER = {
   neg(p, mark) {
     let base = p.process()
 
-    if (base.type === 'Value') {
+    if (base.type === 'Value' && typeof base.value == 'number') {
       return {
         type: 'Value',
         value: -base.value
@@ -161,7 +161,7 @@ const BUILDER = {
   pos(p, mark) {
     let base = p.process()
 
-    if (base.type === 'Value') {
+    if (base.type === 'Value' && typeof base.value == 'number') {
       return {
         type: 'Value',
         value: +base.value

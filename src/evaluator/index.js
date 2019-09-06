@@ -7,6 +7,7 @@ const {
   FALSE_VALUE,
   Range,
   Pair,
+  fromNumber,
 } = require('./value')
 const {functions, pipeFunctions} = require('./functions')
 const operators = require('./operators')
@@ -378,6 +379,26 @@ const EXECUTORS = {
       return NULL_VALUE
     }
     return value.getBoolean() ? FALSE_VALUE : TRUE_VALUE
+  },
+
+  async Neg({base}, scope) {
+    let value = await execute(base, scope)
+    if (value.getType() != 'number') return NULL_VALUE
+    return fromNumber(- await value.get())
+  },
+
+  async Pos({base}, scope) {
+    let value = await execute(base, scope)
+    if (value.getType() != 'number') return NULL_VALUE
+    return fromNumber(await value.get())
+  },
+
+  async Asc() {
+    return NULL_VALUE
+  },
+
+  async Desc() {
+    return NULL_VALUE
   }
 }
 
