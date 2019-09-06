@@ -7,7 +7,7 @@ const {
   FALSE_VALUE,
   Range,
   Pair,
-  fromNumber,
+  fromNumber
 } = require('./value')
 const {functions, pipeFunctions} = require('./functions')
 const operators = require('./operators')
@@ -336,7 +336,7 @@ const EXECUTORS = {
     let pair = new Pair(await leftValue.get(), await rightValue.get())
     return new StaticValue(pair)
   },
-  
+
   async Or({left, right}, scope) {
     let leftValue = await execute(left, scope)
     let rightValue = await execute(right, scope)
@@ -384,7 +384,7 @@ const EXECUTORS = {
   async Neg({base}, scope) {
     let value = await execute(base, scope)
     if (value.getType() != 'number') return NULL_VALUE
-    return fromNumber(- await value.get())
+    return fromNumber(-(await value.get()))
   },
 
   async Pos({base}, scope) {
@@ -408,7 +408,7 @@ function isIterator(obj) {
 
 /**
  * Evaluates a syntax tree (which you can get from {@link module:groq-js.parse}).
- * 
+ *
  * @param {SyntaxNode} tree
  * @param {object} [options] Options.
  * @param {object} [options.params]  Parameters availble in the GROQ query (using `$param` syntax).
@@ -427,7 +427,7 @@ async function evaluate(tree, options = {}) {
     source = new StaticValue(options.documents)
   } else if (isIterator(options.documents)) {
     let iter = options.documents
-    source = new StreamValue(async function* () {
+    source = new StreamValue(async function*() {
       for await (let value of iter) {
         yield new StaticValue(value)
       }

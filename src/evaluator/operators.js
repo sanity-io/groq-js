@@ -89,13 +89,13 @@ exports['in'] = async function inop(left, right, scope, execute) {
       if (leftCmp == null) return NULL_VALUE
       let rightCmp = partialCompare(value, range.right)
       if (rightCmp == null) return NULL_VALUE
-      
+
       if (range.isExclusive()) {
-        return (leftCmp >= 0 && rightCmp < 0) ? TRUE_VALUE : FALSE_VALUE
+        return leftCmp >= 0 && rightCmp < 0 ? TRUE_VALUE : FALSE_VALUE
       } else {
-        return (leftCmp >= 0 && rightCmp <= 0) ? TRUE_VALUE : FALSE_VALUE
+        return leftCmp >= 0 && rightCmp <= 0 ? TRUE_VALUE : FALSE_VALUE
       }
-    }
+  }
 
   return NULL_VALUE
 }
@@ -131,14 +131,14 @@ exports['match'] = async function match(left, right, scope, execute) {
     tokens = tokens.concat(part.match(/[A-Za-z0-9]+/g))
   })
   if (!didSucceed) return NULL_VALUE
-  
+
   didSucceed = await gatherText(pattern, part => {
     patterns = patterns.concat(part.match(/[A-Za-z0-9*]+/g))
   })
   if (!didSucceed) return NULL_VALUE
 
   let matched = patterns.every(p => {
-    let regexp = new RegExp("^" + p.replace('*', '.*') + "$", 'i')
+    let regexp = new RegExp('^' + p.replace('*', '.*') + '$', 'i')
     return tokens.some(token => regexp.test(token))
   })
 

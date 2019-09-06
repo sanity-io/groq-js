@@ -7,7 +7,7 @@ const getType = (exports.getType = function getType(data) {
 
 /**
  * A type of a value in GROQ.
- * 
+ *
  * This can be one of:
  * - 'null'
  * - 'boolean'
@@ -24,7 +24,7 @@ const getType = (exports.getType = function getType(data) {
  *
  * @interface Value
  */
-void 0;
+void 0
 
 /**
  * Returns the type of the value.
@@ -72,7 +72,7 @@ class StaticValue {
 }
 
 /** A StreamValue accepts a generator which yields values.
- * 
+ *
  * @private
  */
 class StreamValue {

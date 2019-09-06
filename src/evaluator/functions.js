@@ -27,21 +27,21 @@ functions.count = async function count(args, scope, execute) {
 
 functions.defined = async function defined(args, scope, execute) {
   if (args.length !== 1) return NULL_VALUE
-  
+
   let inner = await execute(args[0], scope)
   return inner.getType() == 'null' ? FALSE_VALUE : TRUE_VALUE
 }
 
 functions.identity = async function identity(args, scope, execute) {
   if (args.length !== 0) return NULL_VALUE
-  return new StaticValue("me")
+  return new StaticValue('me')
 }
 
 function countUTF8(str) {
   let count = 0
   for (let i = 0; i < str.length; i++) {
     let code = str.charCodeAt(i)
-    if (code >= 0xD800 && code <= 0xDBFF) {
+    if (code >= 0xd800 && code <= 0xdbff) {
       // High surrogate. Don't count this.
       // By only counting the low surrogate we will correctly
       // count the number of UTF-8 code points.

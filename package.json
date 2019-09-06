@@ -4,13 +4,8 @@
   "main": "src/index.js",
   "scripts": {
     "test": "jest",
-    "build-api": "jsdoc2md -t utils/docs.hbs 'src/**/*.js' > API.md"
-  },
-  "prettier": {
-    "semi": false,
-    "printWidth": 100,
-    "bracketSpacing": false,
-    "singleQuote": true
+    "build-api": "jsdoc2md -t utils/docs.hbs 'src/**/*.js' > API.md",
+    "prettify": "prettier --write src/**/*.js"
   },
   "devDependencies": {
     "jest": "^24.8.0",
