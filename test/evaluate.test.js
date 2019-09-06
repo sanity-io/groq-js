@@ -25,4 +25,12 @@ describe('Basic parsing', () => {
       expect(data).toStrictEqual(root)
     }
   })
+
+  test('Re-using stream', async () => {
+    let query = `[[1, 2], [1, 4]] | order(@[0], @[1] desc)`
+    let tree = parse(query)
+    let value = await evaluate(tree)
+    let data = await value.get()
+    expect(data).toStrictEqual([[1, 4], [1, 2]])
+  })
 })

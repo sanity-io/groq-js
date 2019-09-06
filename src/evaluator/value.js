@@ -44,7 +44,10 @@ class StaticValue {
 /** A StreamValue accepts a generator which yields values. */
 class StreamValue {
   constructor(generator) {
-    this.iterator = generator()
+    this._generator = generator
+    this._ticker = null
+    this._isDone = false
+    this._data = []
   }
 
   getType() {
@@ -53,18 +56,57 @@ class StreamValue {
 
   async get() {
     let result = []
-    for await (let element of this.iterator) {
-      result.push(await element.get())
+    for await (let value of this) {
+      result.push(await value.get())
     }
     return result
   }
 
-  [Symbol.asyncIterator]() {
-    return this.iterator
+  async *[Symbol.asyncIterator]() {
+    let i = 0
+    while (true) {
+      for (; i < this._data.length; i++) {
+        yield this._data[i]
+      }
+
+      if (this._isDone) return
+
+      await this._nextTick()
+    }
   }
 
   getBoolean() {
     return false
+  }
+
+  _nextTick() {
+    if (this._ticker) return this._ticker
+
+    let currentResolver
+    let setupTicker = () => {
+      this._ticker = new Promise(resolve => {
+        currentResolver = resolve
+      })
+    }
+
+    let tick = () => {
+      currentResolver()
+      setupTicker()
+    }
+
+    let fetch = async () => {
+      for await (let value of this._generator()) {
+        this._data.push(value)
+        tick()
+      }
+
+      this._isDone = true
+      tick()
+    }
+
+    setupTicker()
+    fetch()
+    return this._ticker
   }
 }
 
