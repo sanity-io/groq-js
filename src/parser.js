@@ -9,6 +9,14 @@ function isString(node) {
   return node.type == 'Value' && typeof node.value == 'string'
 }
 
+/**
+ * A tree-structure representing a GROQ query.
+ * 
+ * @typedef {object} SyntaxNode
+ * @property {string} type The type of the node.
+ * @abstract
+ */
+
 const BUILDER = {
   paren(p) {
     let inner = p.process()
@@ -485,6 +493,14 @@ function extractPropertyKey(node) {
   throw new Error('Cannot determine property key for type: ' + node.type)
 }
 
+/**
+ * Parses a GROQ query and returns a tree structure.
+ * 
+ * @param {string} input GROQ query
+ * @returns {SyntaxNode}
+ * @alias module:groq-js.parse
+ * @static
+ */
 function parse(input) {
   let result = rawParse(input)
   if (result.type === 'error') throw new Error('Syntax error in GROQ query')

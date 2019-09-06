@@ -5,10 +5,40 @@ const getType = (exports.getType = function getType(data) {
   return typeof data
 })
 
-/* A Value represents a value that can be produced during execution of a query.
+/**
+ * A type of a value in GROQ.
+ * 
+ * This can be one of:
+ * - 'null'
+ * - 'boolean'
+ * - 'number'
+ * - 'string'
+ * - 'array'
+ * - 'object'
+ * - 'range'
+ * - 'pair'
+ * @typedef {string} ValueType
+ */
+
+/** The result of an expression.
  *
- * Value provides a `get()` method for returning the whole data, but also
- * implements the async iterator protocol for streaming data.
+ * @interface Value
+ */
+void 0;
+
+/**
+ * Returns the type of the value.
+ * @function
+ * @name Value#getType
+ * @return {ValueType}
+ */
+
+/**
+ * Returns a JavaScript representation of the value.
+ * @async
+ * @function
+ * @return {Promise}
+ * @name Value#get
  */
 
 class StaticValue {
@@ -41,7 +71,10 @@ class StaticValue {
   }
 }
 
-/** A StreamValue accepts a generator which yields values. */
+/** A StreamValue accepts a generator which yields values.
+ * 
+ * @private
+ */
 class StreamValue {
   constructor(generator) {
     this._generator = generator

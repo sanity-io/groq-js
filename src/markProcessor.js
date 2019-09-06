@@ -1,4 +1,7 @@
-/** Helper class for processing a mark stream (which is what the rawParser returns). */
+/** Helper class for processing a mark stream (which is what the rawParser returns).
+ * 
+ * @private
+ */
 class MarkProcessor {
   constructor(visitor, string, marks) {
     this.visitor = visitor;

@@ -406,6 +406,16 @@ function isIterator(obj) {
   return obj != null && typeof obj.next == 'function'
 }
 
+/**
+ * Evaluates a syntax tree (which you can get from {@link module:groq-js.parse}).
+ * 
+ * @param {SyntaxNode} tree
+ * @param {object} [options] Options.
+ * @param {object} [options.params]  Parameters availble in the GROQ query (using `$param` syntax).
+ * @param {array | async-iterator} [options.documents] The documents that will be available as `*` in GROQ.
+ * @return {Value}
+ * @alias module:groq-js.evaluate
+ */
 async function evaluate(tree, options = {}) {
   let source
   let root = NULL_VALUE

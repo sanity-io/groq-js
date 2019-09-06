@@ -3,7 +3,8 @@
   "version": "0.0.1",
   "main": "src/index.js",
   "scripts": {
-    "test": "jest"
+    "test": "jest",
+    "build-api": "jsdoc2md -t utils/docs.hbs 'src/**/*.js' > API.md"
   },
   "prettier": {
     "semi": false,
@@ -13,6 +14,7 @@
   },
   "devDependencies": {
     "jest": "^24.8.0",
+    "jsdoc-to-markdown": "^5.0.1",
     "ndjson": "^1.5.0",
     "prettier": "^1.18.2"
   },
