@@ -415,7 +415,7 @@ class StaticSource {
 async function evaluate(tree, options = {}) {
   let source
   let root = NULL_VALUE
-  let params = {identity: 'groot'}
+  let params = {}
 
   if (options.documents != null) {
     if (!Array.isArray(options.documents)) {
