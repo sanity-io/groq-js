@@ -16,7 +16,8 @@ Evaluates a syntax tree (which you can get from [parse](#module_groq-js.parse)).
 | tree | [<code>SyntaxNode</code>](#SyntaxNode) |  |
 | [options] | <code>object</code> | Options. |
 | [options.params] | <code>object</code> | Parameters availble in the GROQ query (using `$param` syntax). |
-| [options.documents] | <code>array</code> \| <code>async-iterator</code> | The documents that will be available as `*` in GROQ. |
+| [options.root] |  | The value that will be available as `@` in GROQ. |
+| [options.dataset] |  | The value that will be available as `*` in GROQ. |
 
 <a name="module_groq-js.parse"></a>
 

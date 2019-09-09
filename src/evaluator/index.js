@@ -7,7 +7,8 @@ const {
   FALSE_VALUE,
   Range,
   Pair,
-  fromNumber
+  fromNumber,
+  fromJS
 } = require('./value')
 const {functions, pipeFunctions} = require('./functions')
 const operators = require('./operators')
@@ -402,49 +403,27 @@ const EXECUTORS = {
   }
 }
 
-function isIterator(obj) {
-  return obj != null && typeof obj.next == 'function'
-}
-
 /**
  * Evaluates a syntax tree (which you can get from {@link module:groq-js.parse}).
  *
  * @param {SyntaxNode} tree
  * @param {object} [options] Options.
  * @param {object} [options.params]  Parameters availble in the GROQ query (using `$param` syntax).
- * @param {array | async-iterator} [options.documents] The documents that will be available as `*` in GROQ.
+ * @param [options.root] The value that will be available as `@` in GROQ.
+ * @param [options.dataset] The value that will be available as `*` in GROQ.
  * @return {Value}
  * @alias module:groq-js.evaluate
  */
 async function evaluate(tree, options = {}) {
-  let source
-  let root = NULL_VALUE
+  let root = fromJS(options.root)
+  let dataset = fromJS(options.dataset)
   let params = {}
-
-  if (options.documents == null) {
-    source = new StaticValue([])
-  } else if (Array.isArray(options.documents)) {
-    source = new StaticValue(options.documents)
-  } else if (isIterator(options.documents)) {
-    let iter = options.documents
-    source = new StreamValue(async function*() {
-      for await (let value of iter) {
-        yield new StaticValue(value)
-      }
-    })
-  } else {
-    throw new Error('documents must be an array or an iterable')
-  }
-
-  if (options.root != null) {
-    root = new StaticValue(options.root)
-  }
 
   if (options.params) {
     Object.assign(params, options.params)
   }
 
-  let scope = new Scope(params, source, root, null)
+  let scope = new Scope(params, dataset, root, null)
   return await execute(tree, scope)
 }
 

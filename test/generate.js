@@ -102,12 +102,12 @@ process.stdin
       write(`let query = ${JSON.stringify(entry.query)}`)
       write(`let result = ${JSON.stringify(entry.result)}`)
       if (entry.dataset != null) {
-        write(`let documents = await loadDocuments(${JSON.stringify(entry.dataset._ref)})`)
+        write(`let dataset = await loadDocuments(${JSON.stringify(entry.dataset._ref)})`)
       } else {
-        write(`let documents = []`)
+        write(`let dataset = []`)
       }
       write(`let tree = parse(query)`)
-      write(`let value = await evaluate(tree, {documents})`)
+      write(`let value = await evaluate(tree, {dataset})`)
       write(`let data = await value.get()`)
       write(`data = JSON.parse(JSON.stringify(data))`)
       write(`expect(data).toStrictEqual(result)`)

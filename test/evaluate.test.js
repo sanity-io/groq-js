@@ -2,7 +2,7 @@ const {evaluate, parse} = require('../src')
 
 describe('Basic parsing', () => {
   test('Example query', async () => {
-    let documents = [
+    let dataset = [
       {_type: 'product', name: 'T-shirt'},
       {_type: 'product', name: 'Pants'},
       {_type: 'user', name: 'Bob'}
@@ -10,7 +10,7 @@ describe('Basic parsing', () => {
     let query = `*[_type == "product"]{name}`
     let tree = parse(query)
 
-    let value = await evaluate(tree, {documents})
+    let value = await evaluate(tree, {dataset})
     let data = await value.get()
     expect(data).toStrictEqual([{name: 'T-shirt'}, {name: 'Pants'}])
   })
@@ -35,14 +35,14 @@ describe('Basic parsing', () => {
   })
 
   test('Async documents', async () => {
-    let documents = (async function*() {
+    let dataset = (async function*() {
       yield {_id: "a", name: "Michael"}
       yield {_id: "b", name: "George Michael", father: {_ref: "a"}}
     })()
 
     let query = `*[father->name == "Michael"][0].name`
     let tree = parse(query)
-    let value = await evaluate(tree, {documents})
+    let value = await evaluate(tree, {dataset})
     let data = await value.get()
     expect(data).toStrictEqual("George Michael")
   })

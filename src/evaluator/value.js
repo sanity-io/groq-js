@@ -208,12 +208,32 @@ function fromNumber(num) {
   }
 }
 
+function isIterator(obj) {
+  return obj != null && typeof obj.next == 'function'
+}
+
+function fromJS(val) {
+  if (isIterator(val)) {
+    return new StreamValue(async function*() {
+      for await (let value of val) {
+        yield new StaticValue(value)
+      }
+    })
+  } else if (val == null) {
+    // Make sure undefined also becomes null
+    return exports.NULL_VALUE
+  } else {
+    return new StaticValue(val)
+  }
+}
+
 exports.StaticValue = StaticValue
 exports.Range = Range
 exports.Pair = Pair
 exports.StreamValue = StreamValue
 exports.MapperValue = MapperValue
 exports.fromNumber = fromNumber
+exports.fromJS = fromJS
 exports.NULL_VALUE = new StaticValue(null)
 exports.TRUE_VALUE = new StaticValue(true)
 exports.FALSE_VALUE = new StaticValue(false)
