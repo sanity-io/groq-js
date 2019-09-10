@@ -9,6 +9,32 @@ function isString(node) {
   return node.type == 'Value' && typeof node.value == 'string'
 }
 
+const ESCAPE_SEQUENCE = {
+  '\'': '\'',
+  '"': '"',
+  '\\': '\\',
+  '/': '/',
+  'b': '\b',
+  'f': '\f',
+  'n': '\n',
+  'r': '\r',
+  't': '\t',
+}
+
+function expandHex(str) {
+  let charCode = parseInt(str, 16)
+  return String.fromCharCode(charCode)
+}
+
+function expandEscapeSequence(str) {
+  let re = /\\(['"/\\bfnrt]|u([A-Fa-f0-9]{4})|u\{([A-Fa-f0-9]+)\})/g;
+  return str.replace(re, (_, esc, u1, u2) => {
+    if (u1) return expandHex(u1)
+    if (u2) return expandHex(u2)
+    return ESCAPE_SEQUENCE[esc]
+  })
+}
+
 /**
  * A tree-structure representing a GROQ query.
  * 
@@ -279,7 +305,7 @@ const BUILDER = {
   },
 
   str_begin(p, mark) {
-    let value = p.processStringEnd()
+    let value = expandEscapeSequence(p.processStringEnd())
     return {
       type: 'Value',
       value: value
