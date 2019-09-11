@@ -46,4 +46,16 @@ describe('Basic parsing', () => {
     let data = await value.get()
     expect(data).toStrictEqual("George Michael")
   })
+
+  test("Parameters", async () => {
+    let query = `*[name == $name][].name`
+    let dataset = [
+      {name: "Michael"},
+      {name: "George Michael"}
+    ]
+    let tree = parse(query)
+    let value = await evaluate(tree, {dataset, params: {name: "Michael"}})
+    let data = await value.get()
+    expect(data).toStrictEqual(["Michael"])
+  })
 })

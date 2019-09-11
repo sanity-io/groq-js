@@ -495,6 +495,15 @@ const BUILDER = {
       type: 'Desc',
       base
     }
+  },
+
+  param(p, mark) {
+    let name = p.processStringEnd()
+
+    return {
+      type: 'Parameter',
+      name
+    }
   }
 }
 

@@ -55,6 +55,10 @@ const EXECUTORS = {
     return scope.source
   },
 
+  Parameter({name}, scope) {
+    return fromJS(scope.params[name])
+  },
+
   Parent({n}, scope) {
     for (let i = 0; i < n; i++) {
       scope = scope.parent
