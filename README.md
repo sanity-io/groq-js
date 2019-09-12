@@ -10,13 +10,13 @@ let input = '*[_type == "user"]{name}'
 // Returns an ESTree-inspired syntax tree
 let tree = parse(input)
 
-let documents = [
+let dataset = [
   {_type: "user", name: "Michael"},
   {_type: "company", name: "Bluth Company"}
 ]
 
-// Evaluate a tree against a set of documents
-let value = await evaluate(tree, {documents})
+// Evaluate a tree against a dataset
+let value = await evaluate(tree, {dataset})
 
 // Gather everything into one JavaScript object
 let result = await value.get()
