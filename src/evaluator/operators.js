@@ -95,6 +95,11 @@ exports['in'] = async function inop(left, right, scope, execute) {
       } else {
         return leftCmp >= 0 && rightCmp <= 0 ? TRUE_VALUE : FALSE_VALUE
       }
+    case 'path':
+      if (a.getType() != 'string') return NULL_VALUE
+      let str = await a.get()
+      let path = await choices.get()
+      return path.matches(str) ? TRUE_VALUE : FALSE_VALUE
   }
 
   return NULL_VALUE

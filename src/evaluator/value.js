@@ -2,6 +2,7 @@ const getType = (exports.getType = function getType(data) {
   if (data == null) return 'null'
   if (Array.isArray(data)) return 'array'
   if (data instanceof Range) return 'range'
+  if (data instanceof Path) return 'path'
   return typeof data
 })
 
@@ -17,6 +18,7 @@ const getType = (exports.getType = function getType(data) {
  * - 'object'
  * - 'range'
  * - 'pair'
+ * - 'path'
  * @typedef {string} ValueType
  */
 
@@ -200,6 +202,40 @@ class Pair {
   }
 }
 
+function escapeRegExp(string) {
+  return string.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+}
+
+function pathRegExp(pattern) {
+  let re = []
+  for (let part of pattern.split(".")) {
+    if (part == '*') {
+      re.push('[^.]+')
+    } else if (part == '**') {
+      re.push('.*')
+    } else {
+      re.push(escapeRegExp(part))
+    }
+  }
+
+  return new RegExp(`^${re.join('.')}$`)
+}
+
+class Path {
+  constructor(pattern) {
+    this.pattern = pattern
+    this.patternRe = pathRegExp(pattern)
+  }
+
+  matches(str) {
+    return this.patternRe.test(str)
+  }
+
+  toJSON() {
+    return this.pattern
+  }
+}
+
 function fromNumber(num) {
   if (Number.isFinite(num)) {
     return new StaticValue(num)
@@ -230,6 +266,7 @@ function fromJS(val) {
 exports.StaticValue = StaticValue
 exports.Range = Range
 exports.Pair = Pair
+exports.Path = Path
 exports.StreamValue = StreamValue
 exports.MapperValue = MapperValue
 exports.fromNumber = fromNumber

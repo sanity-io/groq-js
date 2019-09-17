@@ -1,4 +1,4 @@
-const {StaticValue, getType, fromNumber, TRUE_VALUE, FALSE_VALUE, NULL_VALUE} = require('./value')
+const {StaticValue, Path, getType, fromNumber, TRUE_VALUE, FALSE_VALUE, NULL_VALUE} = require('./value')
 const {totalCompare} = require('./ordering')
 
 const functions = (exports.functions = {})
@@ -71,6 +71,17 @@ functions.length = async function length(args, scope, execute) {
   }
 
   return NULL_VALUE
+}
+
+functions.path = async function path(args, scope, execute) {
+  if (args.length !== 1) return NULL_VALUE
+
+  let inner = await execute(args[0], scope)
+  if (inner.getType() != 'string') return NULL_VALUE
+
+  let str = inner.data
+
+  return new StaticValue(new Path(str))
 }
 
 functions.select = async function select(args, scope, execute) {
