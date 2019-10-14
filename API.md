@@ -1,7 +1,7 @@
 # API Reference
 * [groq-js](#module_groq-js)
     * [.evaluate(tree, [options])](#module_groq-js.evaluate) ⇒ [<code>Value</code>](#Value)
-    * [.parse(input)](#module_groq-js.parse) ⇒ [<code>SyntaxNode</code>](#SyntaxNode)
+    * [.parse(input, [errorHandler])](#module_groq-js.parse) ⇒ [<code>SyntaxNode</code>](#SyntaxNode)
 
 
 <a name="module_groq-js.evaluate"></a>
@@ -21,7 +21,7 @@ Evaluates a syntax tree (which you can get from [parse](#module_groq-js.parse)).
 
 <a name="module_groq-js.parse"></a>
 
-### groq-js.parse(input) ⇒ [<code>SyntaxNode</code>](#SyntaxNode)
+### groq-js.parse(input, [errorHandler]) ⇒ [<code>SyntaxNode</code>](#SyntaxNode)
 Parses a GROQ query and returns a tree structure.
 
 **Kind**: static method of [<code>groq-js</code>](#module_groq-js)  
@@ -29,6 +29,7 @@ Parses a GROQ query and returns a tree structure.
 | Param | Type | Description |
 | --- | --- | --- |
 | input | <code>string</code> | GROQ query |
+| errorHandler | <code>function</code> | Function to handler parsing errors |
 
 
 <a name="Value"></a>

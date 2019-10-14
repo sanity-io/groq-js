@@ -528,17 +528,22 @@ function extractPropertyKey(node) {
   throw new Error('Cannot determine property key for type: ' + node.type)
 }
 
+function defaultErrorHandler() {
+  throw new Error('Syntax error in GROQ query')
+}
+
 /**
  * Parses a GROQ query and returns a tree structure.
  * 
  * @param {string} input GROQ query
+ * @param {function} errorHandler Function to handle parsing errors
  * @returns {SyntaxNode}
  * @alias module:groq-js.parse
  * @static
  */
-function parse(input) {
+function parse(input, errorHandler = defaultErrorHandler) {
   let result = rawParse(input)
-  if (result.type === 'error') throw new Error('Syntax error in GROQ query')
+  if (result.type === 'error') return errorHandler(result)
   let processor = new MarkProcessor(BUILDER, input, result.marks)
   return processor.process()
 }
