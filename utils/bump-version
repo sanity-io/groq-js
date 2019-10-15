@@ -1,0 +1,29 @@
+#!/usr/bin/env bash
+set -e
+
+if [ $# -ne 1 ]; then
+  echo "usage: $0 NEW-VERSION"
+  exit 1
+fi
+
+NEW_VERSION="$1"
+VERSION_RE="^[0-9]+.[0-9]+.[0-9]+$"
+
+if ! [[ "$NEW_VERSION" =~ $VERSION_RE ]]; then
+  echo "error: version must be on the form X.Y.Z"
+  exit 1
+fi
+
+DATE=$(date +%Y-%m-%d)
+
+
+echo "Updating package.json"
+
+# Note: We need to read it first as > will delete the file
+PACKAGE_JSON="$(cat package.json)"
+echo "$PACKAGE_JSON" | groq "{..., \"version\":\"$NEW_VERSION\"}" --pretty > package.json
+
+echo "Updating CHANGELOG.md"
+sed -i.bak "s/^## Unreleased/## v$NEW_VERSION - $DATE/" CHANGELOG.md
+rm CHANGELOG.md.bak
+
