@@ -16,7 +16,6 @@ fi
 
 DATE=$(date +%Y-%m-%d)
 
-
 echo "Updating package.json"
 
 # Note: We need to read it first as > will delete the file
@@ -26,4 +25,9 @@ echo "$PACKAGE_JSON" | groq "{..., \"version\":\"$NEW_VERSION\"}" --pretty > pac
 echo "Updating CHANGELOG.md"
 sed -i.bak "s/^## Unreleased/## v$NEW_VERSION - $DATE/" CHANGELOG.md
 rm CHANGELOG.md.bak
+
+echo
+echo "Finalize release with:"
+echo "$ git add package.json CHANGELOG.md && git commit -m v$NEW_VERSION"
+echo "$ yarn publish && git tag v$NEW_VERSION && git push && git push origin v$NEW_VERSION"
 
