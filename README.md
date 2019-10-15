@@ -51,6 +51,7 @@ See [API.md](API.md) for the public API.
 ## Versioning
 
 GROQ-JS follows [SemVer](https://semver.org) and is currently at version v0.1.
+See [the changelog](CHANGELOG.md) for recent changes.
 This is an "experimental" release and anything *may* change at any time, but we're trying to keep changes as minimal as possible:
 
 - The public API of the parser/evaluator will most likely stay the same in future version.
