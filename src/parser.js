@@ -528,6 +528,14 @@ function extractPropertyKey(node) {
   throw new Error('Cannot determine property key for type: ' + node.type)
 }
 
+class GroqSyntaxError extends Error {
+  constructor(position) {
+    super(`Syntax error in GROQ query at position ${position}`)
+    this.position = position;
+    this.name = "GroqSyntaxError"
+  }
+}
+
 /**
  * Parses a GROQ query and returns a tree structure.
  * 
@@ -538,7 +546,7 @@ function extractPropertyKey(node) {
  */
 function parse(input) {
   let result = rawParse(input)
-  if (result.type === 'error') throw new Error('Syntax error in GROQ query')
+  if (result.type === 'error') throw new GroqSyntaxError(result.position)
   let processor = new MarkProcessor(BUILDER, input, result.marks)
   return processor.process()
 }
