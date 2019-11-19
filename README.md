@@ -34,8 +34,6 @@ Table of contents:
 
 ## Installation
 
-GROQ-JS is currently not yet released on NPM.com, but you can install the development version from Git:
-
 ```bash
 # NPM
 npm i groq-js
