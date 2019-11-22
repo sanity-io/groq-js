@@ -1,5 +1,10 @@
 # Changelog
 
+## Unreleased
+
+- Add LICENSE.md
+- Add `license`-field in package.json
+
 ## v0.1.4 - 2019-10-15
 
 - Add custom syntax error object (#10, @asbjornh)
