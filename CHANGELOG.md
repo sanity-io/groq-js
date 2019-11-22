@@ -4,6 +4,7 @@
 
 - Add LICENSE.md
 - Add `license`-field in package.json
+- Fix crash during dereferencing when the dataset is non-array
 
 ## v0.1.4 - 2019-10-15
 

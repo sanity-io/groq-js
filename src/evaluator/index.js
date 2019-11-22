@@ -247,6 +247,7 @@ const EXECUTORS = {
   async Deref({base}, scope) {
     let baseValue = await execute(base, scope)
     return inMapper(baseValue, async baseValue => {
+      if (scope.source.getType() != 'array') return NULL_VALUE
       if (baseValue.getType() != 'object') return NULL_VALUE
 
       let id = (await baseValue.get())._ref
