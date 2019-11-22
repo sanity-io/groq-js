@@ -27,7 +27,7 @@ console.log(result)
 Table of contents:
 
 - [Installation](#installation)
-- [Documentation](#documentation)
+- [Documentation](API.md)
 - [Versioning](#versioning)
 - [License](#license)
 - [Tests](#tests)
