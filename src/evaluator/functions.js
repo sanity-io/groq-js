@@ -161,6 +161,12 @@ functions.round = async function round(args, scope, execute) {
   }
 }
 
+functions.now = async function now(args, scope, execute) {
+  if (args.length != 0) throw new Error('now: no arguments are allowed')
+
+  return new StaticValue(scope.timestamp)
+}
+
 pipeFunctions.order = async function order(base, args, scope, execute) {
   if (args.length == 0) throw new Error('order: at least one argument required')
   if (base.getType() != 'array') return NULL_VALUE

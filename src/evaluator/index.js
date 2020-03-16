@@ -33,6 +33,7 @@ class Scope {
     this.source = source
     this.value = value
     this.parent = parent
+    this.timestamp = parent ? parent.timestamp : new Date().toISOString()
   }
 
   createNested(value) {
