@@ -1,4 +1,4 @@
-const {evaluate, parse} = require('../src')
+import {evaluate, parse} from '../src'
 
 describe('Functions', () => {
   describe('now()', () => {

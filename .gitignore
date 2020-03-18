@@ -2,3 +2,5 @@ node_modules
 /yarn.lock
 /test/suite.test.js
 /test/datasets
+dist
+.DS_Store

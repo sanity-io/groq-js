@@ -1,12 +1,12 @@
-const {getType} = require('./value')
+import {getType, GroqValueName} from './value'
 
-const TYPE_ORDER = {
+const TYPE_ORDER: {[key in GroqValueName]?: number} = {
   number: 1,
   string: 2,
   boolean: 3
 }
 
-function partialCompare(a, b) {
+export function partialCompare(a: any, b: any) {
   let aType = getType(a)
   let bType = getType(b)
 
@@ -23,7 +23,7 @@ function partialCompare(a, b) {
   return null
 }
 
-function totalCompare(a, b) {
+export function totalCompare(a: any, b: any) {
   let aType = getType(a)
   let bType = getType(b)
 
@@ -38,6 +38,3 @@ function totalCompare(a, b) {
   if (result == null) result = 0
   return result
 }
-
-exports.partialCompare = partialCompare
-exports.totalCompare = totalCompare
