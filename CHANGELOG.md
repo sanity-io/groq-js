@@ -2,9 +2,12 @@
 
 ## Unreleased
 
+## v0.1.5 - 2020-03-17
+
 - Add LICENSE.md
 - Add `license`-field in package.json
 - Fix crash during dereferencing when the dataset is non-array
+- Implement `now()` function (#16, @rexxars)
 
 ## v0.1.4 - 2019-10-15
 
@@ -29,4 +32,3 @@
 ## v0.0.1 - 2019-07-10
 
 - Initial hacky version
-
