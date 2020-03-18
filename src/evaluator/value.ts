@@ -1,10 +1,21 @@
-const getType = (exports.getType = function getType(data) {
-  if (data == null) return 'null'
+export type GroqValueName =
+  | 'null'
+  | 'boolean'
+  | 'number'
+  | 'string'
+  | 'array'
+  | 'object'
+  | 'range'
+  | 'pair'
+  | 'path'
+
+export function getType(data: any): GroqValueName {
+  if (data === null || typeof data === 'undefined') return 'null'
   if (Array.isArray(data)) return 'array'
   if (data instanceof Range) return 'range'
   if (data instanceof Path) return 'path'
-  return typeof data
-})
+  return typeof data as GroqValueName
+}
 
 /**
  * A type of a value in GROQ.
@@ -43,8 +54,12 @@ void 0
  * @name Value#get
  */
 
-class StaticValue {
-  constructor(data) {
+export type Value = StaticValue | StreamValue | MapperValue
+
+export class StaticValue<P = any> {
+  private data: P
+
+  constructor(data: P) {
     this.data = data
   }
 
@@ -69,7 +84,7 @@ class StaticValue {
   }
 
   getBoolean() {
-    return this.data === true
+    return typeof this.data === 'boolean' && this.data === true
   }
 }
 
@@ -77,12 +92,17 @@ class StaticValue {
  *
  * @private
  */
-class StreamValue {
-  constructor(generator) {
-    this._generator = generator
-    this._ticker = null
-    this._isDone = false
-    this._data = []
+export class StreamValue {
+  private generator: () => AsyncGenerator<Value, void, unknown>
+  private ticker: Promise<void> | null
+  private isDone: boolean
+  private data: any[]
+
+  constructor(generator: () => AsyncGenerator<Value, void, unknown>) {
+    this.generator = generator
+    this.ticker = null
+    this.isDone = false
+    this.data = []
   }
 
   getType() {
@@ -100,11 +120,11 @@ class StreamValue {
   async *[Symbol.asyncIterator]() {
     let i = 0
     while (true) {
-      for (; i < this._data.length; i++) {
-        yield this._data[i]
+      for (; i < this.data.length; i++) {
+        yield this.data[i]
       }
 
-      if (this._isDone) return
+      if (this.isDone) return
 
       await this._nextTick()
     }
@@ -115,11 +135,11 @@ class StreamValue {
   }
 
   _nextTick() {
-    if (this._ticker) return this._ticker
+    if (this.ticker) return this.ticker
 
-    let currentResolver
+    let currentResolver: (value?: void | PromiseLike<void> | undefined) => void
     let setupTicker = () => {
-      this._ticker = new Promise(resolve => {
+      this.ticker = new Promise(resolve => {
         currentResolver = resolve
       })
     }
@@ -130,23 +150,25 @@ class StreamValue {
     }
 
     let fetch = async () => {
-      for await (let value of this._generator()) {
-        this._data.push(value)
+      for await (let value of this.generator()) {
+        this.data.push(value)
         tick()
       }
 
-      this._isDone = true
+      this.isDone = true
       tick()
     }
 
     setupTicker()
     fetch()
-    return this._ticker
+    return this.ticker
   }
 }
 
-class MapperValue {
-  constructor(value) {
+export class MapperValue {
+  public value: Value
+
+  constructor(value: Value) {
     this.value = value
   }
 
@@ -154,12 +176,14 @@ class MapperValue {
     return 'array'
   }
 
-  async get() {
+  async get(): Promise<any> {
     return await this.value.get()
   }
 
   [Symbol.asyncIterator]() {
-    return this.value[Symbol.asyncIterator].call(this.value)
+    const value = this.value as StreamValue
+    const iterator = value[Symbol.asyncIterator]
+    return iterator.call(this.value)
   }
 
   getBoolean() {
@@ -167,8 +191,8 @@ class MapperValue {
   }
 }
 
-class Range {
-  static isConstructible(leftType, rightType) {
+export class Range {
+  static isConstructible(leftType: string, rightType: string) {
     if (leftType == rightType) {
       if (leftType == 'number') return true
       if (leftType == 'string') return true
@@ -176,7 +200,11 @@ class Range {
     return false
   }
 
-  constructor(left, right, exclusive) {
+  private left: string | number
+  private right: string | number
+  private exclusive: boolean
+
+  constructor(left: string | number, right: string | number, exclusive: boolean) {
     this.left = left
     this.right = right
     this.exclusive = exclusive
@@ -191,8 +219,11 @@ class Range {
   }
 }
 
-class Pair {
-  constructor(first, second) {
+export class Pair {
+  private first: any
+  private second: any
+
+  constructor(first: any, second: any) {
     this.first = first
     this.second = second
   }
@@ -202,13 +233,13 @@ class Pair {
   }
 }
 
-function escapeRegExp(string) {
-  return string.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+function escapeRegExp(string: string) {
+  return string.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')
 }
 
-function pathRegExp(pattern) {
+function pathRegExp(pattern: string) {
   let re = []
-  for (let part of pattern.split(".")) {
+  for (let part of pattern.split('.')) {
     if (part == '*') {
       re.push('[^.]+')
     } else if (part == '**') {
@@ -221,13 +252,16 @@ function pathRegExp(pattern) {
   return new RegExp(`^${re.join('.')}$`)
 }
 
-class Path {
-  constructor(pattern) {
+export class Path {
+  private pattern: string
+  private patternRe: RegExp
+
+  constructor(pattern: string) {
     this.pattern = pattern
     this.patternRe = pathRegExp(pattern)
   }
 
-  matches(str) {
+  matches(str: string) {
     return this.patternRe.test(str)
   }
 
@@ -236,7 +270,7 @@ class Path {
   }
 }
 
-function fromNumber(num) {
+export function fromNumber(num: number) {
   if (Number.isFinite(num)) {
     return new StaticValue(num)
   } else {
@@ -244,11 +278,11 @@ function fromNumber(num) {
   }
 }
 
-function isIterator(obj) {
+function isIterator(obj?: Iterator<any>) {
   return obj != null && typeof obj.next == 'function'
 }
 
-function fromJS(val) {
+export function fromJS(val: any) {
   if (isIterator(val)) {
     return new StreamValue(async function*() {
       for await (let value of val) {
@@ -263,14 +297,6 @@ function fromJS(val) {
   }
 }
 
-exports.StaticValue = StaticValue
-exports.Range = Range
-exports.Pair = Pair
-exports.Path = Path
-exports.StreamValue = StreamValue
-exports.MapperValue = MapperValue
-exports.fromNumber = fromNumber
-exports.fromJS = fromJS
-exports.NULL_VALUE = new StaticValue(null)
-exports.TRUE_VALUE = new StaticValue(true)
-exports.FALSE_VALUE = new StaticValue(false)
+export const NULL_VALUE = new StaticValue(null)
+export const TRUE_VALUE = new StaticValue(true)
+export const FALSE_VALUE = new StaticValue(false)

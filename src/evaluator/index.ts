@@ -1,4 +1,5 @@
-const {
+import * as NodeTypes from '../nodeTypes'
+import {
   StaticValue,
   StreamValue,
   MapperValue,
@@ -8,12 +9,13 @@ const {
   Range,
   Pair,
   fromNumber,
-  fromJS
-} = require('./value')
-const {functions, pipeFunctions} = require('./functions')
-const operators = require('./operators')
+  fromJS,
+  Value
+} from './value'
+import {functions, pipeFunctions} from './functions'
+import {operators} from './operators'
 
-function inMapper(value, fn) {
+function inMapper(value: Value, fn: (value: Value) => Value | PromiseLike<Value>) {
   if (value instanceof MapperValue) {
     return new MapperValue(
       new StreamValue(async function*() {
@@ -27,8 +29,14 @@ function inMapper(value, fn) {
   }
 }
 
-class Scope {
-  constructor(params, source, value, parent) {
+export class Scope {
+  public params: {[key: string]: any}
+  public source: any
+  public value: Value
+  public parent: Scope | null
+  public timestamp: string
+
+  constructor(params: {[key: string]: any}, source: any, value: Value, parent: Scope | null) {
     this.params = params
     this.source = source
     this.value = value
@@ -36,58 +44,99 @@ class Scope {
     this.timestamp = parent ? parent.timestamp : new Date().toISOString()
   }
 
-  createNested(value) {
+  createNested(value: Value) {
     return new Scope(this.params, this.source, value, this)
   }
 }
 
-function execute(node, scope) {
+function execute(node: NodeTypes.SyntaxNode, scope: Scope) {
+  if (typeof EXECUTORS[node.type] === 'undefined') {
+    throw new Error('No executor for node.type=' + node.type)
+  }
+
   const func = EXECUTORS[node.type]
-  if (!func) throw new Error('No executor for node.type=' + node.type)
   return func(node, scope)
 }
 
-const EXECUTORS = {
-  This(_, scope) {
+export type Executor = (node: NodeTypes.SyntaxNode, scope: Scope) => Value | PromiseLike<Value>
+
+export type ExecutorMap = {
+  This: (node: NodeTypes.ThisNode, scope: Scope) => Value | PromiseLike<Value>
+  Star: (node: NodeTypes.StarNode, scope: Scope) => Value | PromiseLike<Value>
+  Parameter: (node: NodeTypes.ParameterNode, scope: Scope) => Value | PromiseLike<Value>
+  Parent: (node: NodeTypes.ParentNode, scope: Scope) => Value | PromiseLike<Value>
+  OpCall: (node: NodeTypes.OpCallNode, scope: Scope) => Value | PromiseLike<Value>
+  FuncCall: (node: NodeTypes.FuncCallNode, scope: Scope) => Value | PromiseLike<Value>
+  PipeFuncCall: (node: NodeTypes.PipeFuncCallNode, scope: Scope) => Value | PromiseLike<Value>
+  Filter: (node: NodeTypes.FilterNode, scope: Scope) => Value | PromiseLike<Value>
+  Element: (node: NodeTypes.ElementNode, scope: Scope) => Value | PromiseLike<Value>
+  Slice: (node: NodeTypes.SliceNode, scope: Scope) => Value | PromiseLike<Value>
+  Attribute: (node: NodeTypes.AttributeNode, scope: Scope) => Value | PromiseLike<Value>
+  Identifier: (node: NodeTypes.IdentifierNode, scope: Scope) => Value | PromiseLike<Value>
+  Value: (node: NodeTypes.ValueNode, scope: Scope) => Value | PromiseLike<Value>
+  Mapper: (node: NodeTypes.MapperNode, scope: Scope) => Value | PromiseLike<Value>
+  Parenthesis: (node: NodeTypes.ParenthesisNode, scope: Scope) => Value | PromiseLike<Value>
+  Projection: (node: NodeTypes.ProjectionNode, scope: Scope) => Value | PromiseLike<Value>
+  Deref: (node: NodeTypes.DerefNode, scope: Scope) => Value | PromiseLike<Value>
+  Object: (node: NodeTypes.ObjectNode, scope: Scope) => Value | PromiseLike<Value>
+  Array: (node: NodeTypes.ArrayNode, scope: Scope) => Value | PromiseLike<Value>
+  Range: (node: NodeTypes.RangeNode, scope: Scope) => Value | PromiseLike<Value>
+  Pair: (node: NodeTypes.PairNode, scope: Scope) => Value | PromiseLike<Value>
+  Or: (node: NodeTypes.OrNode, scope: Scope) => Value | PromiseLike<Value>
+  And: (node: NodeTypes.AndNode, scope: Scope) => Value | PromiseLike<Value>
+  Not: (node: NodeTypes.NotNode, scope: Scope) => Value | PromiseLike<Value>
+  Neg: (node: NodeTypes.NegNode, scope: Scope) => Value | PromiseLike<Value>
+  Pos: (node: NodeTypes.PosNode, scope: Scope) => Value | PromiseLike<Value>
+  Asc: (node: NodeTypes.AscNode, scope: Scope) => Value | PromiseLike<Value>
+  Desc: (node: NodeTypes.DescNode, scope: Scope) => Value | PromiseLike<Value>
+  [key: string]: any
+}
+
+const EXECUTORS: ExecutorMap = {
+  This(_: NodeTypes.ThisNode, scope: Scope) {
     return scope.value
   },
 
-  Star(_, scope) {
+  Star(_: NodeTypes.StarNode, scope: Scope) {
     return scope.source
   },
 
-  Parameter({name}, scope) {
+  Parameter({name}: NodeTypes.ParameterNode, scope: Scope) {
     return fromJS(scope.params[name])
   },
 
-  Parent({n}, scope) {
-    for (let i = 0; i < n; i++) {
-      scope = scope.parent
-      if (!scope) return NULL_VALUE
+  Parent(node: NodeTypes.ParentNode, scope: Scope) {
+    let current = scope
+    for (let i = 0; i < node.n; i++) {
+      if (!current.parent) {
+        return NULL_VALUE
+      }
+
+      current = current.parent
     }
-    return scope.value
+    return current.value
   },
 
-  OpCall({op, left, right}, scope) {
+  OpCall({op, left, right}: NodeTypes.OpCallNode, scope: Scope) {
     let func = operators[op]
     if (!func) throw new Error('Unknown operator: ' + op)
     return func(left, right, scope, execute)
   },
 
-  FuncCall({name, args}, scope) {
+  FuncCall({name, args}: NodeTypes.FuncCallNode, scope: Scope) {
     let func = functions[name]
     if (!func) throw new Error('Unknown function: ' + name)
     return func(args, scope, execute)
   },
 
-  async PipeFuncCall({base, name, args}, scope) {
+  async PipeFuncCall({base, name, args}: NodeTypes.PipeFuncCallNode, scope: Scope) {
     let func = pipeFunctions[name]
     if (!func) throw new Error('Unknown function: ' + name)
     let baseValue = await execute(base, scope)
     return func(baseValue, args, scope, execute)
   },
 
-  async Filter({base, query}, scope) {
+  async Filter({base, query}: NodeTypes.FilterNode, scope: Scope) {
     let baseValue = await execute(base, scope)
 
     return inMapper(baseValue, async value => {
@@ -103,7 +152,7 @@ const EXECUTORS = {
     })
   },
 
-  async Element({base, index}, scope) {
+  async Element({base, index}: NodeTypes.ElementNode, scope: Scope) {
     let baseValue = await execute(base, scope)
 
     return inMapper(baseValue, async arrayValue => {
@@ -129,7 +178,7 @@ const EXECUTORS = {
     })
   },
 
-  async Slice({base, left, right, isExclusive}, scope) {
+  async Slice({base, left, right, isExclusive}: NodeTypes.SliceNode, scope: Scope) {
     let baseValue = await execute(base, scope)
 
     return inMapper(baseValue, async arrayValue => {
@@ -143,9 +192,9 @@ const EXECUTORS = {
       }
 
       // OPT: Here we can optimize when either indices are >= 0
-      let array = await arrayValue.get()
-      let leftIdx = await leftIdxValue.get()
-      let rightIdx = await rightIdxValue.get()
+      let array = (await arrayValue.get()) as any[]
+      let leftIdx = (await leftIdxValue.get()) as number
+      let rightIdx = (await rightIdxValue.get()) as number
 
       // Handle negative index
       if (leftIdx < 0) leftIdx = array.length + leftIdx
@@ -164,7 +213,7 @@ const EXECUTORS = {
     })
   },
 
-  async Attribute({base, name}, scope) {
+  async Attribute({base, name}: NodeTypes.AttributeNode, scope: Scope) {
     let baseValue = await execute(base, scope)
 
     return inMapper(baseValue, async value => {
@@ -179,7 +228,7 @@ const EXECUTORS = {
     })
   },
 
-  async Identifier({name}, scope) {
+  async Identifier({name}: NodeTypes.IdentifierNode, scope: Scope) {
     if (scope.value.getType() == 'object') {
       let data = await scope.value.get()
       if (data.hasOwnProperty(name)) {
@@ -190,11 +239,11 @@ const EXECUTORS = {
     return NULL_VALUE
   },
 
-  Value({value}) {
+  Value({value}: NodeTypes.ValueNode) {
     return new StaticValue(value)
   },
 
-  async Mapper({base}, scope) {
+  async Mapper({base}: NodeTypes.MapperNode, scope: Scope) {
     let baseValue = await execute(base, scope)
     if (baseValue.getType() != 'array') return baseValue
 
@@ -217,7 +266,7 @@ const EXECUTORS = {
     }
   },
 
-  async Parenthesis({base}, scope) {
+  async Parenthesis({base}: NodeTypes.ParenthesisNode, scope: Scope) {
     let baseValue = await execute(base, scope)
     if (baseValue instanceof MapperValue) {
       baseValue = baseValue.value
@@ -225,7 +274,7 @@ const EXECUTORS = {
     return baseValue
   },
 
-  async Projection({base, query}, scope) {
+  async Projection({base, query}: NodeTypes.ProjectionNode, scope: Scope) {
     let baseValue = await execute(base, scope)
     return inMapper(baseValue, async baseValue => {
       if (baseValue.getType() == 'null') return NULL_VALUE
@@ -238,14 +287,14 @@ const EXECUTORS = {
             yield newValue
           }
         })
-      } else {
-        let newScope = scope.createNested(baseValue)
-        return await execute(query, newScope)
       }
+
+      let newScope = scope.createNested(baseValue)
+      return await execute(query, newScope)
     })
   },
 
-  async Deref({base}, scope) {
+  async Deref({base}: NodeTypes.DerefNode, scope: Scope) {
     let baseValue = await execute(base, scope)
     return inMapper(baseValue, async baseValue => {
       if (scope.source.getType() != 'array') return NULL_VALUE
@@ -264,9 +313,10 @@ const EXECUTORS = {
     })
   },
 
-  async Object({attributes}, scope) {
-    let result = {}
+  async Object({attributes}: NodeTypes.ObjectNode, scope: Scope) {
+    let result: {[key: string]: any} = {}
     for (let attr of attributes) {
+      const attrType = attr.type
       switch (attr.type) {
         case 'ObjectAttribute': {
           let key = await execute(attr.key, scope)
@@ -301,13 +351,13 @@ const EXECUTORS = {
         }
 
         default:
-          throw new Error('Unknown node type: ' + attr.type)
+          throw new Error('Unknown node type: ' + attrType)
       }
     }
     return new StaticValue(result)
   },
 
-  Array({elements}, scope) {
+  Array({elements}: NodeTypes.ArrayNode, scope: Scope) {
     return new StreamValue(async function*() {
       for (let element of elements) {
         let value = await execute(element.value, scope)
@@ -324,7 +374,7 @@ const EXECUTORS = {
     })
   },
 
-  async Range({left, right, isExclusive}, scope) {
+  async Range({left, right, isExclusive}: NodeTypes.RangeNode, scope: Scope) {
     let leftValue = await execute(left, scope)
     let rightValue = await execute(right, scope)
 
@@ -336,7 +386,7 @@ const EXECUTORS = {
     return new StaticValue(range)
   },
 
-  async Pair({left, right}, scope) {
+  async Pair({left, right}: NodeTypes.PairNode, scope: Scope) {
     let leftValue = await execute(left, scope)
     let rightValue = await execute(right, scope)
 
@@ -344,7 +394,7 @@ const EXECUTORS = {
     return new StaticValue(pair)
   },
 
-  async Or({left, right}, scope) {
+  async Or({left, right}: NodeTypes.OrNode, scope: Scope) {
     let leftValue = await execute(left, scope)
     let rightValue = await execute(right, scope)
 
@@ -362,7 +412,7 @@ const EXECUTORS = {
     return FALSE_VALUE
   },
 
-  async And({left, right}, scope) {
+  async And({left, right}: NodeTypes.AndNode, scope: Scope) {
     let leftValue = await execute(left, scope)
     let rightValue = await execute(right, scope)
 
@@ -380,7 +430,7 @@ const EXECUTORS = {
     return TRUE_VALUE
   },
 
-  async Not({base}, scope) {
+  async Not({base}: NodeTypes.NotNode, scope: Scope) {
     let value = await execute(base, scope)
     if (value.getType() != 'boolean') {
       return NULL_VALUE
@@ -388,13 +438,13 @@ const EXECUTORS = {
     return value.getBoolean() ? FALSE_VALUE : TRUE_VALUE
   },
 
-  async Neg({base}, scope) {
+  async Neg({base}: NodeTypes.NegNode, scope: Scope) {
     let value = await execute(base, scope)
     if (value.getType() != 'number') return NULL_VALUE
     return fromNumber(-(await value.get()))
   },
 
-  async Pos({base}, scope) {
+  async Pos({base}: NodeTypes.PosNode, scope: Scope) {
     let value = await execute(base, scope)
     if (value.getType() != 'number') return NULL_VALUE
     return fromNumber(await value.get())
@@ -420,17 +470,18 @@ const EXECUTORS = {
  * @return {Value}
  * @alias module:groq-js.evaluate
  */
-async function evaluate(tree, options = {}) {
+
+interface EvaluateOptions {
+  root?: any
+  dataset?: any
+  params?: {[key: string]: any}
+}
+
+export async function evaluate(tree: NodeTypes.SyntaxNode, options: EvaluateOptions = {}) {
   let root = fromJS(options.root)
   let dataset = fromJS(options.dataset)
-  let params = {}
-
-  if (options.params) {
-    Object.assign(params, options.params)
-  }
+  let params: {[key: string]: any} = {...options.params}
 
   let scope = new Scope(params, dataset, root, null)
   return await execute(tree, scope)
 }
-
-exports.evaluate = evaluate

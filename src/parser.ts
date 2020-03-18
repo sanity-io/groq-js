@@ -1,50 +1,67 @@
-const {parse: rawParse} = require('./rawParser')
-const MarkProcessor = require('./markProcessor')
+import * as NodeTypes from './nodeTypes'
+import {parse as rawParse} from './rawParser'
+import {Mark, MarkProcessor, MarkVisitor, MarkName} from './markProcessor'
 
-function isNumber(node) {
-  return node.type == 'Value' && typeof node.value == 'number'
+function isValueNode(node: NodeTypes.SyntaxNode): node is NodeTypes.ValueNode {
+  return node.type === 'Value'
 }
 
-function isString(node) {
-  return node.type == 'Value' && typeof node.value == 'string'
+function isNumber(node: NodeTypes.SyntaxNode): node is NodeTypes.ValueNode<number> {
+  return isValueNode(node) && typeof node.value == 'number'
 }
 
-const ESCAPE_SEQUENCE = {
-  '\'': '\'',
+function isString(node: NodeTypes.SyntaxNode): node is NodeTypes.ValueNode<string> {
+  return isValueNode(node) && typeof node.value == 'string'
+}
+
+type EscapeSequences = "'" | '"' | '\\' | '/' | 'b' | 'f' | 'n' | 'r' | 't'
+
+const ESCAPE_SEQUENCE: {[key in EscapeSequences]: string} = {
+  "'": "'",
   '"': '"',
   '\\': '\\',
   '/': '/',
-  'b': '\b',
-  'f': '\f',
-  'n': '\n',
-  'r': '\r',
-  't': '\t',
+  b: '\b',
+  f: '\f',
+  n: '\n',
+  r: '\r',
+  t: '\t'
 }
 
-function expandHex(str) {
+function expandHex(str: string): string {
   let charCode = parseInt(str, 16)
   return String.fromCharCode(charCode)
 }
 
-function expandEscapeSequence(str) {
-  let re = /\\(['"/\\bfnrt]|u([A-Fa-f0-9]{4})|u\{([A-Fa-f0-9]+)\})/g;
-  return str.replace(re, (_, esc, u1, u2) => {
-    if (u1) return expandHex(u1)
-    if (u2) return expandHex(u2)
-    return ESCAPE_SEQUENCE[esc]
-  })
+function expandEscapeSequence(str: String): string {
+  let re = /\\(['"/\\bfnrt]|u([A-Fa-f0-9]{4})|u\{([A-Fa-f0-9]+)\})/g
+  return str.replace(
+    re,
+    (_: string, esc: EscapeSequences, u1?: string | null, u2?: string | null) => {
+      if (u1) return expandHex(u1)
+      if (u2) return expandHex(u2)
+      return ESCAPE_SEQUENCE[esc]
+    }
+  )
 }
 
 /**
  * A tree-structure representing a GROQ query.
- * 
+ *
  * @typedef {object} SyntaxNode
  * @property {string} type The type of the node.
  * @abstract
  */
+export type NodeBuilder<P = NodeTypes.SyntaxNode> = (
+  this: MarkVisitor,
+  processor: MarkProcessor,
+  mark: Mark
+) => P
 
-const BUILDER = {
-  paren(p) {
+export type NodeBuilderArgs = [MarkProcessor, Mark]
+
+const BUILDER: {[key in MarkName]?: NodeBuilder} = {
+  paren(p): NodeTypes.ParenthesisNode {
     let inner = p.process()
     return {
       type: 'Parenthesis',
@@ -52,7 +69,9 @@ const BUILDER = {
     }
   },
 
-  filter(p, mark) {
+  filter(
+    p
+  ): NodeTypes.ElementNode | NodeTypes.AttributeNode | NodeTypes.SliceNode | NodeTypes.FilterNode {
     let base = p.process()
     let query = p.process()
 
@@ -89,7 +108,7 @@ const BUILDER = {
     }
   },
 
-  project(p, mark) {
+  project(p): NodeTypes.ProjectionNode {
     let base = p.process()
     let query = p.process()
     return {
@@ -99,30 +118,30 @@ const BUILDER = {
     }
   },
 
-  star(p, mark) {
+  star(): NodeTypes.StarNode {
     return {type: 'Star'}
   },
 
-  this(p, mark) {
+  this(): NodeTypes.ThisNode {
     return {type: 'This'}
   },
 
-  parent(p, mark) {
+  parent(): NodeTypes.ParentNode {
     return {
       type: 'Parent',
-      n: 1,
+      n: 1
     }
   },
 
-  dblparent(p, mark) {
-    let next = p.process()
+  dblparent(p): NodeTypes.ParentNode {
+    let next = p.process() as NodeTypes.ParentNode
     return {
       type: 'Parent',
       n: next.n + 1
     }
   },
 
-  ident(p, mark) {
+  ident(p): NodeTypes.ValueNode | NodeTypes.IdentifierNode {
     let name = p.processStringEnd()
 
     if (name === 'null') return {type: 'Value', value: null}
@@ -135,7 +154,7 @@ const BUILDER = {
     }
   },
 
-  attr_ident(p, mark) {
+  attr_ident(p): NodeTypes.AttributeNode {
     let base = p.process()
     let name = p.processString()
 
@@ -146,7 +165,7 @@ const BUILDER = {
     }
   },
 
-  arr_expr(p, mark) {
+  arr_expr(p): NodeTypes.MapperNode {
     let base = p.process()
     return {
       type: 'Mapper',
@@ -154,9 +173,9 @@ const BUILDER = {
     }
   },
 
-  inc_range(p, mark) {
-    let left = p.process()
-    let right = p.process()
+  inc_range(p): NodeTypes.RangeNode {
+    let left = p.process() as NodeTypes.ValueNode<number>
+    let right = p.process() as NodeTypes.ValueNode<number>
     return {
       type: 'Range',
       left,
@@ -165,9 +184,9 @@ const BUILDER = {
     }
   },
 
-  exc_range(p, mark) {
-    let left = p.process()
-    let right = p.process()
+  exc_range(p): NodeTypes.RangeNode {
+    let left = p.process() as NodeTypes.ValueNode<number>
+    let right = p.process() as NodeTypes.ValueNode<number>
     return {
       type: 'Range',
       left,
@@ -176,7 +195,7 @@ const BUILDER = {
     }
   },
 
-  neg(p, mark) {
+  neg(p): NodeTypes.ValueNode | NodeTypes.NegNode {
     let base = p.process()
 
     if (base.type === 'Value' && typeof base.value == 'number') {
@@ -192,10 +211,10 @@ const BUILDER = {
     }
   },
 
-  pos(p, mark) {
+  pos(p): NodeTypes.ValueNode | NodeTypes.PosNode {
     let base = p.process()
 
-    if (base.type === 'Value' && typeof base.value == 'number') {
+    if (isNumber(base)) {
       return {
         type: 'Value',
         value: +base.value
@@ -208,81 +227,81 @@ const BUILDER = {
     }
   },
 
-  add(p, mark) {
+  add(p): NodeTypes.OpCallNode {
     let left = p.process()
     let right = p.process()
     return {
       type: 'OpCall',
       op: '+',
       left,
-      right,
+      right
     }
   },
 
-  sub(p, mark) {
+  sub(p): NodeTypes.OpCallNode {
     let left = p.process()
     let right = p.process()
     return {
       type: 'OpCall',
       op: '-',
       left,
-      right,
+      right
     }
   },
 
-  mul(p, mark) {
+  mul(p): NodeTypes.OpCallNode {
     let left = p.process()
     let right = p.process()
     return {
       type: 'OpCall',
       op: '*',
       left,
-      right,
+      right
     }
   },
 
-  div(p, mark) {
+  div(p): NodeTypes.OpCallNode {
     let left = p.process()
     let right = p.process()
     return {
       type: 'OpCall',
       op: '/',
       left,
-      right,
+      right
     }
   },
 
-  mod(p, mark) {
+  mod(p): NodeTypes.OpCallNode {
     let left = p.process()
     let right = p.process()
     return {
       type: 'OpCall',
       op: '%',
       left,
-      right,
+      right
     }
   },
 
-  pow(p, mark) {
+  pow(p): NodeTypes.OpCallNode {
     let left = p.process()
     let right = p.process()
     return {
       type: 'OpCall',
       op: '**',
       left,
-      right,
+      right
     }
   },
-  
-  deref(p, mark) {
+
+  deref(p): NodeTypes.DerefNode | NodeTypes.AttributeNode {
     let base = p.process()
 
     let nextMark = p.getMark()
-    let result = {type: 'Deref', base}
+    let result: NodeTypes.DerefNode = {type: 'Deref', base}
 
     if (nextMark && nextMark.name === 'deref_field') {
       let name = p.processString()
-      result = {
+      return {
         type: 'Attribute',
         base: result,
         name
@@ -292,9 +311,9 @@ const BUILDER = {
     return result
   },
 
-  comp(p, mark) {
+  comp(p): NodeTypes.OpCallNode {
     let left = p.process()
-    let op = p.processString()
+    let op = p.processString() as NodeTypes.OpCall
     let right = p.process()
     return {
       type: 'OpCall',
@@ -304,7 +323,7 @@ const BUILDER = {
     }
   },
 
-  str_begin(p, mark) {
+  str_begin(p): NodeTypes.ValueNode<string> {
     let value = expandEscapeSequence(p.processStringEnd())
     return {
       type: 'Value',
@@ -312,7 +331,7 @@ const BUILDER = {
     }
   },
 
-  integer(p, mark) {
+  integer(p): NodeTypes.ValueNode<number> {
     let strValue = p.processStringEnd()
     return {
       type: 'Value',
@@ -320,7 +339,7 @@ const BUILDER = {
     }
   },
 
-  float(p, mark) {
+  float(p): NodeTypes.ValueNode<number> {
     let strValue = p.processStringEnd()
     return {
       type: 'Value',
@@ -328,7 +347,7 @@ const BUILDER = {
     }
   },
 
-  sci(p, mark) {
+  sci(p): NodeTypes.ValueNode<number> {
     let strValue = p.processStringEnd()
     return {
       type: 'Value',
@@ -336,7 +355,7 @@ const BUILDER = {
     }
   },
 
-  pair(p, mark) {
+  pair(p): NodeTypes.PairNode {
     let left = p.process()
     let right = p.process()
     return {
@@ -346,19 +365,20 @@ const BUILDER = {
     }
   },
 
-  object(p, mark) {
-    let attributes = []
+  object(p): NodeTypes.ObjectNode {
+    let attributes: NodeTypes.ObjectAttributeNode[] = []
     while (p.getMark().name !== 'object_end') {
-      attributes.push(p.process())
+      attributes.push(p.process() as NodeTypes.ObjectAttributeNode)
     }
     p.shift()
+
     return {
       type: 'Object',
       attributes
     }
   },
 
-  object_expr(p, mark) {
+  object_expr(p): NodeTypes.ObjectConditionalSplatNode | NodeTypes.ObjectAttributeNode {
     let value = p.process()
 
     if (value.type == 'Pair') {
@@ -375,21 +395,21 @@ const BUILDER = {
         type: 'Value',
         value: extractPropertyKey(value)
       },
-      value: value
+      value: value as NodeTypes.ValueNode
     }
   },
 
-  object_pair(p, mark) {
+  object_pair(p): NodeTypes.ObjectAttributeNode {
     let key = p.process()
     let value = p.process()
     return {
       type: 'ObjectAttribute',
-      key: key,
-      value: value
+      key: key as NodeTypes.ValueNode<string>,
+      value: value as NodeTypes.ValueNode
     }
   },
 
-  object_splat(p, mark) {
+  object_splat(p): NodeTypes.ObjectSplatNode {
     let value = p.process()
 
     return {
@@ -398,15 +418,15 @@ const BUILDER = {
     }
   },
 
-  object_splat_this(p, mark) {
+  object_splat_this(): NodeTypes.ObjectSplatNode {
     return {
       type: 'ObjectSplat',
       value: {type: 'This'}
     }
   },
 
-  array(p, mark) {
-    let elements = []
+  array(p): NodeTypes.ArrayNode {
+    let elements: NodeTypes.ArrayElementNode[] = []
     while (p.getMark().name !== 'array_end') {
       let isSplat = false
       if (p.getMark().name == 'array_splat') {
@@ -427,12 +447,13 @@ const BUILDER = {
     }
   },
 
-  func_call(p, mark) {
+  func_call(p): NodeTypes.FuncCallNode {
     let name = p.processStringEnd()
-    let args = []
+    let args: NodeTypes.SyntaxNode[] = []
     while (p.getMark().name !== 'func_args_end') {
       args.push(p.process())
     }
+
     p.shift()
     return {
       type: 'FuncCall',
@@ -441,17 +462,18 @@ const BUILDER = {
     }
   },
 
-  pipecall(p, mark) {
+  pipecall(p): NodeTypes.PipeFuncCallNode {
     let base = p.process()
-    let func = p.process()
+    let func = p.process() as NodeTypes.FuncCallNode
     return {
-      ...func,
       type: 'PipeFuncCall',
-      base
+      base,
+      name: func.name,
+      args: func.args
     }
   },
 
-  and(p, mark) {
+  and(p): NodeTypes.AndNode {
     let left = p.process()
     let right = p.process()
     return {
@@ -461,7 +483,7 @@ const BUILDER = {
     }
   },
 
-  or(p, mark) {
+  or(p): NodeTypes.OrNode {
     let left = p.process()
     let right = p.process()
     return {
@@ -471,7 +493,7 @@ const BUILDER = {
     }
   },
 
-  not(p, mark) {
+  not(p): NodeTypes.NotNode {
     let base = p.process()
     return {
       type: 'Not',
@@ -479,7 +501,7 @@ const BUILDER = {
     }
   },
 
-  asc(p, mark) {
+  asc(p): NodeTypes.AscNode {
     let base = p.process()
 
     return {
@@ -488,7 +510,7 @@ const BUILDER = {
     }
   },
 
-  desc(p, mark) {
+  desc(p): NodeTypes.DescNode {
     let base = p.process()
 
     return {
@@ -497,7 +519,7 @@ const BUILDER = {
     }
   },
 
-  param(p, mark) {
+  param(p): NodeTypes.ParameterNode {
     let name = p.processStringEnd()
 
     return {
@@ -507,21 +529,27 @@ const BUILDER = {
   }
 }
 
-const NESTED_PROPERTY_TYPES = [
-  'Deref',
-  'Projection',
-  'Mapper',
-  'Filter',
-  'Element',
-  'Slice',
-]
+type NestedPropertyType =
+  | NodeTypes.IdentifierNode
+  | NodeTypes.DerefNode
+  | NodeTypes.ProjectionNode
+  | NodeTypes.MapperNode
+  | NodeTypes.FilterNode
+  | NodeTypes.ElementNode
+  | NodeTypes.SliceNode
 
-function extractPropertyKey(node) {
+const NESTED_PROPERTY_TYPES = ['Deref', 'Projection', 'Mapper', 'Filter', 'Element', 'Slice']
+
+function isNestedPropertyType(node: NodeTypes.SyntaxNode): node is NestedPropertyType {
+  return NESTED_PROPERTY_TYPES.includes(node.type)
+}
+
+function extractPropertyKey(node: NodeTypes.SyntaxNode): string {
   if (node.type === 'Identifier') {
     return node.name
   }
 
-  if (NESTED_PROPERTY_TYPES.includes(node.type)) {
+  if (isNestedPropertyType(node)) {
     return extractPropertyKey(node.base)
   }
 
@@ -529,26 +557,26 @@ function extractPropertyKey(node) {
 }
 
 class GroqSyntaxError extends Error {
-  constructor(position) {
+  public position?: number
+
+  constructor(position?: number) {
     super(`Syntax error in GROQ query at position ${position}`)
-    this.position = position;
-    this.name = "GroqSyntaxError"
+    this.position = position
+    this.name = 'GroqSyntaxError'
   }
 }
 
 /**
  * Parses a GROQ query and returns a tree structure.
- * 
+ *
  * @param {string} input GROQ query
  * @returns {SyntaxNode}
  * @alias module:groq-js.parse
  * @static
  */
-function parse(input) {
+export function parse(input: string) {
   let result = rawParse(input)
   if (result.type === 'error') throw new GroqSyntaxError(result.position)
-  let processor = new MarkProcessor(BUILDER, input, result.marks)
+  let processor = new MarkProcessor(BUILDER, input, result.marks as Mark[])
   return processor.process()
 }
-
-exports.parse = parse

@@ -1,4 +1,8 @@
-module.exports = async function equality(a, b) {
+import {Value} from './value'
+
+export const isEqual = equality
+
+async function equality(a: Value, b: Value): Promise<boolean> {
   let aType = a.getType()
   let bType = b.getType()
   if (aType != bType) return false

@@ -2,20 +2,37 @@
   "name": "groq-js",
   "version": "0.1.5",
   "license": "MIT",
-  "main": "src/index.js",
+  "author": "Sanity.io <hello@sanity.io>",
+  "main": "dist/index.js",
+  "typings": "dist/index.d.ts",
+  "module": "dist/groq-js.esm.js",
+  "files": [
+    "dist",
+    "README.md"
+  ],
   "scripts": {
-    "test": "jest",
-    "build-api": "jsdoc2md -t utils/docs.hbs 'src/**/*.js' > API.md",
-    "prettify": "prettier --write src/**/*.js"
+    "start": "tsdx watch",
+    "build": "tsdx build",
+    "test": "tsdx test",
+    "lint": "tsdx lint",
+    "prepare": "tsdx build",
+    "build-api": "jsdoc2md -t utils/docs.hbs 'src/**/*.ts' > API.md",
+    "prettify": "prettier --write src/**/*.ts"
   },
+  "peerDependencies": {},
   "devDependencies": {
-    "jest": "^24.8.0",
+    "@types/jest": "^25.1.4",
     "jsdoc-to-markdown": "^5.0.1",
     "ndjson": "^1.5.0",
-    "prettier": "^1.18.2"
+    "tsdx": "^0.12.3",
+    "tslib": "^1.11.1",
+    "typescript": "^3.8.3"
   },
-  "files": [
-    "src",
-    "README.md"
-  ]
+  "jest": {
+    "globals": {
+      "ts-jest": {
+        "diagnostics": false
+      }
+    }
+  }
 }
