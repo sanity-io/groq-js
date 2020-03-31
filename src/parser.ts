@@ -45,13 +45,6 @@ function expandEscapeSequence(str: String): string {
   )
 }
 
-/**
- * A tree-structure representing a GROQ query.
- *
- * @typedef {object} SyntaxNode
- * @property {string} type The type of the node.
- * @abstract
- */
 export type NodeBuilder<P = NodeTypes.SyntaxNode> = (
   this: MarkVisitor,
   processor: MarkProcessor,
@@ -557,22 +550,17 @@ function extractPropertyKey(node: NodeTypes.SyntaxNode): string {
 }
 
 class GroqSyntaxError extends Error {
-  public position?: number
+  public position: number
+  public name = 'GroqSyntaxError'
 
-  constructor(position?: number) {
+  constructor(position: number) {
     super(`Syntax error in GROQ query at position ${position}`)
     this.position = position
-    this.name = 'GroqSyntaxError'
   }
 }
 
 /**
  * Parses a GROQ query and returns a tree structure.
- *
- * @param {string} input GROQ query
- * @returns {SyntaxNode}
- * @alias module:groq-js.parse
- * @static
  */
 export function parse(input: string) {
   let result = rawParse(input)

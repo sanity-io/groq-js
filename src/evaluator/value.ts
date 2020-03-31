@@ -1,3 +1,6 @@
+/**
+ * A type of a value in GROQ.
+ */
 export type GroqValueName =
   | 'null'
   | 'boolean'
@@ -9,6 +12,9 @@ export type GroqValueName =
   | 'pair'
   | 'path'
 
+/**
+ * Returns the type of the value.
+ */
 export function getType(data: any): GroqValueName {
   if (data === null || typeof data === 'undefined') return 'null'
   if (Array.isArray(data)) return 'array'
@@ -18,43 +24,8 @@ export function getType(data: any): GroqValueName {
 }
 
 /**
- * A type of a value in GROQ.
- *
- * This can be one of:
- * - 'null'
- * - 'boolean'
- * - 'number'
- * - 'string'
- * - 'array'
- * - 'object'
- * - 'range'
- * - 'pair'
- * - 'path'
- * @typedef {string} ValueType
- */
-
-/**
  * The result of an expression.
- *
- * @interface Value
  */
-void 0
-
-/**
- * Returns the type of the value.
- * @function
- * @name Value#getType
- * @return {ValueType}
- */
-
-/**
- * Returns a JavaScript representation of the value.
- * @async
- * @function
- * @return {Promise}
- * @name Value#get
- */
-
 export type Value = StaticValue | StreamValue | MapperValue
 
 export class StaticValue<P = any> {
@@ -91,8 +62,6 @@ export class StaticValue<P = any> {
 
 /**
  * A StreamValue accepts a generator which yields values.
- *
- * @private
  */
 export class StreamValue {
   private generator: () => AsyncGenerator<Value, void, unknown>

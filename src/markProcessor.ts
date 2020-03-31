@@ -1,8 +1,3 @@
-/**
- * Helper class for processing a mark stream (which is what the rawParser returns).
- *
- * @private
- */
 import {NodeBuilder} from './parser'
 
 export type MarkName =

@@ -1,80 +1,45 @@
-# API Reference
-* [groq-js](#module_groq-js)
-    * [.evaluate(tree, [options])](#module_groq-js.evaluate) ⇒ [<code>Value</code>](#Value)
-    * [.parse(input)](#module_groq-js.parse) ⇒ [<code>SyntaxNode</code>](#SyntaxNode)
+# API
 
+GROQ-JS exposes two functions:
 
-<a name="module_groq-js.evaluate"></a>
+```typescript
+import {parse, evaluate} from 'groq-js'
+```
 
-### groq-js.evaluate(tree, [options]) ⇒ [<code>Value</code>](#Value)
-Evaluates a syntax tree (which you can get from [parse](#module_groq-js.parse)).
+- [`parse`](#parse)
+- [`evalute`](#evaluate)
 
-**Kind**: static method of [<code>groq-js</code>](#module_groq-js)  
+## `parse`
 
-| Param | Type | Description |
-| --- | --- | --- |
-| tree | [<code>SyntaxNode</code>](#SyntaxNode) |  |
-| [options] | <code>object</code> | Options. |
-| [options.params] | <code>object</code> | Parameters availble in the GROQ query (using `$param` syntax). |
-| [options.root] |  | The value that will be available as `@` in GROQ. |
-| [options.dataset] |  | The value that will be available as `*` in GROQ. |
+```typescript
+declare function parse(input: string): SyntaxNode
 
-<a name="module_groq-js.parse"></a>
+interface GroqSyntaxError extends Error {
+  position: number
+  name: 'GroqSyntaxError'
+}
+```
 
-### groq-js.parse(input) ⇒ [<code>SyntaxNode</code>](#SyntaxNode)
-Parses a GROQ query and returns a tree structure.
+`parse` accepts a string and parses a GROQ query.
+The returned value can be passed to [`evalute`](#evaluate) to evaluate the query.
 
-**Kind**: static method of [<code>groq-js</code>](#module_groq-js)  
+The function will throw `GroqSyntaxError` if there's a syntax error in the query.
 
-| Param | Type | Description |
-| --- | --- | --- |
-| input | <code>string</code> | GROQ query |
+## `evaluate`
 
+```typescript
+interface EvaluateOptions {
+  // The value that will be available as `@` in GROQ.
+  root?: any
 
-<a name="Value"></a>
+  // The value that will be available as `*` in GROQ.
+  dataset?: any
 
-## Value
-The result of an expression.
+  // Parameters availble in the GROQ query (using `$param` syntax).
+  params?: {[key: string]: any}
+}
 
-**Kind**: global interface  
-<a name="Value+getType"></a>
+declare async function evaluate(node: SyntaxNode, options: EvaluateOptions = {})
+```
 
-### value.getType() ⇒ [<code>ValueType</code>](#ValueType)
-Returns the type of the value.
-
-**Kind**: instance method of [<code>Value</code>](#Value)  
-<a name="Value+get"></a>
-
-### value.get() ⇒ <code>Promise</code>
-Returns a JavaScript representation of the value.
-
-**Kind**: instance method of [<code>Value</code>](#Value)  
-<a name="ValueType"></a>
-
-## ValueType : <code>string</code>
-A type of a value in GROQ.
-
-This can be one of:
-- 'null'
-- 'boolean'
-- 'number'
-- 'string'
-- 'array'
-- 'object'
-- 'range'
-- 'pair'
-
-**Kind**: global typedef  
-<a name="SyntaxNode"></a>
-
-## *SyntaxNode : <code>object</code>*
-A tree-structure representing a GROQ query.
-
-**Kind**: global abstract typedef  
-**Properties**
-
-| Name | Type | Description |
-| --- | --- | --- |
-| type | <code>string</code> | The type of the node. |
-
-
+`evaluate` accepts a node returned by [`parse`](#parse) and evaluates the query.
