@@ -459,24 +459,20 @@ const EXECUTORS: ExecutorMap = {
   }
 }
 
-/**
- * Evaluates a syntax tree (which you can get from {@link module:groq-js.parse}).
- *
- * @param {SyntaxNode} tree
- * @param {object} [options] Options.
- * @param {object} [options.params]  Parameters availble in the GROQ query (using `$param` syntax).
- * @param [options.root] The value that will be available as `@` in GROQ.
- * @param [options.dataset] The value that will be available as `*` in GROQ.
- * @return {Value}
- * @alias module:groq-js.evaluate
- */
-
 interface EvaluateOptions {
+  // The value that will be available as `@` in GROQ.
   root?: any
+
+  // The value that will be available as `*` in GROQ.
   dataset?: any
+
+  // Parameters availble in the GROQ query (using `$param` syntax).
   params?: {[key: string]: any}
 }
 
+/**
+ * Evaluates a query.
+ */
 export async function evaluate(tree: NodeTypes.SyntaxNode, options: EvaluateOptions = {}) {
   let root = fromJS(options.root)
   let dataset = fromJS(options.dataset)
