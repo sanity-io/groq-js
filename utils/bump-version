@@ -29,5 +29,5 @@ rm CHANGELOG.md.bak
 echo
 echo "Finalize release with:"
 echo "$ git add package.json CHANGELOG.md && git commit -m v$NEW_VERSION"
-echo "$ yarn publish && git tag v$NEW_VERSION && git push && git push origin v$NEW_VERSION"
+echo "$ npm publish && git tag v$NEW_VERSION && git push && git push origin v$NEW_VERSION"
 
