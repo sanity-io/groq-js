@@ -1,4 +1,5 @@
-/** Helper class for processing a mark stream (which is what the rawParser returns).
+/**
+ * Helper class for processing a mark stream (which is what the rawParser returns).
  *
  * @private
  */

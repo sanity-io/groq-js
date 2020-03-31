@@ -33,7 +33,8 @@ export function getType(data: any): GroqValueName {
  * @typedef {string} ValueType
  */
 
-/** The result of an expression.
+/**
+ * The result of an expression.
  *
  * @interface Value
  */
@@ -88,7 +89,8 @@ export class StaticValue<P = any> {
   }
 }
 
-/** A StreamValue accepts a generator which yields values.
+/**
+ * A StreamValue accepts a generator which yields values.
  *
  * @private
  */
