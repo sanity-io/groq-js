@@ -1,6 +1,6 @@
 import * as NodeTypes from './nodeTypes'
-import {parse as rawParse} from './rawParser'
 import {Mark, MarkProcessor, MarkVisitor, MarkName} from './markProcessor'
+const {parse: rawParse} = require('./rawParser')
 
 function isValueNode(node: NodeTypes.SyntaxNode): node is NodeTypes.ValueNode {
   return node.type === 'Value'
