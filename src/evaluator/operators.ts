@@ -133,14 +133,12 @@ export const operators: {[key in GroqOperator]: GroqOperatorFn} = {
     let patterns: string[] = []
 
     let didSucceed = await gatherText(text, part => {
-      const matches = part.match(/[A-Za-z0-9]+/g)
-      tokens = matches ? tokens.concat(matches) : tokens
+      tokens = tokens.concat(part.match(/[A-Za-z0-9]+/g))
     })
     if (!didSucceed) return NULL_VALUE
 
     didSucceed = await gatherText(pattern, part => {
-      const matches = part.match(/[A-Za-z0-9*]+/g)
-      patterns = matches ? patterns.concat() : patterns
+      patterns = patterns.concat(part.match(/[A-Za-z0-9*]+/g))
     })
     if (!didSucceed) return NULL_VALUE
 
