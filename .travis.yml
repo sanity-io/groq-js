@@ -3,8 +3,7 @@ node_js:
   - node
   - lts/*
 
-env:
-  GROQ_TEST_SUITE=master
+env: GROQ_TEST_SUITE=master
 
 before_script:
   - git init groq-test-suite
@@ -15,6 +14,5 @@ before_script:
       git fetch origin $GROQ_TEST_SUITE
       git reset --hard FETCH_HEAD
     )
-  - (cd groq-test-suite && yarn)
+  - (cd groq-test-suite && npm i)
   - ./test/generate.sh groq-test-suite
-
