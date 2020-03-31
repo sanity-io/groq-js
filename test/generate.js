@@ -9,17 +9,17 @@ const https = require('https')
 
 const OUTPUT = process.stdout
 const STACK = []
-let IDENT = ""
+let IDENT = ''
 
 function write(data) {
-  OUTPUT.write(IDENT + data + "\n")
+  OUTPUT.write(IDENT + data + '\n')
 }
 
 function openStack(expr) {
   let [open, close] = expr.split(/BODY/)
   write(open)
   STACK.push(close)
-  IDENT += "  "
+  IDENT += '  '
 }
 
 function closeStack() {
@@ -29,18 +29,25 @@ function closeStack() {
 }
 
 function space() {
-  OUTPUT.write("\n")
+  OUTPUT.write('\n')
 }
 
-write(`const {evaluate, parse} = require('../src')`)
-write(`const fs = require('fs')`)
-write(`const ndjson = require('ndjson')`)
+write(`import * as fs from 'fs'`)
+write(`import * as ndjson from 'ndjson'`)
+write(`import {evaluate, parse} from '../src'`)
 space()
-write(`const DATASETS = new Map();`)
+
+write(`interface Document {`)
+write(`  _id: string`)
+write(`  [key: string]: any`)
+write(`}`)
+space()
+
+write(`const DATASETS = new Map<string, Document>()`)
 openStack(`describe("groq-test-suite", () => {BODY})`)
 
 write(`
-const LOADERS = new Map();
+const LOADERS = new Map<string, Promise<Document[]>>()
 
 async function loadDocuments(id) {
   let entry = DATASETS.get(id)
@@ -80,15 +87,17 @@ function download(id, url) {
   if (!fs.existsSync(dir)) fs.mkdirSync(dir)
 
   process.stderr.write(`Downloading ${url}\n`)
-  https.request(url, res => {
-    res.pipe(fs.createWriteStream(filename))
-  }).end()
+  https
+    .request(url, res => {
+      res.pipe(fs.createWriteStream(filename))
+    })
+    .end()
 }
 
 process.stdin
   .pipe(ndjson.parse())
   .on('data', entry => {
-    if (entry._type == "dataset") {
+    if (entry._type == 'dataset') {
       if (entry.documents == null) {
         download(entry._id, entry.url)
       }
@@ -97,7 +106,7 @@ process.stdin
       space()
     }
 
-    if (entry._type == "test") {
+    if (entry._type == 'test') {
       openStack(`test("${entry.name}", async () => {BODY}, 20000)`)
       write(`let query = ${JSON.stringify(entry.query)}`)
       write(`let result = ${JSON.stringify(entry.result)}`)

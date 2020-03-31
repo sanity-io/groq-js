@@ -29,6 +29,7 @@
     "typescript": "^3.8.3"
   },
   "jest": {
+    "testEnvironment": "node",
     "globals": {
       "ts-jest": {
         "diagnostics": false

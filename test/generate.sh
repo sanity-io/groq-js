@@ -10,11 +10,13 @@ if [ -z "$1" ]; then
   exit 1
 fi
 
-RESULT="$DIR"/suite.test.js
+RESULT="$DIR"/suite.test.ts
 
 (
   cd "$1" &&
   yarn --silent build
 ) | node "$DIR"/generate.js > "$RESULT"
+
+$DIR/../node_modules/.bin/prettier --write "$RESULT"
 
 echo "Successfully generated $RESULT"
