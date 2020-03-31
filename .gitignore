@@ -2,7 +2,8 @@ node_modules
 /yarn.lock
 /test/suite.test.ts
 /test/datasets
-dist
+/groq-test-suite
+/docs
+/coverage
+/dist
 .DS_Store
-coverage
-groq-test-suite
