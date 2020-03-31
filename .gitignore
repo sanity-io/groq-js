@@ -4,3 +4,4 @@ node_modules
 /test/datasets
 dist
 .DS_Store
+coverage
