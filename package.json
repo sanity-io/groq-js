@@ -8,6 +8,7 @@
   "module": "dist/groq-js.esm.js",
   "files": [
     "dist",
+    "src",
     "README.md"
   ],
   "scripts": {
@@ -17,16 +18,17 @@
     "coverage": "tsdx test --coverage",
     "lint": "tsdx lint",
     "prepare": "tsdx build",
-    "build-api": "jsdoc2md -t utils/docs.hbs 'src/**/*.ts' > API.md",
+    "build-api": "typedoc --mode file --out docs/ --excludeNotExported --inputFiles src/index.ts",
     "prettify": "prettier --write src/**/*.ts"
   },
   "peerDependencies": {},
   "devDependencies": {
     "@types/jest": "^25.1.4",
-    "jsdoc-to-markdown": "^5.0.1",
     "ndjson": "^1.5.0",
     "tsdx": "^0.13.1",
     "tslib": "^1.11.1",
+    "typedoc": "^0.17.3",
+    "typedoc-plugin-markdown": "^2.2.17",
     "typescript": "^3.8.3"
   },
   "jest": {
