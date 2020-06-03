@@ -1,14 +1,18 @@
 export declare function recognize(input: string): boolean
+
+export type Mark = {
+  name: string
+  position: number
+}
+
 export declare function parse(
   input: string
 ):
   | {
-      type: string
-      position: number
-      marks?: undefined
+      type: 'success'
+      marks: Mark[]
     }
   | {
-      type: string
-      marks: any[]
-      position?: undefined
+      type: 'error'
+      position: number
     }
