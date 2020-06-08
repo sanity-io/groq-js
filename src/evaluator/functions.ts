@@ -51,7 +51,7 @@ export const functions: {[key: string]: GroqFunction} = {
   coalesce: async function coalesce(args, scope, execute) {
     for (let arg of args) {
       let value = await execute(arg, scope)
-      if (value.getType() != 'null') return value
+      if (value.getType() !== 'null') return value
     }
     return NULL_VALUE
   },
@@ -60,7 +60,7 @@ export const functions: {[key: string]: GroqFunction} = {
     if (args.length !== 1) return NULL_VALUE
 
     let inner = await execute(args[0], scope)
-    if (inner.getType() != 'array') return NULL_VALUE
+    if (inner.getType() !== 'array') return NULL_VALUE
 
     let num = 0
     for await (let _ of inner) {
@@ -73,7 +73,7 @@ export const functions: {[key: string]: GroqFunction} = {
     if (args.length !== 1) return NULL_VALUE
 
     let inner = await execute(args[0], scope)
-    return inner.getType() == 'null' ? FALSE_VALUE : TRUE_VALUE
+    return inner.getType() === 'null' ? FALSE_VALUE : TRUE_VALUE
   },
 
   identity: async function identity(args) {
@@ -86,12 +86,12 @@ export const functions: {[key: string]: GroqFunction} = {
 
     let inner = await execute(args[0], scope)
 
-    if (inner.getType() == 'string') {
+    if (inner.getType() === 'string') {
       let data = await inner.get()
       return fromNumber(countUTF8(data))
     }
 
-    if (inner.getType() == 'array') {
+    if (inner.getType() === 'array') {
       let num = 0
       for await (let _ of inner) {
         num++
@@ -106,7 +106,7 @@ export const functions: {[key: string]: GroqFunction} = {
     if (args.length !== 1) return NULL_VALUE
 
     let inner = await execute(args[0], scope)
-    if (inner.getType() != 'string') return NULL_VALUE
+    if (inner.getType() !== 'string') return NULL_VALUE
 
     let str = await inner.get()
 
@@ -119,7 +119,7 @@ export const functions: {[key: string]: GroqFunction} = {
     for (let arg of args) {
       if (seenFallback) return NULL_VALUE
 
-      if (arg.type == 'Pair') {
+      if (arg.type === 'Pair') {
         // This is fine.
       } else {
         seenFallback = true
@@ -127,7 +127,7 @@ export const functions: {[key: string]: GroqFunction} = {
     }
 
     for (let arg of args) {
-      if (arg.type == 'Pair') {
+      if (arg.type === 'Pair') {
         let cond = await execute(arg.left, scope)
         if (cond.getBoolean()) {
           return await execute(arg.right, scope)
@@ -141,10 +141,10 @@ export const functions: {[key: string]: GroqFunction} = {
   },
 
   references: async function references(args, scope, execute) {
-    if (args.length != 1) return NULL_VALUE
+    if (args.length !== 1) return NULL_VALUE
 
     let idValue = await execute(args[0], scope)
-    if (idValue.getType() != 'string') return NULL_VALUE
+    if (idValue.getType() !== 'string') return NULL_VALUE
 
     let id = await idValue.get()
     let scopeValue = scope.value
@@ -155,18 +155,18 @@ export const functions: {[key: string]: GroqFunction} = {
     if (args.length < 1 || args.length > 2) return NULL_VALUE
 
     let value = await execute(args[0], scope)
-    if (value.getType() != 'number') return NULL_VALUE
+    if (value.getType() !== 'number') return NULL_VALUE
 
     let num = await value.get()
     let prec = 0
 
-    if (args.length == 2) {
+    if (args.length === 2) {
       let precValue = await execute(args[1], scope)
-      if (precValue.getType() != 'number') return NULL_VALUE
+      if (precValue.getType() !== 'number') return NULL_VALUE
       prec = await precValue.get()
     }
 
-    if (prec == 0) {
+    if (prec === 0) {
       return fromNumber(Math.round(num))
     } else {
       return fromNumber(Number(num.toFixed(prec)))
@@ -174,7 +174,7 @@ export const functions: {[key: string]: GroqFunction} = {
   },
 
   now: async function now(args, scope) {
-    if (args.length != 0) throw new Error('now: no arguments are allowed')
+    if (args.length !== 0) throw new Error('now: no arguments are allowed')
 
     return new StaticValue(scope.timestamp)
   }
@@ -189,8 +189,8 @@ type GroqPipeFunction = (
 
 export const pipeFunctions: {[key: string]: GroqPipeFunction} = {
   order: async function order(base, args, scope, execute) {
-    if (args.length == 0) throw new Error('order: at least one argument required')
-    if (base.getType() != 'array') return NULL_VALUE
+    if (args.length === 0) throw new Error('order: at least one argument required')
+    if (base.getType() !== 'array') return NULL_VALUE
 
     let mappers = []
     let directions: string[] = []
@@ -199,10 +199,10 @@ export const pipeFunctions: {[key: string]: GroqPipeFunction} = {
     for (let mapper of args) {
       let direction = 'asc'
 
-      if (mapper.type == 'Desc') {
+      if (mapper.type === 'Desc') {
         direction = 'desc'
         mapper = mapper.base
-      } else if (mapper.type == 'Asc') {
+      } else if (mapper.type === 'Asc') {
         mapper = mapper.base
       }
 
@@ -226,8 +226,8 @@ export const pipeFunctions: {[key: string]: GroqPipeFunction} = {
     aux.sort((aTuple, bTuple) => {
       for (let i = 0; i < n; i++) {
         let c = totalCompare(aTuple[i + 1], bTuple[i + 1])
-        if (directions[i] == 'desc') c = -c
-        if (c != 0) return c
+        if (directions[i] === 'desc') c = -c
+        if (c !== 0) return c
       }
       return 0
     })

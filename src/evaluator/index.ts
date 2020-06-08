@@ -140,7 +140,7 @@ const EXECUTORS: ExecutorMap = {
     let baseValue = await execute(base, scope)
 
     return inMapper(baseValue, async value => {
-      if (value.getType() != 'array') return NULL_VALUE
+      if (value.getType() !== 'array') return NULL_VALUE
 
       return new StreamValue(async function*() {
         for await (let element of value) {
@@ -156,10 +156,10 @@ const EXECUTORS: ExecutorMap = {
     let baseValue = await execute(base, scope)
 
     return inMapper(baseValue, async arrayValue => {
-      if (arrayValue.getType() != 'array') return NULL_VALUE
+      if (arrayValue.getType() !== 'array') return NULL_VALUE
 
       let idxValue = await execute(index, scope)
-      if (idxValue.getType() != 'number') return NULL_VALUE
+      if (idxValue.getType() !== 'number') return NULL_VALUE
 
       // OPT: Here we can optimize when idx >= 0
       let array = await arrayValue.get()
@@ -182,12 +182,12 @@ const EXECUTORS: ExecutorMap = {
     let baseValue = await execute(base, scope)
 
     return inMapper(baseValue, async arrayValue => {
-      if (arrayValue.getType() != 'array') return NULL_VALUE
+      if (arrayValue.getType() !== 'array') return NULL_VALUE
 
       let leftIdxValue = await execute(left, scope)
       let rightIdxValue = await execute(right, scope)
 
-      if (leftIdxValue.getType() != 'number' || rightIdxValue.getType() != 'number') {
+      if (leftIdxValue.getType() !== 'number' || rightIdxValue.getType() !== 'number') {
         return NULL_VALUE
       }
 
@@ -217,7 +217,7 @@ const EXECUTORS: ExecutorMap = {
     let baseValue = await execute(base, scope)
 
     return inMapper(baseValue, async value => {
-      if (value.getType() == 'object') {
+      if (value.getType() === 'object') {
         let data = await value.get()
         if (data.hasOwnProperty(name)) {
           return new StaticValue(data[name])
@@ -229,7 +229,7 @@ const EXECUTORS: ExecutorMap = {
   },
 
   async Identifier({name}: NodeTypes.IdentifierNode, scope: Scope) {
-    if (scope.value.getType() == 'object') {
+    if (scope.value.getType() === 'object') {
       let data = await scope.value.get()
       if (data.hasOwnProperty(name)) {
         return new StaticValue(data[name])
@@ -245,13 +245,13 @@ const EXECUTORS: ExecutorMap = {
 
   async Mapper({base}: NodeTypes.MapperNode, scope: Scope) {
     let baseValue = await execute(base, scope)
-    if (baseValue.getType() != 'array') return baseValue
+    if (baseValue.getType() !== 'array') return baseValue
 
     if (baseValue instanceof MapperValue) {
       return new MapperValue(
         new StreamValue(async function*() {
           for await (let element of baseValue) {
-            if (element.getType() == 'array') {
+            if (element.getType() === 'array') {
               for await (let subelement of element) {
                 yield subelement
               }
@@ -277,9 +277,9 @@ const EXECUTORS: ExecutorMap = {
   async Projection({base, query}: NodeTypes.ProjectionNode, scope: Scope) {
     let baseValue = await execute(base, scope)
     return inMapper(baseValue, async baseValue => {
-      if (baseValue.getType() == 'null') return NULL_VALUE
+      if (baseValue.getType() === 'null') return NULL_VALUE
 
-      if (baseValue.getType() == 'array') {
+      if (baseValue.getType() === 'array') {
         return new StreamValue(async function*() {
           for await (let value of baseValue) {
             let newScope = scope.createNested(value)
@@ -297,11 +297,11 @@ const EXECUTORS: ExecutorMap = {
   async Deref({base}: NodeTypes.DerefNode, scope: Scope) {
     let baseValue = await execute(base, scope)
     return inMapper(baseValue, async baseValue => {
-      if (scope.source.getType() != 'array') return NULL_VALUE
-      if (baseValue.getType() != 'object') return NULL_VALUE
+      if (scope.source.getType() !== 'array') return NULL_VALUE
+      if (baseValue.getType() !== 'object') return NULL_VALUE
 
       let id = (await baseValue.get())._ref
-      if (typeof id != 'string') return NULL_VALUE
+      if (typeof id !== 'string') return NULL_VALUE
 
       for await (let doc of scope.source) {
         if (id === doc.data._id) {
@@ -320,10 +320,10 @@ const EXECUTORS: ExecutorMap = {
       switch (attr.type) {
         case 'ObjectAttribute': {
           let key = await execute(attr.key, scope)
-          if (key.getType() != 'string') continue
+          if (key.getType() !== 'string') continue
 
           let value = await execute(attr.value, scope)
-          if (value.getType() == 'null') {
+          if (value.getType() === 'null') {
             delete result[key.data]
             break
           }
@@ -337,7 +337,7 @@ const EXECUTORS: ExecutorMap = {
           if (!cond.getBoolean()) continue
 
           let value = await execute(attr.value, scope)
-          if (value.getType() != 'object') continue
+          if (value.getType() !== 'object') continue
           Object.assign(result, value.data)
           break
         }
@@ -362,7 +362,7 @@ const EXECUTORS: ExecutorMap = {
       for (let element of elements) {
         let value = await execute(element.value, scope)
         if (element.isSplat) {
-          if (value.getType() == 'array') {
+          if (value.getType() === 'array') {
             for await (let v of value) {
               yield v
             }
@@ -398,16 +398,16 @@ const EXECUTORS: ExecutorMap = {
     let leftValue = await execute(left, scope)
     let rightValue = await execute(right, scope)
 
-    if (leftValue.getType() == 'boolean') {
-      if (leftValue.data == true) return TRUE_VALUE
+    if (leftValue.getType() === 'boolean') {
+      if (leftValue.data === true) return TRUE_VALUE
     }
 
-    if (rightValue.getType() == 'boolean') {
-      if (rightValue.data == true) return TRUE_VALUE
+    if (rightValue.getType() === 'boolean') {
+      if (rightValue.data === true) return TRUE_VALUE
     }
 
-    if (leftValue.getType() != 'boolean') return NULL_VALUE
-    if (rightValue.getType() != 'boolean') return NULL_VALUE
+    if (leftValue.getType() !== 'boolean') return NULL_VALUE
+    if (rightValue.getType() !== 'boolean') return NULL_VALUE
 
     return FALSE_VALUE
   },
@@ -416,23 +416,23 @@ const EXECUTORS: ExecutorMap = {
     let leftValue = await execute(left, scope)
     let rightValue = await execute(right, scope)
 
-    if (leftValue.getType() == 'boolean') {
-      if (leftValue.data == false) return FALSE_VALUE
+    if (leftValue.getType() === 'boolean') {
+      if (leftValue.data === false) return FALSE_VALUE
     }
 
-    if (rightValue.getType() == 'boolean') {
-      if (rightValue.data == false) return FALSE_VALUE
+    if (rightValue.getType() === 'boolean') {
+      if (rightValue.data === false) return FALSE_VALUE
     }
 
-    if (leftValue.getType() != 'boolean') return NULL_VALUE
-    if (rightValue.getType() != 'boolean') return NULL_VALUE
+    if (leftValue.getType() !== 'boolean') return NULL_VALUE
+    if (rightValue.getType() !== 'boolean') return NULL_VALUE
 
     return TRUE_VALUE
   },
 
   async Not({base}: NodeTypes.NotNode, scope: Scope) {
     let value = await execute(base, scope)
-    if (value.getType() != 'boolean') {
+    if (value.getType() !== 'boolean') {
       return NULL_VALUE
     }
     return value.getBoolean() ? FALSE_VALUE : TRUE_VALUE
@@ -440,13 +440,13 @@ const EXECUTORS: ExecutorMap = {
 
   async Neg({base}: NodeTypes.NegNode, scope: Scope) {
     let value = await execute(base, scope)
-    if (value.getType() != 'number') return NULL_VALUE
+    if (value.getType() !== 'number') return NULL_VALUE
     return fromNumber(-(await value.get()))
   },
 
   async Pos({base}: NodeTypes.PosNode, scope: Scope) {
     let value = await execute(base, scope)
-    if (value.getType() != 'number') return NULL_VALUE
+    if (value.getType() !== 'number') return NULL_VALUE
     return fromNumber(await value.get())
   },
 

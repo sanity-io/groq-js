@@ -47,7 +47,7 @@ export const operators: {[key in GroqOperator]: GroqOperatorFn} = {
     let b = await (await execute(right, scope)).get()
     let result = partialCompare(a, b)
 
-    if (result == null) {
+    if (result === null) {
       return NULL_VALUE
     } else {
       return result > 0 ? TRUE_VALUE : FALSE_VALUE
@@ -59,7 +59,7 @@ export const operators: {[key in GroqOperator]: GroqOperatorFn} = {
     let b = await (await execute(right, scope)).get()
     let result = partialCompare(a, b)
 
-    if (result == null) {
+    if (result === null) {
       return NULL_VALUE
     } else {
       return result >= 0 ? TRUE_VALUE : FALSE_VALUE
@@ -71,7 +71,7 @@ export const operators: {[key in GroqOperator]: GroqOperatorFn} = {
     let b = await (await execute(right, scope)).get()
     let result = partialCompare(a, b)
 
-    if (result == null) {
+    if (result === null) {
       return NULL_VALUE
     } else {
       return result < 0 ? TRUE_VALUE : FALSE_VALUE
@@ -83,7 +83,7 @@ export const operators: {[key in GroqOperator]: GroqOperatorFn} = {
     let b = await (await execute(right, scope)).get()
     let result = partialCompare(a, b)
 
-    if (result == null) {
+    if (result === null) {
       return NULL_VALUE
     } else {
       return result <= 0 ? TRUE_VALUE : FALSE_VALUE
@@ -106,9 +106,9 @@ export const operators: {[key in GroqOperator]: GroqOperatorFn} = {
         let value = await a.get()
         let range = await choices.get()
         let leftCmp = partialCompare(value, range.left)
-        if (leftCmp == null) return NULL_VALUE
+        if (leftCmp === null) return NULL_VALUE
         let rightCmp = partialCompare(value, range.right)
-        if (rightCmp == null) return NULL_VALUE
+        if (rightCmp === null) return NULL_VALUE
 
         if (range.isExclusive()) {
           return leftCmp >= 0 && rightCmp < 0 ? TRUE_VALUE : FALSE_VALUE
@@ -116,7 +116,7 @@ export const operators: {[key in GroqOperator]: GroqOperatorFn} = {
           return leftCmp >= 0 && rightCmp <= 0 ? TRUE_VALUE : FALSE_VALUE
         }
       case 'path':
-        if (a.getType() != 'string') return NULL_VALUE
+        if (a.getType() !== 'string') return NULL_VALUE
         let str = await a.get()
         let path = await choices.get()
         return path.matches(str) ? TRUE_VALUE : FALSE_VALUE
@@ -133,12 +133,12 @@ export const operators: {[key in GroqOperator]: GroqOperatorFn} = {
     let patterns: string[] = []
 
     let didSucceed = await gatherText(text, part => {
-      tokens = tokens.concat(part.match(/[A-Za-z0-9]+/g))
+      tokens = tokens.concat(part.match(/[A-Za-z0-9]+/g) as string[])
     })
     if (!didSucceed) return NULL_VALUE
 
     didSucceed = await gatherText(pattern, part => {
-      patterns = patterns.concat(part.match(/[A-Za-z0-9*]+/g))
+      patterns = patterns.concat(part.match(/[A-Za-z0-9*]+/g) as string[])
     })
     if (!didSucceed) return NULL_VALUE
 
@@ -156,7 +156,7 @@ export const operators: {[key in GroqOperator]: GroqOperatorFn} = {
     let aType = a.getType()
     let bType = b.getType()
 
-    if ((aType == 'number' && bType == 'number') || (aType == 'string' && bType == 'string')) {
+    if ((aType === 'number' && bType === 'number') || (aType === 'string' && bType === 'string')) {
       return new StaticValue((await a.get()) + (await b.get()))
     }
 
@@ -177,7 +177,7 @@ function numericOperator(impl: (a: number, b: number) => number): GroqOperatorFn
     let aType = a.getType()
     let bType = b.getType()
 
-    if (aType == 'number' && bType == 'number') {
+    if (aType === 'number' && bType === 'number') {
       let result = impl(await a.get(), await b.get())
       return fromNumber(result)
     }
@@ -194,7 +194,7 @@ async function gatherText(value: Value, cb: (str: string) => void) {
 
     case 'array':
       for await (let part of value) {
-        if (part.getType() == 'string') {
+        if (part.getType() === 'string') {
           cb(await part.get())
         } else {
           return false

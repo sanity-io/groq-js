@@ -10,7 +10,7 @@ export function partialCompare(a: any, b: any) {
   let aType = getType(a)
   let bType = getType(b)
 
-  if (aType != bType) return null
+  if (aType !== bType) return null
 
   switch (aType) {
     case 'number':
@@ -30,11 +30,11 @@ export function totalCompare(a: any, b: any) {
   let aTypeOrder = TYPE_ORDER[aType] || 100
   let bTypeOrder = TYPE_ORDER[bType] || 100
 
-  if (aTypeOrder != bTypeOrder) {
+  if (aTypeOrder !== bTypeOrder) {
     return aTypeOrder - bTypeOrder
   }
 
   let result = partialCompare(a, b)
-  if (result == null) result = 0
+  if (result === null) result = 0
   return result
 }
