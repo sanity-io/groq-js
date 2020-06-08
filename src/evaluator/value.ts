@@ -164,9 +164,9 @@ export class MapperValue {
 
 export class Range {
   static isConstructible(leftType: string, rightType: string) {
-    if (leftType == rightType) {
-      if (leftType == 'number') return true
-      if (leftType == 'string') return true
+    if (leftType === rightType) {
+      if (leftType === 'number') return true
+      if (leftType === 'string') return true
     }
     return false
   }
@@ -211,9 +211,9 @@ function escapeRegExp(string: string) {
 function pathRegExp(pattern: string) {
   let re = []
   for (let part of pattern.split('.')) {
-    if (part == '*') {
+    if (part === '*') {
       re.push('[^.]+')
-    } else if (part == '**') {
+    } else if (part === '**') {
       re.push('.*')
     } else {
       re.push(escapeRegExp(part))
@@ -250,7 +250,7 @@ export function fromNumber(num: number) {
 }
 
 function isIterator(obj?: Iterator<any>) {
-  return obj != null && typeof obj.next == 'function'
+  return obj && typeof obj.next === 'function'
 }
 
 export function fromJS(val: any) {
@@ -260,8 +260,7 @@ export function fromJS(val: any) {
         yield new StaticValue(value)
       }
     })
-  } else if (val == null) {
-    // Make sure undefined also becomes null
+  } else if (val === null || val === undefined) {
     return exports.NULL_VALUE
   } else {
     return new StaticValue(val)

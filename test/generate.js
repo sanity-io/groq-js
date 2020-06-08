@@ -97,7 +97,7 @@ function download(id, url) {
 process.stdin
   .pipe(ndjson.parse())
   .on('data', entry => {
-    if (entry._type == 'dataset') {
+    if (entry._type === 'dataset') {
       if (entry.documents == null) {
         download(entry._id, entry.url)
       }
@@ -106,7 +106,7 @@ process.stdin
       space()
     }
 
-    if (entry._type == 'test') {
+    if (entry._type === 'test') {
       openStack(`test("${entry.name}", async () => {BODY}, 20000)`)
       write(`let query = ${JSON.stringify(entry.query)}`)
       write(`let result = ${JSON.stringify(entry.result)}`)

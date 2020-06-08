@@ -7,11 +7,11 @@ function isValueNode(node: NodeTypes.SyntaxNode): node is NodeTypes.ValueNode {
 }
 
 function isNumber(node: NodeTypes.SyntaxNode): node is NodeTypes.ValueNode<number> {
-  return isValueNode(node) && typeof node.value == 'number'
+  return isValueNode(node) && typeof node.value === 'number'
 }
 
 function isString(node: NodeTypes.SyntaxNode): node is NodeTypes.ValueNode<string> {
-  return isValueNode(node) && typeof node.value == 'string'
+  return isValueNode(node) && typeof node.value === 'string'
 }
 
 type EscapeSequences = "'" | '"' | '\\' | '/' | 'b' | 'f' | 'n' | 'r' | 't'
@@ -84,7 +84,7 @@ const BUILDER: {[key in MarkName]?: NodeBuilder} = {
       }
     }
 
-    if (query.type == 'Range') {
+    if (query.type === 'Range') {
       return {
         type: 'Slice',
         base,
@@ -191,7 +191,7 @@ const BUILDER: {[key in MarkName]?: NodeBuilder} = {
   neg(p): NodeTypes.ValueNode | NodeTypes.NegNode {
     let base = p.process()
 
-    if (base.type === 'Value' && typeof base.value == 'number') {
+    if (base.type === 'Value' && typeof base.value === 'number') {
       return {
         type: 'Value',
         value: -base.value
@@ -374,7 +374,7 @@ const BUILDER: {[key in MarkName]?: NodeBuilder} = {
   object_expr(p): NodeTypes.ObjectConditionalSplatNode | NodeTypes.ObjectAttributeNode {
     let value = p.process()
 
-    if (value.type == 'Pair') {
+    if (value.type === 'Pair') {
       return {
         type: 'ObjectConditionalSplat',
         condition: value.left,
@@ -422,7 +422,7 @@ const BUILDER: {[key in MarkName]?: NodeBuilder} = {
     let elements: NodeTypes.ArrayElementNode[] = []
     while (p.getMark().name !== 'array_end') {
       let isSplat = false
-      if (p.getMark().name == 'array_splat') {
+      if (p.getMark().name === 'array_splat') {
         isSplat = true
         p.shift()
       }
