@@ -1,5 +1,6 @@
 import * as NodeTypes from './nodeTypes'
 import {Mark, MarkProcessor, MarkVisitor, MarkName} from './markProcessor'
+import {functions, GroqFunctionArity, pipeFunctions} from './evaluator/functions'
 const {parse: rawParse} = require('./rawParser')
 
 function isValueNode(node: NodeTypes.SyntaxNode): node is NodeTypes.ValueNode {
@@ -52,6 +53,10 @@ export type NodeBuilder<P = NodeTypes.SyntaxNode> = (
 ) => P
 
 export type NodeBuilderArgs = [MarkProcessor, Mark]
+
+class GroqQueryError extends Error {
+  public name: 'GroqQueryError'
+}
 
 const BUILDER: {[key in MarkName]?: NodeBuilder} = {
   paren(p): NodeTypes.ParenthesisNode {
@@ -446,10 +451,17 @@ const BUILDER: {[key in MarkName]?: NodeBuilder} = {
     while (p.getMark().name !== 'func_args_end') {
       args.push(p.process())
     }
-
     p.shift()
+
+    let func = functions[name]
+    if (!func) {
+      throw new GroqQueryError(`Undefined function: ${name}`)
+    }
+    validateArity(name, func.arity, args.length)
+
     return {
       type: 'FuncCall',
+      func,
       name,
       args
     }
@@ -457,12 +469,25 @@ const BUILDER: {[key in MarkName]?: NodeBuilder} = {
 
   pipecall(p): NodeTypes.PipeFuncCallNode {
     let base = p.process()
-    let func = p.process() as NodeTypes.FuncCallNode
+    let name = p.processString()
+    let args: NodeTypes.SyntaxNode[] = []
+    while (p.getMark().name !== 'func_args_end') {
+      args.push(p.process())
+    }
+    p.shift()
+
+    let func = pipeFunctions[name]
+    if (!func) {
+      throw new GroqQueryError(`Undefined pipe function: ${name}`)
+    }
+    validateArity(name, func.arity, args.length)
+
     return {
       type: 'PipeFuncCall',
+      func,
       base,
       name: func.name,
-      args: func.args
+      args
     }
   },
 
@@ -546,7 +571,21 @@ function extractPropertyKey(node: NodeTypes.SyntaxNode): string {
     return extractPropertyKey(node.base)
   }
 
-  throw new Error('Cannot determine property key for type: ' + node.type)
+  throw new GroqQueryError('Cannot determine property key for type: ' + node.type)
+}
+
+function validateArity(name: string, arity: GroqFunctionArity, count: number) {
+  if (typeof arity === 'number') {
+    if (count !== arity) {
+      throw new GroqQueryError(
+        `Incorrect number of arguments to function ${name}(). Expected ${arity}, got ${count}.`
+      )
+    }
+  } else if (arity) {
+    if (!arity(count)) {
+      throw new GroqQueryError(`Incorrect number of arguments to function ${name}().`)
+    }
+  }
 }
 
 class GroqSyntaxError extends Error {

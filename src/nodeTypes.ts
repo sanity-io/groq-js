@@ -1,3 +1,5 @@
+import {GroqFunction, GroqPipeFunction} from './evaluator/functions'
+
 export type SyntaxNode =
   | AndNode
   | ArrayNode
@@ -120,6 +122,7 @@ export interface FilterNode {
 
 export interface FuncCallNode {
   type: 'FuncCall'
+  func: GroqFunction
   name: string
   args: SyntaxNode[]
 }
@@ -202,6 +205,7 @@ export interface ParenthesisNode {
 
 export interface PipeFuncCallNode {
   type: 'PipeFuncCall'
+  func: GroqPipeFunction
   base: SyntaxNode
   name: string
   args: SyntaxNode[]

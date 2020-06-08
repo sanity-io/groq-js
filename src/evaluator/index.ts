@@ -123,15 +123,11 @@ const EXECUTORS: ExecutorMap = {
     return func(left, right, scope, execute)
   },
 
-  FuncCall({name, args}: NodeTypes.FuncCallNode, scope: Scope) {
-    let func = functions[name]
-    if (!func) throw new Error('Unknown function: ' + name)
+  FuncCall({func, args}: NodeTypes.FuncCallNode, scope: Scope) {
     return func(args, scope, execute)
   },
 
-  async PipeFuncCall({base, name, args}: NodeTypes.PipeFuncCallNode, scope: Scope) {
-    let func = pipeFunctions[name]
-    if (!func) throw new Error('Unknown function: ' + name)
+  async PipeFuncCall({func, base, args}: NodeTypes.PipeFuncCallNode, scope: Scope) {
     let baseValue = await execute(base, scope)
     return func(baseValue, args, scope, execute)
   },
