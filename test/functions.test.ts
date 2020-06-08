@@ -26,10 +26,5 @@ describe('Functions', () => {
       const data = await value.get()
       expect(data.deep.time).toStrictEqual(data.topTime)
     })
-
-    test('throws is passing arguments', async () => {
-      const tree = parse('now("foo")')
-      return expect(evaluate(tree, {dataset: []})).rejects.toThrow('now: no arguments are allowed')
-    })
   })
 })
