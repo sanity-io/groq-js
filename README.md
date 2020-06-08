@@ -76,14 +76,8 @@ npm test
 You can also generate tests from [the official GROQ test suite](https://github.com/sanity-io/groq-test-suite):
 
 ```bash
-# Clone the repo somewhere:
-git clone https://github.com/sanity-io/groq-test-suite somewhere
-
-# Install dependencies:
-(cd somewhere && npm i)
-
-# Generate test file (in this repo):
-./test/generate.sh somewhere
+# Fecth and generate test file:
+./test/generate.sh
 
 # Run tests as usual:
 npm test

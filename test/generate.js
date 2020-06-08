@@ -109,17 +109,17 @@ process.stdin
     if (entry._type === 'test') {
       openStack(`test("${entry.name}", async () => {BODY}, 20000)`)
       write(`let query = ${JSON.stringify(entry.query)}`)
-      write(`let result = ${JSON.stringify(entry.result)}`)
-      if (entry.dataset != null) {
+      if (entry.valid) {
+        write(`let result = ${JSON.stringify(entry.result)}`)
         write(`let dataset = await loadDocuments(${JSON.stringify(entry.dataset._ref)})`)
+        write(`let tree = parse(query)`)
+        write(`let value = await evaluate(tree, {dataset})`)
+        write(`let data = await value.get()`)
+        write(`data = JSON.parse(JSON.stringify(data))`)
+        write(`expect(data).toStrictEqual(result)`)
       } else {
-        write(`let dataset = []`)
+        write(`expect(() => parse(query)).toThrow()`)
       }
-      write(`let tree = parse(query)`)
-      write(`let value = await evaluate(tree, {dataset})`)
-      write(`let data = await value.get()`)
-      write(`data = JSON.parse(JSON.stringify(data))`)
-      write(`expect(data).toStrictEqual(result)`)
       closeStack()
       space()
     }
