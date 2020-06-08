@@ -167,6 +167,7 @@ export class Range {
     if (leftType === rightType) {
       if (leftType === 'number') return true
       if (leftType === 'string') return true
+      if (leftType === 'boolean') return true
     }
     return false
   }
