@@ -1,5 +1,9 @@
 # Changelog
 
+## Unreleased
+
+- Fix build so that it includes rawParser (@judofyr)
+
 ## v0.1.6 - 2020-06-15
 
 - Migrate to TypeScript (#18, @rexxars, @judofyr)

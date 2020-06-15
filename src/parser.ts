@@ -1,7 +1,7 @@
 import * as NodeTypes from './nodeTypes'
 import {Mark, MarkProcessor, MarkVisitor, MarkName} from './markProcessor'
 import {functions, GroqFunctionArity, pipeFunctions} from './evaluator/functions'
-const {parse: rawParse} = require('./rawParser')
+import {parse as rawParse} from './rawParser'
 
 function isValueNode(node: NodeTypes.SyntaxNode): node is NodeTypes.ValueNode {
   return node.type === 'Value'

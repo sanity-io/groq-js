@@ -22,6 +22,7 @@
   },
   "peerDependencies": {},
   "devDependencies": {
+    "@rollup/plugin-commonjs": "^13.0.0",
     "@types/jest": "^25.1.4",
     "ndjson": "^1.5.0",
     "tsdx": "^0.13.1",
