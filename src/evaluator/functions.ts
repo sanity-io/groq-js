@@ -185,6 +185,9 @@ export type GroqPipeFunction = (
 export const pipeFunctions: {[key: string]: WithArity<GroqPipeFunction>} = {}
 
 pipeFunctions.order = async function order(base, args, scope, execute) {
+  // This is a workaround for https://github.com/rpetrich/babel-plugin-transform-async-to-promises/issues/59
+  await true
+
   if (base.getType() !== 'array') return NULL_VALUE
 
   let mappers = []
