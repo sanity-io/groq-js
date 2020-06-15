@@ -1,8 +1,9 @@
 # Changelog
 
-## Unreleased
+## v0.1.7 - 2020-06-15
 
 - Fix build so that it includes rawParser (@judofyr)
+- Work around bug in babel-plugin-transform-async-to-promises (@judofyr)
 
 ## v0.1.6 - 2020-06-15
 
