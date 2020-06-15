@@ -1,6 +1,9 @@
 # Changelog
 
-## Unreleased
+## v0.1.6 - 2020-06-15
+
+- Migrate to TypeScript (#18, @rexxars, @judofyr)
+- Update semantics to work with latest GROQ spec
 
 ## v0.1.5 - 2020-03-17
 
