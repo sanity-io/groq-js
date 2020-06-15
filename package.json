@@ -23,11 +23,11 @@
   "peerDependencies": {},
   "devDependencies": {
     "@rollup/plugin-commonjs": "^13.0.0",
-    "@types/jest": "^25.1.4",
+    "@types/jest": "^25.2.3",
     "ndjson": "^1.5.0",
-    "tsdx": "^0.13.1",
-    "tslib": "^1.11.1",
-    "typescript": "^3.8.3"
+    "tsdx": "^0.13.2",
+    "tslib": "^1.13.0",
+    "typescript": "^3.9.5"
   },
   "jest": {
     "testEnvironment": "node",
