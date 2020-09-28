@@ -160,6 +160,10 @@ export const operators: {[key in GroqOperator]: GroqOperatorFn} = {
       return new StaticValue((await a.get()) + (await b.get()))
     }
 
+    if (aType === 'array' && bType === 'array') {
+      return new StaticValue((await a.get()).concat(await b.get()))
+    }
+
     return NULL_VALUE
   },
 
