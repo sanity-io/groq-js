@@ -272,22 +272,20 @@ const EXECUTORS: ExecutorMap = {
 
   async Projection({base, query}: NodeTypes.ProjectionNode, scope: Scope) {
     let baseValue = await execute(base, scope)
-    return inMapper(baseValue, async baseValue => {
-      if (baseValue.getType() === 'null') return NULL_VALUE
+    if (baseValue.getType() === 'null') return NULL_VALUE
 
-      if (baseValue.getType() === 'array') {
-        return new StreamValue(async function*() {
-          for await (let value of baseValue) {
-            let newScope = scope.createNested(value)
-            let newValue = await execute(query, newScope)
-            yield newValue
-          }
-        })
-      }
+    if (baseValue.getType() === 'array') {
+      return new StreamValue(async function*() {
+        for await (let value of baseValue) {
+          let newScope = scope.createNested(value)
+          let newValue = await execute(query, newScope)
+          yield newValue
+        }
+      })
+    }
 
-      let newScope = scope.createNested(baseValue)
-      return await execute(query, newScope)
-    })
+    let newScope = scope.createNested(baseValue)
+    return await execute(query, newScope)
   },
 
   async Deref({base}: NodeTypes.DerefNode, scope: Scope) {
