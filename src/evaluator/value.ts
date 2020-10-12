@@ -19,6 +19,7 @@ export function getType(data: any): GroqValueName {
   if (data === null || typeof data === 'undefined') return 'null'
   if (Array.isArray(data)) return 'array'
   if (data instanceof Range) return 'range'
+  if (data instanceof Pair) return 'pair'
   if (data instanceof Path) return 'path'
   return typeof data as GroqValueName
 }
