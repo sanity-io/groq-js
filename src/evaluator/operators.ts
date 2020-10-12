@@ -164,6 +164,10 @@ export const operators: {[key in GroqOperator]: GroqOperatorFn} = {
       return new StaticValue((await a.get()).concat(await b.get()))
     }
 
+    if (aType === 'object' && bType === 'object') {
+      return new StaticValue({...(await a.get()), ...(await b.get())})
+    }
+
     return NULL_VALUE
   },
 
