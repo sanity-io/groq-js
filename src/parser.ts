@@ -471,7 +471,23 @@ const BUILDER: {[key in MarkName]?: NodeBuilder} = {
     let base = p.process()
     let name = p.processString()
     let args: NodeTypes.SyntaxNode[] = []
-    while (p.getMark().name !== 'func_args_end') {
+
+    while (true) {
+      let markName = p.getMark().name
+      if (markName === 'func_args_end') break
+
+      if (name === 'order') {
+        if (markName === 'asc') {
+          p.shift()
+          args.push({type: 'Asc', base: p.process()})
+          continue
+        } else if (markName === 'desc') {
+          p.shift()
+          args.push({type: 'Desc', base: p.process()})
+          continue
+        }
+      }
+
       args.push(p.process())
     }
     p.shift()
@@ -520,21 +536,11 @@ const BUILDER: {[key in MarkName]?: NodeBuilder} = {
   },
 
   asc(p): NodeTypes.AscNode {
-    let base = p.process()
-
-    return {
-      type: 'Asc',
-      base
-    }
+    throw new GroqQueryError('unexpected asc')
   },
 
   desc(p): NodeTypes.DescNode {
-    let base = p.process()
-
-    return {
-      type: 'Desc',
-      base
-    }
+    throw new GroqQueryError('unexpected desc')
   },
 
   param(p): NodeTypes.ParameterNode {
