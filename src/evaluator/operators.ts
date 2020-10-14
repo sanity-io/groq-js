@@ -3,6 +3,7 @@ import {StaticValue, TRUE_VALUE, FALSE_VALUE, NULL_VALUE, fromNumber, Value} fro
 import {isEqual} from './equality'
 import {partialCompare} from './ordering'
 import {Scope, Executor} from './'
+import {gatherText, Token, Pattern, matchText, matchTokenize, matchAnalyzePattern} from './matching'
 
 type GroqOperator =
   | '=='
@@ -129,23 +130,19 @@ export const operators: {[key in GroqOperator]: GroqOperatorFn} = {
     let text = await execute(left, scope)
     let pattern = await execute(right, scope)
 
-    let tokens: string[] = []
-    let patterns: string[] = []
+    let tokens: Token[] = []
+    let patterns: Pattern[] = []
 
-    let didSucceed = await gatherText(text, part => {
-      tokens = tokens.concat(part.match(/[A-Za-z0-9]+/g) as string[])
+    await gatherText(text, part => {
+      tokens = tokens.concat(matchTokenize(part))
     })
-    if (!didSucceed) return NULL_VALUE
 
-    didSucceed = await gatherText(pattern, part => {
-      patterns = patterns.concat(part.match(/[A-Za-z0-9*]+/g) as string[])
+    let didSucceed = await gatherText(pattern, part => {
+      patterns = patterns.concat(matchAnalyzePattern(part))
     })
-    if (!didSucceed) return NULL_VALUE
+    if (!didSucceed) return FALSE_VALUE
 
-    let matched = patterns.every(p => {
-      let regexp = new RegExp('^' + p.replace('*', '.*') + '$', 'i')
-      return tokens.some(token => regexp.test(token))
-    })
+    let matched = matchText(tokens, patterns)
 
     return matched ? TRUE_VALUE : FALSE_VALUE
   },
@@ -192,24 +189,4 @@ function numericOperator(impl: (a: number, b: number) => number): GroqOperatorFn
 
     return NULL_VALUE
   }
-}
-
-async function gatherText(value: Value, cb: (str: string) => void) {
-  switch (value.getType()) {
-    case 'string':
-      cb(await value.get())
-      return true
-
-    case 'array':
-      for await (let part of value) {
-        if (part.getType() === 'string') {
-          cb(await part.get())
-        } else {
-          return false
-        }
-      }
-      return true
-  }
-
-  return false
 }
