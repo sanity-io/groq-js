@@ -61,6 +61,10 @@ export class StaticValue<P = any> {
   }
 }
 
+export const NULL_VALUE = new StaticValue(null)
+export const TRUE_VALUE = new StaticValue(true)
+export const FALSE_VALUE = new StaticValue(false)
+
 /**
  * A StreamValue accepts a generator which yields values.
  */
@@ -247,7 +251,7 @@ export function fromNumber(num: number) {
   if (Number.isFinite(num)) {
     return new StaticValue(num)
   } else {
-    return exports.NULL_VALUE
+    return NULL_VALUE
   }
 }
 
@@ -263,12 +267,8 @@ export function fromJS(val: any) {
       }
     })
   } else if (val === null || val === undefined) {
-    return exports.NULL_VALUE
+    return NULL_VALUE
   } else {
     return new StaticValue(val)
   }
 }
-
-export const NULL_VALUE = new StaticValue(null)
-export const TRUE_VALUE = new StaticValue(true)
-export const FALSE_VALUE = new StaticValue(false)
