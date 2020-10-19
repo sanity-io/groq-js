@@ -145,7 +145,7 @@ function addNextFrame(step, frame) {
   }
 }
 
-function recognize(input) {
+export function recognize(input) {
   var frames = initialFrames;
 
   var i = 0;
@@ -180,7 +180,7 @@ function flattenMarks(marks) {
   return result;
 }
 
-function parse(input) {
+export function parse(input) {
   var frames = initialFrames;
 
   var i = 0;
@@ -2771,5 +2771,3 @@ ruleInitialStates["EXPR^7"] = [state260];
 ruleInitialStates["EXPR^9"] = [state280];
 ruleInitialStates["EXPR^11"] = [state289];
 
-exports.recognize = recognize;
-exports.parse = parse;
