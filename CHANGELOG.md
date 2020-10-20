@@ -1,5 +1,20 @@
 # Changelog
 
+## v0.2.0 - 2020-10-20
+
+- Require native generators (@rexxars)
+- Support concatenation of arrays (@rexxars)
+- Correctly fail on invalid asc/desc (@judofyr)
+- Projection should not be mapped inside traversals (@judofyr)
+- getType: Detect Pair correctly (@judofyr)
+- Add support for object merging (@judofyr)
+- Improve match semantics (@judofyr)
+- Fix ESM build (@rexxars)
+
+## v0.1.8 - 2020-09-27
+
+- Upgrade dependencies (@rexxars)
+
 ## v0.1.7 - 2020-06-15
 
 - Fix build so that it includes rawParser (@judofyr)
