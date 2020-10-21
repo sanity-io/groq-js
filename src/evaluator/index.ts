@@ -15,14 +15,64 @@ import {
 import {functions, pipeFunctions} from './functions'
 import {operators} from './operators'
 
-function inMapper(value: Value, fn: (value: Value) => Value | PromiseLike<Value>) {
+function mapExplicit(value: Value, fn: (value: Value) => Value | PromiseLike<Value>) {
+  if (value instanceof MapperValue) {
+    if (value.implicit) return fn(value.value)
+
+    return new MapperValue(
+      new StreamValue(async function*() {
+        for await (let elementValue of value) {
+          yield await fn(elementValue)
+        }
+      }),
+      false
+    )
+  } else {
+    return fn(value)
+  }
+}
+
+function mapArray(value: Value, fn: (value: Value) => Value | PromiseLike<Value>) {
+  if (value instanceof MapperValue) {
+    if (value.implicit) {
+      let inner = fn(value.value)
+      if ('then' in inner) {
+        return new MapperValue(
+          new StreamValue(async function*() {
+            let values = await inner
+            for await (let elementValue of values) {
+              yield elementValue
+            }
+          }),
+          true
+        )
+      } else {
+        return new MapperValue(inner, true)
+      }
+    }
+
+    return new MapperValue(
+      new StreamValue(async function*() {
+        for await (let elementValue of value) {
+          yield await fn(elementValue)
+        }
+      }),
+      false
+    )
+  } else {
+    return fn(value)
+  }
+}
+
+function mapImplicit(value: Value, fn: (value: Value) => Value | PromiseLike<Value>) {
   if (value instanceof MapperValue) {
     return new MapperValue(
       new StreamValue(async function*() {
         for await (let elementValue of value) {
           yield await fn(elementValue)
         }
-      })
+      }),
+      value.implicit
     )
   } else {
     return fn(value)
@@ -37,6 +87,8 @@ export class Scope {
   public timestamp: string
 
   constructor(params: {[key: string]: any}, source: any, value: Value, parent: Scope | null) {
+    if (source.getType() === 'array') source = new MapperValue(source, true)
+
     this.params = params
     this.source = source
     this.value = value
@@ -135,7 +187,7 @@ const EXECUTORS: ExecutorMap = {
   async Filter({base, query}: NodeTypes.FilterNode, scope: Scope) {
     let baseValue = await execute(base, scope)
 
-    return inMapper(baseValue, async value => {
+    return mapArray(baseValue, value => {
       if (value.getType() !== 'array') return NULL_VALUE
 
       return new StreamValue(async function*() {
@@ -151,7 +203,7 @@ const EXECUTORS: ExecutorMap = {
   async Element({base, index}: NodeTypes.ElementNode, scope: Scope) {
     let baseValue = await execute(base, scope)
 
-    return inMapper(baseValue, async arrayValue => {
+    return mapExplicit(baseValue, async arrayValue => {
       if (arrayValue.getType() !== 'array') return NULL_VALUE
 
       let idxValue = await execute(index, scope)
@@ -177,7 +229,7 @@ const EXECUTORS: ExecutorMap = {
   async Slice({base, left, right, isExclusive}: NodeTypes.SliceNode, scope: Scope) {
     let baseValue = await execute(base, scope)
 
-    return inMapper(baseValue, async arrayValue => {
+    return mapArray(baseValue, async arrayValue => {
       if (arrayValue.getType() !== 'array') return NULL_VALUE
 
       let leftIdxValue = await execute(left, scope)
@@ -212,7 +264,7 @@ const EXECUTORS: ExecutorMap = {
   async Attribute({base, name}: NodeTypes.AttributeNode, scope: Scope) {
     let baseValue = await execute(base, scope)
 
-    return inMapper(baseValue, async value => {
+    return mapImplicit(baseValue, async value => {
       if (value.getType() === 'object') {
         let data = await value.get()
         if (data.hasOwnProperty(name)) {
@@ -244,6 +296,8 @@ const EXECUTORS: ExecutorMap = {
     if (baseValue.getType() !== 'array') return baseValue
 
     if (baseValue instanceof MapperValue) {
+      if (baseValue.implicit) return new MapperValue(baseValue.value, false)
+
       return new MapperValue(
         new StreamValue(async function*() {
           for await (let element of baseValue) {
@@ -255,10 +309,11 @@ const EXECUTORS: ExecutorMap = {
               yield NULL_VALUE
             }
           }
-        })
+        }),
+        false
       )
     } else {
-      return new MapperValue(baseValue)
+      return new MapperValue(baseValue, false)
     }
   },
 
@@ -274,23 +329,16 @@ const EXECUTORS: ExecutorMap = {
     let baseValue = await execute(base, scope)
     if (baseValue.getType() === 'null') return NULL_VALUE
 
-    if (baseValue.getType() === 'array') {
-      return new StreamValue(async function*() {
-        for await (let value of baseValue) {
-          let newScope = scope.createNested(value)
-          let newValue = await execute(query, newScope)
-          yield newValue
-        }
-      })
-    }
-
-    let newScope = scope.createNested(baseValue)
-    return await execute(query, newScope)
+    return mapImplicit(baseValue, async value => {
+      let newScope = scope.createNested(value)
+      let newValue = await execute(query, newScope)
+      return newValue
+    })
   },
 
   async Deref({base}: NodeTypes.DerefNode, scope: Scope) {
     let baseValue = await execute(base, scope)
-    return inMapper(baseValue, async baseValue => {
+    return mapImplicit(baseValue, async baseValue => {
       if (scope.source.getType() !== 'array') return NULL_VALUE
       if (baseValue.getType() !== 'object') return NULL_VALUE
 
@@ -352,20 +400,23 @@ const EXECUTORS: ExecutorMap = {
   },
 
   Array({elements}: NodeTypes.ArrayNode, scope: Scope) {
-    return new StreamValue(async function*() {
-      for (let element of elements) {
-        let value = await execute(element.value, scope)
-        if (element.isSplat) {
-          if (value.getType() === 'array') {
-            for await (let v of value) {
-              yield v
+    return new MapperValue(
+      new StreamValue(async function*() {
+        for (let element of elements) {
+          let value = await execute(element.value, scope)
+          if (element.isSplat) {
+            if (value.getType() === 'array') {
+              for await (let v of value) {
+                yield v
+              }
             }
+          } else {
+            yield value
           }
-        } else {
-          yield value
         }
-      }
-    })
+      }),
+      true
+    )
   },
 
   async Range({left, right, isExclusive}: NodeTypes.RangeNode, scope: Scope) {

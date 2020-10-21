@@ -143,9 +143,11 @@ export class StreamValue {
 
 export class MapperValue {
   public value: Value
+  public implicit: boolean
 
-  constructor(value: Value) {
+  constructor(value: Value, implicit: boolean) {
     this.value = value
+    this.implicit = implicit
   }
 
   getType() {
