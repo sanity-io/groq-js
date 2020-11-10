@@ -139,6 +139,23 @@ functions.select = async function select(args, scope, execute) {
   return NULL_VALUE
 }
 
+functions.string = async function string(args, scope, execute) {
+  let value = await execute(args[0], scope)
+  switch (value.getType()) {
+    case 'array':
+      return new StaticValue((await value.get()).join(','));
+    case 'object':
+      return new StaticValue(JSON.stringify(await value.get()));
+    case 'number':
+    case 'string':
+    case 'boolean':
+      return new StaticValue('' + await value.get());
+    default:
+      return NULL_VALUE;
+  }
+}
+functions.string.arity = 1
+
 functions.references = async function references(args, scope, execute) {
   let idValue = await execute(args[0], scope)
   if (idValue.getType() !== 'string') return FALSE_VALUE

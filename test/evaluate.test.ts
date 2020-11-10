@@ -15,6 +15,19 @@ describe('Basic parsing', () => {
     expect(data).toStrictEqual([{name: 'T-shirt'}, {name: 'Pants'}])
   })
 
+  test('String function', async () => {
+    let dataset = [
+      {_type: 'color', color: 'red', shade: 500, rgb: { r: 255, g: 0, b: 0 }},
+      {_type: 'color', color: 'green', shade: 500, rgb: { r: 0, g: 255, b: 0 }},
+    ]
+    let query = `*[_type == "color"]{ "class": color + "-" + string(shade + 100), "rgb": string(rgb) }`
+    let tree = parse(query)
+
+    let value = await evaluate(tree, {dataset})
+    let data = await value.get()
+    expect(data).toStrictEqual([{ class: 'red-600', rgb: "{\"r\":255,\"g\":0,\"b\":0}" }, { class: 'green-600', rgb: "{\"r\":0,\"g\":255,\"b\":0}" }])
+  })
+
   test('Controlling this', async () => {
     let query = `@`
     let tree = parse(query)
