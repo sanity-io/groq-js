@@ -98,6 +98,14 @@ functions.length = async function length(args, scope, execute) {
     return fromNumber(countUTF8(data))
   }
 
+  if (inner.getType() === 'array') {
+    let num = 0
+    for await (let _ of inner) {
+      num++
+    }
+    return new StaticValue(num)
+  }
+
   return NULL_VALUE
 }
 functions.length.arity = 1
