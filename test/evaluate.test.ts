@@ -25,7 +25,7 @@ describe('Basic parsing', () => {
 
     let value = await evaluate(tree, {dataset})
     let data = await value.get()
-    expect(data).toStrictEqual([{ class: 'red-600', rgb: "{\"r\":255,\"g\":0,\"b\":0}" }, { class: 'green-600', rgb: "{\"r\":0,\"g\":255,\"b\":0}" }])
+    expect(data).toStrictEqual([{ class: 'red-600' }, { class: 'green-600' }])
   })
 
   test('Controlling this', async () => {

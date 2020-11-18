@@ -142,10 +142,6 @@ functions.select = async function select(args, scope, execute) {
 functions.string = async function string(args, scope, execute) {
   let value = await execute(args[0], scope)
   switch (value.getType()) {
-    case 'array':
-      return new StaticValue((await value.get()).join(','));
-    case 'object':
-      return new StaticValue(JSON.stringify(await value.get()));
     case 'number':
     case 'string':
     case 'boolean':
