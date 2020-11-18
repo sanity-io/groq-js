@@ -218,24 +218,27 @@ pipeFunctions.order = async function order(base, args, scope, execute) {
   }
 
   let aux = []
+  let idx = 0
 
   for await (let value of base) {
     let newScope = scope.createNested(value)
-    let tuple = [await value.get()]
+    let tuple = [await value.get(), idx]
     for (let i = 0; i < n; i++) {
       let result = await execute(mappers[i], newScope)
       tuple.push(await result.get())
     }
     aux.push(tuple)
+    idx++
   }
 
   aux.sort((aTuple, bTuple) => {
     for (let i = 0; i < n; i++) {
-      let c = totalCompare(aTuple[i + 1], bTuple[i + 1])
+      let c = totalCompare(aTuple[i + 2], bTuple[i + 2])
       if (directions[i] === 'desc') c = -c
       if (c !== 0) return c
     }
-    return 0
+    // Fallback to sorting on the original index for stable sorting.
+    return aTuple[1] - bTuple[1]
   })
 
   return new StaticValue(aux.map(v => v[0]))
