@@ -66,7 +66,7 @@ describe('Basic parsing', () => {
     let tree = parse(query)
     let value = await evaluate(tree, {dataset})
     let data = await value.get()
-    expect(data).toStrictEqual([{}])
+    expect(data).toStrictEqual([{person: null}])
   })
 
   test('Slices', async () => {

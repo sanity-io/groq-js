@@ -317,11 +317,6 @@ const EXECUTORS: ExecutorMap = {
           if (key.getType() !== 'string') continue
 
           let value = await execute(attr.value, scope)
-          if (value.getType() === 'null') {
-            delete result[key.data]
-            break
-          }
-
           result[key.data] = await value.get()
           break
         }
