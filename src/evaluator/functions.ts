@@ -12,17 +12,19 @@ import {
   Value
 } from './value'
 
-function hasReference(value: any, id: string): boolean {
+function hasReference(value: any, pathSet: Set<string>): boolean {
   switch (getType(value)) {
     case 'array':
       for (let v of value) {
-        if (hasReference(v, id)) return true
+        if (hasReference(v, pathSet)) return true
       }
       break
     case 'object':
-      if (value._ref === id) return true
+      if (value._ref) {
+        return pathSet.has(value._ref)
+      }
       for (let v of Object.values(value)) {
-        if (hasReference(v, id)) return true
+        if (hasReference(v, pathSet)) return true
       }
       break
   }
@@ -161,14 +163,29 @@ functions.string = async function string(args, scope, execute) {
 functions.string.arity = 1
 
 functions.references = async function references(args, scope, execute) {
-  let idValue = await execute(args[0], scope)
-  if (idValue.getType() !== 'string') return FALSE_VALUE
+  let pathSet = new Set<string>()
+  for (let arg of args) {
+    let path = await execute(arg, scope)
+    switch (path.getType()) {
+      case 'string':
+        pathSet.add(await path.get())
+        break
+      case 'array':
+        for await (let elem of path) {
+          if (elem.getType() === 'string') {
+            pathSet.add(await elem.get())
+          }
+        }
+        break
+    }
+  }
 
-  let id = await idValue.get()
-  let scopeValue = scope.value
-  return hasReference(scopeValue, id) ? TRUE_VALUE : FALSE_VALUE
+  if (pathSet.size === 0) return FALSE_VALUE
+
+  let scopeValue = await scope.value.get()
+  return hasReference(scopeValue, pathSet) ? TRUE_VALUE : FALSE_VALUE
 }
-functions.references.arity = 1
+functions.references.arity = c => c >= 1
 
 functions.round = async function round(args, scope, execute) {
   let value = await execute(args[0], scope)
