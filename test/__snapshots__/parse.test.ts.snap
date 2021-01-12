@@ -1,41 +1,176 @@
 // Jest Snapshot v1, https://goo.gl/fbAQLP
 
+exports[`Array traversal Example query 1`] = `
+Object {
+  "base": Object {
+    "type": "Star",
+  },
+  "mapper": Object {
+    "mappers": Array [
+      Object {
+        "isExclusive": false,
+        "left": Object {
+          "type": "Value",
+          "value": 0,
+        },
+        "right": Object {
+          "type": "Value",
+          "value": 5,
+        },
+        "type": "Slice",
+      },
+      Object {
+        "mapper": Object {
+          "mappers": Array [
+            Object {
+              "expr": Object {
+                "attributes": Array [
+                  Object {
+                    "key": Object {
+                      "type": "Value",
+                      "value": "a",
+                    },
+                    "type": "ObjectAttribute",
+                    "value": Object {
+                      "name": "a",
+                      "type": "Identifier",
+                    },
+                  },
+                ],
+                "type": "Object",
+              },
+              "type": "Projection",
+            },
+            Object {
+              "key": "a",
+              "type": "Attribute",
+            },
+            Object {
+              "type": "Deref",
+            },
+            Object {
+              "key": "b",
+              "type": "Attribute",
+            },
+            Object {
+              "key": "c",
+              "type": "Attribute",
+            },
+            Object {
+              "mappers": Array [
+                Object {
+                  "expr": Object {
+                    "left": Object {
+                      "name": "d",
+                      "type": "Identifier",
+                    },
+                    "op": ">",
+                    "right": Object {
+                      "type": "Value",
+                      "value": 1,
+                    },
+                    "type": "OpCall",
+                  },
+                  "type": "Filter",
+                },
+                Object {
+                  "expr": Object {
+                    "left": Object {
+                      "name": "c",
+                      "type": "Identifier",
+                    },
+                    "op": ">",
+                    "right": Object {
+                      "type": "Value",
+                      "value": 2,
+                    },
+                    "type": "OpCall",
+                  },
+                  "type": "Filter",
+                },
+                Object {
+                  "mapper": Object {
+                    "mappers": Array [
+                      Object {
+                        "key": "foo",
+                        "type": "Attribute",
+                      },
+                      Object {
+                        "key": "baz",
+                        "type": "Attribute",
+                      },
+                    ],
+                    "type": "Compound",
+                  },
+                  "type": "Apply",
+                },
+              ],
+              "type": "Compound",
+            },
+          ],
+          "type": "Compound",
+        },
+        "type": "Apply",
+      },
+    ],
+    "type": "Compound",
+  },
+  "type": "Map",
+}
+`;
+
 exports[`Basic parsing Example query 1`] = `
 Object {
   "base": Object {
-    "base": Object {
-      "type": "Star",
-    },
-    "query": Object {
-      "left": Object {
-        "name": "_type",
-        "type": "Identifier",
-      },
-      "op": "==",
-      "right": Object {
-        "type": "Value",
-        "value": "product",
-      },
-      "type": "OpCall",
-    },
-    "type": "Filter",
+    "type": "Star",
   },
-  "query": Object {
-    "attributes": Array [
+  "mapper": Object {
+    "mappers": Array [
       Object {
-        "key": Object {
-          "type": "Value",
-          "value": "name",
+        "expr": Object {
+          "left": Object {
+            "name": "_type",
+            "type": "Identifier",
+          },
+          "op": "==",
+          "right": Object {
+            "type": "Value",
+            "value": "product",
+          },
+          "type": "OpCall",
         },
-        "type": "ObjectAttribute",
-        "value": Object {
-          "name": "name",
-          "type": "Identifier",
+        "type": "Filter",
+      },
+      Object {
+        "mapper": Object {
+          "mappers": Array [
+            Object {
+              "expr": Object {
+                "attributes": Array [
+                  Object {
+                    "key": Object {
+                      "type": "Value",
+                      "value": "name",
+                    },
+                    "type": "ObjectAttribute",
+                    "value": Object {
+                      "name": "name",
+                      "type": "Identifier",
+                    },
+                  },
+                ],
+                "type": "Object",
+              },
+              "type": "Projection",
+            },
+          ],
+          "type": "Compound",
         },
+        "type": "Apply",
       },
     ],
-    "type": "Object",
+    "type": "Compound",
   },
-  "type": "Projection",
+  "type": "Map",
 }
 `;

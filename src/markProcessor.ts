@@ -1,4 +1,5 @@
-import {NodeBuilder} from './parser'
+import {MapState} from './mapHelpers'
+import {GroqParseOptions, NodeBuilder} from './parser'
 
 export type MarkName =
   | 'add'
@@ -61,11 +62,17 @@ export class MarkProcessor {
   private marks: Mark[]
   private index: number
 
-  constructor(visitor: MarkVisitor, string: string, marks: Mark[]) {
+  options: GroqParseOptions
+
+  prevMapState?: MapState
+  nextMapState?: MapState
+
+  constructor(visitor: MarkVisitor, string: string, marks: Mark[], options: GroqParseOptions) {
     this.visitor = visitor
     this.string = string
     this.marks = marks
     this.index = 0
+    this.options = options
   }
 
   hasMark(pos = 0) {
@@ -85,7 +92,10 @@ export class MarkProcessor {
     this.shift()
     let func = this.visitor[mark.name]
     if (!func) throw new Error('Unknown handler: ' + mark.name)
-    return func.call(this.visitor, this, mark)
+    let result = func.call(this.visitor, this, mark)
+    this.prevMapState = this.nextMapState
+    this.nextMapState = undefined
+    return result
   }
 
   processString() {

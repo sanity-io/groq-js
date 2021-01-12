@@ -8,6 +8,14 @@ describe('Basic parsing', () => {
   })
 })
 
+describe('Array traversal', () => {
+  test('Example query', () => {
+    let query = `*[0..5]{a}.a->b.c[d>1][c>2].foo.baz`
+    let tree = parse(query)
+    expect(tree).toMatchSnapshot()
+  })
+})
+
 describe('Error reporting', () => {
   test('Query with syntax error', () => {
     let query = `*[_type == "]`

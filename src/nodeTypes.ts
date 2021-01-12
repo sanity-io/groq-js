@@ -5,14 +5,11 @@ export type SyntaxNode =
   | ArrayNode
   | ArrayElementNode
   | AscNode
-  | AttributeNode
-  | DerefNode
   | DescNode
   | ElementNode
-  | FilterNode
   | FuncCallNode
   | IdentifierNode
-  | MapperNode
+  | MapNode
   | NegNode
   | NotNode
   | ObjectNode
@@ -27,48 +24,14 @@ export type SyntaxNode =
   | ParenthesisNode
   | PipeFuncCallNode
   | PosNode
-  | ProjectionNode
   | RangeNode
-  | SliceNode
   | StarNode
   | ThisNode
   | ValueNode
 
 export type OpCall = '+' | '-' | '*' | '/' | '%' | '**'
 
-export type NodeName =
-  | 'And'
-  | 'Array'
-  | 'ArrayElement'
-  | 'Asc'
-  | 'Attribute'
-  | 'Deref'
-  | 'Desc'
-  | 'Element'
-  | 'Filter'
-  | 'FuncCall'
-  | 'Identifier'
-  | 'Mapper'
-  | 'Neg'
-  | 'Not'
-  | 'Object'
-  | 'ObjectAttribute'
-  | 'ObjectConditionalSplat'
-  | 'ObjectSplat'
-  | 'OpCall'
-  | 'Or'
-  | 'Pair'
-  | 'Parameter'
-  | 'Parent'
-  | 'Parenthesis'
-  | 'PipeFuncCall'
-  | 'Pos'
-  | 'Projection'
-  | 'Range'
-  | 'Slice'
-  | 'Star'
-  | 'This'
-  | 'Value'
+export type NodeName = SyntaxNode['type']
 
 export interface AndNode {
   type: 'And'
@@ -92,17 +55,6 @@ export interface AscNode {
   base: SyntaxNode
 }
 
-export interface AttributeNode {
-  type: 'Attribute'
-  base: SyntaxNode
-  name: string
-}
-
-export interface DerefNode {
-  type: 'Deref'
-  base: SyntaxNode
-}
-
 export interface DescNode {
   type: 'Desc'
   base: SyntaxNode
@@ -112,12 +64,6 @@ export interface ElementNode {
   type: 'Element'
   base: SyntaxNode
   index: ValueNode
-}
-
-export interface FilterNode {
-  type: 'Filter'
-  base: SyntaxNode
-  query: SyntaxNode
 }
 
 export interface FuncCallNode {
@@ -132,9 +78,10 @@ export interface IdentifierNode {
   name: string
 }
 
-export interface MapperNode {
-  type: 'Mapper'
+export interface MapNode {
+  type: 'Map'
   base: SyntaxNode
+  mapper: Mapper
 }
 
 export interface NegNode {
@@ -216,22 +163,8 @@ export interface PosNode {
   base: SyntaxNode
 }
 
-export interface ProjectionNode {
-  type: 'Projection'
-  base: SyntaxNode
-  query: SyntaxNode
-}
-
 export interface RangeNode {
   type: 'Range'
-  left: ValueNode<number>
-  right: ValueNode<number>
-  isExclusive: boolean
-}
-
-export interface SliceNode {
-  type: 'Slice'
-  base: SyntaxNode
   left: ValueNode<number>
   right: ValueNode<number>
   isExclusive: boolean
@@ -248,4 +181,49 @@ export interface ThisNode {
 export interface ValueNode<P = any> {
   type: 'Value'
   value: P
+}
+
+export type Mapper =
+  | ApplyMapper
+  | AttributeMapper
+  | DerefMapper
+  | CompoundMapper
+  | FilterMapper
+  | ProjectionMapper
+  | SliceMapper
+
+export interface ApplyMapper {
+  type: 'Apply'
+  mapper: Mapper
+}
+
+export interface AttributeMapper {
+  type: 'Attribute'
+  key: string
+}
+
+export interface DerefMapper {
+  type: 'Deref'
+}
+
+export interface SliceMapper {
+  type: 'Slice'
+  left: SyntaxNode
+  right: SyntaxNode
+  isExclusive: boolean
+}
+
+export interface ProjectionMapper {
+  type: 'Projection'
+  expr: SyntaxNode
+}
+
+export interface FilterMapper {
+  type: 'Filter'
+  expr: SyntaxNode
+}
+
+export interface CompoundMapper {
+  type: 'Compound'
+  mappers: Mapper[]
 }

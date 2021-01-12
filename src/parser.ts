@@ -2,6 +2,7 @@ import * as NodeTypes from './nodeTypes'
 import {Mark, MarkProcessor, MarkVisitor, MarkName} from './markProcessor'
 import {functions, GroqFunctionArity, pipeFunctions} from './evaluator/functions'
 import {parse as rawParse} from './rawParser'
+import {addMapper, switchMapState} from './mapHelpers'
 
 function isValueNode(node: NodeTypes.SyntaxNode): node is NodeTypes.ValueNode {
   return node.type === 'Value'
@@ -67,10 +68,9 @@ const BUILDER: {[key in MarkName]?: NodeBuilder} = {
     }
   },
 
-  filter(
-    p
-  ): NodeTypes.ElementNode | NodeTypes.AttributeNode | NodeTypes.SliceNode | NodeTypes.FilterNode {
-    let base = p.process()
+  filter(p): NodeTypes.SyntaxNode {
+    let base = p.process() as NodeTypes.SyntaxNode
+    let prevMapState = p.prevMapState
     let query = p.process()
 
     if (isNumber(query)) {
@@ -81,43 +81,49 @@ const BUILDER: {[key in MarkName]?: NodeBuilder} = {
       }
     }
 
-    if (isString(query)) {
-      return {
-        type: 'Attribute',
-        base,
-        name: query.value
-      }
-    }
+    let mapState = (p.nextMapState = switchMapState(base, prevMapState, 'array'))
 
-    if (query.type === 'Range') {
-      return {
+    if (isString(query)) {
+      addMapper(mapState, {
+        type: 'Attribute',
+        key: query.value
+      })
+    } else if (query.type === 'Range') {
+      addMapper(mapState, {
         type: 'Slice',
-        base,
         left: query.left,
         right: query.right,
         isExclusive: query.isExclusive
-      }
+      })
+    } else {
+      addMapper(mapState, {
+        type: 'Filter',
+        expr: query
+      })
     }
 
-    return {
-      type: 'Filter',
-      base,
-      query
-    }
+    return mapState.base
   },
 
-  project(p): NodeTypes.ProjectionNode {
-    let base = p.process()
-    let query = p.process()
-    return {
-      type: 'Projection',
-      base,
-      query
-    }
+  project(p): NodeTypes.SyntaxNode {
+    let base = p.process() as NodeTypes.SyntaxNode
+    let prevMapState = p.prevMapState
+    let expr = p.process()
+
+    let mapState = (p.nextMapState = switchMapState(base, prevMapState, 'simple'))
+    addMapper(mapState, {type: 'Projection', expr})
+    return mapState.base
   },
 
-  star(): NodeTypes.StarNode {
-    return {type: 'Star'}
+  star(p): NodeTypes.SyntaxNode {
+    let base: NodeTypes.SyntaxNode = {type: 'Star'}
+
+    if (p.options.datasetIsArray) {
+      let mapState = (p.nextMapState = switchMapState(base, undefined, 'array'))
+      base = mapState.base
+    }
+
+    return base
   },
 
   this(): NodeTypes.ThisNode {
@@ -152,23 +158,21 @@ const BUILDER: {[key in MarkName]?: NodeBuilder} = {
     }
   },
 
-  attr_ident(p): NodeTypes.AttributeNode {
-    let base = p.process()
-    let name = p.processString()
+  attr_ident(p): NodeTypes.SyntaxNode {
+    let base = p.process() as NodeTypes.SyntaxNode
+    let prevMapState = p.prevMapState
+    let key = p.processString()
 
-    return {
-      type: 'Attribute',
-      base,
-      name
-    }
+    let mapState = (p.nextMapState = switchMapState(base, prevMapState, 'simple'))
+    addMapper(mapState, {type: 'Attribute', key})
+    return mapState.base
   },
 
-  arr_expr(p): NodeTypes.MapperNode {
-    let base = p.process()
-    return {
-      type: 'Mapper',
-      base
-    }
+  arr_expr(p): NodeTypes.SyntaxNode {
+    let base = p.process() as NodeTypes.SyntaxNode
+    let prevMapState = p.prevMapState
+    let mapState = (p.nextMapState = switchMapState(base, prevMapState, 'array'))
+    return mapState.base
   },
 
   inc_range(p): NodeTypes.RangeNode {
@@ -291,22 +295,23 @@ const BUILDER: {[key in MarkName]?: NodeBuilder} = {
     }
   },
 
-  deref(p): NodeTypes.DerefNode | NodeTypes.AttributeNode {
+  deref(p): NodeTypes.SyntaxNode {
     let base = p.process()
+    let prevMapState = p.prevMapState
 
     let nextMark = p.getMark()
-    let result: NodeTypes.DerefNode = {type: 'Deref', base}
+    let name: string | undefined = undefined
 
     if (nextMark && nextMark.name === 'deref_field') {
-      let name = p.processString()
-      return {
-        type: 'Attribute',
-        base: result,
-        name
-      }
+      name = p.processString()
     }
 
-    return result
+    let mapState = (p.nextMapState = switchMapState(base, prevMapState, 'simple'))
+    addMapper(mapState, {type: 'Deref'})
+    if (name !== undefined) {
+      addMapper(mapState, {type: 'Attribute', key: name})
+    }
+    return mapState.base
   },
 
   comp(p): NodeTypes.OpCallNode {
@@ -553,16 +558,9 @@ const BUILDER: {[key in MarkName]?: NodeBuilder} = {
   }
 }
 
-type NestedPropertyType =
-  | NodeTypes.IdentifierNode
-  | NodeTypes.DerefNode
-  | NodeTypes.ProjectionNode
-  | NodeTypes.MapperNode
-  | NodeTypes.FilterNode
-  | NodeTypes.ElementNode
-  | NodeTypes.SliceNode
+type NestedPropertyType = NodeTypes.IdentifierNode | NodeTypes.MapNode | NodeTypes.ElementNode
 
-const NESTED_PROPERTY_TYPES = ['Deref', 'Projection', 'Mapper', 'Filter', 'Element', 'Slice']
+const NESTED_PROPERTY_TYPES = ['Map', 'Element', 'Slice']
 
 function isNestedPropertyType(node: NodeTypes.SyntaxNode): node is NestedPropertyType {
   return NESTED_PROPERTY_TYPES.includes(node.type)
@@ -604,12 +602,16 @@ class GroqSyntaxError extends Error {
   }
 }
 
+export type GroqParseOptions = {
+  datasetIsArray: boolean
+}
+
 /**
  * Parses a GROQ query and returns a tree structure.
  */
-export function parse(input: string) {
+export function parse(input: string, {datasetIsArray = true}: Partial<GroqParseOptions> = {}) {
   let result = rawParse(input)
   if (result.type === 'error') throw new GroqSyntaxError(result.position)
-  let processor = new MarkProcessor(BUILDER, input, result.marks as Mark[])
+  let processor = new MarkProcessor(BUILDER, input, result.marks as Mark[], {datasetIsArray})
   return processor.process()
 }

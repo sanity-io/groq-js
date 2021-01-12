@@ -75,8 +75,8 @@ describe('Basic parsing', () => {
   test('Non-array documents', async () => {
     let dataset = {data: [{person: {_ref: 'b'}}]}
 
-    let query = `*.data{person->}`
-    let tree = parse(query)
+    let query = `*.data[]{person->}`
+    let tree = parse(query, {datasetIsArray: false})
     let value = await evaluate(tree, {dataset})
     let data = await value.get()
     expect(data).toStrictEqual([{person: null}])

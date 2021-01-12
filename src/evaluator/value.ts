@@ -27,7 +27,7 @@ export function getType(data: any): GroqValueName {
 /**
  * The result of an expression.
  */
-export type Value = StaticValue | StreamValue | MapperValue
+export type Value = StaticValue | StreamValue
 
 export class StaticValue<P = any> {
   private data: P
@@ -138,32 +138,6 @@ export class StreamValue {
     setupTicker()
     fetch()
     return this.ticker
-  }
-}
-
-export class MapperValue {
-  public value: Value
-
-  constructor(value: Value) {
-    this.value = value
-  }
-
-  getType() {
-    return 'array'
-  }
-
-  async get(): Promise<any> {
-    return await this.value.get()
-  }
-
-  [Symbol.asyncIterator]() {
-    const value = this.value as StreamValue
-    const iterator = value[Symbol.asyncIterator]
-    return iterator.call(this.value)
-  }
-
-  getBoolean() {
-    return false
   }
 }
 
