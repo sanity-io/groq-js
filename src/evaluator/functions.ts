@@ -153,9 +153,9 @@ functions.string = async function string(args, scope, execute) {
     case 'number':
     case 'string':
     case 'boolean':
-      return new StaticValue('' + await value.get());
+      return new StaticValue('' + (await value.get()))
     default:
-      return NULL_VALUE;
+      return NULL_VALUE
   }
 }
 functions.string.arity = 1
