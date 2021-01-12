@@ -18,7 +18,8 @@
     "coverage": "tsdx test --coverage",
     "lint": "tsdx lint",
     "prepare": "tsdx build",
-    "prettify": "prettier --write src/**/*.ts"
+    "prettify": "prettier --write src/**/*.ts",
+    "prettify-check": "prettier --check src/**/*.ts"
   },
   "peerDependencies": {},
   "devDependencies": {
