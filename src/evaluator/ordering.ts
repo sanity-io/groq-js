@@ -1,9 +1,10 @@
 import {getType, GroqValueName} from './value'
 
 const TYPE_ORDER: {[key in GroqValueName]?: number} = {
-  number: 1,
-  string: 2,
-  boolean: 3
+  datetime: 1,
+  number: 2,
+  string: 3,
+  boolean: 4
 }
 
 export function partialCompare(a: any, b: any) {
@@ -18,6 +19,8 @@ export function partialCompare(a: any, b: any) {
       return a - b
     case 'string':
       return a < b ? -1 : a > b ? 1 : 0
+    case 'datetime':
+      return a.compareTo(b)
   }
 
   return null

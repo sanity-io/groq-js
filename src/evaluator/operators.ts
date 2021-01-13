@@ -153,6 +153,12 @@ export const operators: {[key in GroqOperator]: GroqOperatorFn} = {
     let aType = a.getType()
     let bType = b.getType()
 
+    if (aType === 'datetime' && bType === 'number') {
+      let dateTime = await a.get()
+      let secs = await b.get()
+      return new StaticValue(dateTime.add(secs))
+    }
+
     if ((aType === 'number' && bType === 'number') || (aType === 'string' && bType === 'string')) {
       return new StaticValue((await a.get()) + (await b.get()))
     }
@@ -168,7 +174,31 @@ export const operators: {[key in GroqOperator]: GroqOperatorFn} = {
     return NULL_VALUE
   },
 
-  '-': numericOperator((a, b) => a - b),
+  '-': async function minus(left, right, scope, execute) {
+    let a = await execute(left, scope)
+    let b = await execute(right, scope)
+    let aType = a.getType()
+    let bType = b.getType()
+
+    if (aType === 'datetime' && bType === 'number') {
+      let dateTime = await a.get()
+      let secs = await b.get()
+      return new StaticValue(dateTime.add(-secs))
+    }
+
+    if (aType === 'datetime' && bType === 'datetime') {
+      let aDateTime = await a.get()
+      let bDateTime = await b.get()
+      return new StaticValue(aDateTime.difference(bDateTime))
+    }
+
+    if (aType === 'number' && bType === 'number') {
+      return new StaticValue((await a.get()) - (await b.get()))
+    }
+
+    return NULL_VALUE
+  },
+
   '*': numericOperator((a, b) => a * b),
   '/': numericOperator((a, b) => a / b),
   '%': numericOperator((a, b) => a % b),

@@ -1,3 +1,5 @@
+import {formatRFC3339, parseRFC3339} from './dateHelpers'
+
 /**
  * A type of a value in GROQ.
  */
@@ -11,6 +13,7 @@ export type GroqValueName =
   | 'range'
   | 'pair'
   | 'path'
+  | 'datetime'
 
 /**
  * Returns the type of the value.
@@ -21,6 +24,7 @@ export function getType(data: any): GroqValueName {
   if (data instanceof Range) return 'range'
   if (data instanceof Pair) return 'pair'
   if (data instanceof Path) return 'path'
+  if (data instanceof DateTime) return 'datetime'
   return typeof data as GroqValueName
 }
 
@@ -249,6 +253,48 @@ export class Path {
 
   toJSON() {
     return this.pattern
+  }
+}
+export class DateTime {
+  date: Date
+
+  constructor(date: Date) {
+    this.date = date
+  }
+
+  static parseToValue(str: string): Value {
+    let date = parseRFC3339(str)
+    if (date) {
+      return new StaticValue(new DateTime(date))
+    } else {
+      return NULL_VALUE
+    }
+  }
+
+  equals(other: DateTime): boolean {
+    return this.date.getTime() == other.date.getTime()
+  }
+
+  add(secs: number): DateTime {
+    let copy = new Date(this.date.getTime())
+    copy.setTime(copy.getTime() + secs * 1000)
+    return new DateTime(copy)
+  }
+
+  difference(other: DateTime): number {
+    return (this.date.getTime() - other.date.getTime()) / 1000
+  }
+
+  compareTo(other: DateTime) {
+    return this.date.getTime() - other.date.getTime()
+  }
+
+  toString() {
+    return formatRFC3339(this.date)
+  }
+
+  toJSON() {
+    return this.toString()
   }
 }
 

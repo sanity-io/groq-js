@@ -9,5 +9,8 @@ async function equality(a: Value, b: Value): Promise<boolean> {
   if (aType === 'number' || aType === 'string' || aType === 'boolean' || aType === 'null') {
     return (await a.get()) === (await b.get())
   }
+  if (aType === 'datetime') {
+    return (await a.get()).equals(await b.get())
+  }
   return false
 }
