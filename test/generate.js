@@ -107,9 +107,6 @@ process.stdin
     }
 
     if (entry._type === 'test') {
-      // TODO: Remove when dateTime functionality is implemented
-      if (/dateTime/.test(entry.query)) return
-
       openStack(`test("${entry.name}", async () => {BODY}, 20000)`)
       write(`let query = ${JSON.stringify(entry.query)}`)
       if (entry.valid) {

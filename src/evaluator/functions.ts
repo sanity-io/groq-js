@@ -9,7 +9,8 @@ import {
   TRUE_VALUE,
   FALSE_VALUE,
   NULL_VALUE,
-  Value
+  Value,
+  DateTime
 } from './value'
 
 function hasReference(value: any, pathSet: Set<string>): boolean {
@@ -80,6 +81,13 @@ functions.count = async function count(args, scope, execute) {
   return new StaticValue(num)
 }
 functions.count.arity = 1
+
+functions.dateTime = async function count(args, scope, execute) {
+  let val = await execute(args[0], scope)
+  if (val.getType() !== 'string') return NULL_VALUE
+  return DateTime.parseToValue(await val.get())
+}
+functions.dateTime.arity = 1
 
 functions.defined = async function defined(args, scope, execute) {
   let inner = await execute(args[0], scope)
@@ -155,6 +163,7 @@ functions.string = async function string(args, scope, execute) {
     case 'number':
     case 'string':
     case 'boolean':
+    case 'datetime':
       return new StaticValue('' + (await value.get()))
     default:
       return NULL_VALUE
