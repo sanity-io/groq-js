@@ -192,7 +192,10 @@ export class Range {
   }
 
   toJSON() {
-    return [this.left, this.right]
+    let leftStr = JSON.stringify(this.left)
+    let rightStr = JSON.stringify(this.right)
+    let mid = this.exclusive ? '...' : '..'
+    return `${leftStr}${mid}${rightStr}`
   }
 }
 
@@ -206,7 +209,9 @@ export class Pair {
   }
 
   toJSON() {
-    return [this.first, this.second]
+    let firstStr = JSON.stringify(this.first)
+    let secondStr = JSON.stringify(this.second)
+    return `${firstStr} => ${secondStr}`
   }
 }
 
