@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 set -eo pipefail
 
-GROQTEST_SUITE_VERSION=${GROQTEST_SUITE_VERSION:-v0.1.8}
+GROQTEST_SUITE_VERSION=${GROQTEST_SUITE_VERSION:-v0.1.9}
 
 DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" >/dev/null 2>&1 && pwd )"
 RESULT="$DIR"/suite.test.ts
