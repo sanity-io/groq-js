@@ -2,18 +2,8 @@ import * as NodeTypes from './nodeTypes'
 import {Mark, MarkProcessor, MarkVisitor, MarkName} from './markProcessor'
 import {functions, GroqFunctionArity, pipeFunctions} from './evaluator/functions'
 import {parse as rawParse} from './rawParser'
-
-function isValueNode(node: NodeTypes.SyntaxNode): node is NodeTypes.ValueNode {
-  return node.type === 'Value'
-}
-
-function isNumber(node: NodeTypes.SyntaxNode): node is NodeTypes.ValueNode<number> {
-  return isValueNode(node) && typeof node.value === 'number'
-}
-
-function isString(node: NodeTypes.SyntaxNode): node is NodeTypes.ValueNode<string> {
-  return isValueNode(node) && typeof node.value === 'string'
-}
+import {processMapper, MAP_BUILDER} from './mappers'
+import {isNumber} from './nodeHelpers'
 
 type EscapeSequences = "'" | '"' | '\\' | '/' | 'b' | 'f' | 'n' | 'r' | 't'
 
@@ -67,53 +57,12 @@ const BUILDER: {[key in MarkName]?: NodeBuilder} = {
     }
   },
 
-  filter(
-    p
-  ): NodeTypes.ElementNode | NodeTypes.AttributeNode | NodeTypes.SliceNode | NodeTypes.FilterNode {
-    let base = p.process()
-    let query = p.process()
-
-    if (isNumber(query)) {
-      return {
-        type: 'Element',
-        base,
-        index: query
-      }
-    }
-
-    if (isString(query)) {
-      return {
-        type: 'Attribute',
-        base,
-        name: query.value
-      }
-    }
-
-    if (query.type === 'Range') {
-      return {
-        type: 'Slice',
-        base,
-        left: query.left,
-        right: query.right,
-        isExclusive: query.isExclusive
-      }
-    }
-
-    return {
-      type: 'Filter',
-      base,
-      query
-    }
+  filter(p): NodeTypes.SyntaxNode {
+    return processMapper(p, MAP_BUILDER.filter)
   },
 
-  project(p): NodeTypes.ProjectionNode {
-    let base = p.process()
-    let query = p.process()
-    return {
-      type: 'Projection',
-      base,
-      query
-    }
+  project(p): NodeTypes.SyntaxNode {
+    return processMapper(p, MAP_BUILDER.project)
   },
 
   star(): NodeTypes.StarNode {
@@ -152,23 +101,12 @@ const BUILDER: {[key in MarkName]?: NodeBuilder} = {
     }
   },
 
-  attr_ident(p): NodeTypes.AttributeNode {
-    let base = p.process()
-    let name = p.processString()
-
-    return {
-      type: 'Attribute',
-      base,
-      name
-    }
+  attr_ident(p): NodeTypes.SyntaxNode {
+    return processMapper(p, MAP_BUILDER.attr_ident!)
   },
 
-  arr_expr(p): NodeTypes.MapperNode {
-    let base = p.process()
-    return {
-      type: 'Mapper',
-      base
-    }
+  arr_expr(p): NodeTypes.SyntaxNode {
+    return processMapper(p, MAP_BUILDER.arr_expr!)
   },
 
   inc_range(p): NodeTypes.RangeNode {
@@ -291,22 +229,8 @@ const BUILDER: {[key in MarkName]?: NodeBuilder} = {
     }
   },
 
-  deref(p): NodeTypes.DerefNode | NodeTypes.AttributeNode {
-    let base = p.process()
-
-    let nextMark = p.getMark()
-    let result: NodeTypes.DerefNode = {type: 'Deref', base}
-
-    if (nextMark && nextMark.name === 'deref_field') {
-      let name = p.processString()
-      return {
-        type: 'Attribute',
-        base: result,
-        name
-      }
-    }
-
-    return result
+  deref(p): NodeTypes.SyntaxNode {
+    return processMapper(p, MAP_BUILDER.deref!)
   },
 
   comp(p): NodeTypes.OpCallNode {
@@ -553,27 +477,12 @@ const BUILDER: {[key in MarkName]?: NodeBuilder} = {
   }
 }
 
-type NestedPropertyType =
-  | NodeTypes.IdentifierNode
-  | NodeTypes.DerefNode
-  | NodeTypes.ProjectionNode
-  | NodeTypes.MapperNode
-  | NodeTypes.FilterNode
-  | NodeTypes.ElementNode
-  | NodeTypes.SliceNode
-
-const NESTED_PROPERTY_TYPES = ['Deref', 'Projection', 'Mapper', 'Filter', 'Element', 'Slice']
-
-function isNestedPropertyType(node: NodeTypes.SyntaxNode): node is NestedPropertyType {
-  return NESTED_PROPERTY_TYPES.includes(node.type)
-}
-
 function extractPropertyKey(node: NodeTypes.SyntaxNode): string {
   if (node.type === 'Identifier') {
     return node.name
   }
 
-  if (isNestedPropertyType(node)) {
+  if (node.type === 'Mapper') {
     return extractPropertyKey(node.base)
   }
 

@@ -14,20 +14,7 @@ import {
 } from './value'
 import {functions, pipeFunctions} from './functions'
 import {operators} from './operators'
-
-function inMapper(value: Value, fn: (value: Value) => Value | PromiseLike<Value>) {
-  if (value instanceof MapperValue) {
-    return new MapperValue(
-      new StreamValue(async function*() {
-        for await (let elementValue of value) {
-          yield await fn(elementValue)
-        }
-      })
-    )
-  } else {
-    return fn(value)
-  }
-}
+import {applyMapper} from './mapper'
 
 export class Scope {
   public params: {[key: string]: any}
@@ -47,9 +34,13 @@ export class Scope {
   createNested(value: Value) {
     return new Scope(this.params, this.source, value, this)
   }
+
+  rebindThis(value: Value) {
+    return new Scope(this.params, this.source, value, this.parent)
+  }
 }
 
-function execute(node: NodeTypes.SyntaxNode, scope: Scope) {
+export function execute(node: NodeTypes.SyntaxNode, scope: Scope) {
   if (typeof EXECUTORS[node.type] === 'undefined') {
     throw new Error('No executor for node.type=' + node.type)
   }
@@ -68,16 +59,10 @@ export type ExecutorMap = {
   OpCall: (node: NodeTypes.OpCallNode, scope: Scope) => Value | PromiseLike<Value>
   FuncCall: (node: NodeTypes.FuncCallNode, scope: Scope) => Value | PromiseLike<Value>
   PipeFuncCall: (node: NodeTypes.PipeFuncCallNode, scope: Scope) => Value | PromiseLike<Value>
-  Filter: (node: NodeTypes.FilterNode, scope: Scope) => Value | PromiseLike<Value>
-  Element: (node: NodeTypes.ElementNode, scope: Scope) => Value | PromiseLike<Value>
-  Slice: (node: NodeTypes.SliceNode, scope: Scope) => Value | PromiseLike<Value>
-  Attribute: (node: NodeTypes.AttributeNode, scope: Scope) => Value | PromiseLike<Value>
   Identifier: (node: NodeTypes.IdentifierNode, scope: Scope) => Value | PromiseLike<Value>
   Value: (node: NodeTypes.ValueNode, scope: Scope) => Value | PromiseLike<Value>
   Mapper: (node: NodeTypes.MapperNode, scope: Scope) => Value | PromiseLike<Value>
   Parenthesis: (node: NodeTypes.ParenthesisNode, scope: Scope) => Value | PromiseLike<Value>
-  Projection: (node: NodeTypes.ProjectionNode, scope: Scope) => Value | PromiseLike<Value>
-  Deref: (node: NodeTypes.DerefNode, scope: Scope) => Value | PromiseLike<Value>
   Object: (node: NodeTypes.ObjectNode, scope: Scope) => Value | PromiseLike<Value>
   Array: (node: NodeTypes.ArrayNode, scope: Scope) => Value | PromiseLike<Value>
   Range: (node: NodeTypes.RangeNode, scope: Scope) => Value | PromiseLike<Value>
@@ -132,98 +117,6 @@ const EXECUTORS: ExecutorMap = {
     return func(baseValue, args, scope, execute)
   },
 
-  async Filter({base, query}: NodeTypes.FilterNode, scope: Scope) {
-    let baseValue = await execute(base, scope)
-
-    return inMapper(baseValue, async value => {
-      if (value.getType() !== 'array') return NULL_VALUE
-
-      return new StreamValue(async function*() {
-        for await (let element of value) {
-          let newScope = scope.createNested(element)
-          let condValue = await execute(query, newScope)
-          if (condValue.getBoolean()) yield element
-        }
-      })
-    })
-  },
-
-  async Element({base, index}: NodeTypes.ElementNode, scope: Scope) {
-    let baseValue = await execute(base, scope)
-
-    return inMapper(baseValue, async arrayValue => {
-      if (arrayValue.getType() !== 'array') return NULL_VALUE
-
-      let idxValue = await execute(index, scope)
-      if (idxValue.getType() !== 'number') return NULL_VALUE
-
-      // OPT: Here we can optimize when idx >= 0
-      let array = await arrayValue.get()
-      let idx = await idxValue.get()
-
-      if (idx < 0) {
-        idx = array.length + idx
-      }
-
-      if (idx >= 0 && idx < array.length) {
-        return new StaticValue(array[idx])
-      } else {
-        // Make sure we return `null` for out-of-bounds access
-        return NULL_VALUE
-      }
-    })
-  },
-
-  async Slice({base, left, right, isExclusive}: NodeTypes.SliceNode, scope: Scope) {
-    let baseValue = await execute(base, scope)
-
-    return inMapper(baseValue, async arrayValue => {
-      if (arrayValue.getType() !== 'array') return NULL_VALUE
-
-      let leftIdxValue = await execute(left, scope)
-      let rightIdxValue = await execute(right, scope)
-
-      if (leftIdxValue.getType() !== 'number' || rightIdxValue.getType() !== 'number') {
-        return NULL_VALUE
-      }
-
-      // OPT: Here we can optimize when either indices are >= 0
-      let array = (await arrayValue.get()) as any[]
-      let leftIdx = (await leftIdxValue.get()) as number
-      let rightIdx = (await rightIdxValue.get()) as number
-
-      // Handle negative index
-      if (leftIdx < 0) leftIdx = array.length + leftIdx
-      if (rightIdx < 0) rightIdx = array.length + rightIdx
-
-      // Convert from inclusive to exclusive index
-      if (!isExclusive) rightIdx++
-
-      if (leftIdx < 0) leftIdx = 0
-      if (rightIdx < 0) rightIdx = 0
-
-      // Note: At this point the indices might point out-of-bound, but
-      // .slice handles this correctly.
-
-      return new StaticValue(array.slice(leftIdx, rightIdx))
-    })
-  },
-
-  async Attribute({base, name}: NodeTypes.AttributeNode, scope: Scope) {
-    let baseValue = await execute(base, scope)
-
-    return inMapper(baseValue, async value => {
-      if (value.getType() === 'object') {
-        let data = await value.get()
-        if (data.hasOwnProperty(name)) {
-          return new StaticValue(data[name])
-        }
-      }
-
-      return NULL_VALUE
-    })
-  },
-
   async Identifier({name}: NodeTypes.IdentifierNode, scope: Scope) {
     if (scope.value.getType() === 'object') {
       let data = await scope.value.get()
@@ -239,27 +132,9 @@ const EXECUTORS: ExecutorMap = {
     return new StaticValue(value)
   },
 
-  async Mapper({base}: NodeTypes.MapperNode, scope: Scope) {
+  async Mapper({base, mapper}: NodeTypes.MapperNode, scope: Scope) {
     let baseValue = await execute(base, scope)
-    if (baseValue.getType() !== 'array') return baseValue
-
-    if (baseValue instanceof MapperValue) {
-      return new MapperValue(
-        new StreamValue(async function*() {
-          for await (let element of baseValue) {
-            if (element.getType() === 'array') {
-              for await (let subelement of element) {
-                yield subelement
-              }
-            } else {
-              yield NULL_VALUE
-            }
-          }
-        })
-      )
-    } else {
-      return new MapperValue(baseValue)
-    }
+    return applyMapper(scope, baseValue, mapper)
   },
 
   async Parenthesis({base}: NodeTypes.ParenthesisNode, scope: Scope) {
@@ -268,43 +143,6 @@ const EXECUTORS: ExecutorMap = {
       baseValue = baseValue.value
     }
     return baseValue
-  },
-
-  async Projection({base, query}: NodeTypes.ProjectionNode, scope: Scope) {
-    let baseValue = await execute(base, scope)
-    if (baseValue.getType() === 'null') return NULL_VALUE
-
-    if (baseValue.getType() === 'array') {
-      return new StreamValue(async function*() {
-        for await (let value of baseValue) {
-          let newScope = scope.createNested(value)
-          let newValue = await execute(query, newScope)
-          yield newValue
-        }
-      })
-    }
-
-    let newScope = scope.createNested(baseValue)
-    return await execute(query, newScope)
-  },
-
-  async Deref({base}: NodeTypes.DerefNode, scope: Scope) {
-    let baseValue = await execute(base, scope)
-    return inMapper(baseValue, async baseValue => {
-      if (scope.source.getType() !== 'array') return NULL_VALUE
-      if (baseValue.getType() !== 'object') return NULL_VALUE
-
-      let id = (await baseValue.get())._ref
-      if (typeof id !== 'string') return NULL_VALUE
-
-      for await (let doc of scope.source) {
-        if (id === doc.data._id) {
-          return doc
-        }
-      }
-
-      return NULL_VALUE
-    })
   },
 
   async Object({attributes}: NodeTypes.ObjectNode, scope: Scope) {
