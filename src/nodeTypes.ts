@@ -1,15 +1,12 @@
 import {GroqFunction, GroqPipeFunction} from './evaluator/functions'
+import {Mapper} from './mappers'
 
 export type SyntaxNode =
   | AndNode
   | ArrayNode
   | ArrayElementNode
   | AscNode
-  | AttributeNode
-  | DerefNode
   | DescNode
-  | ElementNode
-  | FilterNode
   | FuncCallNode
   | IdentifierNode
   | MapperNode
@@ -29,7 +26,6 @@ export type SyntaxNode =
   | PosNode
   | ProjectionNode
   | RangeNode
-  | SliceNode
   | StarNode
   | ThisNode
   | ValueNode
@@ -41,11 +37,7 @@ export type NodeName =
   | 'Array'
   | 'ArrayElement'
   | 'Asc'
-  | 'Attribute'
-  | 'Deref'
   | 'Desc'
-  | 'Element'
-  | 'Filter'
   | 'FuncCall'
   | 'Identifier'
   | 'Mapper'
@@ -65,7 +57,6 @@ export type NodeName =
   | 'Pos'
   | 'Projection'
   | 'Range'
-  | 'Slice'
   | 'Star'
   | 'This'
   | 'Value'
@@ -92,32 +83,9 @@ export interface AscNode {
   base: SyntaxNode
 }
 
-export interface AttributeNode {
-  type: 'Attribute'
-  base: SyntaxNode
-  name: string
-}
-
-export interface DerefNode {
-  type: 'Deref'
-  base: SyntaxNode
-}
-
 export interface DescNode {
   type: 'Desc'
   base: SyntaxNode
-}
-
-export interface ElementNode {
-  type: 'Element'
-  base: SyntaxNode
-  index: ValueNode
-}
-
-export interface FilterNode {
-  type: 'Filter'
-  base: SyntaxNode
-  query: SyntaxNode
 }
 
 export interface FuncCallNode {
@@ -135,6 +103,7 @@ export interface IdentifierNode {
 export interface MapperNode {
   type: 'Mapper'
   base: SyntaxNode
+  mapper: Mapper
 }
 
 export interface NegNode {
@@ -224,14 +193,6 @@ export interface ProjectionNode {
 
 export interface RangeNode {
   type: 'Range'
-  left: ValueNode<number>
-  right: ValueNode<number>
-  isExclusive: boolean
-}
-
-export interface SliceNode {
-  type: 'Slice'
-  base: SyntaxNode
   left: ValueNode<number>
   right: ValueNode<number>
   isExclusive: boolean
