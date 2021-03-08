@@ -7,6 +7,8 @@ const ndjson = require('ndjson')
 const fs = require('fs')
 const https = require('https')
 
+const SUPPORTED_FEATURES = new Set()
+
 const OUTPUT = process.stdout
 const STACK = []
 let IDENT = ''
@@ -107,6 +109,11 @@ process.stdin
     }
 
     if (entry._type === 'test') {
+      const supported = entry.features.every(f => SUPPORTED_FEATURES.has(f))
+      if (!supported) return
+
+      if (/perf/.test(entry.filename)) return
+
       openStack(`test("${entry.name}", async () => {BODY}, 20000)`)
       write(`let query = ${JSON.stringify(entry.query)}`)
       if (entry.valid) {
