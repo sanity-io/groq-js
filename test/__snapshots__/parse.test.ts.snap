@@ -3,39 +3,50 @@
 exports[`Basic parsing Example query 1`] = `
 Object {
   "base": Object {
-    "base": Object {
-      "type": "Star",
-    },
-    "query": Object {
-      "left": Object {
-        "name": "_type",
-        "type": "Identifier",
-      },
-      "op": "==",
-      "right": Object {
-        "type": "Value",
-        "value": "product",
-      },
-      "type": "OpCall",
-    },
-    "type": "Filter",
+    "type": "Star",
   },
-  "query": Object {
-    "attributes": Array [
+  "mapper": Object {
+    "mappers": Array [
       Object {
-        "key": Object {
-          "type": "Value",
-          "value": "name",
+        "expr": Object {
+          "left": Object {
+            "name": "_type",
+            "type": "Identifier",
+          },
+          "op": "==",
+          "right": Object {
+            "type": "Value",
+            "value": "product",
+          },
+          "type": "OpCall",
         },
-        "type": "ObjectAttribute",
-        "value": Object {
-          "name": "name",
-          "type": "Identifier",
+        "type": "Filter",
+      },
+      Object {
+        "inner": Object {
+          "expr": Object {
+            "attributes": Array [
+              Object {
+                "key": Object {
+                  "type": "Value",
+                  "value": "name",
+                },
+                "type": "ObjectAttribute",
+                "value": Object {
+                  "name": "name",
+                  "type": "Identifier",
+                },
+              },
+            ],
+            "type": "Object",
+          },
+          "type": "Map",
         },
+        "type": "ArrayMap",
       },
     ],
-    "type": "Object",
+    "type": "Chain",
   },
-  "type": "Projection",
+  "type": "Mapper",
 }
 `;
