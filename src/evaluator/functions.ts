@@ -84,6 +84,7 @@ functions.count.arity = 1
 
 functions.dateTime = async function count(args, scope, execute) {
   let val = await execute(args[0], scope)
+  if (val.getType() === 'datetime') return val
   if (val.getType() !== 'string') return NULL_VALUE
   return DateTime.parseToValue(await val.get())
 }
