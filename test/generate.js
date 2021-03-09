@@ -7,7 +7,7 @@ const ndjson = require('ndjson')
 const fs = require('fs')
 const https = require('https')
 
-const SUPPORTED_FEATURES = new Set()
+const SUPPORTED_FEATURES = new Set(['scoring'])
 
 const OUTPUT = process.stdout
 const STACK = []
@@ -72,6 +72,43 @@ async function loadDocuments(id) {
 
   return LOADERS.get(id)
 }
+
+function replaceScoreWithPos(val: any) {
+  const scores: Set<number> = new Set<number>();
+  const entries: Array<{_score: number}> = [];
+
+  function visit(val: any) {
+    if (Array.isArray(val)) {
+      for (const child of val) {
+        visit(child)
+      }
+      return
+    }
+
+    if (val && typeof val === 'object') {
+      if (typeof val._score === 'number') {
+        entries.push(val)
+        scores.add(val._score)
+      }
+
+      for (const child of Object.values(val)) {
+        visit(child)
+      }
+
+      return
+    }
+  }
+
+  visit(val)
+
+  const sortedScores = Array.from(scores).sort((a, b) => b - a)
+
+  for (const entry of entries) {
+    const pos = sortedScores.indexOf(entry._score) + 1
+    entry._pos = pos
+    delete entry._score
+  }
+}
 `)
 
 const DOWNLOADING = new Set()
@@ -109,8 +146,13 @@ process.stdin
     }
 
     if (entry._type === 'test') {
-      const supported = entry.features.every(f => SUPPORTED_FEATURES.has(f))
+      const supported = entry.features.every((f) => SUPPORTED_FEATURES.has(f))
       if (!supported) return
+
+      if (!entry.valid && entry.features.indexOf('scoring') != -1) {
+        // For now we don't validate score()
+        return
+      }
 
       if (/perf/.test(entry.filename)) return
 
@@ -123,6 +165,7 @@ process.stdin
         write(`let value = await evaluate(tree, {dataset})`)
         write(`let data = await value.get()`)
         write(`data = JSON.parse(JSON.stringify(data))`)
+        write(`replaceScoreWithPos(data)`)
         write(`expect(data).toStrictEqual(result)`)
       } else {
         write(`expect(() => parse(query)).toThrow()`)

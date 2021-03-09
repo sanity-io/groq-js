@@ -11,6 +11,8 @@ import {
   NULL_VALUE,
   Value,
   DateTime,
+  StreamValue,
+  isObject,
 } from './value'
 
 function hasReference(value: any, pathSet: Set<string>): boolean {
@@ -318,3 +320,21 @@ pipeFunctions.order = async function order(base, args, scope, execute) {
   return new StaticValue(aux.map((v) => v[0]))
 }
 pipeFunctions.order.arity = (count) => count >= 1
+
+// eslint-disable-next-line require-await
+pipeFunctions.score = async function score(base, args, scope, execute) {
+  if (base.getType() !== 'array') return TRUE_VALUE
+
+  return new StreamValue(async function* () {
+    for await (const value of base) {
+      const newObject: Record<string, any> = {}
+      if (isObject(value)) {
+        Object.assign(newObject, value.data)
+      }
+      newObject._score = 0
+      yield new StaticValue(newObject)
+    }
+  })
+}
+
+pipeFunctions.score.arity = (count) => count >= 1
