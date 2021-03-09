@@ -5,9 +5,11 @@ export type Token = string
 export type Pattern = (tokens: Token[]) => boolean
 
 export function matchText(tokens: Token[], patterns: Pattern[]): boolean {
-  if (tokens.length === 0 || patterns.length === 0) return false
+  if (tokens.length === 0 || patterns.length === 0) {
+    return false
+  }
 
-  return patterns.every(pattern => pattern(tokens))
+  return patterns.every((pattern) => pattern(tokens))
 }
 
 export function matchTokenize(text: string): Token[] {
@@ -15,12 +17,12 @@ export function matchTokenize(text: string): Token[] {
 }
 
 export function matchAnalyzePattern(text: string): Pattern {
-  let terms = text.match(/[A-Za-z0-9*]+/g) || []
-  let termsRe = terms.map(term => new RegExp('^' + term.replace(/\*/g, '.*') + '$', 'i'))
-  return (tokens: Token[]) => termsRe.every(re => tokens.some(token => re.test(token)))
+  const terms = text.match(/[A-Za-z0-9*]+/g) || []
+  const termsRe = terms.map((term) => new RegExp(`^${term.replace(/\*/g, '.*')}$`, 'i'))
+  return (tokens: Token[]) => termsRe.every((re) => tokens.some((token) => re.test(token)))
 }
 
-export async function gatherText(value: Value, cb: (str: string) => void) {
+export async function gatherText(value: Value, cb: (str: string) => void): Promise<boolean> {
   switch (value.getType()) {
     case 'string': {
       cb(await value.get())
@@ -29,7 +31,7 @@ export async function gatherText(value: Value, cb: (str: string) => void) {
 
     case 'array': {
       let success = true
-      for await (let part of value) {
+      for await (const part of value) {
         if (part.getType() === 'string') {
           cb(await part.get())
         } else {

@@ -1,3 +1,4 @@
+/* eslint-disable camelcase */
 import * as NodeTypes from './nodeTypes'
 import {Mark, MarkProcessor, MarkVisitor, MarkName} from './markProcessor'
 import {functions, GroqFunctionArity, pipeFunctions} from './evaluator/functions'
@@ -16,21 +17,25 @@ const ESCAPE_SEQUENCE: {[key in EscapeSequences]: string} = {
   f: '\f',
   n: '\n',
   r: '\r',
-  t: '\t'
+  t: '\t',
 }
 
 function expandHex(str: string): string {
-  let charCode = parseInt(str, 16)
+  const charCode = parseInt(str, 16)
   return String.fromCharCode(charCode)
 }
 
 function expandEscapeSequence(str: String): string {
-  let re = /\\(['"/\\bfnrt]|u([A-Fa-f0-9]{4})|u\{([A-Fa-f0-9]+)\})/g
+  const re = /\\(['"/\\bfnrt]|u([A-Fa-f0-9]{4})|u\{([A-Fa-f0-9]+)\})/g
   return str.replace(
     re,
     (_: string, esc: EscapeSequences, u1?: string | null, u2?: string | null) => {
-      if (u1) return expandHex(u1)
-      if (u2) return expandHex(u2)
+      if (u1) {
+        return expandHex(u1)
+      }
+      if (u2) {
+        return expandHex(u2)
+      }
       return ESCAPE_SEQUENCE[esc]
     }
   )
@@ -50,10 +55,10 @@ class GroqQueryError extends Error {
 
 const BUILDER: {[key in MarkName]?: NodeBuilder} = {
   paren(p): NodeTypes.ParenthesisNode {
-    let inner = p.process()
+    const inner = p.process()
     return {
       type: 'Parenthesis',
-      base: inner
+      base: inner,
     }
   },
 
@@ -76,28 +81,34 @@ const BUILDER: {[key in MarkName]?: NodeBuilder} = {
   parent(): NodeTypes.ParentNode {
     return {
       type: 'Parent',
-      n: 1
+      n: 1,
     }
   },
 
   dblparent(p): NodeTypes.ParentNode {
-    let next = p.process() as NodeTypes.ParentNode
+    const next = p.process() as NodeTypes.ParentNode
     return {
       type: 'Parent',
-      n: next.n + 1
+      n: next.n + 1,
     }
   },
 
   ident(p): NodeTypes.ValueNode | NodeTypes.IdentifierNode {
-    let name = p.processStringEnd()
+    const name = p.processStringEnd()
 
-    if (name === 'null') return {type: 'Value', value: null}
-    if (name === 'true') return {type: 'Value', value: true}
-    if (name === 'false') return {type: 'Value', value: false}
+    if (name === 'null') {
+      return {type: 'Value', value: null}
+    }
+    if (name === 'true') {
+      return {type: 'Value', value: true}
+    }
+    if (name === 'false') {
+      return {type: 'Value', value: false}
+    }
 
     return {
       type: 'Identifier',
-      name: name
+      name: name,
     }
   },
 
@@ -110,122 +121,122 @@ const BUILDER: {[key in MarkName]?: NodeBuilder} = {
   },
 
   inc_range(p): NodeTypes.RangeNode {
-    let left = p.process() as NodeTypes.ValueNode<number>
-    let right = p.process() as NodeTypes.ValueNode<number>
+    const left = p.process() as NodeTypes.ValueNode<number>
+    const right = p.process() as NodeTypes.ValueNode<number>
     return {
       type: 'Range',
       left,
       right,
-      isExclusive: false
+      isExclusive: false,
     }
   },
 
   exc_range(p): NodeTypes.RangeNode {
-    let left = p.process() as NodeTypes.ValueNode<number>
-    let right = p.process() as NodeTypes.ValueNode<number>
+    const left = p.process() as NodeTypes.ValueNode<number>
+    const right = p.process() as NodeTypes.ValueNode<number>
     return {
       type: 'Range',
       left,
       right,
-      isExclusive: true
+      isExclusive: true,
     }
   },
 
   neg(p): NodeTypes.ValueNode | NodeTypes.NegNode {
-    let base = p.process()
+    const base = p.process()
 
     if (base.type === 'Value' && typeof base.value === 'number') {
       return {
         type: 'Value',
-        value: -base.value
+        value: -base.value,
       }
     }
 
     return {
       type: 'Neg',
-      base
+      base,
     }
   },
 
   pos(p): NodeTypes.ValueNode | NodeTypes.PosNode {
-    let base = p.process()
+    const base = p.process()
 
     if (isNumber(base)) {
       return {
         type: 'Value',
-        value: +base.value
+        value: +base.value,
       }
     }
 
     return {
       type: 'Pos',
-      base
+      base,
     }
   },
 
   add(p): NodeTypes.OpCallNode {
-    let left = p.process()
-    let right = p.process()
+    const left = p.process()
+    const right = p.process()
     return {
       type: 'OpCall',
       op: '+',
       left,
-      right
+      right,
     }
   },
 
   sub(p): NodeTypes.OpCallNode {
-    let left = p.process()
-    let right = p.process()
+    const left = p.process()
+    const right = p.process()
     return {
       type: 'OpCall',
       op: '-',
       left,
-      right
+      right,
     }
   },
 
   mul(p): NodeTypes.OpCallNode {
-    let left = p.process()
-    let right = p.process()
+    const left = p.process()
+    const right = p.process()
     return {
       type: 'OpCall',
       op: '*',
       left,
-      right
+      right,
     }
   },
 
   div(p): NodeTypes.OpCallNode {
-    let left = p.process()
-    let right = p.process()
+    const left = p.process()
+    const right = p.process()
     return {
       type: 'OpCall',
       op: '/',
       left,
-      right
+      right,
     }
   },
 
   mod(p): NodeTypes.OpCallNode {
-    let left = p.process()
-    let right = p.process()
+    const left = p.process()
+    const right = p.process()
     return {
       type: 'OpCall',
       op: '%',
       left,
-      right
+      right,
     }
   },
 
   pow(p): NodeTypes.OpCallNode {
-    let left = p.process()
-    let right = p.process()
+    const left = p.process()
+    const right = p.process()
     return {
       type: 'OpCall',
       op: '**',
       left,
-      right
+      right,
     }
   },
 
@@ -234,61 +245,61 @@ const BUILDER: {[key in MarkName]?: NodeBuilder} = {
   },
 
   comp(p): NodeTypes.OpCallNode {
-    let left = p.process()
-    let op = p.processString() as NodeTypes.OpCall
-    let right = p.process()
+    const left = p.process()
+    const op = p.processString() as NodeTypes.OpCall
+    const right = p.process()
     return {
       type: 'OpCall',
       op: op,
       left: left,
-      right: right
+      right: right,
     }
   },
 
   str_begin(p): NodeTypes.ValueNode<string> {
-    let value = expandEscapeSequence(p.processStringEnd())
+    const value = expandEscapeSequence(p.processStringEnd())
     return {
       type: 'Value',
-      value: value
+      value: value,
     }
   },
 
   integer(p): NodeTypes.ValueNode<number> {
-    let strValue = p.processStringEnd()
+    const strValue = p.processStringEnd()
     return {
       type: 'Value',
-      value: Number(strValue)
+      value: Number(strValue),
     }
   },
 
   float(p): NodeTypes.ValueNode<number> {
-    let strValue = p.processStringEnd()
+    const strValue = p.processStringEnd()
     return {
       type: 'Value',
-      value: Number(strValue)
+      value: Number(strValue),
     }
   },
 
   sci(p): NodeTypes.ValueNode<number> {
-    let strValue = p.processStringEnd()
+    const strValue = p.processStringEnd()
     return {
       type: 'Value',
-      value: Number(strValue)
+      value: Number(strValue),
     }
   },
 
   pair(p): NodeTypes.PairNode {
-    let left = p.process()
-    let right = p.process()
+    const left = p.process()
+    const right = p.process()
     return {
       type: 'Pair',
       left,
-      right
+      right,
     }
   },
 
   object(p): NodeTypes.ObjectNode {
-    let attributes: NodeTypes.ObjectAttributeNode[] = []
+    const attributes: NodeTypes.ObjectAttributeNode[] = []
     while (p.getMark().name !== 'object_end') {
       attributes.push(p.process() as NodeTypes.ObjectAttributeNode)
     }
@@ -296,18 +307,18 @@ const BUILDER: {[key in MarkName]?: NodeBuilder} = {
 
     return {
       type: 'Object',
-      attributes
+      attributes,
     }
   },
 
   object_expr(p): NodeTypes.ObjectConditionalSplatNode | NodeTypes.ObjectAttributeNode {
-    let value = p.process()
+    const value = p.process()
 
     if (value.type === 'Pair') {
       return {
         type: 'ObjectConditionalSplat',
         condition: value.left,
-        value: value.right
+        value: value.right,
       }
     }
 
@@ -315,69 +326,69 @@ const BUILDER: {[key in MarkName]?: NodeBuilder} = {
       type: 'ObjectAttribute',
       key: {
         type: 'Value',
-        value: extractPropertyKey(value)
+        value: extractPropertyKey(value),
       },
-      value: value as NodeTypes.ValueNode
+      value: value as NodeTypes.ValueNode,
     }
   },
 
   object_pair(p): NodeTypes.ObjectAttributeNode {
-    let key = p.process()
-    let value = p.process()
+    const key = p.process()
+    const value = p.process()
     return {
       type: 'ObjectAttribute',
       key: key as NodeTypes.ValueNode<string>,
-      value: value as NodeTypes.ValueNode
+      value: value as NodeTypes.ValueNode,
     }
   },
 
   object_splat(p): NodeTypes.ObjectSplatNode {
-    let value = p.process()
+    const value = p.process()
 
     return {
       type: 'ObjectSplat',
-      value
+      value,
     }
   },
 
   object_splat_this(): NodeTypes.ObjectSplatNode {
     return {
       type: 'ObjectSplat',
-      value: {type: 'This'}
+      value: {type: 'This'},
     }
   },
 
   array(p): NodeTypes.ArrayNode {
-    let elements: NodeTypes.ArrayElementNode[] = []
+    const elements: NodeTypes.ArrayElementNode[] = []
     while (p.getMark().name !== 'array_end') {
       let isSplat = false
       if (p.getMark().name === 'array_splat') {
         isSplat = true
         p.shift()
       }
-      let value = p.process()
+      const value = p.process()
       elements.push({
         type: 'ArrayElement',
         value,
-        isSplat
+        isSplat,
       })
     }
     p.shift()
     return {
       type: 'Array',
-      elements: elements
+      elements: elements,
     }
   },
 
   func_call(p): NodeTypes.FuncCallNode {
-    let name = p.processStringEnd()
-    let args: NodeTypes.SyntaxNode[] = []
+    const name = p.processStringEnd()
+    const args: NodeTypes.SyntaxNode[] = []
     while (p.getMark().name !== 'func_args_end') {
       args.push(p.process())
     }
     p.shift()
 
-    let func = functions[name]
+    const func = functions[name]
     if (!func) {
       throw new GroqQueryError(`Undefined function: ${name}`)
     }
@@ -387,18 +398,20 @@ const BUILDER: {[key in MarkName]?: NodeBuilder} = {
       type: 'FuncCall',
       func,
       name,
-      args
+      args,
     }
   },
 
   pipecall(p): NodeTypes.PipeFuncCallNode {
-    let base = p.process()
-    let name = p.processString()
-    let args: NodeTypes.SyntaxNode[] = []
+    const base = p.process()
+    const name = p.processString()
+    const args: NodeTypes.SyntaxNode[] = []
 
-    while (true) {
-      let markName = p.getMark().name
-      if (markName === 'func_args_end') break
+    for (;;) {
+      const markName = p.getMark().name
+      if (markName === 'func_args_end') {
+        break
+      }
 
       if (name === 'order') {
         if (markName === 'asc') {
@@ -416,7 +429,7 @@ const BUILDER: {[key in MarkName]?: NodeBuilder} = {
     }
     p.shift()
 
-    let func = pipeFunctions[name]
+    const func = pipeFunctions[name]
     if (!func) {
       throw new GroqQueryError(`Undefined pipe function: ${name}`)
     }
@@ -427,35 +440,35 @@ const BUILDER: {[key in MarkName]?: NodeBuilder} = {
       func,
       base,
       name: func.name,
-      args
+      args,
     }
   },
 
   and(p): NodeTypes.AndNode {
-    let left = p.process()
-    let right = p.process()
+    const left = p.process()
+    const right = p.process()
     return {
       type: 'And',
       left,
-      right
+      right,
     }
   },
 
   or(p): NodeTypes.OrNode {
-    let left = p.process()
-    let right = p.process()
+    const left = p.process()
+    const right = p.process()
     return {
       type: 'Or',
       left,
-      right
+      right,
     }
   },
 
   not(p): NodeTypes.NotNode {
-    let base = p.process()
+    const base = p.process()
     return {
       type: 'Not',
-      base
+      base,
     }
   },
 
@@ -468,13 +481,13 @@ const BUILDER: {[key in MarkName]?: NodeBuilder} = {
   },
 
   param(p): NodeTypes.ParameterNode {
-    let name = p.processStringEnd()
+    const name = p.processStringEnd()
 
     return {
       type: 'Parameter',
-      name
+      name,
     }
-  }
+  },
 }
 
 function extractPropertyKey(node: NodeTypes.SyntaxNode): string {
@@ -486,7 +499,7 @@ function extractPropertyKey(node: NodeTypes.SyntaxNode): string {
     return extractPropertyKey(node.base)
   }
 
-  throw new GroqQueryError('Cannot determine property key for type: ' + node.type)
+  throw new GroqQueryError(`Cannot determine property key for type: ${node.type}`)
 }
 
 function validateArity(name: string, arity: GroqFunctionArity, count: number) {
@@ -516,9 +529,11 @@ class GroqSyntaxError extends Error {
 /**
  * Parses a GROQ query and returns a tree structure.
  */
-export function parse(input: string) {
-  let result = rawParse(input)
-  if (result.type === 'error') throw new GroqSyntaxError(result.position)
-  let processor = new MarkProcessor(BUILDER, input, result.marks as Mark[])
+export function parse(input: string): NodeTypes.SyntaxNode {
+  const result = rawParse(input)
+  if (result.type === 'error') {
+    throw new GroqSyntaxError(result.position)
+  }
+  const processor = new MarkProcessor(BUILDER, input, result.marks as Mark[])
   return processor.process()
 }
