@@ -294,7 +294,11 @@ export function processMapper(
   const result = processMapperInternal(p, builder)
   let mapper = result.result(null)
 
-  if (result.base.type === 'Star' || result.base.type === 'Array') {
+  if (
+    result.base.type === 'Star' ||
+    result.base.type === 'Array' ||
+    result.base.type === 'PipeFuncCall'
+  ) {
     mapper = mapArray({type: 'Chain', mappers: []}, mapper)
   }
 
