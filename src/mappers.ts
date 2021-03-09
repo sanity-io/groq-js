@@ -1,3 +1,4 @@
+/* eslint-disable camelcase */
 import {MarkProcessor} from './markProcessor'
 import {isNumber, isString} from './nodeHelpers'
 import * as NodeTypes from './nodeTypes'
@@ -23,7 +24,7 @@ export type Mapper =
  * applying `a` and then applying `b`.
  */
 function join(a: Mapper, b: Mapper): Mapper {
-  let mappers: Mapper[] = []
+  const mappers: Mapper[] = []
 
   if (a.type === 'Chain') {
     mappers.push(...a.mappers)
@@ -37,7 +38,9 @@ function join(a: Mapper, b: Mapper): Mapper {
     mappers.push(b)
   }
 
-  if (mappers.length === 1) return mappers[0]
+  if (mappers.length === 1) {
+    return mappers[0]
+  }
 
   return {type: 'Chain', mappers}
 }
@@ -61,129 +64,144 @@ type MapperResult = {
 type MapperBuilder = (rhs: MapperResult | null) => MapperResult
 
 function mapArray(mapper: Mapper, right: MapperResult | null): MapperResult {
-  if (!right)
+  if (!right) {
     return {
       type: 'a-a',
-      mapper
+      mapper,
     }
+  }
 
   switch (right.type) {
     case 'a-a':
       return {
         type: 'a-a',
-        mapper: join(mapper, right.mapper)
+        mapper: join(mapper, right.mapper),
       }
 
     case 'a-b':
       return {
         type: 'a-b',
-        mapper: join(mapper, right.mapper)
+        mapper: join(mapper, right.mapper),
       }
 
     case 'b-b':
       return {
         type: 'a-a',
-        mapper: join(mapper, map(right.mapper))
+        mapper: join(mapper, map(right.mapper)),
       }
 
     case 'b-a':
       return {
         type: 'a-a',
-        mapper: join(mapper, flatMap(right.mapper))
+        mapper: join(mapper, flatMap(right.mapper)),
       }
+
+    default:
+      throw new Error(`unknown type: ${right.type}`)
   }
 }
 
 function mapBasic(mapper: Mapper, right: MapperResult | null): MapperResult {
-  if (!right)
+  if (!right) {
     return {
       type: 'b-b',
-      mapper
+      mapper,
     }
+  }
 
   switch (right.type) {
     case 'a-a':
     case 'b-a':
       return {
         type: 'b-a',
-        mapper: join(mapper, right.mapper)
+        mapper: join(mapper, right.mapper),
       }
 
     case 'a-b':
     case 'b-b':
       return {
         type: 'b-b',
-        mapper: join(mapper, right.mapper)
+        mapper: join(mapper, right.mapper),
       }
+
+    default:
+      throw new Error(`unknown type: ${right.type}`)
   }
 }
 
 function mapElement(mapper: Mapper, right: MapperResult | null): MapperResult {
-  if (!right)
+  if (!right) {
     return {
       type: 'a-b',
-      mapper
+      mapper,
     }
+  }
 
   switch (right.type) {
     case 'a-a':
     case 'b-a':
       return {
         type: 'a-a',
-        mapper: join(mapper, right.mapper)
+        mapper: join(mapper, right.mapper),
       }
 
     case 'a-b':
     case 'b-b':
       return {
         type: 'a-b',
-        mapper: join(mapper, right.mapper)
+        mapper: join(mapper, right.mapper),
       }
+
+    default:
+      throw new Error(`unknown type: ${right.type}`)
   }
 }
 
 function mapProjection(mapper: Mapper, right: MapperResult | null): MapperResult {
-  if (!right)
+  if (!right) {
     return {
       type: 'b-b',
-      mapper
+      mapper,
     }
+  }
 
   switch (right.type) {
     case 'a-a':
       return {
         type: 'a-a',
-        mapper: join(map(mapper), right.mapper)
+        mapper: join(map(mapper), right.mapper),
       }
     case 'a-b':
       return {
         type: 'a-b',
-        mapper: join(map(mapper), right.mapper)
+        mapper: join(map(mapper), right.mapper),
       }
     case 'b-a':
       return {
         type: 'b-a',
-        mapper: join(mapper, right.mapper)
+        mapper: join(mapper, right.mapper),
       }
     case 'b-b':
       return {
         type: 'b-b',
-        mapper: join(mapper, right.mapper)
+        mapper: join(mapper, right.mapper),
       }
+    default:
+      throw new Error(`unknown type: ${right.type}`)
   }
 }
 
 export const MAP_BUILDER: Record<string, undefined | ((p: MarkProcessor) => MapperBuilder)> = {
   filter(p): MapperBuilder {
-    let expr = p.process() as NodeTypes.SyntaxNode
+    const expr = p.process() as NodeTypes.SyntaxNode
 
     if (isNumber(expr)) {
       const numberExpr = expr
-      return right =>
+      return (right) =>
         mapElement(
           {
             type: 'Element',
-            index: numberExpr
+            index: numberExpr,
           },
           right
         )
@@ -191,11 +209,11 @@ export const MAP_BUILDER: Record<string, undefined | ((p: MarkProcessor) => Mapp
 
     if (isString(expr)) {
       const stringExpr = expr
-      return right =>
+      return (right) =>
         mapBasic(
           {
             type: 'Attribute',
-            name: stringExpr.value
+            name: stringExpr.value,
           },
           right
         )
@@ -203,75 +221,75 @@ export const MAP_BUILDER: Record<string, undefined | ((p: MarkProcessor) => Mapp
 
     if (expr.type === 'Range') {
       const rangeExpr = expr
-      return right =>
+      return (right) =>
         mapArray(
           {
             type: 'Slice',
             left: rangeExpr.left,
             right: rangeExpr.right,
-            isExclusive: rangeExpr.isExclusive
+            isExclusive: rangeExpr.isExclusive,
           },
           right
         )
     }
 
-    return right =>
+    return (right) =>
       mapArray(
         {
           type: 'Filter',
-          expr
+          expr,
         },
         right
       )
   },
 
   attr_ident(p) {
-    let name = p.processString()
+    const name = p.processString()
 
-    return right =>
+    return (right) =>
       mapBasic(
         {
           type: 'Attribute',
-          name
+          name,
         },
         right
       )
   },
 
   arr_expr(p) {
-    return right => mapArray({type: 'Chain', mappers: []}, right)
+    return (right) => mapArray({type: 'Chain', mappers: []}, right)
   },
 
   deref(p) {
-    let nextMark = p.getMark()
+    const nextMark = p.getMark()
 
     let mapper: Mapper = {type: 'Deref'}
 
     if (nextMark && nextMark.name === 'deref_field') {
-      let name = p.processString()
+      const name = p.processString()
       mapper = {type: 'Chain', mappers: [mapper, {type: 'Attribute', name}]}
     }
 
-    return right => mapBasic(mapper, right)
+    return (right) => mapBasic(mapper, right)
   },
 
   project(p) {
-    let expr = p.process()
+    const expr = p.process()
 
-    return right =>
+    return (right) =>
       mapProjection(
         {
           type: 'Map',
-          expr
+          expr,
         },
         right
       )
-  }
+  },
 }
 
 export function processMapper(
   p: MarkProcessor,
-  builder: (p: MarkProcessor) => MapperBuilder
+  builder: (p2: MarkProcessor) => MapperBuilder
 ): NodeTypes.SyntaxNode {
   const result = processMapperInternal(p, builder)
   let mapper = result.result(null)
@@ -285,7 +303,7 @@ export function processMapper(
 
 function processMapperInternal(
   p: MarkProcessor,
-  builder: (p: MarkProcessor) => MapperBuilder
+  builder: (p2: MarkProcessor) => MapperBuilder
 ): {
   result: (right: MapperResult | null) => MapperResult
   base: NodeTypes.SyntaxNode
@@ -298,15 +316,14 @@ function processMapperInternal(
     const current = builder(p)
 
     return {
-      result: rhs => inner.result(current(rhs)),
-      base: inner.base
+      result: (rhs) => inner.result(current(rhs)),
+      base: inner.base,
     }
-  } else {
-    const base = p.process()
-    const current = builder(p)
-    return {
-      result: rhs => current(rhs),
-      base
-    }
+  }
+  const base = p.process()
+  const current = builder(p)
+  return {
+    result: (rhs) => current(rhs),
+    base,
   }
 }
