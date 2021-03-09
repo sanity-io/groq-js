@@ -1,3 +1,4 @@
+import {SyntaxNode} from './nodeTypes'
 import {NodeBuilder} from './parser'
 
 export type MarkName =
@@ -68,34 +69,36 @@ export class MarkProcessor {
     this.index = 0
   }
 
-  hasMark(pos = 0) {
+  hasMark(pos = 0): boolean {
     return this.index + pos < this.marks.length
   }
 
-  getMark(pos = 0) {
+  getMark(pos = 0): Mark {
     return this.marks[this.index + pos]
   }
 
-  shift() {
+  shift(): void {
     this.index += 1
   }
 
-  process() {
-    let mark = this.marks[this.index]
+  process(): SyntaxNode {
+    const mark = this.marks[this.index]
     this.shift()
-    let func = this.visitor[mark.name]
-    if (!func) throw new Error('Unknown handler: ' + mark.name)
+    const func = this.visitor[mark.name]
+    if (!func) {
+      throw new Error(`Unknown handler: ${mark.name}`)
+    }
     return func.call(this.visitor, this, mark)
   }
 
-  processString() {
+  processString(): string {
     this.shift()
     return this.processStringEnd()
   }
 
-  processStringEnd() {
-    let prev = this.marks[this.index - 1]
-    let curr = this.marks[this.index]
+  processStringEnd(): string {
+    const prev = this.marks[this.index - 1]
+    const curr = this.marks[this.index]
     this.shift()
     return this.string.slice(prev.position, curr.position)
   }

@@ -18,16 +18,20 @@
     "coverage": "tsdx test --coverage",
     "lint": "tsdx lint",
     "prepare": "tsdx build",
-    "prettify": "prettier --write src/**/*.ts",
-    "prettify-check": "prettier --check src/**/*.ts"
+    "prettify": "prettier --write src/**/*.ts src/*.ts",
+    "prettify-check": "prettier --check src/**/*.ts src/*.ts"
   },
   "peerDependencies": {},
   "devDependencies": {
     "@types/jest": "^26.0.14",
+    "@typescript-eslint/eslint-plugin": "^4.16.0",
+    "@typescript-eslint/parser": "^4.16.0",
+    "eslint-config-sanity": "^5.1.0",
     "ndjson": "^2.0.0",
+    "prettier": "^2.1.2",
     "tsdx": "^0.14.0",
-    "tslib": "^2.0.1",
-    "typescript": "^4.0.3"
+    "tslib": "^2.1.0",
+    "typescript": "^4.2.0"
   },
   "jest": {
     "testEnvironment": "node",

@@ -2,7 +2,6 @@ import * as NodeTypes from '../nodeTypes'
 import {
   StaticValue,
   StreamValue,
-  MapperValue,
   NULL_VALUE,
   TRUE_VALUE,
   FALSE_VALUE,
@@ -10,9 +9,12 @@ import {
   Pair,
   fromNumber,
   fromJS,
-  Value
+  Value,
+  isBoolean,
+  isString,
+  isObject,
+  isNumber,
 } from './value'
-import {functions, pipeFunctions} from './functions'
 import {operators} from './operators'
 import {applyMapper} from './mapper'
 
@@ -23,6 +25,7 @@ export class Scope {
   public parent: Scope | null
   public timestamp: string
 
+  // eslint-disable-next-line @typescript-eslint/explicit-module-boundary-types
   constructor(params: {[key: string]: any}, source: any, value: Value, parent: Scope | null) {
     this.params = params
     this.source = source
@@ -31,18 +34,18 @@ export class Scope {
     this.timestamp = parent ? parent.timestamp : new Date().toISOString()
   }
 
-  createNested(value: Value) {
+  createNested(value: Value): Scope {
     return new Scope(this.params, this.source, value, this)
   }
 
-  rebindThis(value: Value) {
+  rebindThis(value: Value): Scope {
     return new Scope(this.params, this.source, value, this.parent)
   }
 }
 
-export function execute(node: NodeTypes.SyntaxNode, scope: Scope) {
+export function execute(node: NodeTypes.SyntaxNode, scope: Scope): Value | PromiseLike<Value> {
   if (typeof EXECUTORS[node.type] === 'undefined') {
-    throw new Error('No executor for node.type=' + node.type)
+    throw new Error(`No executor for node.type=${node.type}`)
   }
 
   const func = EXECUTORS[node.type]
@@ -103,8 +106,10 @@ const EXECUTORS: ExecutorMap = {
   },
 
   OpCall({op, left, right}: NodeTypes.OpCallNode, scope: Scope) {
-    let func = operators[op]
-    if (!func) throw new Error('Unknown operator: ' + op)
+    const func = operators[op]
+    if (!func) {
+      throw new Error(`Unknown operator: ${op}`)
+    }
     return func(left, right, scope, execute)
   },
 
@@ -113,13 +118,13 @@ const EXECUTORS: ExecutorMap = {
   },
 
   async PipeFuncCall({func, base, args}: NodeTypes.PipeFuncCallNode, scope: Scope) {
-    let baseValue = await execute(base, scope)
+    const baseValue = await execute(base, scope)
     return func(baseValue, args, scope, execute)
   },
 
   async Identifier({name}: NodeTypes.IdentifierNode, scope: Scope) {
     if (scope.value.getType() === 'object') {
-      let data = await scope.value.get()
+      const data = await scope.value.get()
       if (data.hasOwnProperty(name)) {
         return new StaticValue(data[name])
       }
@@ -133,64 +138,66 @@ const EXECUTORS: ExecutorMap = {
   },
 
   async Mapper({base, mapper}: NodeTypes.MapperNode, scope: Scope) {
-    let baseValue = await execute(base, scope)
+    const baseValue = await execute(base, scope)
     return applyMapper(scope, baseValue, mapper)
   },
 
-  async Parenthesis({base}: NodeTypes.ParenthesisNode, scope: Scope) {
-    let baseValue = await execute(base, scope)
-    if (baseValue instanceof MapperValue) {
-      baseValue = baseValue.value
-    }
-    return baseValue
+  Parenthesis({base}: NodeTypes.ParenthesisNode, scope: Scope) {
+    return execute(base, scope)
   },
 
   async Object({attributes}: NodeTypes.ObjectNode, scope: Scope) {
-    let result: {[key: string]: any} = {}
-    for (let attr of attributes) {
+    const result: {[key: string]: any} = {}
+    for (const attr of attributes) {
       const attrType = attr.type
       switch (attr.type) {
         case 'ObjectAttribute': {
-          let key = await execute(attr.key, scope)
-          if (key.getType() !== 'string') continue
+          const key = await execute(attr.key, scope)
+          if (!isString(key)) {
+            continue
+          }
 
-          let value = await execute(attr.value, scope)
+          const value = await execute(attr.value, scope)
           result[key.data] = await value.get()
           break
         }
 
         case 'ObjectConditionalSplat': {
-          let cond = await execute(attr.condition, scope)
-          if (!cond.getBoolean()) continue
+          const cond = await execute(attr.condition, scope)
+          if (!cond.getBoolean()) {
+            continue
+          }
 
-          let value = await execute(attr.value, scope)
-          if (value.getType() !== 'object') continue
+          const value = await execute(attr.value, scope)
+          if (!isObject(value)) {
+            continue
+          }
           Object.assign(result, value.data)
           break
         }
 
         case 'ObjectSplat': {
-          let value = await execute(attr.value, scope)
-          if (value.getType('object')) {
+          const value = await execute(attr.value, scope)
+          if (isObject(value)) {
             Object.assign(result, value.data)
           }
           break
         }
 
         default:
-          throw new Error('Unknown node type: ' + attrType)
+          throw new Error(`Unknown node type: ${attrType}`)
       }
     }
     return new StaticValue(result)
   },
 
   Array({elements}: NodeTypes.ArrayNode, scope: Scope) {
-    return new StreamValue(async function*() {
-      for (let element of elements) {
-        let value = await execute(element.value, scope)
+    return new StreamValue(async function* () {
+      for (const element of elements) {
+        const value = await execute(element.value, scope)
         if (element.isSplat) {
           if (value.getType() === 'array') {
-            for await (let v of value) {
+            for await (const v of value) {
               yield v
             }
           }
@@ -202,88 +209,108 @@ const EXECUTORS: ExecutorMap = {
   },
 
   async Range({left, right, isExclusive}: NodeTypes.RangeNode, scope: Scope) {
-    let leftValue = await execute(left, scope)
-    let rightValue = await execute(right, scope)
+    const leftValue = await execute(left, scope)
+    const rightValue = await execute(right, scope)
 
     if (!Range.isConstructible(leftValue.getType(), rightValue.getType())) {
       return NULL_VALUE
     }
 
-    let range = new Range(await leftValue.get(), await rightValue.get(), isExclusive)
+    const range = new Range(await leftValue.get(), await rightValue.get(), isExclusive)
     return new StaticValue(range)
   },
 
   async Pair({left, right}: NodeTypes.PairNode, scope: Scope) {
-    let leftValue = await execute(left, scope)
-    let rightValue = await execute(right, scope)
+    const leftValue = await execute(left, scope)
+    const rightValue = await execute(right, scope)
 
-    let pair = new Pair(await leftValue.get(), await rightValue.get())
+    const pair = new Pair(await leftValue.get(), await rightValue.get())
     return new StaticValue(pair)
   },
 
   async Or({left, right}: NodeTypes.OrNode, scope: Scope) {
-    let leftValue = await execute(left, scope)
-    let rightValue = await execute(right, scope)
+    const leftValue = await execute(left, scope)
+    const rightValue = await execute(right, scope)
 
-    if (leftValue.getType() === 'boolean') {
-      if (leftValue.data === true) return TRUE_VALUE
+    if (isBoolean(leftValue)) {
+      if (leftValue.data === true) {
+        return TRUE_VALUE
+      }
     }
 
-    if (rightValue.getType() === 'boolean') {
-      if (rightValue.data === true) return TRUE_VALUE
+    if (isBoolean(rightValue)) {
+      if (rightValue.data === true) {
+        return TRUE_VALUE
+      }
     }
 
-    if (leftValue.getType() !== 'boolean') return NULL_VALUE
-    if (rightValue.getType() !== 'boolean') return NULL_VALUE
+    if (!isBoolean(leftValue)) {
+      return NULL_VALUE
+    }
+    if (!isBoolean(rightValue)) {
+      return NULL_VALUE
+    }
 
     return FALSE_VALUE
   },
 
   async And({left, right}: NodeTypes.AndNode, scope: Scope) {
-    let leftValue = await execute(left, scope)
-    let rightValue = await execute(right, scope)
+    const leftValue = await execute(left, scope)
+    const rightValue = await execute(right, scope)
 
-    if (leftValue.getType() === 'boolean') {
-      if (leftValue.data === false) return FALSE_VALUE
+    if (isBoolean(leftValue)) {
+      if (leftValue.data === false) {
+        return FALSE_VALUE
+      }
     }
 
-    if (rightValue.getType() === 'boolean') {
-      if (rightValue.data === false) return FALSE_VALUE
+    if (isBoolean(rightValue)) {
+      if (rightValue.data === false) {
+        return FALSE_VALUE
+      }
     }
 
-    if (leftValue.getType() !== 'boolean') return NULL_VALUE
-    if (rightValue.getType() !== 'boolean') return NULL_VALUE
+    if (!isBoolean(leftValue)) {
+      return NULL_VALUE
+    }
+    if (!isBoolean(rightValue)) {
+      return NULL_VALUE
+    }
 
     return TRUE_VALUE
   },
 
   async Not({base}: NodeTypes.NotNode, scope: Scope) {
-    let value = await execute(base, scope)
-    if (value.getType() !== 'boolean') {
+    const value = await execute(base, scope)
+    if (!isBoolean(value)) {
       return NULL_VALUE
     }
     return value.getBoolean() ? FALSE_VALUE : TRUE_VALUE
   },
 
   async Neg({base}: NodeTypes.NegNode, scope: Scope) {
-    let value = await execute(base, scope)
-    if (value.getType() !== 'number') return NULL_VALUE
-    return fromNumber(-(await value.get()))
+    const value = await execute(base, scope)
+    if (!isNumber(value)) {
+      return NULL_VALUE
+    }
+    return fromNumber(-value.data)
   },
 
   async Pos({base}: NodeTypes.PosNode, scope: Scope) {
-    let value = await execute(base, scope)
-    if (value.getType() !== 'number') return NULL_VALUE
+    const value = await execute(base, scope)
+    if (value.getType() !== 'number') {
+      return NULL_VALUE
+    }
     return fromNumber(await value.get())
   },
 
-  async Asc() {
+  Asc() {
     return NULL_VALUE
   },
 
-  async Desc() {
+  Desc() {
     return NULL_VALUE
-  }
+  },
 }
 
 interface EvaluateOptions {
@@ -300,11 +327,14 @@ interface EvaluateOptions {
 /**
  * Evaluates a query.
  */
-export async function evaluate(tree: NodeTypes.SyntaxNode, options: EvaluateOptions = {}) {
-  let root = fromJS(options.root)
-  let dataset = fromJS(options.dataset)
-  let params: {[key: string]: any} = {...options.params}
+export function evaluate(
+  tree: NodeTypes.SyntaxNode,
+  options: EvaluateOptions = {}
+): Value | PromiseLike<Value> {
+  const root = fromJS(options.root)
+  const dataset = fromJS(options.dataset)
+  const params: {[key: string]: any} = {...options.params}
 
-  let scope = new Scope(params, dataset, root, null)
-  return await execute(tree, scope)
+  const scope = new Scope(params, dataset, root, null)
+  return execute(tree, scope)
 }
