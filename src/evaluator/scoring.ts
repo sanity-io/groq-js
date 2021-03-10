@@ -1,6 +1,7 @@
 import {Executor, Scope} from '.'
 import {SyntaxNode} from '../nodeTypes'
 import {gatherText, matchPatternRegex, matchTokenize, Token} from './matching'
+import {isNumber} from './value'
 
 // BM25 similarity constants
 const BM25k = 1.2
@@ -12,6 +13,16 @@ export async function evaluateScore(
 ): Promise<number> {
   if (node.type === 'OpCall' && node.op === 'match') {
     return evaluateMatchScore(node.left, node.right, scope, execute)
+  }
+
+  if (node.type === 'FuncCall' && node.name === 'boost') {
+    const innerScore = await evaluateScore(node.args[0], scope, execute)
+    const boost = await execute(node.args[1], scope)
+    if (isNumber(boost)) {
+      return innerScore + boost.data
+    }
+
+    return 1
   }
 
   switch (node.type) {

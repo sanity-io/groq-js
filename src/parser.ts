@@ -388,6 +388,8 @@ const BUILDER: {[key in MarkName]?: NodeBuilder} = {
     }
     p.shift()
 
+    if (name === 'boost' && !p.allowBoost) throw new GroqQueryError('unexpected boost')
+
     const func = functions[name]
     if (!func) {
       throw new GroqQueryError(`Undefined function: ${name}`)
@@ -406,6 +408,12 @@ const BUILDER: {[key in MarkName]?: NodeBuilder} = {
     const base = p.process()
     const name = p.processString()
     const args: NodeTypes.SyntaxNode[] = []
+
+    const oldAllowBoost = p.allowBoost
+    if (name === 'score') {
+      // Only allow boost inside a score expression
+      p.allowBoost = true
+    }
 
     for (;;) {
       const markName = p.getMark().name
@@ -428,6 +436,8 @@ const BUILDER: {[key in MarkName]?: NodeBuilder} = {
       args.push(p.process())
     }
     p.shift()
+
+    p.allowBoost = oldAllowBoost
 
     const func = pipeFunctions[name]
     if (!func) {

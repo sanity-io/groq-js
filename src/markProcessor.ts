@@ -61,6 +61,7 @@ export class MarkProcessor {
   private string: string
   private marks: Mark[]
   private index: number
+  allowBoost = false
 
   constructor(visitor: MarkVisitor, string: string, marks: Mark[]) {
     this.visitor = visitor

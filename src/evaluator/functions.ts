@@ -253,6 +253,14 @@ functions.now = async function now(args, scope) {
 }
 functions.now.arity = 0
 
+// eslint-disable-next-line require-await
+functions.boost = async function boost() {
+  // This should be handled by the scoring function.
+  throw new Error('unexpected boost call')
+}
+
+functions.boost.arity = 2
+
 export type GroqPipeFunction = (
   base: Value,
   args: SyntaxNode[],
