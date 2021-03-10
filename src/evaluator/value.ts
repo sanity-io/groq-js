@@ -90,7 +90,7 @@ export function isString(val: Value): val is StaticValue<string> {
   return val.getType() === 'string'
 }
 
-export function isObject(val: Value): val is StaticValue<object> {
+export function isObject(val: Value): val is StaticValue<Record<string, any>> {
   return val.getType() === 'object'
 }
 
