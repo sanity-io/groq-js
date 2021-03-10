@@ -30,7 +30,21 @@ export type SyntaxNode =
   | ThisNode
   | ValueNode
 
-export type OpCall = '+' | '-' | '*' | '/' | '%' | '**'
+export type OpCall =
+  | '=='
+  | '!='
+  | '>'
+  | '>='
+  | '<'
+  | '<='
+  | '+'
+  | '-'
+  | '*'
+  | '/'
+  | '%'
+  | '**'
+  | 'in'
+  | 'match'
 
 export type NodeName =
   | 'And'
