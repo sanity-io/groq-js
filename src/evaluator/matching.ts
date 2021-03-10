@@ -22,6 +22,11 @@ export function matchAnalyzePattern(text: string): Pattern {
   return (tokens: Token[]) => termsRe.every((re) => tokens.some((token) => re.test(token)))
 }
 
+export function matchPatternRegex(text: string): RegExp[] {
+  const terms = text.match(/[A-Za-z0-9*]+/g) || []
+  return terms.map((term) => new RegExp(`^${term.replace(/\*/g, '.*')}$`, 'i'))
+}
+
 export async function gatherText(value: Value, cb: (str: string) => void): Promise<boolean> {
   switch (value.getType()) {
     case 'string': {

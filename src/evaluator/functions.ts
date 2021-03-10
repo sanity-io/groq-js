@@ -1,5 +1,6 @@
 import type {SyntaxNode} from '../nodeTypes'
 import {totalCompare} from './ordering'
+import {evaluateScore} from './scoring'
 import {Scope, Executor} from './index'
 import {
   StaticValue,
@@ -327,11 +328,18 @@ pipeFunctions.score = async function score(base, args, scope, execute) {
 
   return new StreamValue(async function* () {
     for await (const value of base) {
+      const newScope = scope.createNested(value)
+      let valueScore = 0
+
+      for (const arg of args) {
+        valueScore += await evaluateScore(arg, newScope, execute)
+      }
+
       const newObject: Record<string, any> = {}
       if (isObject(value)) {
         Object.assign(newObject, value.data)
       }
-      newObject._score = 0
+      newObject._score = valueScore
       yield new StaticValue(newObject)
     }
   })

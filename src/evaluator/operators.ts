@@ -1,25 +1,9 @@
-import {SyntaxNode} from '../nodeTypes'
+import {OpCall, SyntaxNode} from '../nodeTypes'
 import {StaticValue, TRUE_VALUE, FALSE_VALUE, NULL_VALUE, fromNumber, Value} from './value'
 import {isEqual} from './equality'
 import {partialCompare} from './ordering'
 import {Scope, Executor} from './'
 import {gatherText, Token, Pattern, matchText, matchTokenize, matchAnalyzePattern} from './matching'
-
-type GroqOperator =
-  | '=='
-  | '!='
-  | '>'
-  | '>='
-  | '<'
-  | '<='
-  | '+'
-  | '-'
-  | '*'
-  | '/'
-  | '%'
-  | '**'
-  | 'in'
-  | 'match'
 
 type GroqOperatorFn = (
   left: SyntaxNode,
@@ -28,7 +12,7 @@ type GroqOperatorFn = (
   execute: Executor
 ) => Value | PromiseLike<Value>
 
-export const operators: {[key in GroqOperator]: GroqOperatorFn} = {
+export const operators: {[key in OpCall]: GroqOperatorFn} = {
   '==': async function eq(left, right, scope, execute) {
     const a = await execute(left, scope)
     const b = await execute(right, scope)
