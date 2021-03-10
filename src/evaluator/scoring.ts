@@ -18,18 +18,18 @@ export async function evaluateScore(
   if (node.type === 'FuncCall' && node.name === 'boost') {
     const innerScore = await evaluateScore(node.args[0], scope, execute)
     const boost = await execute(node.args[1], scope)
-    if (isNumber(boost)) {
+    if (isNumber(boost) && innerScore > 0) {
       return innerScore + boost.data
     }
 
-    return 1
+    return 0
   }
 
   switch (node.type) {
     case 'OpCall':
     case 'Not': {
       const res = await execute(node, scope)
-      return res.getBoolean() ? 2 : 1
+      return res.getBoolean() ? 1 : 0
     }
     case 'Or': {
       const leftScore = await evaluateScore(node.left, scope, execute)
@@ -39,13 +39,13 @@ export async function evaluateScore(
     case 'And': {
       const leftScore = await evaluateScore(node.left, scope, execute)
       const rightScore = await evaluateScore(node.right, scope, execute)
-      if (leftScore === 1 || rightScore === 1) return 1
+      if (leftScore === 0 || rightScore === 0) return 0
       return leftScore + rightScore
     }
     default:
   }
 
-  return 1
+  return 0
 }
 
 async function evaluateMatchScore(
@@ -69,11 +69,11 @@ async function evaluateMatchScore(
   })
 
   if (!didSucceed) {
-    return 1
+    return 0
   }
 
   if (tokens.length === 0 || terms.length === 0) {
-    return 1
+    return 0
   }
 
   let score = 0

@@ -336,17 +336,20 @@ pipeFunctions.score = async function score(base, args, scope, execute) {
 
   return new StreamValue(async function* () {
     for await (const value of base) {
+      if (!isObject(value)) {
+        yield value
+        continue
+      }
+
       const newScope = scope.createNested(value)
-      let valueScore = 0
+      let valueScore = typeof value.data._score === 'number' ? value.data._score : 1
 
       for (const arg of args) {
         valueScore += await evaluateScore(arg, newScope, execute)
       }
 
       const newObject: Record<string, any> = {}
-      if (isObject(value)) {
-        Object.assign(newObject, value.data)
-      }
+      Object.assign(newObject, value.data)
       newObject._score = valueScore
       yield new StaticValue(newObject)
     }
