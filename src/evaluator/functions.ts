@@ -332,28 +332,33 @@ pipeFunctions.order.arity = (count) => count >= 1
 
 // eslint-disable-next-line require-await
 pipeFunctions.score = async function score(base, args, scope, execute) {
-  if (base.getType() !== 'array') return TRUE_VALUE
+  if (base.getType() !== 'array') return NULL_VALUE
 
-  return new StreamValue(async function* () {
-    for await (const value of base) {
-      if (!isObject(value)) {
-        yield value
-        continue
-      }
+  // Anything that isn't an object should be sorted first.
+  const unknown: Array<any> = []
+  const scored: Array<ObjectWithScore> = []
 
-      const newScope = scope.createNested(value)
-      let valueScore = typeof value.data._score === 'number' ? value.data._score : 1
-
-      for (const arg of args) {
-        valueScore += await evaluateScore(arg, newScope, execute)
-      }
-
-      const newObject: Record<string, any> = {}
-      Object.assign(newObject, value.data)
-      newObject._score = valueScore
-      yield new StaticValue(newObject)
+  for await (const value of base) {
+    if (!isObject(value)) {
+      unknown.push(value.get())
+      continue
     }
-  })
+
+    const newScope = scope.createNested(value)
+    let valueScore = typeof value.data._score === 'number' ? value.data._score : 0
+
+    for (const arg of args) {
+      valueScore += await evaluateScore(arg, newScope, execute)
+    }
+
+    const newObject = Object.assign({}, value.data, {_score: valueScore})
+    scored.push(newObject)
+  }
+
+  scored.sort((a, b) => b._score - a._score)
+  return new StaticValue(scored.concat(unknown))
 }
 
 pipeFunctions.score.arity = (count) => count >= 1
+
+type ObjectWithScore = Record<string, any> & {_score: number}
