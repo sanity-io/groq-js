@@ -26,11 +26,6 @@ export async function evaluateScore(
   }
 
   switch (node.type) {
-    case 'OpCall':
-    case 'Not': {
-      const res = await execute(node, scope)
-      return res.getBoolean() ? 1 : 0
-    }
     case 'Or': {
       const leftScore = await evaluateScore(node.left, scope, execute)
       const rightScore = await evaluateScore(node.right, scope, execute)
@@ -42,10 +37,11 @@ export async function evaluateScore(
       if (leftScore === 0 || rightScore === 0) return 0
       return leftScore + rightScore
     }
-    default:
+    default: {
+      const res = await execute(node, scope)
+      return res.getBoolean() ? 1 : 0
+    }
   }
-
-  return 0
 }
 
 async function evaluateMatchScore(
