@@ -25,17 +25,17 @@
   },
   "peerDependencies": {},
   "devDependencies": {
-    "@types/jest": "^26.0.14",
-    "@typescript-eslint/eslint-plugin": "^4.16.0",
-    "@typescript-eslint/parser": "^4.16.0",
+    "@types/jest": "^26.0.23",
+    "@typescript-eslint/eslint-plugin": "^4.22.1",
+    "@typescript-eslint/parser": "^4.22.1",
     "eslint-config-sanity": "^5.1.0",
     "ndjson": "^2.0.0",
-    "prettier": "^2.1.2",
+    "prettier": "^2.2.1",
     "semver": "^7.3.5",
     "tap": "^15.0.6",
-    "tsdx": "^0.14.0",
-    "tslib": "^2.1.0",
-    "typescript": "^4.2.0"
+    "tsdx": "^0.14.1",
+    "tslib": "^2.2.0",
+    "typescript": "^4.2.4"
   },
   "jest": {
     "testEnvironment": "node",
