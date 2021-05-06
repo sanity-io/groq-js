@@ -14,7 +14,9 @@
   "scripts": {
     "start": "tsdx watch",
     "build": "tsdx build",
-    "test": "tsdx test",
+    "test:jest": "tsdx test",
+    "test:tap": "[ -e test/suite.taptest.js ] && tap --no-timeout test/suite.taptest.js",
+    "test": "npm run-script test:jest && npm run-script test:tap",
     "coverage": "tsdx test --coverage",
     "lint": "tsdx lint",
     "prepare": "tsdx build",
@@ -29,6 +31,8 @@
     "eslint-config-sanity": "^5.1.0",
     "ndjson": "^2.0.0",
     "prettier": "^2.1.2",
+    "semver": "^7.3.5",
+    "tap": "^15.0.6",
     "tsdx": "^0.14.0",
     "tslib": "^2.1.0",
     "typescript": "^4.2.0"

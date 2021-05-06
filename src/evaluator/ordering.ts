@@ -1,6 +1,6 @@
-import {getType, GroqValueName} from './value'
+import {getType, GroqType} from '../values'
 
-const TYPE_ORDER: {[key in GroqValueName]?: number} = {
+const TYPE_ORDER: {[key in GroqType]?: number} = {
   datetime: 1,
   number: 2,
   string: 3,

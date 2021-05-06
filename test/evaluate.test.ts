@@ -31,6 +31,30 @@ describe('Basic parsing', () => {
     ])
   })
 
+  test('In-range', async () => {
+    let dataset = [
+      {_id: 'a', val: 1},
+      {_id: 'b', val: 5},
+      {_id: 'c', val: 3},
+    ]
+    let query = `*[val in 1..3]._id`
+    let tree = parse(query)
+
+    let value = await evaluate(tree, {dataset})
+    let data = await value.get()
+    expect(data).toStrictEqual(['a', 'c'])
+  })
+
+  test('select() function', async () => {
+    let dataset = [{_id: 'a', a: true}, {_id: 'b', b: true}, {_id: 'c'}]
+    let query = `*{"a":select(a => 1, b => 2, 3)}.a`
+    let tree = parse(query)
+
+    let value = await evaluate(tree, {dataset})
+    let data = await value.get()
+    expect(data).toStrictEqual([1, 2, 3])
+  })
+
   test('Controlling this', async () => {
     let query = `@`
     let tree = parse(query)

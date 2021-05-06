@@ -2,9 +2,11 @@ node_modules
 /yarn.lock
 /package-lock.json
 /test/suite.test.ts
+/test/suite.taptest.js
 /test/datasets
 /groq-test-suite
 /docs
 /coverage
+/.nyc_output
 /dist
 .DS_Store

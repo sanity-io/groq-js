@@ -1,32 +1,41 @@
 import {GroqFunction, GroqPipeFunction} from './evaluator/functions'
-import {Mapper} from './mappers'
 
-export type SyntaxNode =
+/** Any sort of node which appears as syntax */
+export type SyntaxNode = ExprNode | ArrayElementNode | ObjectAttributeNode | SelectAlternativeNode
+
+export type ObjectAttributeNode =
+  | ObjectAttributeValueNode
+  | ObjectConditionalSplatNode
+  | ObjectSplatNode
+
+/** A node which can be evaluated into a value. */
+export type ExprNode =
+  | AccessAttributeNode
+  | AccessElementNode
   | AndNode
   | ArrayNode
-  | ArrayElementNode
   | AscNode
+  | DerefNode
   | DescNode
+  | EverythingNode
+  | FilterNode
+  | FlatMapNode
   | FuncCallNode
-  | IdentifierNode
-  | MapperNode
+  | GroupNode
+  | InRangeNode
+  | MapNode
   | NegNode
   | NotNode
   | ObjectNode
-  | ObjectAttributeNode
-  | ObjectConditionalSplatNode
-  | ObjectSplatNode
   | OpCallNode
   | OrNode
-  | PairNode
   | ParameterNode
   | ParentNode
-  | ParenthesisNode
   | PipeFuncCallNode
   | PosNode
   | ProjectionNode
-  | RangeNode
-  | StarNode
+  | SelectNode
+  | SliceNode
   | ThisNode
   | ValueNode
 
@@ -46,181 +55,196 @@ export type OpCall =
   | 'in'
   | 'match'
 
-export type NodeName =
-  | 'And'
-  | 'Array'
-  | 'ArrayElement'
-  | 'Asc'
-  | 'Desc'
-  | 'FuncCall'
-  | 'Identifier'
-  | 'Mapper'
-  | 'Neg'
-  | 'Not'
-  | 'Object'
-  | 'ObjectAttribute'
-  | 'ObjectConditionalSplat'
-  | 'ObjectSplat'
-  | 'OpCall'
-  | 'Or'
-  | 'Pair'
-  | 'Parameter'
-  | 'Parent'
-  | 'Parenthesis'
-  | 'PipeFuncCall'
-  | 'Pos'
-  | 'Projection'
-  | 'Range'
-  | 'Star'
-  | 'This'
-  | 'Value'
-
-export interface AndNode {
-  type: 'And'
-  left: SyntaxNode
-  right: SyntaxNode
+/** The base interface for SyntaxNode. */
+export interface BaseNode {
+  type: string
 }
 
-export interface ArrayNode {
+export interface AndNode extends BaseNode {
+  type: 'And'
+  left: ExprNode
+  right: ExprNode
+}
+
+export interface ArrayElementNode extends BaseNode {
+  type: 'ArrayElement'
+  value: ExprNode
+  isSplat: boolean
+}
+
+export interface ArrayNode extends BaseNode {
   type: 'Array'
   elements: ArrayElementNode[]
 }
 
-export interface ArrayElementNode {
-  type: 'ArrayElement'
-  value: SyntaxNode
-  isSplat: boolean
-}
-
-export interface AscNode {
+export interface AscNode extends BaseNode {
   type: 'Asc'
-  base: SyntaxNode
+  base: ExprNode
 }
 
-export interface DescNode {
+export interface DerefNode extends BaseNode {
+  type: 'Deref'
+  base: ExprNode
+}
+
+export interface DescNode extends BaseNode {
   type: 'Desc'
-  base: SyntaxNode
+  base: ExprNode
 }
 
-export interface FuncCallNode {
+export interface EverythingNode extends BaseNode {
+  type: 'Everything'
+}
+
+export interface FuncCallNode extends BaseNode {
   type: 'FuncCall'
   func: GroqFunction
   name: string
-  args: SyntaxNode[]
+  args: ExprNode[]
 }
 
-export interface IdentifierNode {
-  type: 'Identifier'
-  name: string
+export interface GroupNode extends BaseNode {
+  type: 'Group'
+  base: ExprNode
 }
 
-export interface MapperNode {
-  type: 'Mapper'
-  base: SyntaxNode
-  mapper: Mapper
+export interface InRangeNode extends BaseNode {
+  type: 'InRange'
+  base: ExprNode
+  left: ExprNode
+  right: ExprNode
+  isInclusive: boolean
 }
 
-export interface NegNode {
+export interface NegNode extends BaseNode {
   type: 'Neg'
-  base: SyntaxNode
+  base: ExprNode
 }
 
-export interface NotNode {
+export interface NotNode extends BaseNode {
   type: 'Not'
-  base: SyntaxNode
+  base: ExprNode
 }
 
-export interface ObjectNode {
-  type: 'Object'
-  attributes: (ObjectAttributeNode | ObjectConditionalSplatNode | ObjectSplatNode)[]
+export interface ObjectAttributeValueNode extends BaseNode {
+  type: 'ObjectAttributeValue'
+  name: string
+  value: ExprNode
 }
 
-export interface ObjectAttributeNode {
-  type: 'ObjectAttribute'
-  key: ValueNode<string>
-  value: ValueNode
-}
-
-export interface ObjectConditionalSplatNode {
+export interface ObjectConditionalSplatNode extends BaseNode {
   type: 'ObjectConditionalSplat'
-  condition: SyntaxNode
-  value: SyntaxNode
+  condition: ExprNode
+  value: ExprNode
 }
 
-export interface ObjectSplatNode {
+export interface ObjectNode extends BaseNode {
+  type: 'Object'
+  attributes: ObjectAttributeNode[]
+}
+
+export interface ObjectSplatNode extends BaseNode {
   type: 'ObjectSplat'
-  value: SyntaxNode
+  value: ExprNode
 }
 
-export interface OpCallNode {
+export interface OpCallNode extends BaseNode {
   type: 'OpCall'
   op: OpCall
-  left: SyntaxNode
-  right: SyntaxNode
+  left: ExprNode
+  right: ExprNode
 }
 
-export interface OrNode {
+export interface OrNode extends BaseNode {
   type: 'Or'
-  left: SyntaxNode
-  right: SyntaxNode
+  left: ExprNode
+  right: ExprNode
 }
 
-export interface PairNode {
-  type: 'Pair'
-  left: SyntaxNode
-  right: SyntaxNode
-}
-
-export interface ParameterNode {
+export interface ParameterNode extends BaseNode {
   type: 'Parameter'
   name: string
 }
 
-export interface ParentNode {
+export interface ParentNode extends BaseNode {
   type: 'Parent'
   n: number
 }
 
-export interface ParenthesisNode {
-  type: 'Parenthesis'
-  base: SyntaxNode
-}
-
-export interface PipeFuncCallNode {
+export interface PipeFuncCallNode extends BaseNode {
   type: 'PipeFuncCall'
   func: GroqPipeFunction
-  base: SyntaxNode
+  base: ExprNode
   name: string
-  args: SyntaxNode[]
+  args: ExprNode[]
 }
 
-export interface PosNode {
+export interface PosNode extends BaseNode {
   type: 'Pos'
-  base: SyntaxNode
+  base: ExprNode
 }
 
-export interface ProjectionNode {
-  type: 'Projection'
-  base: SyntaxNode
-  query: SyntaxNode
+export interface SelectAlternativeNode extends BaseNode {
+  type: 'SelectAlternative'
+  condition: ExprNode
+  value: ExprNode
 }
 
-export interface RangeNode {
-  type: 'Range'
-  left: ValueNode<number>
-  right: ValueNode<number>
-  isExclusive: boolean
+export interface SelectNode extends BaseNode {
+  type: 'Select'
+  alternatives: SelectAlternativeNode[]
+  fallback?: ExprNode
 }
 
-export interface StarNode {
-  type: 'Star'
-}
-
-export interface ThisNode {
+export interface ThisNode extends BaseNode {
   type: 'This'
 }
 
 export interface ValueNode<P = any> {
   type: 'Value'
   value: P
+}
+
+export interface FlatMapNode extends BaseNode {
+  type: 'FlatMap'
+  base: ExprNode
+  expr: ExprNode
+}
+
+export interface MapNode extends BaseNode {
+  type: 'Map'
+  base: ExprNode
+  expr: ExprNode
+}
+
+export interface AccessAttributeNode extends BaseNode {
+  type: 'AccessAttribute'
+  base?: ExprNode
+  name: string
+}
+
+export interface AccessElementNode extends BaseNode {
+  type: 'AccessElement'
+  base: ExprNode
+  index: number
+}
+
+export interface SliceNode extends BaseNode {
+  type: 'Slice'
+  base: ExprNode
+  left: number
+  right: number
+  isInclusive: boolean
+}
+
+export interface FilterNode extends BaseNode {
+  type: 'Filter'
+  base: ExprNode
+  expr: ExprNode
+}
+
+export interface ProjectionNode extends BaseNode {
+  type: 'Projection'
+  base: ExprNode
+  expr: ExprNode
 }

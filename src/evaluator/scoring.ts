@@ -1,13 +1,13 @@
-import {Executor, Scope} from '.'
-import {SyntaxNode} from '../nodeTypes'
+import {Executor} from './types'
+import {ExprNode} from '../nodeTypes'
 import {gatherText, matchPatternRegex, matchTokenize, Token} from './matching'
-import {isNumber} from './value'
+import {Scope} from './scope'
 
 // BM25 similarity constants
 const BM25k = 1.2
 
 export async function evaluateScore(
-  node: SyntaxNode,
+  node: ExprNode,
   scope: Scope,
   execute: Executor
 ): Promise<number> {
@@ -18,7 +18,7 @@ export async function evaluateScore(
   if (node.type === 'FuncCall' && node.name === 'boost') {
     const innerScore = await evaluateScore(node.args[0], scope, execute)
     const boost = await execute(node.args[1], scope)
-    if (isNumber(boost) && innerScore > 0) {
+    if (boost.type === 'number' && innerScore > 0) {
       return innerScore + boost.data
     }
 
@@ -39,14 +39,14 @@ export async function evaluateScore(
     }
     default: {
       const res = await execute(node, scope)
-      return res.getBoolean() ? 1 : 0
+      return res.type === 'boolean' && res.data === true ? 1 : 0
     }
   }
 }
 
 async function evaluateMatchScore(
-  left: SyntaxNode,
-  right: SyntaxNode,
+  left: ExprNode,
+  right: ExprNode,
   scope: Scope,
   execute: Executor
 ): Promise<number> {

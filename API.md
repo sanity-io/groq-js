@@ -12,11 +12,11 @@ import {parse, evaluate} from 'groq-js'
 ## `parse`
 
 ```typescript
-declare function parse(input: string): SyntaxNode
+declare function parse(input: string): ExprNode
 
 interface GroqSyntaxError extends Error {
   position: number
-  name: 'GroqSyntaxError'
+  name = 'GroqSyntaxError'
 }
 ```
 
@@ -39,7 +39,7 @@ interface EvaluateOptions {
   params?: {[key: string]: any}
 }
 
-declare async function evaluate(node: SyntaxNode, options: EvaluateOptions = {})
+declare async function evaluate(node: ExprNode, options: EvaluateOptions = {})
 ```
 
 `evaluate` accepts a node returned by [`parse`](#parse) and evaluates the query.

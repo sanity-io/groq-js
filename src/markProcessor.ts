@@ -1,6 +1,3 @@
-import {SyntaxNode} from './nodeTypes'
-import {NodeBuilder} from './parser'
-
 export type MarkName =
   | 'add'
   | 'and'
@@ -50,21 +47,20 @@ export type MarkName =
   | 'this'
 
 export interface Mark {
-  name: MarkName
+  name: string
   position: number
 }
 
-export type MarkVisitor = {[key in MarkName]?: NodeBuilder}
+export type MarkVisitor<T> = Record<string, MarkVisitorFunc<T>>
+export type MarkVisitorFunc<T> = (p: MarkProcessor, mark: Mark) => T
 
 export class MarkProcessor {
-  private visitor: MarkVisitor
   private string: string
   private marks: Mark[]
   private index: number
   allowBoost = false
 
-  constructor(visitor: MarkVisitor, string: string, marks: Mark[]) {
-    this.visitor = visitor
+  constructor(string: string, marks: Mark[]) {
     this.string = string
     this.marks = marks
     this.index = 0
@@ -82,14 +78,14 @@ export class MarkProcessor {
     this.index += 1
   }
 
-  process(): SyntaxNode {
+  process<T>(visitor: MarkVisitor<T>): T {
     const mark = this.marks[this.index]
     this.shift()
-    const func = this.visitor[mark.name]
+    const func = visitor[mark.name]
     if (!func) {
       throw new Error(`Unknown handler: ${mark.name}`)
     }
-    return func.call(this.visitor, this, mark)
+    return func.call(visitor, this, mark)
   }
 
   processString(): string {
@@ -102,5 +98,10 @@ export class MarkProcessor {
     const curr = this.marks[this.index]
     this.shift()
     return this.string.slice(prev.position, curr.position)
+  }
+
+  slice(len: number): string {
+    const pos = this.marks[this.index].position
+    return this.string.slice(pos, pos + len)
   }
 }
