@@ -6,8 +6,11 @@
 const ndjson = require('ndjson')
 const fs = require('fs')
 const https = require('https')
+const semver = require('semver')
 
 const SUPPORTED_FEATURES = new Set(['scoring'])
+const GROQ_VERSION = '2.0.0'
+const DISABLED_TESTS = ['Filters / documents, nested 3']
 
 const OUTPUT = process.stdout
 const STACK = []
@@ -34,22 +37,19 @@ function space() {
   OUTPUT.write('\n')
 }
 
-write(`import * as fs from 'fs'`)
-write(`import * as ndjson from 'ndjson'`)
-write(`import {evaluate, parse} from '../src'`)
+write(`const fs = require('fs')`)
+write(`const ndjson = require('ndjson')`)
+write(`const tap = require('tap')`)
+write(`const {evaluate, parse} = require('../dist')`)
 space()
 
-write(`interface Document {`)
-write(`  _id: string`)
-write(`  [key: string]: any`)
-write(`}`)
+write(`tap.setTimeout(0)`)
 space()
 
-write(`const DATASETS = new Map<string, Document>()`)
-openStack(`describe("groq-test-suite", () => {BODY})`)
+write(`const DATASETS = new Map()`)
 
 write(`
-const LOADERS = new Map<string, Promise<Document[]>>()
+const LOADERS = new Map()
 
 async function loadDocuments(id) {
   let entry = DATASETS.get(id)
@@ -59,6 +59,8 @@ async function loadDocuments(id) {
   }
 
   if (!LOADERS.has(id)) {
+    // For now we've disabled all external datasets since they are very big.
+    return null
     LOADERS.set(id, new Promise((resolve, reject) => {
       let filename = __dirname + "/datasets/" + entry._id + ".ndjson"
       let documents = []
@@ -73,11 +75,11 @@ async function loadDocuments(id) {
   return LOADERS.get(id)
 }
 
-function replaceScoreWithPos(val: any) {
-  const scores: Set<number> = new Set<number>();
-  const entries: Array<{_score: number}> = [];
+function replaceScoreWithPos(val) {
+  const scores = new Set();
+  const entries = [];
 
-  function visit(val: any) {
+  function visit(val) {
     if (Array.isArray(val)) {
       for (const child of val) {
         visit(child)
@@ -127,17 +129,25 @@ function download(id, url) {
 
   process.stderr.write(`Downloading ${url}\n`)
   https
-    .request(url, res => {
+    .request(url, (res) => {
       res.pipe(fs.createWriteStream(filename))
     })
     .end()
 }
 
+function cmpString(a, b) {
+  if (a < b) return -1
+  if (a > b) return 1
+  return 0
+}
+
 process.stdin
   .pipe(ndjson.parse())
-  .on('data', entry => {
+  .on('data', (entry) => {
     if (entry._type === 'dataset') {
-      if (entry.documents == null) {
+      if (entry.documents) {
+        entry.documents.sort((a, b) => cmpString(a._id, b._id))
+      } else {
         download(entry._id, entry.url)
       }
 
@@ -149,26 +159,32 @@ process.stdin
       const supported = entry.features.every((f) => SUPPORTED_FEATURES.has(f))
       if (!supported) return
 
+      if (entry.version && !semver.satisfies(GROQ_VERSION, entry.version)) return
+
       if (!entry.valid && entry.features.indexOf('scoring') != -1) {
         // For now we don't validate score()
         return
       }
 
       if (/perf/.test(entry.filename)) return
+      if (DISABLED_TESTS.includes(entry.name)) return
 
-      openStack(`test("${entry.name}", async () => {BODY}, 20000)`)
+      openStack(`tap.test(${JSON.stringify(entry.name)}, async (t) => {BODY})`)
       write(`let query = ${JSON.stringify(entry.query)}`)
+      write(`t.comment(query)`)
       if (entry.valid) {
         write(`let result = ${JSON.stringify(entry.result)}`)
         write(`let dataset = await loadDocuments(${JSON.stringify(entry.dataset._ref)})`)
+        write(`if (!dataset) return`)
+        write(`let params = ${JSON.stringify(entry.params || {})}`)
         write(`let tree = parse(query)`)
-        write(`let value = await evaluate(tree, {dataset})`)
+        write(`let value = await evaluate(tree, {dataset, params})`)
         write(`let data = await value.get()`)
         write(`data = JSON.parse(JSON.stringify(data))`)
         write(`replaceScoreWithPos(data)`)
-        write(`expect(data).toStrictEqual(result)`)
+        write(`t.match(data, result)`)
       } else {
-        write(`expect(() => parse(query)).toThrow()`)
+        write(`t.throws(() => parse(query))`)
       }
       closeStack()
       space()

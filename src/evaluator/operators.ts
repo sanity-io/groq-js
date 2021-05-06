@@ -1,36 +1,33 @@
-import {OpCall, SyntaxNode} from '../nodeTypes'
-import {StaticValue, TRUE_VALUE, FALSE_VALUE, NULL_VALUE, fromNumber, Value} from './value'
+import {OpCall} from '../nodeTypes'
+import {
+  TRUE_VALUE,
+  FALSE_VALUE,
+  NULL_VALUE,
+  fromNumber,
+  Value,
+  fromString,
+  fromJS,
+  fromDateTime,
+  StreamValue,
+} from '../values'
 import {isEqual} from './equality'
 import {partialCompare} from './ordering'
-import {Scope, Executor} from './'
 import {gatherText, Token, Pattern, matchText, matchTokenize, matchAnalyzePattern} from './matching'
 
-type GroqOperatorFn = (
-  left: SyntaxNode,
-  right: SyntaxNode,
-  scope: Scope,
-  execute: Executor
-) => Value | PromiseLike<Value>
+type GroqOperatorFn = (left: Value, right: Value) => Value | PromiseLike<Value>
 
 export const operators: {[key in OpCall]: GroqOperatorFn} = {
-  '==': async function eq(left, right, scope, execute) {
-    const a = await execute(left, scope)
-    const b = await execute(right, scope)
-    const result = await isEqual(a, b)
-    return result ? TRUE_VALUE : FALSE_VALUE
+  '==': function eq(left, right) {
+    return isEqual(left, right) ? TRUE_VALUE : FALSE_VALUE
   },
 
-  '!=': async function neq(left, right, scope, execute) {
-    const a = await execute(left, scope)
-    const b = await execute(right, scope)
-    const result = await isEqual(a, b)
-    return result ? FALSE_VALUE : TRUE_VALUE
+  '!=': function neq(left, right) {
+    return isEqual(left, right) ? FALSE_VALUE : TRUE_VALUE
   },
 
-  '>': async function gt(left, right, scope, execute) {
-    const a = await (await execute(left, scope)).get()
-    const b = await (await execute(right, scope)).get()
-    const result = partialCompare(a, b)
+  '>': function gt(left, right) {
+    if (left.type === 'stream' || right.type === 'stream') return NULL_VALUE
+    const result = partialCompare(left.data, right.data)
 
     if (result === null) {
       return NULL_VALUE
@@ -38,10 +35,9 @@ export const operators: {[key in OpCall]: GroqOperatorFn} = {
     return result > 0 ? TRUE_VALUE : FALSE_VALUE
   },
 
-  '>=': async function gte(left, right, scope, execute) {
-    const a = await (await execute(left, scope)).get()
-    const b = await (await execute(right, scope)).get()
-    const result = partialCompare(a, b)
+  '>=': function gte(left, right) {
+    if (left.type === 'stream' || right.type === 'stream') return NULL_VALUE
+    const result = partialCompare(left.data, right.data)
 
     if (result === null) {
       return NULL_VALUE
@@ -49,10 +45,9 @@ export const operators: {[key in OpCall]: GroqOperatorFn} = {
     return result >= 0 ? TRUE_VALUE : FALSE_VALUE
   },
 
-  '<': async function lt(left, right, scope, execute) {
-    const a = await (await execute(left, scope)).get()
-    const b = await (await execute(right, scope)).get()
-    const result = partialCompare(a, b)
+  '<': function lt(left, right) {
+    if (left.type === 'stream' || right.type === 'stream') return NULL_VALUE
+    const result = partialCompare(left.data, right.data)
 
     if (result === null) {
       return NULL_VALUE
@@ -60,10 +55,9 @@ export const operators: {[key in OpCall]: GroqOperatorFn} = {
     return result < 0 ? TRUE_VALUE : FALSE_VALUE
   },
 
-  '<=': async function lte(left, right, scope, execute) {
-    const a = await (await execute(left, scope)).get()
-    const b = await (await execute(right, scope)).get()
-    const result = partialCompare(a, b)
+  '<=': function lte(left, right) {
+    if (left.type === 'stream' || right.type === 'stream') return NULL_VALUE
+    const result = partialCompare(left.data, right.data)
 
     if (result === null) {
       return NULL_VALUE
@@ -72,60 +66,37 @@ export const operators: {[key in OpCall]: GroqOperatorFn} = {
   },
 
   // eslint-disable-next-line func-name-matching
-  in: async function inop(left, right, scope, execute) {
-    const a = await execute(left, scope)
-    const choices = await execute(right, scope)
-
-    switch (choices.getType()) {
-      case 'array':
-        for await (const b of choices) {
-          if (await isEqual(a, b)) {
-            return TRUE_VALUE
-          }
-        }
-        return FALSE_VALUE
-      case 'range': {
-        const value = await a.get()
-        const range = await choices.get()
-        const leftCmp = partialCompare(value, range.left)
-        if (leftCmp === null) {
-          return NULL_VALUE
-        }
-        const rightCmp = partialCompare(value, range.right)
-        if (rightCmp === null) {
-          return NULL_VALUE
-        }
-
-        if (range.isExclusive()) {
-          return leftCmp >= 0 && rightCmp < 0 ? TRUE_VALUE : FALSE_VALUE
-        }
-        return leftCmp >= 0 && rightCmp <= 0 ? TRUE_VALUE : FALSE_VALUE
-      }
-      case 'path': {
-        if (a.getType() !== 'string') {
-          return NULL_VALUE
-        }
-        const str = await a.get()
-        const path = await choices.get()
-        return path.matches(str) ? TRUE_VALUE : FALSE_VALUE
-      }
-      default:
+  in: async function inop(left, right) {
+    if (right.type === 'path') {
+      if (left.type !== 'string') {
         return NULL_VALUE
+      }
+
+      return right.data.matches(left.data) ? TRUE_VALUE : FALSE_VALUE
     }
+
+    if (right.isArray()) {
+      for await (const b of right) {
+        if (isEqual(left, b)) {
+          return TRUE_VALUE
+        }
+      }
+
+      return FALSE_VALUE
+    }
+
+    return NULL_VALUE
   },
 
-  match: async function match(left, right, scope, execute) {
-    const text = await execute(left, scope)
-    const pattern = await execute(right, scope)
-
+  match: async function match(left, right) {
     let tokens: Token[] = []
     let patterns: Pattern[] = []
 
-    await gatherText(text, (part) => {
+    await gatherText(left, (part) => {
       tokens = tokens.concat(matchTokenize(part))
     })
 
-    const didSucceed = await gatherText(pattern, (part) => {
+    const didSucceed = await gatherText(right, (part) => {
       patterns = patterns.concat(matchAnalyzePattern(part))
     })
     if (!didSucceed) {
@@ -137,53 +108,53 @@ export const operators: {[key in OpCall]: GroqOperatorFn} = {
     return matched ? TRUE_VALUE : FALSE_VALUE
   },
 
-  '+': async function plus(left, right, scope, execute) {
-    const a = await execute(left, scope)
-    const b = await execute(right, scope)
-    const aType = a.getType()
-    const bType = b.getType()
-
-    if (aType === 'datetime' && bType === 'number') {
-      const dateTime = await a.get()
-      const secs = await b.get()
-      return new StaticValue(dateTime.add(secs))
+  '+': function plus(left, right) {
+    if (left.type === 'datetime' && right.type === 'number') {
+      return fromDateTime(left.data.add(right.data))
     }
 
-    if ((aType === 'number' && bType === 'number') || (aType === 'string' && bType === 'string')) {
-      return new StaticValue((await a.get()) + (await b.get()))
+    if (left.type === 'number' && right.type === 'number') {
+      return fromNumber(left.data + right.data)
     }
 
-    if (aType === 'array' && bType === 'array') {
-      return new StaticValue((await a.get()).concat(await b.get()))
+    if (left.type === 'string' && right.type === 'string') {
+      return fromString(left.data + right.data)
     }
 
-    if (aType === 'object' && bType === 'object') {
-      return new StaticValue({...(await a.get()), ...(await b.get())})
+    if (left.type === 'object' && right.type === 'object') {
+      return fromJS({...left.data, ...right.data})
+    }
+
+    if (left.type === 'array' && right.type === 'array') {
+      return fromJS(left.data.concat(right.data))
+    }
+
+    if (left.isArray() && right.isArray()) {
+      return new StreamValue(async function* () {
+        for await (const val of left) {
+          yield val
+        }
+
+        for await (const val of right) {
+          yield val
+        }
+      })
     }
 
     return NULL_VALUE
   },
 
-  '-': async function minus(left, right, scope, execute) {
-    const a = await execute(left, scope)
-    const b = await execute(right, scope)
-    const aType = a.getType()
-    const bType = b.getType()
-
-    if (aType === 'datetime' && bType === 'number') {
-      const dateTime = await a.get()
-      const secs = await b.get()
-      return new StaticValue(dateTime.add(-secs))
+  '-': function minus(left, right) {
+    if (left.type === 'datetime' && right.type === 'number') {
+      return fromDateTime(left.data.add(-right.data))
     }
 
-    if (aType === 'datetime' && bType === 'datetime') {
-      const aDateTime = await a.get()
-      const bDateTime = await b.get()
-      return new StaticValue(aDateTime.difference(bDateTime))
+    if (left.type === 'datetime' && right.type === 'datetime') {
+      return fromNumber(left.data.difference(right.data))
     }
 
-    if (aType === 'number' && bType === 'number') {
-      return new StaticValue((await a.get()) - (await b.get()))
+    if (left.type === 'number' && right.type === 'number') {
+      return fromNumber(left.data - right.data)
     }
 
     return NULL_VALUE
@@ -196,14 +167,9 @@ export const operators: {[key in OpCall]: GroqOperatorFn} = {
 }
 
 function numericOperator(impl: (a: number, b: number) => number): GroqOperatorFn {
-  return async function (left, right, scope, execute) {
-    const a = await execute(left, scope)
-    const b = await execute(right, scope)
-    const aType = a.getType()
-    const bType = b.getType()
-
-    if (aType === 'number' && bType === 'number') {
-      const result = impl(await a.get(), await b.get())
+  return function (left, right) {
+    if (left.type === 'number' && right.type === 'number') {
+      const result = impl(left.data, right.data)
       return fromNumber(result)
     }
 

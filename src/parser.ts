@@ -1,10 +1,16 @@
 /* eslint-disable camelcase */
 import * as NodeTypes from './nodeTypes'
-import {Mark, MarkProcessor, MarkVisitor, MarkName} from './markProcessor'
+import {Mark, MarkProcessor, MarkVisitor} from './markProcessor'
 import {functions, GroqFunctionArity, pipeFunctions} from './evaluator/functions'
 import {parse as rawParse} from './rawParser'
-import {processMapper, MAP_BUILDER} from './mappers'
-import {isNumber} from './nodeHelpers'
+import {
+  TraversalResult,
+  traverseArray,
+  traverseElement,
+  traversePlain,
+  traverseProjection,
+} from './traversal'
+import {tryConstantEvaluate} from './evaluator'
 
 type EscapeSequences = "'" | '"' | '\\' | '/' | 'b' | 'f' | 'n' | 'r' | 't'
 
@@ -25,76 +31,62 @@ function expandHex(str: string): string {
   return String.fromCharCode(charCode)
 }
 
-function expandEscapeSequence(str: String): string {
-  const re = /\\(['"/\\bfnrt]|u([A-Fa-f0-9]{4})|u\{([A-Fa-f0-9]+)\})/g
-  return str.replace(
-    re,
-    (_: string, esc: EscapeSequences, u1?: string | null, u2?: string | null) => {
-      if (u1) {
-        return expandHex(u1)
-      }
-      if (u2) {
-        return expandHex(u2)
-      }
-      return ESCAPE_SEQUENCE[esc]
-    }
-  )
-}
-
-export type NodeBuilder<P = NodeTypes.SyntaxNode> = (
-  this: MarkVisitor,
-  processor: MarkProcessor,
-  mark: Mark
-) => P
-
-export type NodeBuilderArgs = [MarkProcessor, Mark]
-
 class GroqQueryError extends Error {
-  public name: 'GroqQueryError'
+  public name = 'GroqQueryError'
 }
 
-const BUILDER: {[key in MarkName]?: NodeBuilder} = {
-  paren(p): NodeTypes.ParenthesisNode {
-    const inner = p.process()
+const EXPR_BUILDER: MarkVisitor<NodeTypes.ExprNode> = {
+  group(p) {
+    const inner = p.process(EXPR_BUILDER)
     return {
-      type: 'Parenthesis',
+      type: 'Group',
       base: inner,
     }
   },
 
-  filter(p): NodeTypes.SyntaxNode {
-    return processMapper(p, MAP_BUILDER.filter)
+  everything() {
+    return {type: 'Everything'}
   },
 
-  project(p): NodeTypes.SyntaxNode {
-    return processMapper(p, MAP_BUILDER.project)
-  },
-
-  star(): NodeTypes.StarNode {
-    return {type: 'Star'}
-  },
-
-  this(): NodeTypes.ThisNode {
+  this() {
     return {type: 'This'}
   },
 
-  parent(): NodeTypes.ParentNode {
+  parent() {
     return {
       type: 'Parent',
       n: 1,
     }
   },
 
-  dblparent(p): NodeTypes.ParentNode {
-    const next = p.process() as NodeTypes.ParentNode
+  dblparent(p) {
+    const next = p.process(EXPR_BUILDER) as NodeTypes.ParentNode
     return {
       type: 'Parent',
       n: next.n + 1,
     }
   },
 
-  ident(p): NodeTypes.ValueNode | NodeTypes.IdentifierNode {
-    const name = p.processStringEnd()
+  traverse(p) {
+    const base = p.process(EXPR_BUILDER)
+    const traversalList: Array<(right: TraversalResult | null) => TraversalResult> = []
+    while (p.getMark().name !== 'traversal_end') {
+      traversalList.push(p.process(TRAVERSE_BUILDER))
+    }
+    p.shift()
+    let traversal: TraversalResult | null = null
+    for (let i = traversalList.length - 1; i >= 0; i--) {
+      traversal = traversalList[i](traversal)
+    }
+    if (base.type === 'Everything' || base.type === 'Array' || base.type === 'PipeFuncCall') {
+      traversal = traverseArray((val) => val, traversal)
+    }
+    if (traversal === null) throw new Error('BUG: unexpected empty traversal')
+    return traversal.build(base)
+  },
+
+  this_attr(p) {
+    const name = p.processString()
 
     if (name === 'null') {
       return {type: 'Value', value: null}
@@ -107,50 +99,13 @@ const BUILDER: {[key in MarkName]?: NodeBuilder} = {
     }
 
     return {
-      type: 'Identifier',
-      name: name,
+      type: 'AccessAttribute',
+      name,
     }
   },
 
-  attr_ident(p): NodeTypes.SyntaxNode {
-    return processMapper(p, MAP_BUILDER.attr_ident!)
-  },
-
-  arr_expr(p): NodeTypes.SyntaxNode {
-    return processMapper(p, MAP_BUILDER.arr_expr!)
-  },
-
-  inc_range(p): NodeTypes.RangeNode {
-    const left = p.process() as NodeTypes.ValueNode<number>
-    const right = p.process() as NodeTypes.ValueNode<number>
-    return {
-      type: 'Range',
-      left,
-      right,
-      isExclusive: false,
-    }
-  },
-
-  exc_range(p): NodeTypes.RangeNode {
-    const left = p.process() as NodeTypes.ValueNode<number>
-    const right = p.process() as NodeTypes.ValueNode<number>
-    return {
-      type: 'Range',
-      left,
-      right,
-      isExclusive: true,
-    }
-  },
-
-  neg(p): NodeTypes.ValueNode | NodeTypes.NegNode {
-    const base = p.process()
-
-    if (base.type === 'Value' && typeof base.value === 'number') {
-      return {
-        type: 'Value',
-        value: -base.value,
-      }
-    }
+  neg(p) {
+    const base = p.process(EXPR_BUILDER)
 
     return {
       type: 'Neg',
@@ -158,15 +113,8 @@ const BUILDER: {[key in MarkName]?: NodeBuilder} = {
     }
   },
 
-  pos(p): NodeTypes.ValueNode | NodeTypes.PosNode {
-    const base = p.process()
-
-    if (isNumber(base)) {
-      return {
-        type: 'Value',
-        value: +base.value,
-      }
-    }
+  pos(p) {
+    const base = p.process(EXPR_BUILDER)
 
     return {
       type: 'Pos',
@@ -174,9 +122,9 @@ const BUILDER: {[key in MarkName]?: NodeBuilder} = {
     }
   },
 
-  add(p): NodeTypes.OpCallNode {
-    const left = p.process()
-    const right = p.process()
+  add(p) {
+    const left = p.process(EXPR_BUILDER)
+    const right = p.process(EXPR_BUILDER)
     return {
       type: 'OpCall',
       op: '+',
@@ -185,9 +133,9 @@ const BUILDER: {[key in MarkName]?: NodeBuilder} = {
     }
   },
 
-  sub(p): NodeTypes.OpCallNode {
-    const left = p.process()
-    const right = p.process()
+  sub(p) {
+    const left = p.process(EXPR_BUILDER)
+    const right = p.process(EXPR_BUILDER)
     return {
       type: 'OpCall',
       op: '-',
@@ -196,9 +144,9 @@ const BUILDER: {[key in MarkName]?: NodeBuilder} = {
     }
   },
 
-  mul(p): NodeTypes.OpCallNode {
-    const left = p.process()
-    const right = p.process()
+  mul(p) {
+    const left = p.process(EXPR_BUILDER)
+    const right = p.process(EXPR_BUILDER)
     return {
       type: 'OpCall',
       op: '*',
@@ -207,9 +155,9 @@ const BUILDER: {[key in MarkName]?: NodeBuilder} = {
     }
   },
 
-  div(p): NodeTypes.OpCallNode {
-    const left = p.process()
-    const right = p.process()
+  div(p) {
+    const left = p.process(EXPR_BUILDER)
+    const right = p.process(EXPR_BUILDER)
     return {
       type: 'OpCall',
       op: '/',
@@ -218,9 +166,9 @@ const BUILDER: {[key in MarkName]?: NodeBuilder} = {
     }
   },
 
-  mod(p): NodeTypes.OpCallNode {
-    const left = p.process()
-    const right = p.process()
+  mod(p) {
+    const left = p.process(EXPR_BUILDER)
+    const right = p.process(EXPR_BUILDER)
     return {
       type: 'OpCall',
       op: '%',
@@ -229,9 +177,9 @@ const BUILDER: {[key in MarkName]?: NodeBuilder} = {
     }
   },
 
-  pow(p): NodeTypes.OpCallNode {
-    const left = p.process()
-    const right = p.process()
+  pow(p) {
+    const left = p.process(EXPR_BUILDER)
+    const right = p.process(EXPR_BUILDER)
     return {
       type: 'OpCall',
       op: '**',
@@ -240,14 +188,10 @@ const BUILDER: {[key in MarkName]?: NodeBuilder} = {
     }
   },
 
-  deref(p): NodeTypes.SyntaxNode {
-    return processMapper(p, MAP_BUILDER.deref!)
-  },
-
-  comp(p): NodeTypes.OpCallNode {
-    const left = p.process()
+  comp(p) {
+    const left = p.process(EXPR_BUILDER)
     const op = p.processString() as NodeTypes.OpCall
-    const right = p.process()
+    const right = p.process(EXPR_BUILDER)
     return {
       type: 'OpCall',
       op: op,
@@ -256,52 +200,82 @@ const BUILDER: {[key in MarkName]?: NodeBuilder} = {
     }
   },
 
-  str_begin(p): NodeTypes.ValueNode<string> {
-    const value = expandEscapeSequence(p.processStringEnd())
+  in_range(p) {
+    const base = p.process(EXPR_BUILDER)
+    const isInclusive = p.getMark().name === 'inc_range'
+    p.shift()
+    const left = p.process(EXPR_BUILDER)
+    const right = p.process(EXPR_BUILDER)
     return {
-      type: 'Value',
-      value: value,
-    }
-  },
-
-  integer(p): NodeTypes.ValueNode<number> {
-    const strValue = p.processStringEnd()
-    return {
-      type: 'Value',
-      value: Number(strValue),
-    }
-  },
-
-  float(p): NodeTypes.ValueNode<number> {
-    const strValue = p.processStringEnd()
-    return {
-      type: 'Value',
-      value: Number(strValue),
-    }
-  },
-
-  sci(p): NodeTypes.ValueNode<number> {
-    const strValue = p.processStringEnd()
-    return {
-      type: 'Value',
-      value: Number(strValue),
-    }
-  },
-
-  pair(p): NodeTypes.PairNode {
-    const left = p.process()
-    const right = p.process()
-    return {
-      type: 'Pair',
+      type: 'InRange',
+      base,
       left,
       right,
+      isInclusive,
     }
   },
 
-  object(p): NodeTypes.ObjectNode {
+  str(p) {
+    let value = ''
+    // eslint-disable-next-line no-labels
+    loop: while (p.hasMark()) {
+      const mark = p.getMark()
+      switch (mark.name) {
+        case 'str_end':
+          value += p.processStringEnd()
+          // eslint-disable-next-line no-labels
+          break loop
+        case 'str_pause':
+          value += p.processStringEnd()
+          break
+        case 'str_start':
+          p.shift()
+          break
+        case 'single_escape': {
+          const char = p.slice(1)
+          p.shift()
+          value += ESCAPE_SEQUENCE[char as EscapeSequences]
+          break
+        }
+        case 'unicode_hex':
+          p.shift()
+          value += expandHex(p.processStringEnd())
+          break
+        default:
+          throw new Error(`unexpected mark: ${mark.name}`)
+      }
+    }
+    return {type: 'Value', value}
+  },
+
+  integer(p) {
+    const strValue = p.processStringEnd()
+    return {
+      type: 'Value',
+      value: Number(strValue),
+    }
+  },
+
+  float(p) {
+    const strValue = p.processStringEnd()
+    return {
+      type: 'Value',
+      value: Number(strValue),
+    }
+  },
+
+  sci(p) {
+    const strValue = p.processStringEnd()
+    return {
+      type: 'Value',
+      value: Number(strValue),
+    }
+  },
+
+  object(p) {
     const attributes: NodeTypes.ObjectAttributeNode[] = []
     while (p.getMark().name !== 'object_end') {
-      attributes.push(p.process() as NodeTypes.ObjectAttributeNode)
+      attributes.push(p.process(OBJECT_BUILDER))
     }
     p.shift()
 
@@ -311,54 +285,7 @@ const BUILDER: {[key in MarkName]?: NodeBuilder} = {
     }
   },
 
-  object_expr(p): NodeTypes.ObjectConditionalSplatNode | NodeTypes.ObjectAttributeNode {
-    const value = p.process()
-
-    if (value.type === 'Pair') {
-      return {
-        type: 'ObjectConditionalSplat',
-        condition: value.left,
-        value: value.right,
-      }
-    }
-
-    return {
-      type: 'ObjectAttribute',
-      key: {
-        type: 'Value',
-        value: extractPropertyKey(value),
-      },
-      value: value as NodeTypes.ValueNode,
-    }
-  },
-
-  object_pair(p): NodeTypes.ObjectAttributeNode {
-    const key = p.process()
-    const value = p.process()
-    return {
-      type: 'ObjectAttribute',
-      key: key as NodeTypes.ValueNode<string>,
-      value: value as NodeTypes.ValueNode,
-    }
-  },
-
-  object_splat(p): NodeTypes.ObjectSplatNode {
-    const value = p.process()
-
-    return {
-      type: 'ObjectSplat',
-      value,
-    }
-  },
-
-  object_splat_this(): NodeTypes.ObjectSplatNode {
-    return {
-      type: 'ObjectSplat',
-      value: {type: 'This'},
-    }
-  },
-
-  array(p): NodeTypes.ArrayNode {
+  array(p) {
     const elements: NodeTypes.ArrayElementNode[] = []
     while (p.getMark().name !== 'array_end') {
       let isSplat = false
@@ -366,7 +293,7 @@ const BUILDER: {[key in MarkName]?: NodeBuilder} = {
         isSplat = true
         p.shift()
       }
-      const value = p.process()
+      const value = p.process(EXPR_BUILDER)
       elements.push({
         type: 'ArrayElement',
         value,
@@ -380,11 +307,38 @@ const BUILDER: {[key in MarkName]?: NodeBuilder} = {
     }
   },
 
-  func_call(p): NodeTypes.FuncCallNode {
-    const name = p.processStringEnd()
-    const args: NodeTypes.SyntaxNode[] = []
+  func_call(p) {
+    const name = p.processString()
+    if (name === 'select') {
+      const result: NodeTypes.SelectNode = {
+        type: 'Select',
+        alternatives: [],
+      }
+
+      while (p.getMark().name !== 'func_args_end') {
+        if (p.getMark().name === 'pair') {
+          if (result.fallback) throw new GroqQueryError(`unexpected argument to select()`)
+          p.shift()
+          const condition = p.process(EXPR_BUILDER)
+          const value = p.process(EXPR_BUILDER)
+          result.alternatives.push({
+            type: 'SelectAlternative',
+            condition,
+            value,
+          })
+        } else {
+          if (result.fallback) throw new GroqQueryError(`unexpected argument to select()`)
+          const value = p.process(EXPR_BUILDER)
+          result.fallback = value
+        }
+      }
+      p.shift()
+      return result
+    }
+
+    const args: NodeTypes.ExprNode[] = []
     while (p.getMark().name !== 'func_args_end') {
-      args.push(p.process())
+      args.push(p.process(EXPR_BUILDER))
     }
     p.shift()
 
@@ -394,7 +348,9 @@ const BUILDER: {[key in MarkName]?: NodeBuilder} = {
     if (!func) {
       throw new GroqQueryError(`Undefined function: ${name}`)
     }
-    validateArity(name, func.arity, args.length)
+    if (func.arity !== undefined) {
+      validateArity(name, func.arity, args.length)
+    }
 
     return {
       type: 'FuncCall',
@@ -404,10 +360,11 @@ const BUILDER: {[key in MarkName]?: NodeBuilder} = {
     }
   },
 
-  pipecall(p): NodeTypes.PipeFuncCallNode {
-    const base = p.process()
+  pipecall(p) {
+    const base = p.process(EXPR_BUILDER)
+    p.shift() // Remove the func_call
     const name = p.processString()
-    const args: NodeTypes.SyntaxNode[] = []
+    const args: NodeTypes.ExprNode[] = []
 
     const oldAllowBoost = p.allowBoost
     if (name === 'score') {
@@ -424,16 +381,16 @@ const BUILDER: {[key in MarkName]?: NodeBuilder} = {
       if (name === 'order') {
         if (markName === 'asc') {
           p.shift()
-          args.push({type: 'Asc', base: p.process()})
+          args.push({type: 'Asc', base: p.process(EXPR_BUILDER)})
           continue
         } else if (markName === 'desc') {
           p.shift()
-          args.push({type: 'Desc', base: p.process()})
+          args.push({type: 'Desc', base: p.process(EXPR_BUILDER)})
           continue
         }
       }
 
-      args.push(p.process())
+      args.push(p.process(EXPR_BUILDER))
     }
     p.shift()
 
@@ -443,20 +400,26 @@ const BUILDER: {[key in MarkName]?: NodeBuilder} = {
     if (!func) {
       throw new GroqQueryError(`Undefined pipe function: ${name}`)
     }
-    validateArity(name, func.arity, args.length)
+    if (func.arity) {
+      validateArity(name, func.arity, args.length)
+    }
 
     return {
       type: 'PipeFuncCall',
       func,
       base,
-      name: func.name,
+      name,
       args,
     }
   },
 
-  and(p): NodeTypes.AndNode {
-    const left = p.process()
-    const right = p.process()
+  pair(p) {
+    throw new GroqQueryError(`unexpected =>`)
+  },
+
+  and(p) {
+    const left = p.process(EXPR_BUILDER)
+    const right = p.process(EXPR_BUILDER)
     return {
       type: 'And',
       left,
@@ -464,9 +427,9 @@ const BUILDER: {[key in MarkName]?: NodeBuilder} = {
     }
   },
 
-  or(p): NodeTypes.OrNode {
-    const left = p.process()
-    const right = p.process()
+  or(p) {
+    const left = p.process(EXPR_BUILDER)
+    const right = p.process(EXPR_BUILDER)
     return {
       type: 'Or',
       left,
@@ -474,24 +437,24 @@ const BUILDER: {[key in MarkName]?: NodeBuilder} = {
     }
   },
 
-  not(p): NodeTypes.NotNode {
-    const base = p.process()
+  not(p) {
+    const base = p.process(EXPR_BUILDER)
     return {
       type: 'Not',
       base,
     }
   },
 
-  asc(p): NodeTypes.AscNode {
+  asc(p) {
     throw new GroqQueryError('unexpected asc')
   },
 
-  desc(p): NodeTypes.DescNode {
+  desc(p) {
     throw new GroqQueryError('unexpected desc')
   },
 
-  param(p): NodeTypes.ParameterNode {
-    const name = p.processStringEnd()
+  param(p) {
+    const name = p.processString()
 
     return {
       type: 'Parameter',
@@ -500,12 +463,163 @@ const BUILDER: {[key in MarkName]?: NodeBuilder} = {
   },
 }
 
-function extractPropertyKey(node: NodeTypes.SyntaxNode): string {
-  if (node.type === 'Identifier') {
+const OBJECT_BUILDER: MarkVisitor<NodeTypes.ObjectAttributeNode> = {
+  object_expr(p) {
+    if (p.getMark().name === 'pair') {
+      p.shift()
+      const condition = p.process(EXPR_BUILDER)
+      const value = p.process(EXPR_BUILDER)
+
+      return {
+        type: 'ObjectConditionalSplat',
+        condition,
+        value,
+      }
+    }
+
+    const value = p.process(EXPR_BUILDER)
+
+    return {
+      type: 'ObjectAttributeValue',
+      name: extractPropertyKey(value),
+      value,
+    }
+  },
+
+  object_pair(p) {
+    const name = p.process(EXPR_BUILDER)
+    if (name.type !== 'Value') throw new Error('name must be string')
+
+    const value = p.process(EXPR_BUILDER)
+    return {
+      type: 'ObjectAttributeValue',
+      name: name.value,
+      value: value,
+    }
+  },
+
+  object_splat(p): NodeTypes.ObjectSplatNode {
+    const value = p.process(EXPR_BUILDER)
+
+    return {
+      type: 'ObjectSplat',
+      value,
+    }
+  },
+
+  object_splat_this(): NodeTypes.ObjectSplatNode {
+    return {
+      type: 'ObjectSplat',
+      value: {type: 'This'},
+    }
+  },
+}
+
+const TRAVERSE_BUILDER: MarkVisitor<(rhs: TraversalResult | null) => TraversalResult> = {
+  square_bracket(p) {
+    const expr = p.process(EXPR_BUILDER)
+
+    const value = tryConstantEvaluate(expr)
+    if (value && value.type === 'number') {
+      return (right) =>
+        traverseElement((base) => ({type: 'AccessElement', base, index: value.data}), right)
+    }
+
+    if (value && value.type === 'string') {
+      return (right) =>
+        traversePlain((base) => ({type: 'AccessAttribute', base, name: value.data}), right)
+    }
+
+    return (right) =>
+      traverseArray(
+        (base) => ({
+          type: 'Filter',
+          base,
+          expr,
+        }),
+        right
+      )
+  },
+
+  slice(p) {
+    const isInclusive = p.getMark().name === 'inc_range'
+    p.shift()
+
+    const left = p.process(EXPR_BUILDER)
+    const right = p.process(EXPR_BUILDER)
+
+    const leftValue = tryConstantEvaluate(left)
+    const rightValue = tryConstantEvaluate(right)
+
+    if (!leftValue || !rightValue || leftValue.type !== 'number' || rightValue.type !== 'number') {
+      throw new GroqQueryError('slicing must use constant numbers')
+    }
+
+    return (rhs) =>
+      traverseArray(
+        (base) => ({
+          type: 'Slice',
+          base,
+          left: leftValue.data,
+          right: rightValue.data,
+          isInclusive,
+        }),
+        rhs
+      )
+  },
+
+  projection(p) {
+    const obj = p.process(EXPR_BUILDER)
+    return (right) =>
+      traverseProjection((base) => ({type: 'Projection', base: base, expr: obj}), right)
+  },
+
+  attr_access(p) {
+    const name = p.processString()
+
+    return (right) => traversePlain((base) => ({type: 'AccessAttribute', base, name}), right)
+  },
+
+  deref(p) {
+    let attr: string | null = null
+
+    if (p.getMark().name === 'deref_attr') {
+      p.shift()
+      attr = p.processString()
+    }
+
+    const wrap = (base: NodeTypes.ExprNode): NodeTypes.ExprNode =>
+      attr ? {type: 'AccessAttribute', base, name: attr} : base
+
+    return (right) =>
+      traversePlain(
+        (base) =>
+          wrap({
+            type: 'Deref',
+            base,
+          }),
+        right
+      )
+  },
+
+  array_postfix(p) {
+    return (right) => traverseArray((base) => base, right)
+  },
+}
+
+function extractPropertyKey(node: NodeTypes.ExprNode): string {
+  if (node.type === 'AccessAttribute' && !node.base) {
     return node.name
   }
 
-  if (node.type === 'Mapper') {
+  if (
+    node.type === 'Deref' ||
+    node.type === 'Map' ||
+    node.type === 'Projection' ||
+    node.type === 'Slice' ||
+    node.type === 'Filter' ||
+    node.type === 'AccessElement'
+  ) {
     return extractPropertyKey(node.base)
   }
 
@@ -539,11 +653,11 @@ class GroqSyntaxError extends Error {
 /**
  * Parses a GROQ query and returns a tree structure.
  */
-export function parse(input: string): NodeTypes.SyntaxNode {
+export function parse(input: string): NodeTypes.ExprNode {
   const result = rawParse(input)
   if (result.type === 'error') {
     throw new GroqSyntaxError(result.position)
   }
-  const processor = new MarkProcessor(BUILDER, input, result.marks as Mark[])
-  return processor.process()
+  const processor = new MarkProcessor(input, result.marks as Mark[])
+  return processor.process(EXPR_BUILDER)
 }

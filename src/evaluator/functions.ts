@@ -1,10 +1,9 @@
-import type {SyntaxNode} from '../nodeTypes'
+import type {ExprNode} from '../nodeTypes'
 import {totalCompare} from './ordering'
+import {Scope} from './scope'
 import {evaluateScore} from './scoring'
-import {Scope, Executor} from './index'
+import {Executor} from './types'
 import {
-  StaticValue,
-  Path,
   getType,
   fromNumber,
   TRUE_VALUE,
@@ -12,9 +11,11 @@ import {
   NULL_VALUE,
   Value,
   DateTime,
-  StreamValue,
-  isObject,
-} from './value'
+  fromString,
+  fromPath,
+  Path,
+  fromJS,
+} from '../values'
 
 function hasReference(value: any, pathSet: Set<string>): boolean {
   switch (getType(value)) {
@@ -55,7 +56,7 @@ function countUTF8(str: string): number {
   return count
 }
 
-type GroqFunctionArg = any
+type GroqFunctionArg = ExprNode
 type WithArity<T> = T & {
   arity?: GroqFunctionArity
 }
@@ -73,7 +74,7 @@ export const functions: {[key: string]: WithArity<GroqFunction>} = {}
 functions.coalesce = async function coalesce(args, scope, execute) {
   for (const arg of args) {
     const value = await execute(arg, scope)
-    if (value.getType() !== 'null') {
+    if (value.type !== 'null') {
       return value
     }
   }
@@ -82,7 +83,7 @@ functions.coalesce = async function coalesce(args, scope, execute) {
 
 functions.count = async function count(args, scope, execute) {
   const inner = await execute(args[0], scope)
-  if (inner.getType() !== 'array') {
+  if (!inner.isArray()) {
     return NULL_VALUE
   }
 
@@ -91,49 +92,48 @@ functions.count = async function count(args, scope, execute) {
   for await (const _ of inner) {
     num++
   }
-  return new StaticValue(num)
+  return fromNumber(num)
 }
 functions.count.arity = 1
 
 functions.dateTime = async function dateTime(args, scope, execute) {
   const val = await execute(args[0], scope)
-  if (val.getType() === 'datetime') {
+  if (val.type === 'datetime') {
     return val
   }
-  if (val.getType() !== 'string') {
+  if (val.type !== 'string') {
     return NULL_VALUE
   }
-  return DateTime.parseToValue(await val.get())
+  return DateTime.parseToValue(val.data)
 }
 functions.dateTime.arity = 1
 
 functions.defined = async function defined(args, scope, execute) {
   const inner = await execute(args[0], scope)
-  return inner.getType() === 'null' ? FALSE_VALUE : TRUE_VALUE
+  return inner.type === 'null' ? FALSE_VALUE : TRUE_VALUE
 }
 functions.defined.arity = 1
 
 // eslint-disable-next-line require-await
 functions.identity = async function identity(args) {
-  return new StaticValue('me')
+  return fromString('me')
 }
 functions.identity.arity = 0
 
 functions.length = async function length(args, scope, execute) {
   const inner = await execute(args[0], scope)
 
-  if (inner.getType() === 'string') {
-    const data = await inner.get()
-    return fromNumber(countUTF8(data))
+  if (inner.type === 'string') {
+    return fromNumber(countUTF8(inner.data))
   }
 
-  if (inner.getType() === 'array') {
+  if (inner.isArray()) {
     let num = 0
     // eslint-disable-next-line @typescript-eslint/no-unused-vars
     for await (const _ of inner) {
       num++
     }
-    return new StaticValue(num)
+    return fromNumber(num)
   }
 
   return NULL_VALUE
@@ -142,53 +142,22 @@ functions.length.arity = 1
 
 functions.path = async function path(args, scope, execute) {
   const inner = await execute(args[0], scope)
-  if (inner.getType() !== 'string') {
+  if (inner.type !== 'string') {
     return NULL_VALUE
   }
 
-  const str = await inner.get()
-
-  return new StaticValue(new Path(str))
+  return fromPath(new Path(inner.data))
 }
 functions.path.arity = 1
 
-functions.select = async function select(args, scope, execute) {
-  // First check if everything is valid:
-  let seenFallback = false
-  for (const arg of args) {
-    if (seenFallback) {
-      return NULL_VALUE
-    }
-
-    if (arg.type === 'Pair') {
-      // This is fine.
-    } else {
-      seenFallback = true
-    }
-  }
-
-  for (const arg of args) {
-    if (arg.type === 'Pair') {
-      const cond = await execute(arg.left, scope)
-      if (cond.getBoolean()) {
-        return execute(arg.right, scope)
-      }
-    } else {
-      return execute(arg, scope)
-    }
-  }
-
-  return NULL_VALUE
-}
-
 functions.string = async function string(args, scope, execute) {
   const value = await execute(args[0], scope)
-  switch (value.getType()) {
+  switch (value.type) {
     case 'number':
     case 'string':
     case 'boolean':
     case 'datetime':
-      return new StaticValue(`${await value.get()}`)
+      return fromString(`${value.data}`)
     default:
       return NULL_VALUE
   }
@@ -199,18 +168,14 @@ functions.references = async function references(args, scope, execute) {
   const pathSet = new Set<string>()
   for (const arg of args) {
     const path = await execute(arg, scope)
-    switch (path.getType()) {
-      case 'string':
-        pathSet.add(await path.get())
-        break
-      case 'array':
-        for await (const elem of path) {
-          if (elem.getType() === 'string') {
-            pathSet.add(await elem.get())
-          }
+    if (path.type === 'string') {
+      pathSet.add(path.data)
+    } else if (path.isArray()) {
+      for await (const elem of path) {
+        if (elem.type === 'string') {
+          pathSet.add(elem.data)
         }
-        break
-      default:
+      }
     }
   }
 
@@ -225,19 +190,19 @@ functions.references.arity = (c) => c >= 1
 
 functions.round = async function round(args, scope, execute) {
   const value = await execute(args[0], scope)
-  if (value.getType() !== 'number') {
+  if (value.type !== 'number') {
     return NULL_VALUE
   }
 
-  const num = await value.get()
+  const num = value.data
   let prec = 0
 
   if (args.length === 2) {
     const precValue = await execute(args[1], scope)
-    if (precValue.getType() !== 'number') {
+    if (precValue.type !== 'number' || precValue.data < 0) {
       return NULL_VALUE
     }
-    prec = await precValue.get()
+    prec = precValue.data
   }
 
   if (prec === 0) {
@@ -249,7 +214,7 @@ functions.round.arity = (count) => count >= 1 && count <= 2
 
 // eslint-disable-next-line require-await
 functions.now = async function now(args, scope) {
-  return new StaticValue(scope.timestamp)
+  return fromString(scope.timestamp)
 }
 functions.now.arity = 0
 
@@ -263,7 +228,7 @@ functions.boost.arity = 2
 
 export type GroqPipeFunction = (
   base: Value,
-  args: SyntaxNode[],
+  args: ExprNode[],
   scope: Scope,
   execute: Executor
 ) => PromiseLike<Value>
@@ -275,7 +240,7 @@ pipeFunctions.order = async function order(base, args, scope, execute) {
   // This is a workaround for https://github.com/rpetrich/babel-plugin-transform-async-to-promises/issues/59
   await true
 
-  if (base.getType() !== 'array') {
+  if (!base.isArray()) {
     return NULL_VALUE
   }
 
@@ -326,21 +291,21 @@ pipeFunctions.order = async function order(base, args, scope, execute) {
     return aTuple[1] - bTuple[1]
   })
 
-  return new StaticValue(aux.map((v) => v[0]))
+  return fromJS(aux.map((v) => v[0]))
 }
 pipeFunctions.order.arity = (count) => count >= 1
 
 // eslint-disable-next-line require-await
 pipeFunctions.score = async function score(base, args, scope, execute) {
-  if (base.getType() !== 'array') return NULL_VALUE
+  if (!base.isArray()) return NULL_VALUE
 
   // Anything that isn't an object should be sorted first.
   const unknown: Array<any> = []
   const scored: Array<ObjectWithScore> = []
 
   for await (const value of base) {
-    if (!isObject(value)) {
-      unknown.push(value.get())
+    if (value.type !== 'object') {
+      unknown.push(await value.get())
       continue
     }
 
@@ -356,9 +321,9 @@ pipeFunctions.score = async function score(base, args, scope, execute) {
   }
 
   scored.sort((a, b) => b._score - a._score)
-  return new StaticValue(scored.concat(unknown))
+  return fromJS(scored)
 }
 
 pipeFunctions.score.arity = (count) => count >= 1
 
-type ObjectWithScore = Record<string, any> & {_score: number}
+type ObjectWithScore = Record<string, unknown> & {_score: number}
