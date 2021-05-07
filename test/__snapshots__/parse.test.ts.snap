@@ -3,50 +3,42 @@
 exports[`Basic parsing Example query 1`] = `
 Object {
   "base": Object {
-    "type": "Star",
-  },
-  "mapper": Object {
-    "mappers": Array [
-      Object {
-        "expr": Object {
-          "left": Object {
-            "name": "_type",
-            "type": "Identifier",
-          },
-          "op": "==",
-          "right": Object {
-            "type": "Value",
-            "value": "product",
-          },
-          "type": "OpCall",
-        },
-        "type": "Filter",
+    "base": Object {
+      "type": "Everything",
+    },
+    "expr": Object {
+      "left": Object {
+        "name": "_type",
+        "type": "AccessAttribute",
       },
-      Object {
-        "inner": Object {
-          "expr": Object {
-            "attributes": Array [
-              Object {
-                "key": Object {
-                  "type": "Value",
-                  "value": "name",
-                },
-                "type": "ObjectAttribute",
-                "value": Object {
-                  "name": "name",
-                  "type": "Identifier",
-                },
-              },
-            ],
-            "type": "Object",
-          },
-          "type": "Map",
-        },
-        "type": "ArrayMap",
+      "op": "==",
+      "right": Object {
+        "type": "Value",
+        "value": "product",
       },
-    ],
-    "type": "Chain",
+      "type": "OpCall",
+    },
+    "type": "Filter",
   },
-  "type": "Mapper",
+  "expr": Object {
+    "base": Object {
+      "type": "This",
+    },
+    "expr": Object {
+      "attributes": Array [
+        Object {
+          "name": "name",
+          "type": "ObjectAttributeValue",
+          "value": Object {
+            "name": "name",
+            "type": "AccessAttribute",
+          },
+        },
+      ],
+      "type": "Object",
+    },
+    "type": "Projection",
+  },
+  "type": "Map",
 }
 `;
