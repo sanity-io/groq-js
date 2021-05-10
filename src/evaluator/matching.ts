@@ -19,10 +19,7 @@ export function matchTokenize(text: string): Token[] {
 const MAX_TERM_LENGTH = 1024
 
 export function matchAnalyzePattern(text: string): Pattern {
-  const terms = text.match(/[A-Za-z0-9*]+/g) || []
-  const termsRe = terms.map(
-    (term) => new RegExp(`^${term.slice(0, MAX_TERM_LENGTH).replace(/\*/g, '.*')}$`, 'i')
-  )
+  const termsRe = matchPatternRegex(text)
   return (tokens: Token[]) => termsRe.every((re) => tokens.some((token) => re.test(token)))
 }
 
