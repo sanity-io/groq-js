@@ -8,7 +8,7 @@ const fs = require('fs')
 const https = require('https')
 const semver = require('semver')
 
-const SUPPORTED_FEATURES = new Set(['scoring'])
+const SUPPORTED_FEATURES = new Set(['scoring', 'namespaces'])
 const GROQ_VERSION = '2.0.0'
 const DISABLED_TESTS = ['Filters / documents, nested 3']
 
