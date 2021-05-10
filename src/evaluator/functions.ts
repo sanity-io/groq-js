@@ -203,7 +203,7 @@ global.round = async function round(args, scope, execute) {
 
   if (args.length === 2) {
     const precValue = await execute(args[1], scope)
-    if (precValue.type !== 'number' || precValue.data < 0) {
+    if (precValue.type !== 'number' || precValue.data < 0 || !Number.isInteger(precValue.data)) {
       return NULL_VALUE
     }
     prec = precValue.data
