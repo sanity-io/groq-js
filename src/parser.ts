@@ -375,6 +375,16 @@ const EXPR_BUILDER: MarkVisitor<NodeTypes.ExprNode> = {
   pipecall(p) {
     const base = p.process(EXPR_BUILDER)
     p.shift() // Remove the func_call
+
+    let namespace = 'global'
+    if (p.getMark().name === 'namespace') {
+      p.shift()
+      namespace = p.processString()
+    }
+    if (namespace !== 'global') {
+      throw new GroqQueryError(`Undefined namespace: ${namespace}`)
+    }
+
     const name = p.processString()
     const args: NodeTypes.ExprNode[] = []
 
