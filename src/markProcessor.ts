@@ -1,3 +1,5 @@
+import {ParseOptions} from './types'
+
 export type MarkName =
   | 'add'
   | 'and'
@@ -58,12 +60,14 @@ export class MarkProcessor {
   private string: string
   private marks: Mark[]
   private index: number
+  parseOptions: ParseOptions
   allowBoost = false
 
-  constructor(string: string, marks: Mark[]) {
+  constructor(string: string, marks: Mark[], parseOptions: ParseOptions) {
     this.string = string
     this.marks = marks
     this.index = 0
+    this.parseOptions = parseOptions
   }
 
   hasMark(pos = 0): boolean {

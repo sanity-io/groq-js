@@ -12,5 +12,5 @@ export interface EvaluateOptions {
   dataset?: any
 
   // Parameters availble in the GROQ query (using `$param` syntax).
-  params?: {[key: string]: any}
+  params?: Record<string, unknown>
 }

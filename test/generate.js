@@ -10,7 +10,7 @@ const semver = require('semver')
 
 const SUPPORTED_FEATURES = new Set(['scoring', 'namespaces', 'portableText'])
 const GROQ_VERSION = '2.0.0'
-const DISABLED_TESTS = ['Filters / documents, nested 3']
+const DISABLED_TESTS = ['Filters / documents, nested 3', 'Parameters / Undefined']
 
 const OUTPUT = process.stdout
 const STACK = []
@@ -177,7 +177,7 @@ process.stdin
         write(`let dataset = await loadDocuments(${JSON.stringify(entry.dataset._ref)})`)
         write(`if (!dataset) return`)
         write(`let params = ${JSON.stringify(entry.params || {})}`)
-        write(`let tree = parse(query)`)
+        write(`let tree = parse(query, {params})`)
         write(`let value = await evaluate(tree, {dataset, params})`)
         write(`let data = await value.get()`)
         write(`data = JSON.parse(JSON.stringify(data))`)

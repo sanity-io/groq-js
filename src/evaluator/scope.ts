@@ -1,7 +1,7 @@
 import {Value} from '../values'
 
 export class Scope {
-  public params: {[key: string]: any}
+  public params: Record<string, unknown>
   public source: Value
   public value: Value
   public parent: Scope | null
@@ -9,7 +9,7 @@ export class Scope {
   public isHidden = false
 
   // eslint-disable-next-line @typescript-eslint/explicit-module-boundary-types
-  constructor(params: {[key: string]: any}, source: any, value: Value, parent: Scope | null) {
+  constructor(params: Record<string, unknown>, source: Value, value: Value, parent: Scope | null) {
     this.params = params
     this.source = source
     this.value = value
