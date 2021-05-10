@@ -12,7 +12,11 @@ import {parse, evaluate} from 'groq-js'
 ## `parse`
 
 ```typescript
-declare function parse(input: string): ExprNode
+declare function parse(input: string, options: ParserOptions = {}): ExprNode
+
+interface ParseOptions {
+  params?: Record<string, unknown>
+}
 
 interface GroqSyntaxError extends Error {
   position: number
@@ -36,7 +40,7 @@ interface EvaluateOptions {
   dataset?: any
 
   // Parameters availble in the GROQ query (using `$param` syntax).
-  params?: {[key: string]: any}
+  params?: Record<string, unknown>
 }
 
 declare async function evaluate(node: ExprNode, options: EvaluateOptions = {})

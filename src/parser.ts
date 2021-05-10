@@ -11,6 +11,7 @@ import {
   traverseProjection,
 } from './traversal'
 import {tryConstantEvaluate} from './evaluator'
+import {ParseOptions} from './types'
 
 type EscapeSequences = "'" | '"' | '\\' | '/' | 'b' | 'f' | 'n' | 'r' | 't'
 
@@ -478,6 +479,13 @@ const EXPR_BUILDER: MarkVisitor<NodeTypes.ExprNode> = {
   param(p) {
     const name = p.processString()
 
+    if (p.parseOptions.params && p.parseOptions.params.hasOwnProperty(name)) {
+      return {
+        type: 'Value',
+        value: p.parseOptions.params[name],
+      }
+    }
+
     return {
       type: 'Parameter',
       name,
@@ -676,11 +684,11 @@ class GroqSyntaxError extends Error {
 /**
  * Parses a GROQ query and returns a tree structure.
  */
-export function parse(input: string): NodeTypes.ExprNode {
+export function parse(input: string, options: ParseOptions = {}): NodeTypes.ExprNode {
   const result = rawParse(input)
   if (result.type === 'error') {
     throw new GroqSyntaxError(result.position)
   }
-  const processor = new MarkProcessor(input, result.marks as Mark[])
+  const processor = new MarkProcessor(input, result.marks as Mark[], options)
   return processor.process(EXPR_BUILDER)
 }
