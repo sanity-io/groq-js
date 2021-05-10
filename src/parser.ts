@@ -1,7 +1,7 @@
 /* eslint-disable camelcase */
 import * as NodeTypes from './nodeTypes'
 import {Mark, MarkProcessor, MarkVisitor} from './markProcessor'
-import {functions, GroqFunctionArity, pipeFunctions} from './evaluator/functions'
+import {GroqFunctionArity, namespaces, pipeFunctions} from './evaluator/functions'
 import {parse as rawParse} from './rawParser'
 import {
   TraversalResult,
@@ -308,8 +308,14 @@ const EXPR_BUILDER: MarkVisitor<NodeTypes.ExprNode> = {
   },
 
   func_call(p) {
+    let namespace = 'global'
+    if (p.getMark().name === 'namespace') {
+      p.shift()
+      namespace = p.processString()
+    }
+
     const name = p.processString()
-    if (name === 'select') {
+    if (namespace === 'global' && name === 'select') {
       const result: NodeTypes.SelectNode = {
         type: 'Select',
         alternatives: [],
@@ -342,9 +348,15 @@ const EXPR_BUILDER: MarkVisitor<NodeTypes.ExprNode> = {
     }
     p.shift()
 
-    if (name === 'boost' && !p.allowBoost) throw new GroqQueryError('unexpected boost')
+    if (namespace === 'global' && name === 'boost' && !p.allowBoost)
+      throw new GroqQueryError('unexpected boost')
 
-    const func = functions[name]
+    const funcs = namespaces[namespace]
+    if (!funcs) {
+      throw new GroqQueryError(`Undefined namespace: ${namespace}`)
+    }
+
+    const func = funcs[name]
     if (!func) {
       throw new GroqQueryError(`Undefined function: ${name}`)
     }
