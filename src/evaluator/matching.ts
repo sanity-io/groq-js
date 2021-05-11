@@ -18,9 +18,9 @@ export function matchTokenize(text: string): Token[] {
 
 const MAX_TERM_LENGTH = 1024
 
-export function matchAnalyzePattern(text: string): Pattern {
+export function matchAnalyzePattern(text: string): Pattern[] {
   const termsRe = matchPatternRegex(text)
-  return (tokens: Token[]) => termsRe.every((re) => tokens.some((token) => re.test(token)))
+  return termsRe.map((re) => (tokens: Token[]) => tokens.some((token) => re.test(token)))
 }
 
 export function matchPatternRegex(text: string): RegExp[] {
