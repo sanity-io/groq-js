@@ -1,5 +1,10 @@
 import {Value} from '../values'
 
+const CHARS = /([^!@#$%^&*(),\\/?";:{}|[\]+<>\s-])+/g
+const CHARS_WITH_WILDCARD = /([^!@#$%^&(),\\/?";:{}|[\]+<>\s-])+/g
+const EDGE_CHARS = /(\b\.+|\.+\b)/g
+const MAX_TERM_LENGTH = 1024
+
 export type Token = string
 
 export type Pattern = (tokens: Token[]) => boolean
@@ -13,10 +18,8 @@ export function matchText(tokens: Token[], patterns: Pattern[]): boolean {
 }
 
 export function matchTokenize(text: string): Token[] {
-  return text.replace(/(\b\.|\.\b)/g, '').match(/[A-Za-z0-9.]+/g) || []
+  return text.replace(EDGE_CHARS, '').match(CHARS) || []
 }
-
-const MAX_TERM_LENGTH = 1024
 
 export function matchAnalyzePattern(text: string): Pattern[] {
   const termsRe = matchPatternRegex(text)
@@ -24,7 +27,7 @@ export function matchAnalyzePattern(text: string): Pattern[] {
 }
 
 export function matchPatternRegex(text: string): RegExp[] {
-  const terms = text.replace(/(\b\.|\.\b)/g, '').match(/[A-Za-z0-9*.]+/g) || []
+  const terms = text.replace(EDGE_CHARS, '').match(CHARS_WITH_WILDCARD) || []
   return terms.map(
     (term) => new RegExp(`^${term.slice(0, MAX_TERM_LENGTH).replace(/\*/g, '.*')}$`, 'i')
   )
