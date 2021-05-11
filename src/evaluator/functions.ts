@@ -210,6 +210,11 @@ global.round = async function round(args, scope, execute) {
   }
 
   if (prec === 0) {
+    if (num < 0) {
+      // JavaScript's round() function will always rounds towards positive infinity (-3.5 -> -3).
+      // The behavior we're interested in is to "round half away from zero".
+      return fromNumber(-Math.round(-num))
+    }
     return fromNumber(Math.round(num))
   }
   return fromNumber(Number(num.toFixed(prec)))
