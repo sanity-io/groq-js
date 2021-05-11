@@ -14,6 +14,7 @@ export type ExprNode =
   | AccessElementNode
   | AndNode
   | ArrayNode
+  | ArrayCoerceNode
   | AscNode
   | DerefNode
   | DescNode
@@ -75,6 +76,11 @@ export interface ArrayElementNode extends BaseNode {
 export interface ArrayNode extends BaseNode {
   type: 'Array'
   elements: ArrayElementNode[]
+}
+
+export interface ArrayCoerceNode extends BaseNode {
+  type: 'ArrayCoerce'
+  base: ExprNode
 }
 
 export interface AscNode extends BaseNode {
