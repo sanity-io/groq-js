@@ -625,7 +625,7 @@ const TRAVERSE_BUILDER: MarkVisitor<(rhs: TraversalResult | null) => TraversalRe
   },
 
   array_postfix(p) {
-    return (right) => traverseArray((base) => base, right)
+    return (right) => traverseArray((base) => ({type: 'ArrayCoerce', base}), right)
   },
 }
 
@@ -640,7 +640,8 @@ function extractPropertyKey(node: NodeTypes.ExprNode): string {
     node.type === 'Projection' ||
     node.type === 'Slice' ||
     node.type === 'Filter' ||
-    node.type === 'AccessElement'
+    node.type === 'AccessElement' ||
+    node.type === 'ArrayCoerce'
   ) {
     return extractPropertyKey(node.base)
   }

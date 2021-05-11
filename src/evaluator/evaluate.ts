@@ -392,6 +392,11 @@ const EXECUTORS: ExecutorMap = {
     return NULL_VALUE
   },
 
+  async ArrayCoerce({base}, scope, execute) {
+    const value = await execute(base, scope)
+    return value.isArray() ? value : NULL_VALUE
+  },
+
   async Map({base, expr}, scope, execute) {
     const value = await execute(base, scope)
     if (!value.isArray()) {
