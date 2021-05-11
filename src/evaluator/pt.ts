@@ -1,4 +1,4 @@
-import {Value} from '../values'
+import {NULL_VALUE, Value} from '../values'
 
 export async function portableTextContent(value: Value): Promise<string | null> {
   if (value.type === 'object') {
@@ -13,14 +13,18 @@ export async function portableTextContent(value: Value): Promise<string | null> 
       if (block.type !== 'object') continue
 
       const text = blockText(block.data)
-      if (!text) continue
+      if (text === null) continue
+
       if (!first) {
         result += '\n\n'
-        first = false
       }
+      first = false
       result += text
     }
   }
+
+  // If there were no blocks => Return null.
+  if (first) return null
 
   return result
 }
@@ -32,7 +36,13 @@ function blockText(obj: Record<string, unknown>): string | null {
 
   let result = ''
   for (const child of children) {
-    if (child && typeof child === 'object' && typeof child.text === 'string') {
+    if (
+      child &&
+      typeof child === 'object' &&
+      typeof child._type === 'string' &&
+      child._type === 'span' &&
+      typeof child.text === 'string'
+    ) {
       result += child.text
     }
   }
