@@ -13,7 +13,7 @@ export function matchText(tokens: Token[], patterns: Pattern[]): boolean {
 }
 
 export function matchTokenize(text: string): Token[] {
-  return text.match(/[A-Za-z0-9]+/g) || []
+  return text.replace(/(\b\.|\.\b)/g, '').match(/[A-Za-z0-9.]+/g) || []
 }
 
 const MAX_TERM_LENGTH = 1024
@@ -24,7 +24,7 @@ export function matchAnalyzePattern(text: string): Pattern {
 }
 
 export function matchPatternRegex(text: string): RegExp[] {
-  const terms = text.match(/[A-Za-z0-9*]+/g) || []
+  const terms = text.replace(/(\b\.|\.\b)/g, '').match(/[A-Za-z0-9*.]+/g) || []
   return terms.map(
     (term) => new RegExp(`^${term.slice(0, MAX_TERM_LENGTH).replace(/\*/g, '.*')}$`, 'i')
   )
