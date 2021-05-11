@@ -16,6 +16,7 @@ import {
   Path,
   fromJS,
 } from '../values'
+import {portableTextContent} from './pt'
 
 function hasReference(value: any, pathSet: Set<string>): boolean {
   switch (getType(value)) {
@@ -262,6 +263,20 @@ string.upper.arity = 1
 global.lower = string.lower
 global.upper = string.upper
 
+const pt: FunctionSet = {}
+pt.text = async function (args, scope, execute) {
+  const value = await execute(args[0], scope)
+  const text = await portableTextContent(value)
+
+  if (text === null) {
+    return NULL_VALUE
+  }
+
+  return fromString(text)
+}
+
+pt.text.arity = 1
+
 export type GroqPipeFunction = (
   base: Value,
   args: ExprNode[],
@@ -367,4 +382,5 @@ type ObjectWithScore = Record<string, unknown> & {_score: number}
 export const namespaces: NamespaceSet = {
   global,
   string,
+  pt,
 }
