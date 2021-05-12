@@ -44,5 +44,8 @@
         "diagnostics": false
       }
     }
+  },
+  "tap": {
+    "check-coverage": false
   }
 }
