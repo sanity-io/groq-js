@@ -20,3 +20,13 @@ describe('Error reporting', () => {
     }
   })
 })
+
+describe('Delta-GROQ', () => {
+  test('Supports before() and after()', () => {
+    let query = `before().title == after().title`
+    expect(() => parse(query)).toThrow()
+
+    let tree = parse(query, {mode: 'delta'})
+    expect(tree).toMatchSnapshot()
+  })
+})

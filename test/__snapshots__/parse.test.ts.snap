@@ -42,3 +42,26 @@ Object {
   "type": "Map",
 }
 `;
+
+exports[`Delta-GROQ Supports before() and after() 1`] = `
+Object {
+  "left": Object {
+    "base": Object {
+      "key": "before",
+      "type": "Context",
+    },
+    "name": "title",
+    "type": "AccessAttribute",
+  },
+  "op": "==",
+  "right": Object {
+    "base": Object {
+      "key": "after",
+      "type": "Context",
+    },
+    "name": "title",
+    "type": "AccessAttribute",
+  },
+  "type": "OpCall",
+}
+`;

@@ -149,4 +149,13 @@ describe('Basic parsing', () => {
     let data = await value.get()
     expect(data).toStrictEqual([{_id: 'drafts.agot'}])
   })
+
+  test('Delta-GROQ', async () => {
+    let tree = parse(`before().title == after().title`, {mode: 'delta'})
+    let value1 = await evaluate(tree, {before: {title: 'A'}, after: {title: 'A'}})
+    expect(await value1.get()).toBeTruthy()
+
+    let value2 = await evaluate(tree, {before: {title: 'A'}, after: {title: 'B'}})
+    expect(await value2.get()).toBeFalsy()
+  })
 })

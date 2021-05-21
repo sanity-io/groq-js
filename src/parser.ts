@@ -349,6 +349,15 @@ const EXPR_BUILDER: MarkVisitor<NodeTypes.ExprNode> = {
     }
     p.shift()
 
+    if (namespace === 'global' && (name === 'before' || name === 'after')) {
+      if (p.parseOptions.mode === 'delta') {
+        return {
+          type: 'Context',
+          key: name,
+        }
+      }
+    }
+
     if (namespace === 'global' && name === 'boost' && !p.allowBoost)
       throw new GroqQueryError('unexpected boost')
 

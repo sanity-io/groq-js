@@ -5,16 +5,15 @@ export class Scope {
   public source: Value
   public value: Value
   public parent: Scope | null
-  public timestamp: string
   public isHidden = false
+  public context: Record<string, Value | undefined>
 
-  // eslint-disable-next-line @typescript-eslint/explicit-module-boundary-types
   constructor(params: Record<string, unknown>, source: Value, value: Value, parent: Scope | null) {
     this.params = params
     this.source = source
     this.value = value
     this.parent = parent
-    this.timestamp = parent ? parent.timestamp : new Date().toISOString()
+    this.context = parent ? parent.context : {}
   }
 
   createNested(value: Value): Scope {

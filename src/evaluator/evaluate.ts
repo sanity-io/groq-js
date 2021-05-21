@@ -3,7 +3,9 @@ import {operators} from './operators'
 import {Scope} from './scope'
 import {EvaluateOptions, Executor} from './types'
 import {
+  DateTime,
   FALSE_VALUE,
+  fromDateTime,
   fromJS,
   fromNumber,
   NULL_VALUE,
@@ -57,6 +59,12 @@ const EXECUTORS: ExecutorMap = {
 
   Parameter({name}, scope) {
     return fromJS(scope.params[name])
+  },
+
+  Context({key}, scope) {
+    const value = scope.context[key]
+    if (!value) throw new Error(`unknown value: ${key}`)
+    return value
   },
 
   Parent({n}, scope) {
@@ -445,5 +453,12 @@ export function evaluateQuery(
   const params: {[key: string]: any} = {...options.params}
 
   const scope = new Scope(params, dataset, root, null)
+  scope.context.timestamp = fromDateTime(new DateTime(options.timestamp || new Date()))
+  if (options.before) {
+    scope.context.before = fromJS(options.before)
+  }
+  if (options.after) {
+    scope.context.after = fromJS(options.after)
+  }
   return evaluate(tree, scope)
 }

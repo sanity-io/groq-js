@@ -16,6 +16,7 @@ export type ExprNode =
   | ArrayNode
   | ArrayCoerceNode
   | AscNode
+  | ContextNode
   | DerefNode
   | DescNode
   | EverythingNode
@@ -86,6 +87,11 @@ export interface ArrayCoerceNode extends BaseNode {
 export interface AscNode extends BaseNode {
   type: 'Asc'
   base: ExprNode
+}
+
+export interface ContextNode extends BaseNode {
+  type: 'Context'
+  key: string
 }
 
 export interface DerefNode extends BaseNode {

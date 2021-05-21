@@ -13,4 +13,13 @@ export interface EvaluateOptions {
 
   // Parameters availble in the GROQ query (using `$param` syntax).
   params?: Record<string, unknown>
+
+  // The timestamp returned from now()
+  timestamp?: Date
+
+  // The value returned from before() in Delta-mode
+  before?: any
+
+  // The value returned from after() in Delta-mode
+  after?: any
 }

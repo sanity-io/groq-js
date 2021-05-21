@@ -224,7 +224,11 @@ global.round.arity = (count) => count >= 1 && count <= 2
 
 // eslint-disable-next-line require-await
 global.now = async function now(args, scope) {
-  return fromString(scope.timestamp)
+  const timestamp = scope.context.timestamp
+  if (timestamp && timestamp.type === 'datetime') {
+    return fromString(timestamp.data.toString())
+  }
+  return NULL_VALUE
 }
 global.now.arity = 0
 
