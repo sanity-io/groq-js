@@ -8,6 +8,7 @@ module.exports = {
     },
   },
   extends: ['sanity/typescript', 'prettier/@typescript-eslint', 'prettier', 'prettier/react'],
+  plugins: ['jest'],
   rules: {
     'callback-return': 'off',
     'no-unused-vars': 'off',
