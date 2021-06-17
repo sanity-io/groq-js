@@ -1,5 +1,5 @@
-import {parse} from '../parser'
-import {ExprNode, OrNode} from '../nodeTypes'
+import {parse} from './parser'
+import {ExprNode, OrNode} from './nodeTypes'
 
 function isExprNode(value: unknown): value is ExprNode {
   if (typeof value !== 'object') return false
@@ -143,12 +143,17 @@ type BooleanNode =
   | {type: 'And'; and: BooleanNode[]}
   | {type: 'Or'; or: BooleanNode[]}
   | {type: 'Not'; not: BooleanNode}
+  | {type: 'Literal'; value: boolean}
   | {type: 'Leaf'; hash: string; groupHash: string | null}
 
 function transform(node: ExprNode): BooleanNode {
   if (node.type === 'And') return {type: 'And', and: [transform(node.left), transform(node.right)]}
   if (node.type === 'Or') return {type: 'Or', or: [transform(node.left), transform(node.right)]}
   if (node.type === 'Not') return {type: 'Not', not: transform(node.base)}
+
+  if (node.type === 'Value' && typeof node.value === 'boolean') {
+    return {type: 'Literal', value: node.value}
+  }
 
   const groupHash = (() => {
     if (node.type !== 'OpCall') return null
@@ -161,13 +166,6 @@ function transform(node: ExprNode): BooleanNode {
     hash: hash(node),
     groupHash,
   }
-}
-
-function evaluate(tree: BooleanNode, truthTable: {[hash: string]: boolean}): boolean {
-  if (tree.type === 'And') return tree.and.every((i) => evaluate(i, truthTable))
-  if (tree.type === 'Or') return tree.or.some((i) => evaluate(i, truthTable))
-  if (tree.type === 'Not') return !evaluate(tree.not, truthTable)
-  return truthTable[tree.hash]
 }
 
 function compare(a: ExprNode, b: ExprNode) {
@@ -193,6 +191,10 @@ function compare(a: ExprNode, b: ExprNode) {
       return
     }
 
+    if (n.type === 'Literal') {
+      return
+    }
+
     hashes.add(n.hash)
 
     if (n.groupHash) {
@@ -205,47 +207,57 @@ function compare(a: ExprNode, b: ExprNode) {
   findHashes(treeA)
   findHashes(treeB)
 
-  let m: {[hash: string]: boolean}[] = []
+  const states: number[] = []
+  const orderedHashes = Array.from(hashes).sort((a, b) => a.localeCompare(b, 'en'))
 
-  const sorted = Array.from(hashes).sort((a, b) => a.localeCompare(b, 'en'))
+  const hashIndexMap = orderedHashes.reduce<{[hash: string]: number}>((acc, next, index) => {
+    acc[next] = index
+    return acc
+  }, {})
+
+  const masks = Array.from(groupHashes.values())
+    .filter((hashes) => hashes.size > 1)
+    .map((hashes) =>
+      Array.from(hashes)
+        .map((hash) => hashIndexMap[hash])
+        .reduce((acc, next) => acc + 2 ** next, 0)
+    )
+
+  const isValid = (x: number) =>
+    masks.every((mask) => {
+      const result = x & mask
+      return (result & (result - 1)) === 0
+    })
 
   // 2^n… oof
-  for (let y = 0; y < 2 ** hashes.size; y++) {
-    m[y] = y
-      .toString(2)
-      .padStart(hashes.size, '0')
-      .split('')
-      .map((binary, index) => [sorted[index], binary === '1'] as const)
-      .reduce<Record<string, boolean>>((acc, [key, value]) => {
-        acc[key] = value
-        return acc
-      }, {})
+  for (let i = 0; i < 2 ** hashes.size; i++) {
+    if (isValid(i)) {
+      states.push(i)
+    }
   }
 
-  // remove invalid states
-  m = m.filter((booleans) => {
-    for (const hashes of Array.from(groupHashes.values())) {
-      const firstHash = Array.from(hashes).find((hash) => booleans[hash])
-      if (!firstHash) return true
+  function evaluate(tree: BooleanNode, truthTable: number): boolean {
+    if (tree.type === 'And') return tree.and.every((i) => evaluate(i, truthTable))
+    if (tree.type === 'Or') return tree.or.some((i) => evaluate(i, truthTable))
+    if (tree.type === 'Not') return !evaluate(tree.not, truthTable)
+    if (tree.type === 'Literal') return tree.value
+    const index = hashIndexMap[tree.hash]
 
-      const secondHash = Array.from(hashes).find((hash) => booleans[hash] && hash !== firstHash)
-      if (secondHash) return false
-    }
+    return ((2 ** index) & truthTable) !== 0
+  }
 
-    return true
-  })
-
-  const truthTableA = m.map((truthTable) => evaluate(treeA, truthTable))
-  const truthTableB = m.map((truthTable) => evaluate(treeB, truthTable))
-
+  const truthTableA = states.map((truthTable) => evaluate(treeA, truthTable))
+  const truthTableB = states.map((truthTable) => evaluate(treeB, truthTable))
   if (arrayEquals(truthTableA, truthTableB)) return 'equal'
-  const intersection = m.map((truthTable) =>
+
+  const intersection = states.map((truthTable) =>
     evaluate({type: 'And', and: [treeA, treeB]}, truthTable)
   )
-
   if (intersection.every((i) => !i)) return 'disjoint'
+
   if (arrayEquals(intersection, truthTableA)) return 'subset'
   if (arrayEquals(intersection, truthTableB)) return 'superset'
+
   return 'overlap'
 }
 
