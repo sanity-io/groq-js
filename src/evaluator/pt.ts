@@ -3,28 +3,25 @@ import {NULL_VALUE, Value} from '../values'
 export async function portableTextContent(value: Value): Promise<string | null> {
   if (value.type === 'object') {
     return blockText(value.data)
-  }
-
-  let result = ''
-  let first = true
-
-  if (value.isArray()) {
-    for await (const block of value) {
-      if (block.type !== 'object') continue
-
-      const text = blockText(block.data)
-      if (text === null) continue
-
-      if (!first) {
-        result += '\n\n'
-      }
-      first = false
-      result += text
+  } else if (value.isArray()) {
+    const texts = await arrayText(value)
+    if (texts.length > 0) {
+      return texts.join('\n\n')
     }
   }
 
-  // If there were no blocks => Return null.
-  if (first) return null
+  return null
+}
+
+async function arrayText(value: Value, result: string[] = []): Promise<string[]> {
+  for await (const block of value) {
+    if (block.type === 'object') {
+      const text = blockText(block.data)
+      if (text !== null) result.push(text)
+    } else if (block.isArray()) {
+      await arrayText(block, result)
+    }
+  }
 
   return result
 }
