@@ -1,5 +1,35 @@
 # Changelog
 
+## v0.3.0 - 2021-06-25
+
+API changes:
+
+- Introduce `params` parameter on `parse` which is required to properly parse an expression (@judofyr)
+
+GROQ compatibility fixes:
+
+- Preserve nulls in objects (@judofyr, #36)
+- Add support for arrays in `length` (@judofyr)
+- Use stable sorting in `order` (@judofyr)
+- Implement `string` function (@judofyr, @israelroldan)
+- Add support for arrays in `references` (@judofyr)
+- Implement `dateTime` (@judofyr)
+- Implement proper array traversal (@judofyr)
+- Implement `score` function (@judofyr)
+- Implement namespaced functions (@judofyr)
+- Implement `lower` and `upper` (@judofyr)
+- Implement `pt::text` (@judofyr)
+- Improve `match` behavior (@judofyr)
+
+Private changes:
+
+- Simplify and restructure AST (@judofyr)
+- Split up `SyntaxNode` into a special `ExprNode` represent what's returned from `parse` (@judofyr)
+
+Tooling changes:
+
+- Use `tap` for running tests since Jest is too slow (@judofyr)
+
 ## v0.2.0 - 2020-10-20
 
 - Require native generators (@rexxars)
