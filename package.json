@@ -1,6 +1,6 @@
 {
   "name": "groq-js",
-  "version": "0.2.0",
+  "version": "0.3.0",
   "license": "MIT",
   "author": "Sanity.io <hello@sanity.io>",
   "main": "dist/index.js",
