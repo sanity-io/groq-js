@@ -320,6 +320,10 @@ const EXECUTORS: ExecutorMap = {
     })
   },
 
+  Tuple() {
+    throw new Error('tuples can not be evaluated')
+  },
+
   async Or({left, right}, scope, execute) {
     const leftValue = await execute(left, scope)
     const rightValue = await execute(right, scope)

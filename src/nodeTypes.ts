@@ -39,6 +39,7 @@ export type ExprNode =
   | SelectNode
   | SliceNode
   | ThisNode
+  | TupleNode
   | ValueNode
 
 export type OpCall =
@@ -210,6 +211,11 @@ export interface SelectNode extends BaseNode {
 
 export interface ThisNode extends BaseNode {
   type: 'This'
+}
+
+export interface TupleNode extends BaseNode {
+  type: 'Tuple'
+  members: Array<ExprNode>
 }
 
 export interface ValueNode<P = any> {
