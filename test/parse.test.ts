@@ -22,11 +22,19 @@ describe('Error reporting', () => {
 })
 
 describe('Delta-GROQ', () => {
-  test('Supports before() and after()', () => {
-    let query = `before().title == after().title`
-    expect(() => parse(query)).toThrow()
+  const queries = [
+    `before().title == after().title`,
+    `delta::changedAny(name)`,
+    `delta::changedAny((name, description))`,
+    `delta::changedAny((name, description)._type)`,
+    `delta::changedOnly(foo)`,
+    `delta::changedOnly(foo[bar == 1])`,
+  ]
 
-    let tree = parse(query, {mode: 'delta'})
-    expect(tree).toMatchSnapshot()
-  })
+  for (const query of queries) {
+    test(query, () => {
+      expect(() => parse(query)).toThrow()
+      parse(query, {mode: 'delta'})
+    })
+  }
 })

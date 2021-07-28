@@ -58,8 +58,9 @@ function countUTF8(str: string): number {
 }
 
 type GroqFunctionArg = ExprNode
-type WithArity<T> = T & {
+type WithOptions<T> = T & {
   arity?: GroqFunctionArity
+  mode?: 'normal' | 'delta'
 }
 
 export type GroqFunctionArity = number | ((count: number) => boolean)
@@ -70,7 +71,7 @@ export type GroqFunction = (
   execute: Executor
 ) => PromiseLike<Value>
 
-export type FunctionSet = Record<string, WithArity<GroqFunction> | undefined>
+export type FunctionSet = Record<string, WithOptions<GroqFunction> | undefined>
 
 export type NamespaceSet = Record<string, FunctionSet | undefined>
 
@@ -288,7 +289,7 @@ export type GroqPipeFunction = (
   execute: Executor
 ) => PromiseLike<Value>
 
-export const pipeFunctions: {[key: string]: WithArity<GroqPipeFunction>} = {}
+export const pipeFunctions: {[key: string]: WithOptions<GroqPipeFunction>} = {}
 
 pipeFunctions.order = async function order(base, args, scope, execute) {
   // eslint-disable-next-line max-len
@@ -383,8 +384,34 @@ pipeFunctions.score.arity = (count) => count >= 1
 
 type ObjectWithScore = Record<string, unknown> & {_score: number}
 
+const delta: FunctionSet = {}
+delta.changedAny = () => {
+  throw new Error('not implemented')
+}
+delta.changedAny.arity = 1
+delta.changedAny.mode = 'delta'
+
+delta.changedOnly = () => {
+  throw new Error('not implemented')
+}
+delta.changedOnly.arity = 1
+delta.changedOnly.mode = 'delta'
+
+const diff: FunctionSet = {}
+diff.changedAny = () => {
+  throw new Error('not implemented')
+}
+diff.changedAny.arity = 3
+
+diff.changedOnly = () => {
+  throw new Error('not implemented')
+}
+diff.changedOnly.arity = 3
+
 export const namespaces: NamespaceSet = {
   global,
   string,
   pt,
+  delta,
+  diff,
 }
