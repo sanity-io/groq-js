@@ -444,6 +444,15 @@ export function evaluateQuery(
   const dataset = fromJS(options.dataset)
   const params: {[key: string]: any} = {...options.params}
 
-  const scope = new Scope(params, dataset, root, null)
+  const scope = new Scope(
+    params,
+    dataset,
+    root,
+    {
+      timestamp: options.timestamp || new Date(),
+      identity: options.identity === undefined ? 'me' : options.identity,
+    },
+    null
+  )
   return evaluate(tree, scope)
 }

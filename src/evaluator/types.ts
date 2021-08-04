@@ -13,4 +13,15 @@ export interface EvaluateOptions {
 
   // Parameters availble in the GROQ query (using `$param` syntax).
   params?: Record<string, unknown>
+
+  // Timestamp used for now()
+  timestamp?: Date
+
+  // Value used for identity()
+  identity?: string
+}
+
+export interface Context {
+  timestamp: Date
+  identity: string
 }

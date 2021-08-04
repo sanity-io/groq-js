@@ -28,7 +28,13 @@ function canConstantEvaluate(node: ExprNode): boolean {
   }
 }
 
-const DUMMY_SCOPE = new Scope({}, NULL_VALUE, NULL_VALUE, null)
+const DUMMY_SCOPE = new Scope(
+  {},
+  NULL_VALUE,
+  NULL_VALUE,
+  {timestamp: new Date(0), identity: 'me'},
+  null
+)
 
 class ConstantEvaluateError extends Error {
   name = 'ConstantEvaluateError'
