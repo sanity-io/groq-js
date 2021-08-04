@@ -120,8 +120,8 @@ global.defined = async function defined(args, scope, execute) {
 global.defined.arity = 1
 
 // eslint-disable-next-line require-await
-global.identity = async function identity(args) {
-  return fromString('me')
+global.identity = async function identity(args, scope) {
+  return fromString(scope.context.identity)
 }
 global.identity.arity = 0
 
@@ -224,7 +224,7 @@ global.round.arity = (count) => count >= 1 && count <= 2
 
 // eslint-disable-next-line require-await
 global.now = async function now(args, scope) {
-  return fromString(scope.timestamp)
+  return fromString(scope.context.timestamp.toISOString())
 }
 global.now.arity = 0
 

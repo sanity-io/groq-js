@@ -1,5 +1,9 @@
 # Changelog
 
+## Unreleased
+
+- Support specifying `now()` and `identity()` during evaluation.
+
 ## v0.3.0 - 2021-06-25
 
 API changes:
