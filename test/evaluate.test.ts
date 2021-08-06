@@ -149,4 +149,22 @@ describe('Basic parsing', () => {
     let data = await value.get()
     expect(data).toStrictEqual([{_id: 'drafts.agot'}])
   })
+
+  test('Override identity()', async () => {
+    let dataset = [{_id: 'yes', user: 'me'}]
+    let query = `{"me":identity(), "nested": *[user == "me"][0]._id}`
+    let tree = parse(query)
+    let value = await evaluate(tree, {dataset, identity: 'bob'})
+    let data = await value.get()
+    expect(data).toStrictEqual({me: 'bob', nested: 'yes'})
+  })
+
+  test('Override now()', async () => {
+    let dataset = [{_id: 'yes', time: '2021-05-06T12:14:15Z'}]
+    let query = `{"me":now(), "nested": *[dateTime(time) == dateTime(now())][0]._id}`
+    let tree = parse(query)
+    let value = await evaluate(tree, {dataset, timestamp: new Date('2021-05-06T12:14:15Z')})
+    let data = await value.get()
+    expect(data).toStrictEqual({me: '2021-05-06T12:14:15.000Z', nested: 'yes'})
+  })
 })
