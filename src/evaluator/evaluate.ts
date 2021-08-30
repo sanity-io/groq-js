@@ -62,9 +62,11 @@ const EXECUTORS: ExecutorMap = {
   },
 
   Context({key}, scope) {
-    const value = scope.context[key]
-    if (!value) throw new Error(`unknown value: ${key}`)
-    return value
+    if (key === 'before' || key === 'after') {
+      const value = scope.context[key]
+      return value || NULL_VALUE
+    }
+    throw new Error(`unknown context key: ${key}`)
   },
 
   Parent({n}, scope) {
