@@ -399,6 +399,25 @@ pipeFunctions.score.arity = (count) => count >= 1
 type ObjectWithScore = Record<string, unknown> & {_score: number}
 
 const delta: FunctionSet = {}
+delta.operation = async function (args, scope) {
+  const hasBefore = scope.context.before !== null
+  const hasAfter = scope.context.after !== null
+
+  if (hasBefore && hasAfter) {
+    return fromString('update')
+  }
+
+  if (hasAfter) {
+    return fromString('create')
+  }
+
+  if (hasBefore) {
+    return fromString('delete')
+  }
+
+  return NULL_VALUE
+}
+
 delta.changedAny = () => {
   throw new Error('not implemented')
 }

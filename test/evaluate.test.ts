@@ -159,6 +159,18 @@ describe('Basic parsing', () => {
     expect(await value2.get()).toBeFalsy()
   })
 
+  test('delta::operation()', async () => {
+    let tree = parse(`delta::operation()`, {mode: 'delta'})
+    let value1 = await evaluate(tree, {before: {title: 'A'}, after: {title: 'A'}})
+    expect(await value1.get()).toBe('update')
+
+    let value2 = await evaluate(tree, {before: {title: 'A'}})
+    expect(await value2.get()).toBe('delete')
+
+    let value3 = await evaluate(tree, {after: {title: 'A'}})
+    expect(await value3.get()).toBe('create')
+  })
+
   test('Override identity()', async () => {
     let dataset = [{_id: 'yes', user: 'me'}]
     let query = `{"me":identity(), "nested": *[user == "me"][0]._id}`
