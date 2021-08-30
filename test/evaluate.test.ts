@@ -5,7 +5,7 @@ describe('Basic parsing', () => {
     let dataset = [
       {_type: 'product', name: 'T-shirt'},
       {_type: 'product', name: 'Pants'},
-      {_type: 'user', name: 'Bob'}
+      {_type: 'user', name: 'Bob'},
     ]
     let query = `*[_type == "product"]{name}`
     let tree = parse(query)
@@ -18,7 +18,7 @@ describe('Basic parsing', () => {
   test('String function', async () => {
     let dataset = [
       {_type: 'color', color: 'red', shade: 500, rgb: {r: 255, g: 0, b: 0}},
-      {_type: 'color', color: 'green', shade: 500, rgb: {r: 0, g: 255, b: 0}}
+      {_type: 'color', color: 'green', shade: 500, rgb: {r: 0, g: 255, b: 0}},
     ]
     let query = `*[_type == "color"]{ "class": color + "-" + string(shade + 100), "rgb": string(rgb) }`
     let tree = parse(query)
@@ -27,7 +27,7 @@ describe('Basic parsing', () => {
     let data = await value.get()
     expect(data).toStrictEqual([
       {class: 'red-600', rgb: null},
-      {class: 'green-600', rgb: null}
+      {class: 'green-600', rgb: null},
     ])
   })
 
@@ -73,12 +73,12 @@ describe('Basic parsing', () => {
     let data = await value.get()
     expect(data).toStrictEqual([
       [1, 4],
-      [1, 2]
+      [1, 2],
     ])
   })
 
   test('Async documents', async () => {
-    let dataset = (async function*() {
+    let dataset = (async function* () {
       yield {_id: 'a', name: 'Michael'}
       yield {_id: 'b', name: 'George Michael', father: {_ref: 'a'}}
     })()
@@ -122,7 +122,7 @@ describe('Basic parsing', () => {
   test('Conditional', async () => {
     let dataset = [
       {_type: 'book', title: 'A Game of Thrones'},
-      {_type: 'tv-show', title: 'Game of Thrones'}
+      {_type: 'tv-show', title: 'Game of Thrones'},
     ]
 
     let query = `*[] {
@@ -140,7 +140,7 @@ describe('Basic parsing', () => {
   test('Paths', async () => {
     let dataset = [
       {_id: 'drafts.agot', _type: 'book', title: 'A Game of Thrones'},
-      {_id: 'agot', _type: 'book', title: 'Game of Thrones'}
+      {_id: 'agot', _type: 'book', title: 'Game of Thrones'},
     ]
 
     let query = `*[_id in path("drafts.**")]{_id}`
@@ -166,5 +166,21 @@ describe('Basic parsing', () => {
     let value = await evaluate(tree, {dataset, timestamp: new Date('2021-05-06T12:14:15Z')})
     let data = await value.get()
     expect(data).toStrictEqual({me: '2021-05-06T12:14:15.000Z', nested: 'yes'})
+  })
+
+  test('sanity-functions default', async () => {
+    let query = `sanity::dataset() + sanity::projectId()`
+    let tree = parse(query)
+    let value = await evaluate(tree)
+    let data = await value.get()
+    expect(data).toStrictEqual(null)
+  })
+
+  test('sanity-functions', async () => {
+    let query = `sanity::dataset() + sanity::projectId()`
+    let tree = parse(query)
+    let value = await evaluate(tree, {sanity: {dataset: 'abc', projectId: 'def'}})
+    let data = await value.get()
+    expect(data).toStrictEqual('abcdef')
   })
 })

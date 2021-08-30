@@ -451,6 +451,7 @@ export function evaluateQuery(
     {
       timestamp: options.timestamp || new Date(),
       identity: options.identity === undefined ? 'me' : options.identity,
+      sanity: options.sanity,
     },
     null
   )

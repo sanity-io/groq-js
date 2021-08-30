@@ -19,9 +19,19 @@ export interface EvaluateOptions {
 
   // Value used for identity()
   identity?: string
+
+  // Settings used for the `sanity`-functions
+  sanity?: {
+    projectId: string
+    dataset: string
+  }
 }
 
 export interface Context {
   timestamp: Date
   identity: string
+  sanity?: {
+    projectId: string
+    dataset: string
+  }
 }
