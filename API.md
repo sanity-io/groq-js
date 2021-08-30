@@ -47,6 +47,12 @@ interface EvaluateOptions {
 
   // Value used for identity().
   identity?: string
+
+  // Settings used for the `sanity`-functions.
+  sanity?: {
+    projectId: string
+    dataset: string
+  }
 }
 
 declare async function evaluate(node: ExprNode, options: EvaluateOptions = {})

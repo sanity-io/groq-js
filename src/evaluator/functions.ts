@@ -277,6 +277,24 @@ pt.text = async function (args, scope, execute) {
 
 pt.text.arity = 1
 
+const sanity: FunctionSet = {}
+// eslint-disable-next-line require-await
+sanity.projectId = async function (args, scope) {
+  if (scope.context.sanity) {
+    return fromString(scope.context.sanity.projectId)
+  }
+
+  return NULL_VALUE
+}
+// eslint-disable-next-line require-await
+sanity.dataset = async function (args, scope) {
+  if (scope.context.sanity) {
+    return fromString(scope.context.sanity.dataset)
+  }
+
+  return NULL_VALUE
+}
+
 export type GroqPipeFunction = (
   base: Value,
   args: ExprNode[],
@@ -383,4 +401,5 @@ export const namespaces: NamespaceSet = {
   global,
   string,
   pt,
+  sanity,
 }
