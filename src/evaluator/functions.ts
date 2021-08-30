@@ -121,8 +121,8 @@ global.defined = async function defined(args, scope, execute) {
 global.defined.arity = 1
 
 // eslint-disable-next-line require-await
-global.identity = async function identity(args) {
-  return fromString('me')
+global.identity = async function identity(args, scope) {
+  return fromString(scope.context.identity)
 }
 global.identity.arity = 0
 
@@ -225,11 +225,7 @@ global.round.arity = (count) => count >= 1 && count <= 2
 
 // eslint-disable-next-line require-await
 global.now = async function now(args, scope) {
-  const timestamp = scope.context.timestamp
-  if (timestamp && timestamp.type === 'datetime') {
-    return fromString(timestamp.data.toString())
-  }
-  return NULL_VALUE
+  return fromString(scope.context.timestamp.toISOString())
 }
 global.now.arity = 0
 
@@ -281,6 +277,24 @@ pt.text = async function (args, scope, execute) {
 }
 
 pt.text.arity = 1
+
+const sanity: FunctionSet = {}
+// eslint-disable-next-line require-await
+sanity.projectId = async function (args, scope) {
+  if (scope.context.sanity) {
+    return fromString(scope.context.sanity.projectId)
+  }
+
+  return NULL_VALUE
+}
+// eslint-disable-next-line require-await
+sanity.dataset = async function (args, scope) {
+  if (scope.context.sanity) {
+    return fromString(scope.context.sanity.dataset)
+  }
+
+  return NULL_VALUE
+}
 
 export type GroqPipeFunction = (
   base: Value,
@@ -414,4 +428,5 @@ export const namespaces: NamespaceSet = {
   pt,
   delta,
   diff,
+  sanity,
 }

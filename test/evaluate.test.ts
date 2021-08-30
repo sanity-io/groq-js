@@ -158,4 +158,38 @@ describe('Basic parsing', () => {
     let value2 = await evaluate(tree, {before: {title: 'A'}, after: {title: 'B'}})
     expect(await value2.get()).toBeFalsy()
   })
+
+  test('Override identity()', async () => {
+    let dataset = [{_id: 'yes', user: 'me'}]
+    let query = `{"me":identity(), "nested": *[user == "me"][0]._id}`
+    let tree = parse(query)
+    let value = await evaluate(tree, {dataset, identity: 'bob'})
+    let data = await value.get()
+    expect(data).toStrictEqual({me: 'bob', nested: 'yes'})
+  })
+
+  test('Override now()', async () => {
+    let dataset = [{_id: 'yes', time: '2021-05-06T12:14:15Z'}]
+    let query = `{"me":now(), "nested": *[dateTime(time) == dateTime(now())][0]._id}`
+    let tree = parse(query)
+    let value = await evaluate(tree, {dataset, timestamp: new Date('2021-05-06T12:14:15Z')})
+    let data = await value.get()
+    expect(data).toStrictEqual({me: '2021-05-06T12:14:15.000Z', nested: 'yes'})
+  })
+
+  test('sanity-functions default', async () => {
+    let query = `sanity::dataset() + sanity::projectId()`
+    let tree = parse(query)
+    let value = await evaluate(tree)
+    let data = await value.get()
+    expect(data).toStrictEqual(null)
+  })
+
+  test('sanity-functions', async () => {
+    let query = `sanity::dataset() + sanity::projectId()`
+    let tree = parse(query)
+    let value = await evaluate(tree, {sanity: {dataset: 'abc', projectId: 'def'}})
+    let data = await value.get()
+    expect(data).toStrictEqual('abcdef')
+  })
 })

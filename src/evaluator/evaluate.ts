@@ -456,13 +456,18 @@ export function evaluateQuery(
   const dataset = fromJS(options.dataset)
   const params: {[key: string]: any} = {...options.params}
 
-  const scope = new Scope(params, dataset, root, null)
-  scope.context.timestamp = fromDateTime(new DateTime(options.timestamp || new Date()))
-  if (options.before) {
-    scope.context.before = fromJS(options.before)
-  }
-  if (options.after) {
-    scope.context.after = fromJS(options.after)
-  }
+  const scope = new Scope(
+    params,
+    dataset,
+    root,
+    {
+      timestamp: options.timestamp || new Date(),
+      identity: options.identity === undefined ? 'me' : options.identity,
+      sanity: options.sanity,
+      after: options.after ? fromJS(options.after) : null,
+      before: options.before ? fromJS(options.before) : null,
+    },
+    null
+  )
   return evaluate(tree, scope)
 }
