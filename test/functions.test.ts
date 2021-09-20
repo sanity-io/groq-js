@@ -15,7 +15,7 @@ describe('Functions', () => {
 
     test('returns the same value for each use in query', async () => {
       const dataset = [
-        {_type: 'product', deep: {deep: {deep: {deep: {deep: {deep: {text: 'value'}}}}}}}
+        {_type: 'product', deep: {deep: {deep: {deep: {deep: {deep: {text: 'value'}}}}}}},
       ]
       const query = `{
         "topTime": now(),

@@ -17,18 +17,18 @@ const STACK = []
 let IDENT = ''
 
 function write(data) {
-  OUTPUT.write(IDENT + data + '\n')
+  OUTPUT.write(`${IDENT + data}\n`)
 }
 
 function openStack(expr) {
-  let [open, close] = expr.split(/BODY/)
+  const [open, close] = expr.split(/BODY/)
   write(open)
   STACK.push(close)
   IDENT += '  '
 }
 
 function closeStack() {
-  let close = STACK.pop()
+  const close = STACK.pop()
   IDENT = IDENT.substring(0, IDENT.length - 2)
   write(close)
 }
@@ -119,8 +119,8 @@ function download(id, url) {
   if (DOWNLOADING.has(id)) return
   DOWNLOADING.add(id)
 
-  let dir = `${__dirname}/datasets`
-  let filename = `${dir}/${id}.ndjson`
+  const dir = `${__dirname}/datasets`
+  const filename = `${dir}/${id}.ndjson`
 
   // File already exists
   if (fs.existsSync(filename)) return

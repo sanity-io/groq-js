@@ -1,5 +1,5 @@
 module.exports = {
-  env: {node: true, browser: true},
+  env: {node: true, browser: true, jest: true},
   parserOptions: {
     ecmaVersion: 9,
     sourceType: 'module',
