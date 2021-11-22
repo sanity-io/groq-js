@@ -46,6 +46,10 @@ yarn add groq-js
 
 See [API.md](API.md) for the public API.
 
+## Learn GROQ
+
+[![free egghead GROQ introduction course by John Lindquist](https://user-images.githubusercontent.com/6188161/142888559-37c4758a-3214-4765-b3a9-930ee543b336.png)](https://egghead.io/courses/introduction-to-groq-query-language-6e9c6fc0?utm_source=github&utm_medium=cta&utm_term=GROQ)
+
 ## Versioning
 
 GROQ-JS follows [SemVer](https://semver.org) and is currently at version v0.2.
