@@ -48,7 +48,7 @@ See [API.md](API.md) for the public API.
 
 ## Learn GROQ
 
-[![free egghead GROQ introduction course by John Lindquist](https://user-images.githubusercontent.com/6188161/142889665-fc04ac47-d0fa-492b-897b-4203c97e94ec.png)](https://egghead.io/courses/introduction-to-groq-query-language-6e9c6fc0?utm_source=github&utm_medium=cta&utm_term=GROQ)
+[![Free egghead GROQ introduction course by John Lindquist](https://user-images.githubusercontent.com/6188161/142889665-fc04ac47-d0fa-492b-897b-4203c97e94ec.png)](https://egghead.io/courses/introduction-to-groq-query-language-6e9c6fc0?utm_source=github&utm_medium=cta&utm_term=GROQ)
 
 
 ## Versioning
