@@ -1,19 +1,21 @@
 import {evaluate, parse} from '../src'
 
-describe('Functions', () => {
-  describe('now()', () => {
-    test('returns iso-8601 timestamp', async () => {
+import t from 'tap'
+
+t.test('Functions', async (t) => {
+  t.test('now()', async (t) => {
+    t.test('returns iso-8601 timestamp', async (t) => {
       const tree = parse('now()')
       const value = await evaluate(tree, {dataset: []})
       const data = await value.get()
 
-      expect(typeof data).toBe('string')
+      t.type(data, 'string')
 
       // Allow a ~5s shift to account for lag
-      expect(Date.parse(data)).toBeGreaterThan(Date.now() - 5000)
+      t.ok(Date.parse(data) > Date.now() - 5000)
     })
 
-    test('returns the same value for each use in query', async () => {
+    t.test('returns the same value for each use in query', async (t) => {
       const dataset = [
         {_type: 'product', deep: {deep: {deep: {deep: {deep: {deep: {text: 'value'}}}}}}},
       ]
@@ -24,7 +26,7 @@ describe('Functions', () => {
       const tree = parse(query)
       const value = await evaluate(tree, {dataset})
       const data = await value.get()
-      expect(data.deep.time).toStrictEqual(data.topTime)
+      t.same(data.deep.time, data.topTime)
     })
   })
 })

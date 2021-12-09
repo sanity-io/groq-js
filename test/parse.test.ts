@@ -1,22 +1,25 @@
 import {parse} from '../src'
 
-describe('Basic parsing', () => {
-  test('Example query', () => {
+import t from 'tap'
+
+t.test('Basic parsing', async (t) => {
+  t.test('Example query', async (t) => {
     const query = `*[_type == "product"]{name}`
     const tree = parse(query)
-    expect(tree).toMatchSnapshot()
+    t.matchSnapshot(tree)
   })
 })
 
-describe('Error reporting', () => {
-  test('Query with syntax error', () => {
+t.test('Error reporting', async (t) => {
+  t.test('Query with syntax error', async (t) => {
+    t.plan(3)
     const query = `*[_type == "]`
     try {
       parse(query)
     } catch (error: any) {
-      expect(error.name).toBe('GroqSyntaxError')
-      expect(error.position).toBe(13)
-      expect(error.message).toBe('Syntax error in GROQ query at position 13')
+      t.same(error.name, 'GroqSyntaxError')
+      t.same(error.position, 13)
+      t.same(error.message, 'Syntax error in GROQ query at position 13')
     }
   })
 })
