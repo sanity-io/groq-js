@@ -75,17 +75,35 @@ function parseExpr(str, pos, level) {
       break
     }
     case '(': {
-      // TODO: tuple
       let rhs = parseExpr(str, skipWS(str, pos + 1), 0)
       if (rhs.type === 'error') return rhs
       pos = skipWS(str, rhs.position)
-      if (str[pos] === ')') {
-        pos++
-        marks = [{name: 'group', position: startPos}].concat(rhs.marks)
-        break
-      } else {
-        return {type: 'error', position: pos}
+      switch (str[pos]) {
+        case ',': {
+          // Tuples
+          marks = [{name: 'tuple', position: startPos}].concat(rhs.marks)
+          pos = skipWS(str, pos + 1)
+          while (true) {
+            rhs = parseExpr(str, pos, 0)
+            if (rhs.type === 'error') return rhs
+            pos = skipWS(str, rhs.position)
+            if (str[pos] !== ',') break
+            pos = skipWS(str, pos + 1)
+          }
+          if (str[pos] !== ')') return {type: 'error', position: pos}
+          pos++
+          marks.push({name: 'tuple_end', position: pos})
+          break
+        }
+        case ')': {
+          pos++
+          marks = [{name: 'group', position: startPos}].concat(rhs.marks)
+          break
+        }
+        default:
+          return {type: 'error', position: pos}
       }
+      break
     }
     case '!': {
       let rhs = parseExpr(str, skipWS(str, pos + 1), PREC_NOT)

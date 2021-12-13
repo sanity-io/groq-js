@@ -16,6 +16,7 @@ export type ExprNode =
   | ArrayNode
   | ArrayCoerceNode
   | AscNode
+  | ContextNode
   | DerefNode
   | DescNode
   | EverythingNode
@@ -38,6 +39,7 @@ export type ExprNode =
   | SelectNode
   | SliceNode
   | ThisNode
+  | TupleNode
   | ValueNode
 
 export type OpCall =
@@ -86,6 +88,11 @@ export interface ArrayCoerceNode extends BaseNode {
 export interface AscNode extends BaseNode {
   type: 'Asc'
   base: ExprNode
+}
+
+export interface ContextNode extends BaseNode {
+  type: 'Context'
+  key: string
 }
 
 export interface DerefNode extends BaseNode {
@@ -204,6 +211,11 @@ export interface SelectNode extends BaseNode {
 
 export interface ThisNode extends BaseNode {
   type: 'This'
+}
+
+export interface TupleNode extends BaseNode {
+  type: 'Tuple'
+  members: Array<ExprNode>
 }
 
 export interface ValueNode<P = any> {

@@ -3,7 +3,9 @@ import {operators} from './operators'
 import {Scope} from './scope'
 import {EvaluateOptions, Executor} from './types'
 import {
+  DateTime,
   FALSE_VALUE,
+  fromDateTime,
   fromJS,
   fromNumber,
   NULL_VALUE,
@@ -57,6 +59,14 @@ const EXECUTORS: ExecutorMap = {
 
   Parameter({name}, scope) {
     return fromJS(scope.params[name])
+  },
+
+  Context({key}, scope) {
+    if (key === 'before' || key === 'after') {
+      const value = scope.context[key]
+      return value || NULL_VALUE
+    }
+    throw new Error(`unknown context key: ${key}`)
   },
 
   Parent({n}, scope) {
@@ -312,6 +322,10 @@ const EXECUTORS: ExecutorMap = {
     })
   },
 
+  Tuple() {
+    throw new Error('tuples can not be evaluated')
+  },
+
   async Or({left, right}, scope, execute) {
     const leftValue = await execute(left, scope)
     const rightValue = await execute(right, scope)
@@ -452,6 +466,8 @@ export function evaluateQuery(
       timestamp: options.timestamp || new Date(),
       identity: options.identity === undefined ? 'me' : options.identity,
       sanity: options.sanity,
+      after: options.after ? fromJS(options.after) : null,
+      before: options.before ? fromJS(options.before) : null,
     },
     null
   )

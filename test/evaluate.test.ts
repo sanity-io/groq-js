@@ -152,6 +152,27 @@ t.test('Basic parsing', async (t) => {
     t.same(data, [{_id: 'drafts.agot'}])
   })
 
+  t.test('Delta-GROQ', async (t) => {
+    let tree = parse(`before().title == after().title`, {mode: 'delta'})
+    let value1 = await evaluate(tree, {before: {title: 'A'}, after: {title: 'A'}})
+    t.same(await value1.get(), true)
+
+    let value2 = await evaluate(tree, {before: {title: 'A'}, after: {title: 'B'}})
+    t.same(await value2.get(), false)
+  })
+
+  t.test('delta::operation()', async (t) => {
+    let tree = parse(`delta::operation()`, {mode: 'delta'})
+    let value1 = await evaluate(tree, {before: {title: 'A'}, after: {title: 'A'}})
+    t.same(await value1.get(), 'update')
+
+    let value2 = await evaluate(tree, {before: {title: 'A'}})
+    t.same(await value2.get(), 'delete')
+
+    let value3 = await evaluate(tree, {after: {title: 'A'}})
+    t.same(await value3.get(), 'create')
+  })
+
   t.test('Override identity()', async (t) => {
     const dataset = [{_id: 'yes', user: 'me'}]
     const query = `{"me":identity(), "nested": *[user == "me"][0]._id}`

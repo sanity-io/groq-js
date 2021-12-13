@@ -23,3 +23,21 @@ t.test('Error reporting', async (t) => {
     }
   })
 })
+
+t.test('Delta-GROQ', async (t) => {
+  const queries = [
+    `before().title == after().title`,
+    `delta::changedAny(name)`,
+    `delta::changedAny((name, description))`,
+    `delta::changedAny((name, description)._type)`,
+    `delta::changedOnly(foo)`,
+    `delta::changedOnly(foo[bar == 1])`,
+  ]
+
+  for (const query of queries) {
+    t.test(query, async (t) => {
+      t.throws(() => parse(query))
+      t.doesNotThrow(() => parse(query, {mode: 'delta'}))
+    })
+  }
+})

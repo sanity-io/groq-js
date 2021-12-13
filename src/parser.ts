@@ -308,6 +308,18 @@ const EXPR_BUILDER: MarkVisitor<NodeTypes.ExprNode> = {
     }
   },
 
+  tuple(p) {
+    const members: NodeTypes.ExprNode[] = []
+    while (p.getMark().name !== 'tuple_end') {
+      members.push(p.process(EXPR_BUILDER))
+    }
+    p.shift()
+    return {
+      type: 'Tuple',
+      members,
+    }
+  },
+
   func_call(p) {
     let namespace = 'global'
     if (p.getMark().name === 'namespace') {
@@ -349,6 +361,15 @@ const EXPR_BUILDER: MarkVisitor<NodeTypes.ExprNode> = {
     }
     p.shift()
 
+    if (namespace === 'global' && (name === 'before' || name === 'after')) {
+      if (p.parseOptions.mode === 'delta') {
+        return {
+          type: 'Context',
+          key: name,
+        }
+      }
+    }
+
     if (namespace === 'global' && name === 'boost' && !p.allowBoost)
       throw new GroqQueryError('unexpected boost')
 
@@ -363,6 +384,10 @@ const EXPR_BUILDER: MarkVisitor<NodeTypes.ExprNode> = {
     }
     if (func.arity !== undefined) {
       validateArity(name, func.arity, args.length)
+    }
+
+    if (func.mode !== undefined && func.mode !== p.parseOptions.mode) {
+      throw new GroqQueryError(`Undefined function: ${name}`)
     }
 
     return {
