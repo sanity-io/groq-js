@@ -1,6 +1,5 @@
 export * from './utils'
 export * from './types'
 export * from './StreamValue'
-export * from './StaticValue'
 export * from './DateTime'
 export * from './Path'

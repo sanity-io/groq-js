@@ -1,6 +1,5 @@
-import {StaticValue} from './StaticValue'
 import {Value} from './types'
-import {NULL_VALUE} from './utils'
+import {NULL_VALUE, StaticValue} from './utils'
 
 export class DateTime {
   date: Date

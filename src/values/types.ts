@@ -1,6 +1,6 @@
 import {DateTime} from './DateTime'
 import {Path} from './Path'
-import {StaticValue} from './StaticValue'
+import {StaticValue} from './utils'
 import {StreamValue} from './StreamValue'
 
 /**

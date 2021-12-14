@@ -1,8 +1,37 @@
 import {DateTime} from './DateTime'
 import {Path} from './Path'
-import {StaticValue} from './StaticValue'
 import {StreamValue} from './StreamValue'
 import {BooleanValue, GroqType, NullValue, Value} from './types'
+
+export class StaticValue<P, T extends GroqType> {
+  data: P
+  type: T
+
+  constructor(data: P, type: T) {
+    this.data = data
+    this.type = type
+  }
+
+  isArray(): boolean {
+    return this.type === 'array'
+  }
+
+  // eslint-disable-next-line require-await
+  async get(): Promise<any> {
+    return this.data
+  }
+
+  [Symbol.asyncIterator](): Generator<Value, void, unknown> {
+    if (Array.isArray(this.data)) {
+      return (function* (data) {
+        for (const element of data) {
+          yield fromJS(element)
+        }
+      })(this.data)
+    }
+    throw new Error(`Cannot iterate over: ${this.type}`)
+  }
+}
 
 export const NULL_VALUE: NullValue = new StaticValue(null, 'null')
 export const TRUE_VALUE: BooleanValue = new StaticValue(true, 'boolean')
