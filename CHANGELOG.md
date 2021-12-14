@@ -11,6 +11,7 @@ Backwards compatible API changes:
 
 - Introduce `params` and `mode` option on `parse`.
 - Introduce `before` and `after` option on `evaluate`.
+- The main file is now an UMD file usable in the browser, exported under `groqJS`.
 
 Private changes:
 
