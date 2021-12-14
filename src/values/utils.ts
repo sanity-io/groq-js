@@ -1,4 +1,4 @@
-import {DateTime} from './DateTime'
+import {parseRFC3339, formatRFC3339} from './dateHelpers'
 import {Path} from './Path'
 import {StreamValue} from './StreamValue'
 import {BooleanValue, GroqType, NullValue, Value} from './types'
@@ -36,6 +36,48 @@ export class StaticValue<P, T extends GroqType> {
 export const NULL_VALUE: NullValue = new StaticValue(null, 'null')
 export const TRUE_VALUE: BooleanValue = new StaticValue(true, 'boolean')
 export const FALSE_VALUE: BooleanValue = new StaticValue(false, 'boolean')
+
+export class DateTime {
+  date: Date
+
+  constructor(date: Date) {
+    this.date = date
+  }
+
+  static parseToValue(str: string): Value {
+    const date = parseRFC3339(str)
+    if (date) {
+      return new StaticValue(new DateTime(date), 'datetime')
+    }
+    return NULL_VALUE
+  }
+
+  equals(other: DateTime): boolean {
+    return this.date.getTime() == other.date.getTime()
+  }
+
+  add(secs: number): DateTime {
+    const copy = new Date(this.date.getTime())
+    copy.setTime(copy.getTime() + secs * 1000)
+    return new DateTime(copy)
+  }
+
+  difference(other: DateTime): number {
+    return (this.date.getTime() - other.date.getTime()) / 1000
+  }
+
+  compareTo(other: DateTime): number {
+    return this.date.getTime() - other.date.getTime()
+  }
+
+  toString(): string {
+    return formatRFC3339(this.date)
+  }
+
+  toJSON(): string {
+    return this.toString()
+  }
+}
 
 export function fromNumber(num: number): Value {
   if (Number.isFinite(num)) {

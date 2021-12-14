@@ -1,4 +1,4 @@
-import {Value} from './types'
+import type {Value} from './types'
 
 export class StreamValue {
   type: 'stream' = 'stream'
