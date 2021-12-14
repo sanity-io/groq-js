@@ -1,6 +1,6 @@
 # Changelog
 
-## Unreleased
+## v0.4.0-beta0 - 2021-12-14
 
 New features:
 
