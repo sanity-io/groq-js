@@ -15,7 +15,11 @@ import {parse, evaluate} from 'groq-js'
 declare function parse(input: string, options: ParserOptions = {}): ExprNode
 
 interface ParseOptions {
+  /** Parameters given to the query. */
   params?: Record<string, unknown>
+
+  /** What mode to evaluate the query under. Defaults to "normal". */
+  mode?: 'normal' | 'delta'
 }
 
 interface GroqSyntaxError extends Error {
@@ -47,6 +51,12 @@ interface EvaluateOptions {
 
   // Value used for identity().
   identity?: string
+
+  // The value returned from before() in Delta-mode
+  before?: any
+
+  // The value returned from after() in Delta-mode
+  after?: any
 
   // Settings used for the `sanity`-functions.
   sanity?: {

@@ -2,7 +2,24 @@
 
 ## Unreleased
 
+New features:
+
 - Support specifying `now()` and `identity()` during evaluation.
+- Support for validating Delta GROQ.
+
+Backwards compatible API changes:
+
+- Introduce `params` and `mode` option on `parse`.
+- Introduce `before` and `after` option on `evaluate`.
+
+Private changes:
+
+- Rewrite parser, optimizing for performance.
+
+Tooling changes:
+
+- Use Vite and esbuild instead of TSDX.
+- Switch completely over from Jest to Tap for running test.
 
 ## v0.3.0 - 2021-06-25
 
