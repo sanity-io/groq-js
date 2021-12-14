@@ -5,9 +5,7 @@ export type Mark = {
   position: number
 }
 
-export declare function parse(
-  input: string
-):
+export declare function parse(input: string):
   | {
       type: 'success'
       marks: Mark[]
