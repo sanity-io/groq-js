@@ -6,7 +6,7 @@ Bug fixes:
 
 - Fix error `ReferenceError: marks is not defined` which happened while parsing strings in strict mode.
 
-## v0.4.0-beta0 - 2021-12-14
+## v0.4.0-beta.0 - 2021-12-14
 
 New features:
 
