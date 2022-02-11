@@ -1,3 +1,5 @@
+'use strict'
+
 const WS = /^([\t\n\v\f\r \u0085\u00A0]|(\/\/[^\n]+\n))+/
 const NUM = /^\d+/
 const IDENT = /^[a-zA-Z_][a-zA-Z_0-9]*/
@@ -757,7 +759,7 @@ function parseObject(str, pos) {
 function parseString(str, pos) {
   let token = str[pos]
   pos = pos + 1
-  marks = [{name: 'str', position: pos}]
+  const marks = [{name: 'str', position: pos}]
   str: for (; ; pos++) {
     if (pos > str.length) return {type: 'error', position: pos}
 
