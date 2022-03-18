@@ -14,6 +14,18 @@ t.test('Basic parsing', async (t) => {
     const tree = parse(query)
     t.matchSnapshot(tree)
   })
+
+  t.test('Object expression starting with string', async (t) => {
+    const query = `{"mail" == 1 => {}}`
+    const tree = parse(query)
+    t.matchSnapshot(tree)
+  })
+
+  t.test('Space after field in objects', async (t) => {
+    const query = `{"mail" : 123}`
+    const tree = parse(query)
+    t.matchSnapshot(tree)
+  })
 })
 
 t.test('Error reporting', async (t) => {
