@@ -1,6 +1,6 @@
 'use strict'
 
-const WS = /^([\t\n\v\f\r \u0085\u00A0]|(\/\/[^\n]+\n))+/
+const WS = /^([\t\n\v\f\r \u0085\u00A0]|(\/\/[^\n]*\n))+/
 const NUM = /^\d+/
 const IDENT = /^[a-zA-Z_][a-zA-Z_0-9]*/
 

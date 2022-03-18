@@ -26,6 +26,16 @@ t.test('Basic parsing', async (t) => {
     const tree = parse(query)
     t.matchSnapshot(tree)
   })
+
+  t.test('Comment with no text', async (t) => {
+    const query = `
+      // my comment
+      //
+      1
+    `
+    const tree = parse(query)
+    t.matchSnapshot(tree)
+  })
 })
 
 t.test('Error reporting', async (t) => {
