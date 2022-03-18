@@ -704,46 +704,33 @@ function parseObject(str, pos) {
 
   loop: while (str[pos] !== '}') {
     let pairPos = pos
-    switch (str[pos]) {
-      case '"':
-      case "'": {
-        let field = parseString(str, pos)
-        if (field.type === 'error') return field
-        pos = skipWS(str, field.position)
-        if (str[pos] !== ':') return {type: 'error', position: pos}
-        let value = parseExpr(str, skipWS(str, pos + 1), 0)
-        if (value.type === 'error') return value
-        marks.push({name: 'object_pair', position: pairPos})
-        marks = marks.concat(field.marks, value.marks)
-        pos = value.position
-        break
-      }
-      case '.': {
-        if (str.slice(pos, pos + 3) === '...') {
-          pos = skipWS(str, pos + 3)
-          if (str[pos] !== '}' && str[pos] !== ',') {
-            let expr = parseExpr(str, pos, 0)
-            if (expr.type === 'error') return expr
-            marks.push({name: 'object_splat', position: pairPos})
-            marks = marks.concat(expr.marks)
-            pos = expr.position
-            break
-          } else {
-            marks.push({name: 'object_splat_this', position: pairPos})
-            break
-          }
-        }
 
-        break loop
-      }
-      default: {
+    if (str.slice(pos, pos + 3) === '...') {
+      pos = skipWS(str, pos + 3)
+      if (str[pos] !== '}' && str[pos] !== ',') {
         let expr = parseExpr(str, pos, 0)
         if (expr.type === 'error') return expr
+        marks.push({name: 'object_splat', position: pairPos})
+        marks = marks.concat(expr.marks)
+        pos = expr.position
+      } else {
+        marks.push({name: 'object_splat_this', position: pairPos})
+      }
+    } else {
+      let expr = parseExpr(str, pos, 0)
+      if (expr.type === 'error') return expr
+      let nextPos = skipWS(str, expr.position)
+      if (expr.marks[0].name === 'str' && str[nextPos] === ':') {
+        let value = parseExpr(str, skipWS(str, nextPos + 1), 0)
+        if (value.type === 'error') return value
+        marks.push({name: 'object_pair', position: pairPos})
+        marks = marks.concat(expr.marks, value.marks)
+        pos = value.position
+      } else {
         marks = marks.concat({name: 'object_expr', position: pos}, expr.marks)
         pos = expr.position
       }
     }
-
     pos = skipWS(str, pos)
     if (str[pos] !== ',') break
     pos = skipWS(str, pos + 1)

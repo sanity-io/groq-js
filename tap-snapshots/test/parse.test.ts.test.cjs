@@ -48,6 +48,49 @@ Object {
 }
 `
 
+exports[`test/parse.test.ts TAP Basic parsing Object expression starting with string > must match snapshot 1`] = `
+Object {
+  "attributes": Array [
+    Object {
+      "condition": Object {
+        "left": Object {
+          "type": "Value",
+          "value": "mail",
+        },
+        "op": "==",
+        "right": Object {
+          "type": "Value",
+          "value": 1,
+        },
+        "type": "OpCall",
+      },
+      "type": "ObjectConditionalSplat",
+      "value": Object {
+        "attributes": Array [],
+        "type": "Object",
+      },
+    },
+  ],
+  "type": "Object",
+}
+`
+
+exports[`test/parse.test.ts TAP Basic parsing Space after field in objects > must match snapshot 1`] = `
+Object {
+  "attributes": Array [
+    Object {
+      "name": "mail",
+      "type": "ObjectAttributeValue",
+      "value": Object {
+        "type": "Value",
+        "value": 123,
+      },
+    },
+  ],
+  "type": "Object",
+}
+`
+
 exports[`test/parse.test.ts TAP Basic parsing Trailing comma in function call > must match snapshot 1`] = `
 Object {
   "alternatives": Array [],
