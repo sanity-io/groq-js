@@ -679,6 +679,8 @@ function parseFuncCall(str, startPos, pos) {
       pos = skipWS(str, result.position)
       if (str[pos] !== ',') break
       pos = skipWS(str, pos + 1)
+      // Also allow trailing commas
+      if (str[pos] === ')') break
     }
   }
 

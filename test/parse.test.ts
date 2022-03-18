@@ -8,6 +8,12 @@ t.test('Basic parsing', async (t) => {
     const tree = parse(query)
     t.matchSnapshot(tree)
   })
+
+  t.test('Trailing comma in function call', async (t) => {
+    const query = `select(123,)`
+    const tree = parse(query)
+    t.matchSnapshot(tree)
+  })
 })
 
 t.test('Error reporting', async (t) => {

@@ -47,3 +47,14 @@ Object {
   "type": "Map",
 }
 `
+
+exports[`test/parse.test.ts TAP Basic parsing Trailing comma in function call > must match snapshot 1`] = `
+Object {
+  "alternatives": Array [],
+  "fallback": Object {
+    "type": "Value",
+    "value": 123,
+  },
+  "type": "Select",
+}
+`
