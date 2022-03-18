@@ -1,5 +1,11 @@
 # Changelog
 
+## Unreleased
+
+Bug fixes
+
+- Correctly accept function calls with trailing commas: `select(123,)`.
+
 ## v0.4.0-beta.1
 
 Bug fixes:
