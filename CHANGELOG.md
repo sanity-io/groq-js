@@ -6,6 +6,7 @@ Bug fixes
 
 - Correctly accept function calls with trailing commas: `select(123,)`.
 - Correctly parse object expressions which start with literal strings (e.g. `{"mail" == … => …}`).
+- Correctly accept comments with no text (`//` on a single line).
 
 ## v0.4.0-beta.1
 

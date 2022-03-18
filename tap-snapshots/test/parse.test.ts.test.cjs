@@ -5,6 +5,13 @@
  * Make sure to inspect the output below.  Do not ignore changes!
  */
 'use strict'
+exports[`test/parse.test.ts TAP Basic parsing Comment with no text > must match snapshot 1`] = `
+Object {
+  "type": "Value",
+  "value": 1,
+}
+`
+
 exports[`test/parse.test.ts TAP Basic parsing Example query > must match snapshot 1`] = `
 Object {
   "base": Object {
