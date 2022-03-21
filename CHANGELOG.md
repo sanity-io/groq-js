@@ -1,6 +1,6 @@
 # Changelog
 
-## Unreleased
+## v0.4.0-beta.2 - 2022-03-21
 
 Bug fixes
 
