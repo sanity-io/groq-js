@@ -29,7 +29,7 @@ interface GroqSyntaxError extends Error {
 ```
 
 `parse` accepts a string and parses a GROQ query.
-The returned value can be passed to [`evalute`](#evaluate) to evaluate the query.
+The returned value can be passed to [`evaluate`](#evaluate) to evaluate the query.
 
 The function will throw `GroqSyntaxError` if there's a syntax error in the query.
 
