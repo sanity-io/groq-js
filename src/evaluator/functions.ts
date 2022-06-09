@@ -264,6 +264,21 @@ string.upper.arity = 1
 global.lower = string.lower
 global.upper = string.upper
 
+string.startsWith = async function (args, scope, execute) {
+  const str = await execute(args[0], scope)
+  if (str.type !== 'string') {
+    return NULL_VALUE
+  }
+
+  const prefix = await execute(args[1], scope)
+  if (prefix.type !== 'string') {
+    return NULL_VALUE
+  }
+
+  return str.data.startsWith(prefix.data) ? TRUE_VALUE : FALSE_VALUE
+}
+string.startsWith.arity = 2
+
 const pt: FunctionSet = {}
 pt.text = async function (args, scope, execute) {
   const value = await execute(args[0], scope)
