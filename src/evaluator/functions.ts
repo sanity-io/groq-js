@@ -356,6 +356,33 @@ array.compact = async function (args, scope, execute) {
 }
 array.compact.arity = 1
 
+array.unique = async function (args, scope, execute) {
+  const value = await execute(args[0], scope)
+  if (!value.isArray()) {
+    return NULL_VALUE
+  }
+
+  return new StreamValue(async function* () {
+    const added = new Set()
+    for await (const iter of value) {
+      switch (iter.type) {
+        case 'number':
+        case 'string':
+        case 'boolean':
+        case 'datetime':
+          if (!added.has(iter.data)) {
+            added.add(iter.data)
+            yield iter
+          }
+          break
+        default:
+          yield iter
+      }
+    }
+  })
+}
+array.unique.arity = 1
+
 const pt: FunctionSet = {}
 pt.text = async function (args, scope, execute) {
   const value = await execute(args[0], scope)

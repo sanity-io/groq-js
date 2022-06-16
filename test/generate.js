@@ -15,7 +15,7 @@ const SUPPORTED_FEATURES = new Set([
   'experimentalFunctions',
 ])
 const GROQ_VERSION = '2.0.0'
-const DISABLED_TESTS = ['Filters / documents, nested 3', 'Parameters / Undefined', /array::unique/]
+const DISABLED_TESTS = ['Filters / documents, nested 3', 'Parameters / Undefined']
 
 const OUTPUT = process.stdout
 const STACK = []
