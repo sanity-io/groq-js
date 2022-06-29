@@ -1,9 +1,9 @@
 # GROQ-JS
 
-GROQ-JS is a (work-in-progress) JavaScript implementation of [GROQ](https://www.sanity.io/docs/data-store/how-queries-work) which follows the official specification.
+GROQ-JS is a JavaScript implementation of [GROQ](https://www.sanity.io/docs/data-store/how-queries-work) which follows the official specification.
 
 ```javascript
-import {parse, evaluate} from 'groq-js'
+import {parse, evaluate} from 'groq-js/v2'
 
 let input = '*[_type == "user"]{name}'
 
@@ -12,7 +12,7 @@ let tree = parse(input)
 
 let dataset = [
   {_type: 'user', name: 'Michael'},
-  {_type: 'company', name: 'Bluth Company'}
+  {_type: 'company', name: 'Bluth Company'},
 ]
 
 // Evaluate a tree against a dataset
@@ -22,6 +22,15 @@ let value = await evaluate(tree, {dataset})
 let result = await value.get()
 
 console.log(result)
+```
+
+** Note: TypeScript doesn't yet support export subpaths, to use this library with TypeScript you can do: **
+
+```typescript
+import {v2} from "groq-js";
+const {parse, evaluate} = v2
+
+...
 ```
 
 Table of contents:
@@ -50,8 +59,13 @@ See [API.md](API.md) for the public API.
 
 [![Free egghead GROQ introduction course by John Lindquist](https://user-images.githubusercontent.com/6188161/142889665-fc04ac47-d0fa-492b-897b-4203c97e94ec.png)](https://egghead.io/courses/introduction-to-groq-query-language-6e9c6fc0?utm_source=github&utm_medium=cta&utm_term=GROQ)
 
-
 ## Versioning
+
+### GROQ
+
+The GROQ spec version is independent of the groq-js library version. When you import groq-js you need to be explicit on which GROQ version you want to use. The GROQ version is tied to the [groq-spec](https://github.com/sanity-io/groq). This allows us to update the library and its API independent of the GROQ version.
+
+### GROQ-JS
 
 GROQ-JS follows [SemVer](https://semver.org) and is currently at version v0.2.
 See [the changelog](CHANGELOG.md) for recent changes.
