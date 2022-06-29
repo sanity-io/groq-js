@@ -44,7 +44,7 @@ export function tryConstantEvaluate(node: ExprNode): Value | null {
   try {
     return constantEvaluate(node)
   } catch (err) {
-    if (err.name === 'ConstantEvaluateError') {
+    if (err instanceof ConstantEvaluateError) {
       return null
     }
     throw err
