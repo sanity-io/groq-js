@@ -1,2 +1,3 @@
-export {parse} from './parser'
-export {evaluate} from './evaluator'
+import {parse, evaluate} from './v2'
+
+export const v2 = {parse, evaluate}

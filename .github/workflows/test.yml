@@ -19,7 +19,7 @@ jobs:
           node-version: ${{ matrix.node-version }}
       - run: npm install
       - run: npm run-script prettify-check
-      - run: ./test/generate.sh
+      - run: npm run test:generate
       - run: npm test
         env:
           CI: true
