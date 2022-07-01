@@ -48,7 +48,7 @@ function parseExpr(str, pos, level) {
   // while handling the RHS of the multiplication in `1 + 2 * 3 + 4` we only parse `3`.
   //
   // `lhsLevel` is the precedence level of the currently parsed expression on
-  // the left-hand side. This is mainly used to handle non-associcativeness.
+  // the left-hand side. This is mainly used to handle non-associativeness.
 
   // This means that you'll see code like:
   // - `if (level > PREC_XXX) break`: Operator is at this precedence level.

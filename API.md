@@ -43,7 +43,7 @@ interface EvaluateOptions {
   // The value that will be available as `*` in GROQ.
   dataset?: any
 
-  // Parameters availble in the GROQ query (using `$param` syntax).
+  // Parameters available in the GROQ query (using `$param` syntax).
   params?: Record<string, unknown>
 
   // Timestamp used for now().

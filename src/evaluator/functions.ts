@@ -16,7 +16,7 @@ import {
   Path,
   fromJS,
 } from '../values'
-import {portableTextContent} from './pt'
+import {portableTextContent} from './extensions/pt'
 
 function hasReference(value: any, pathSet: Set<string>): boolean {
   switch (getType(value)) {
@@ -446,14 +446,31 @@ delta.changedOnly.arity = 1
 delta.changedOnly.mode = 'delta'
 
 const diff: FunctionSet = {}
-diff.changedAny = () => {
-  throw new Error('not implemented')
+diff.changedAny = async function (args, scope) {
+  // throw new Error('not implemented')
+  const [lhs, rhs, selector] = args
+
+  const before = evaluate(lhs, scope)
+  const after = evaluate(rhs, scope)
+
+  const evaluatedSelector = evaluate(selector, scope)
+
+  const selected = selectorSearch(evaluatedSelector, before, scope)
+  const diff = before - after
+
+  // if diff intersect selected
+  //  return true
+  // else
+  //  return false
+  return false
 }
+
 diff.changedAny.arity = 3
 
 diff.changedOnly = () => {
   throw new Error('not implemented')
 }
+
 diff.changedOnly.arity = 3
 
 export const namespaces: NamespaceSet = {

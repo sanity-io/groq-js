@@ -390,6 +390,11 @@ const EXPR_BUILDER: MarkVisitor<NodeTypes.ExprNode> = {
       throw new GroqQueryError(`Undefined function: ${name}`)
     }
 
+    if (namespace === 'diff') {
+      const selector = args[2]
+      validateSelector(selector, name)
+    }
+
     return {
       type: 'FuncCall',
       func,
@@ -693,6 +698,19 @@ function validateArity(name: string, arity: GroqFunctionArity, count: number) {
     if (!arity(count)) {
       throw new GroqQueryError(`Incorrect number of arguments to function ${name}().`)
     }
+  }
+}
+
+function validateSelector(selector: NodeTypes.ExprNode, functionName: string) {
+  if (selector.type !== 'Tuple' && selector.type !== 'AccessAttribute') {
+    throw new GroqQueryError(
+      `Invalid selector type for ${functionName}(): ` +
+      `expected identifier or tuple of identifiers, got: '${selector.type}'`)
+  }
+  
+  if (selector.type === 'Tuple' && !selector.members.every((node) => node.type === 'AccessAttribute')) {
+      throw new GroqQueryError(
+        `Invalid selector argument for ${functionName}(), expected tuple of identifiers`)
   }
 }
 
