@@ -676,7 +676,7 @@ const SELECTOR_BUILDER: MarkVisitor<NodeTypes.SelectorNode> = {
   this_attr(p) {
     const name = p.processString()
 
-    if(['null', 'true', 'false'].includes(name)) throw new GroqSelectorError('invalid selector')
+    if (['null', 'true', 'false'].includes(name)) throw new GroqSelectorError('invalid selector')
 
     return {
       type: 'Selector',
@@ -690,10 +690,10 @@ const SELECTOR_BUILDER: MarkVisitor<NodeTypes.SelectorNode> = {
     p.unshift()
     const path = p.process(EXPR_BUILDER)
     if (path.type !== 'AccessAttribute') throw new GroqSelectorError('invalid selector')
-    
+
     return {
-      type: "Selector",
-      paths: [path]
+      type: 'Selector',
+      paths: [path],
     }
   },
 
@@ -703,27 +703,27 @@ const SELECTOR_BUILDER: MarkVisitor<NodeTypes.SelectorNode> = {
 
     return {
       type: 'Selector',
-      paths: [node]
+      paths: [node],
     }
   },
 
   tuple(p) {
     const paths: NodeTypes.ExprNode[] = []
-  
+
     while (p.getMark().name !== 'tuple_end') {
       paths.push(p.process(EXPR_BUILDER))
     }
     p.shift()
 
-    if(!paths.every((path) => path.type === 'AccessAttribute')) {
+    if (!paths.every((path) => path.type === 'AccessAttribute')) {
       throw new GroqSelectorError('invalid selector')
     }
 
     return {
       type: 'Selector',
-      paths
+      paths,
     }
-  }
+  },
 }
 
 function extractPropertyKey(node: NodeTypes.ExprNode): string {

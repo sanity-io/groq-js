@@ -57,7 +57,7 @@ t.test('Diff extension', async (t) => {
     const query = `diff::changedAny(a, b, "foo")`
     try {
       parse(query)
-    } catch(error: any) {
+    } catch (error: any) {
       t.same(error.name, 'Error')
       t.same(error.message, 'Unknown handler: str')
     }
@@ -65,9 +65,9 @@ t.test('Diff extension', async (t) => {
 
   t.test('accepts valid selectors', async (t) => {
     const queries = [
-      "diff::changedAny(a, b, foo)",
-      "diff::changedAny(a, b, foo.bar.baz)",
-      "diff::changedAny(a, b, (foo, bar, baz))",
+      'diff::changedAny(a, b, foo)',
+      'diff::changedAny(a, b, foo.bar.baz)',
+      'diff::changedAny(a, b, (foo, bar, baz))',
       // "diff::changedAny(a, b, doc.(foo, bar))" // Not yet implemented!
     ]
 

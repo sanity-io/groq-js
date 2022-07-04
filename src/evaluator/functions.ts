@@ -446,7 +446,7 @@ delta.changedOnly.arity = 1
 delta.changedOnly.mode = 'delta'
 
 const diff: FunctionSet = {}
-diff.changedAny = async function (args, scope) {
+diff.changedAny = () => {
   throw new Error('not implemented')
 }
 
