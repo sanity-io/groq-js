@@ -326,6 +326,10 @@ const EXECUTORS: ExecutorMap = {
     throw new Error('tuples can not be evaluated')
   },
 
+  Selector() {
+    throw new Error('selectors are not yet implemented')
+  },
+
   async Or({left, right}, scope, execute) {
     const leftValue = await execute(left, scope)
     const rightValue = await execute(right, scope)

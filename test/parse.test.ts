@@ -52,6 +52,31 @@ t.test('Error reporting', async (t) => {
   })
 })
 
+t.test('Diff extension', async (t) => {
+  t.test('throws when passed invalid selector', async (t) => {
+    const query = `diff::changedAny(a, b, "foo")`
+    try {
+      parse(query)
+    } catch(error: any) {
+      t.same(error.name, 'Error')
+      t.same(error.message, 'Unknown handler: str')
+    }
+  })
+
+  t.test('accepts valid selectors', async (t) => {
+    const queries = [
+      "diff::changedAny(a, b, foo)",
+      "diff::changedAny(a, b, foo.bar.baz)",
+      "diff::changedAny(a, b, (foo, bar, baz))",
+      // "diff::changedAny(a, b, doc.(foo, bar))" // Not yet implemented!
+    ]
+
+    for (const query of queries) {
+      t.doesNotThrow(() => parse(query))
+    }
+  })
+})
+
 t.test('Delta-GROQ', async (t) => {
   const queries = [
     `before().title == after().title`,

@@ -36,6 +36,10 @@ class GroqQueryError extends Error {
   public name = 'GroqQueryError'
 }
 
+class GroqSelectorError extends Error {
+  public name = 'GroqSelectorError'
+}
+
 const EXPR_BUILDER: MarkVisitor<NodeTypes.ExprNode> = {
   group(p) {
     const inner = p.process(EXPR_BUILDER)
@@ -356,9 +360,15 @@ const EXPR_BUILDER: MarkVisitor<NodeTypes.ExprNode> = {
     }
 
     const args: NodeTypes.ExprNode[] = []
+
     while (p.getMark().name !== 'func_args_end') {
-      args.push(p.process(EXPR_BUILDER))
+      if (argumentShouldBeSelector(namespace, args)) {
+        args.push(p.process(SELECTOR_BUILDER))
+      } else {
+        args.push(p.process(EXPR_BUILDER))
+      }
     }
+
     p.shift()
 
     if (namespace === 'global' && (name === 'before' || name === 'after')) {
@@ -388,11 +398,6 @@ const EXPR_BUILDER: MarkVisitor<NodeTypes.ExprNode> = {
 
     if (func.mode !== undefined && func.mode !== p.parseOptions.mode) {
       throw new GroqQueryError(`Undefined function: ${name}`)
-    }
-
-    if (namespace === 'diff') {
-      const selector = args[2]
-      validateSelector(selector, name)
     }
 
     return {
@@ -667,6 +672,60 @@ const TRAVERSE_BUILDER: MarkVisitor<(rhs: TraversalResult | null) => TraversalRe
   },
 }
 
+const SELECTOR_BUILDER: MarkVisitor<NodeTypes.SelectorNode> = {
+  this_attr(p) {
+    const name = p.processString()
+
+    if(['null', 'true', 'false'].includes(name)) throw new GroqSelectorError('invalid selector')
+
+    return {
+      type: 'Selector',
+      paths: [{type: 'AccessAttribute', name}],
+    }
+  },
+
+  traverse(p) {
+    // The expr builder has functionality to handles traversals, so we need to push (or unshift)
+    // the `traverse` mark back onto the mark stack so the expr builder can handle it properly.
+    p.unshift()
+    const path = p.process(EXPR_BUILDER)
+    if (path.type !== 'AccessAttribute') throw new GroqSelectorError('invalid selector')
+    
+    return {
+      type: "Selector",
+      paths: [path]
+    }
+  },
+
+  attr_access(p) {
+    const node = p.process(EXPR_BUILDER)
+    if (node.type !== 'AccessAttribute') throw new GroqSelectorError('invalid selector')
+
+    return {
+      type: 'Selector',
+      paths: [node]
+    }
+  },
+
+  tuple(p) {
+    const paths: NodeTypes.ExprNode[] = []
+  
+    while (p.getMark().name !== 'tuple_end') {
+      paths.push(p.process(EXPR_BUILDER))
+    }
+    p.shift()
+
+    if(!paths.every((path) => path.type === 'AccessAttribute')) {
+      throw new GroqSelectorError('invalid selector')
+    }
+
+    return {
+      type: 'Selector',
+      paths
+    }
+  }
+}
+
 function extractPropertyKey(node: NodeTypes.ExprNode): string {
   if (node.type === 'AccessAttribute' && !node.base) {
     return node.name
@@ -701,17 +760,8 @@ function validateArity(name: string, arity: GroqFunctionArity, count: number) {
   }
 }
 
-function validateSelector(selector: NodeTypes.ExprNode, functionName: string) {
-  if (selector.type !== 'Tuple' && selector.type !== 'AccessAttribute') {
-    throw new GroqQueryError(
-      `Invalid selector type for ${functionName}(): ` +
-      `expected identifier or tuple of identifiers, got: '${selector.type}'`)
-  }
-  
-  if (selector.type === 'Tuple' && !selector.members.every((node) => node.type === 'AccessAttribute')) {
-      throw new GroqQueryError(
-        `Invalid selector argument for ${functionName}(), expected tuple of identifiers`)
-  }
+function argumentShouldBeSelector(namespace: string, args: NodeTypes.ExprNode[]) {
+  return namespace == 'diff' && AbortSignal.length == 2
 }
 
 class GroqSyntaxError extends Error {

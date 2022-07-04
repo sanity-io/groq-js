@@ -88,7 +88,10 @@ function parseExpr(str, pos, level) {
           while (true) {
             rhs = parseExpr(str, pos, 0)
             if (rhs.type === 'error') return rhs
+
+            marks = marks.concat(rhs.marks)
             pos = skipWS(str, rhs.position)
+
             if (str[pos] !== ',') break
             pos = skipWS(str, pos + 1)
           }
