@@ -761,7 +761,7 @@ function validateArity(name: string, arity: GroqFunctionArity, count: number) {
 }
 
 function argumentShouldBeSelector(namespace: string, args: NodeTypes.ExprNode[]) {
-  return namespace == 'diff' && AbortSignal.length == 2
+  return namespace == 'diff' && args.length == 2
 }
 
 class GroqSyntaxError extends Error {

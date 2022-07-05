@@ -83,6 +83,7 @@ export class MarkProcessor {
   }
 
   unshift(): void {
+    if (this.index <= 0) throw new Error('accessing out of bounds index')
     this.index -= 1
   }
 
