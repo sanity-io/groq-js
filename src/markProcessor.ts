@@ -113,4 +113,10 @@ export class MarkProcessor {
     const pos = this.marks[this.index].position
     return this.string.slice(pos, pos + len)
   }
+
+  // We use this to insert new marks into the marks array.
+  splice(startPosition: number, marks: Mark[]): void {
+    let positionCounter = this.index + startPosition
+    this.marks.splice(positionCounter, 0, ...marks)
+  }
 }

@@ -68,7 +68,7 @@ t.test('Diff extension', async (t) => {
       'diff::changedAny(a, b, foo)',
       'diff::changedAny(a, b, foo.bar.baz)',
       'diff::changedAny(a, b, (foo, bar, baz))',
-      // "diff::changedAny(a, b, doc.(foo, bar))" // Not yet implemented!
+      'diff::changedAny(a, b, doc.(foo, bar))',
     ]
 
     for (const query of queries) {

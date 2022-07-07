@@ -1,8 +1,11 @@
 'use strict'
 
+import {processTraversalsWithTuples} from './helpers/parserHelper'
+
 const WS = /^([\t\n\v\f\r \u0085\u00A0]|(\/\/[^\n]*\n))+/
 const NUM = /^\d+/
 const IDENT = /^[a-zA-Z_][a-zA-Z_0-9]*/
+const TUPLE = /^\(.*\)/
 
 // Precedence levels for binary operators:
 const PREC_PAIR = 1
@@ -532,6 +535,12 @@ function parseExpr(str, pos, level) {
     }
   }
 
+  // We process traversals containing tuples and accessors at this point to save complexity later
+  // when we process the marks. The two possible transformations are shown below.
+  // `foo.(title, subtitle)` => `(foo.title, foo.subtitle)`
+  // `(foo, bar).thing` => `(foo.thing, bar.thing)`
+  marks = processTraversalsWithTuples(marks)
+
   let failPosition = trav?.type === 'error' && trav.position
 
   return {type: 'success', marks, position: pos, failPosition}
@@ -541,20 +550,28 @@ function parseTraversal(str, pos) {
   let startPos = pos
   switch (str[pos]) {
     case '.': {
+      // We want to allow tuples inside traversals to facilitate selector syntax,
+      // where `thing.(foo, bar)` is valid.
       pos = skipWS(str, pos + 1)
-      let identStart = pos
-      let identLen = parseRegex(str, pos, IDENT)
-      if (!identLen) return {type: 'error', position: pos}
-      pos += identLen
+      let tupleLength = parseRegex(str, pos, TUPLE)
+      if (tupleLength) {
+        return parseExpr(str, pos, 0)
+      } else {
+        let identStart = pos
+        let identLen = parseRegex(str, pos, IDENT)
 
-      return {
-        type: 'success',
-        marks: [
-          {name: 'attr_access', position: startPos},
-          {name: 'ident', position: identStart},
-          {name: 'ident_end', position: pos},
-        ],
-        position: pos,
+        if (!identLen) return {type: 'error', position: pos}
+
+        pos += identLen
+        return {
+          type: 'success',
+          marks: [
+            {name: 'attr_access', position: startPos},
+            {name: 'ident', position: identStart},
+            {name: 'ident_end', position: pos},
+          ],
+          position: pos,
+        }
       }
     }
     case '-':
