@@ -29,4 +29,27 @@ t.test('Functions', async (t) => {
       t.same(data.deep.time, data.topTime)
     })
   })
+
+  t.test('diff extension', async (t) => {
+    t.test('throws when passed invalid selector names', async (t) => {
+      const queriesWithInvalidSelectors = [
+        'diff::changedAny(a, b, true)',
+        'diff::changedAny(a, b, false)',
+        'diff::changedAny(a, b, null)',
+        'diff::changedOnly(a, b, true)',
+        'diff::changedOnly(a, b, false)',
+        'diff::changedOnly(a, b, null)',
+      ]
+
+      queriesWithInvalidSelectors.forEach((query) => {
+        const tree = parse(query)
+        try {
+          evaluate(tree, {dataset: []})
+        } catch (error: any) {
+          t.same(error.name, 'Error')
+          t.same(error.message, 'Invalid selector')
+        }
+      })
+    })
+  })
 })

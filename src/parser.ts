@@ -363,8 +363,14 @@ const EXPR_BUILDER: MarkVisitor<NodeTypes.ExprNode> = {
     const args: NodeTypes.ExprNode[] = []
 
     while (p.getMark().name !== 'func_args_end') {
-      if (argumentShouldBeSelector(namespace, args)) {
-        args.push(p.process(SELECTOR_BUILDER))
+      if (argumentShouldBeSelector(namespace, name, args)) {
+        try {
+          args.push(p.process(SELECTOR_BUILDER))
+        } catch (error: any) {
+          if (error.message.match('Unknown handler')) {
+            throw new Error('Cannot parse selector, must be identifier or tuple of identifiers')
+          }
+        }
       } else {
         args.push(p.process(EXPR_BUILDER))
       }
@@ -677,8 +683,6 @@ const SELECTOR_BUILDER: MarkVisitor<NodeTypes.SelectorNode> = {
   this_attr(p) {
     const name = p.processString()
 
-    if (['null', 'true', 'false'].includes(name)) throw new GroqSelectorError('invalid selector')
-
     return {
       type: 'Selector',
       paths: [{type: 'AccessAttribute', name}],
@@ -772,8 +776,14 @@ function validateArity(name: string, arity: GroqFunctionArity, count: number) {
   }
 }
 
-function argumentShouldBeSelector(namespace: string, args: NodeTypes.ExprNode[]) {
-  return namespace == 'diff' && args.length == 2
+function argumentShouldBeSelector(
+  namespace: string,
+  functionName: string,
+  args: NodeTypes.ExprNode[]
+) {
+  return (
+    namespace == 'diff' && args.length == 2 && ['changedAny', 'changedOnly'].includes(functionName)
+  )
 }
 
 // An array of arrays where each internal array consists of traversals to be applied to a base node.

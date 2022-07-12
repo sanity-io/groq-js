@@ -55,27 +55,21 @@ t.test('Error reporting', async (t) => {
 })
 
 t.test('Diff extension', async (t) => {
-  t.test('throws when passed invalid selector', async (t) => {
-    const query = `diff::changedAny(a, b, "foo")`
-    try {
-      parse(query)
-    } catch (error: any) {
-      t.same(error.name, 'Error')
-      t.same(error.message, 'Unknown handler: str')
-    }
-  })
-
-  t.test('accepts valid selectors', async (t) => {
-    const queries = [
-      'diff::changedAny(a, b, foo)',
-      'diff::changedAny(a, b, foo.bar.baz)',
-      'diff::changedAny(a, b, (foo, bar, baz))',
-      'diff::changedAny(a, b, doc.(foo, bar))',
+  t.test('throws when invalid selector syntax used', async (t) => {
+    const queriesWithInvalidSelectors = [
+      'diff::changedAny(a, b, 1337)',
+      'diff::changedAny(a, b, [])',
+      'diff::changedAny(a, b, "foo")',
     ]
 
-    for (const query of queries) {
-      t.doesNotThrow(() => parse(query))
-    }
+    queriesWithInvalidSelectors.forEach((query) => {
+      try {
+        parse(query)
+      } catch (error: any) {
+        t.same(error.name, 'Error')
+        t.same(error.message, 'Cannot parse selector, must be identifier or tuple of identifiers')
+      }
+    })
   })
 
   t.test('parses selectors properly', async (t) => {
