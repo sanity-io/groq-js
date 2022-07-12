@@ -37,10 +37,6 @@ class GroqQueryError extends Error {
   public name = 'GroqQueryError'
 }
 
-class GroqSelectorError extends Error {
-  public name = 'GroqSelectorError'
-}
-
 const EXPR_BUILDER: MarkVisitor<NodeTypes.ExprNode> = {
   group(p) {
     const inner = p.process(EXPR_BUILDER)
@@ -370,6 +366,7 @@ const EXPR_BUILDER: MarkVisitor<NodeTypes.ExprNode> = {
           if (error.message.match('Unknown handler')) {
             throw new Error('Cannot parse selector, must be identifier or tuple of identifiers')
           }
+          throw error
         }
       } else {
         args.push(p.process(EXPR_BUILDER))
@@ -690,8 +687,8 @@ const SELECTOR_BUILDER: MarkVisitor<NodeTypes.SelectorNode> = {
   },
 
   traverse(p) {
-    // For the time being we only handle traversals with one tuple in them. Adding support for
-    // multi-tuple traversals adds significant complexity that we may not need.
+    // For the time being we only handle traversals containing one tuple. Adding support for
+    // multi-tuple traversals adds significant complexity we probably don't need.
     const node = p.process(EXPR_BUILDER)
     const selectorPathBases = node.type === 'Tuple' ? node.members : [node]
 
@@ -714,12 +711,9 @@ const SELECTOR_BUILDER: MarkVisitor<NodeTypes.SelectorNode> = {
   },
 
   attr_access(p) {
-    const node = p.process(EXPR_BUILDER)
-    if (node.type !== 'AccessAttribute') throw new GroqSelectorError('invalid selector')
-
     return {
       type: 'Selector',
-      paths: [node],
+      paths: [p.process(EXPR_BUILDER)],
     }
   },
 
@@ -730,10 +724,6 @@ const SELECTOR_BUILDER: MarkVisitor<NodeTypes.SelectorNode> = {
       paths.push(p.process(EXPR_BUILDER))
     }
     p.shift()
-
-    if (!paths.every((path) => path.type === 'AccessAttribute')) {
-      throw new GroqSelectorError('invalid selector')
-    }
 
     return {
       type: 'Selector',
@@ -786,7 +776,7 @@ function argumentShouldBeSelector(
   )
 }
 
-// An array of arrays where each internal array consists of traversals to be applied to a base node.
+// An array of arrays where each internal array consists of traversals to be applied to base nodes.
 type TraversalLists = Array<(right: TraversalResult | null) => TraversalResult>[]
 
 function buildTraversalLists(p: MarkProcessor): TraversalLists {
@@ -830,12 +820,11 @@ function buildTraversalListsFromTuples(
     })
   } else {
     // Every node in a tuple will result in a new selector path.
-    // For example, `foo.(a, b)` shoudl become [`foo.a`, `foo.b`]
+    // For example, `foo.(a, b)` should become [`foo.a`, `foo.b`]
     // For each node we generate it's traversal, then append it to a shallow copy of the
     // existing traversal lists. This results in N * M traversal lists, where:
     // - N is the number of nodes in the tuple
     // - M is the number of orginal traversal lists
-    // let newTraversalLists: Array<(right: TraversalResult | null) => TraversalResult>[] = []
     tuple.members.forEach((node) => {
       const traversals = buildTraversalForAccessNodes(node as NodeTypes.AccessAttributeNode)
 

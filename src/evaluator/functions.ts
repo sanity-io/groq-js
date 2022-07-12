@@ -17,7 +17,7 @@ import {
   fromJS,
 } from '../values'
 import {portableTextContent} from './pt'
-import {validSelector} from './extensions/diff'
+import {validateSelector} from './extensions/diff'
 
 function hasReference(value: any, pathSet: Set<string>): boolean {
   switch (getType(value)) {
@@ -449,7 +449,7 @@ delta.changedOnly.mode = 'delta'
 const diff: FunctionSet = {}
 diff.changedAny = (args, scope, execute) => {
   const selector = args[2]
-  if (!validSelector(selector)) throw new Error('Invalid selector')
+  validateSelector(selector)
 
   throw new Error('not implemented')
 }
@@ -458,7 +458,7 @@ diff.changedAny.arity = 3
 
 diff.changedOnly = (args, scope, execute) => {
   const selector = args[2]
-  if (!validSelector(selector)) throw new Error('Invalid selector')
+  validateSelector(selector)
 
   throw new Error('not implemented')
 }
