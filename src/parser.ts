@@ -12,6 +12,7 @@ import {
 } from './traversal'
 import {tryConstantEvaluate} from './evaluator'
 import {ParseOptions} from './types'
+import {buildTraversalForAccessNodes} from './helpers/parserHelper'
 
 type EscapeSequences = "'" | '"' | '\\' | '/' | 'b' | 'f' | 'n' | 'r' | 't'
 
@@ -685,16 +686,27 @@ const SELECTOR_BUILDER: MarkVisitor<NodeTypes.SelectorNode> = {
   },
 
   traverse(p) {
-    // The expr builder has functionality to handles traversals, so we need to push (or unshift)
-    // the `traverse` mark back onto the mark stack so the expr builder can handle it properly.
-    p.unshift()
-    const path = p.process(EXPR_BUILDER)
-    if (path.type !== 'AccessAttribute') throw new GroqSelectorError('invalid selector')
+    // For the time being we only handle traversals with one tuple in them. Adding support for
+    // multi-tuple traversals adds significant complexity that we may not need.
+    const node = p.process(EXPR_BUILDER)
+    const selectorPathBases = node.type === 'Tuple' ? node.members : [node]
 
-    return {
-      type: 'Selector',
-      paths: [path],
-    }
+    const selectorPaths: [NodeTypes.ExprNode] | [] = []
+
+    const traversalLists = buildTraversalLists(p)
+    traversalLists.forEach((traversalList) => {
+      let traversal: TraversalResult | null = null
+      for (let i = traversalList.length - 1; i >= 0; i--) {
+        traversal = traversalList[i](traversal)
+      }
+
+      if (traversal === null) throw new Error('invalid selector syntax')
+
+      // @ts-ignore (we already check `traversal` is not `null`)
+      selectorPathBases.forEach((base) => selectorPaths.push(traversal.build(base)))
+    })
+
+    return {type: 'Selector', paths: selectorPaths}
   },
 
   attr_access(p) {
@@ -762,6 +774,68 @@ function validateArity(name: string, arity: GroqFunctionArity, count: number) {
 
 function argumentShouldBeSelector(namespace: string, args: NodeTypes.ExprNode[]) {
   return namespace == 'diff' && args.length == 2
+}
+
+// An array of arrays where each internal array consists of traversals to be applied to a base node.
+type TraversalLists = Array<(right: TraversalResult | null) => TraversalResult>[]
+
+function buildTraversalLists(p: MarkProcessor): TraversalLists {
+  let traversalLists: TraversalLists = []
+
+  while (p.getMark().name !== 'traversal_end') {
+    if (p.getMark().name === 'tuple') {
+      // The normal traversal workflow has no tuple support, since traversals containing tuples
+      // are unique to Selector syntax. To avoid complicating the rest of the traversal code we
+      // manually build an array of traversals.
+      traversalLists = buildTraversalListsFromTuples(p, traversalLists)
+    } else {
+      const newTraversal = p.process(TRAVERSE_BUILDER)
+      if (traversalLists.length === 0) {
+        // If no selector paths exist we can trivially add this traversal as the first path.
+        traversalLists.push([newTraversal])
+      } else {
+        // If multiple selector paths exist we want to add this traversal to each one.
+        traversalLists.forEach((traversalList) => traversalList.push(newTraversal))
+      }
+    }
+  }
+
+  p.shift()
+
+  return traversalLists
+}
+
+function buildTraversalListsFromTuples(
+  p: MarkProcessor,
+  originalTraversalLists: TraversalLists
+): TraversalLists {
+  const tuple = p.process(EXPR_BUILDER) as NodeTypes.TupleNode
+  let newTraversalLists: Array<(right: TraversalResult | null) => TraversalResult>[] = []
+
+  if (originalTraversalLists.length === 0) {
+    newTraversalLists = originalTraversalLists
+    tuple.members.forEach((node) => {
+      const traversals = buildTraversalForAccessNodes(node as NodeTypes.AccessAttributeNode)
+      newTraversalLists.push(traversals)
+    })
+  } else {
+    // Every node in a tuple will result in a new selector path.
+    // For example, `foo.(a, b)` shoudl become [`foo.a`, `foo.b`]
+    // For each node we generate it's traversal, then append it to a shallow copy of the
+    // existing traversal lists. This results in N * M traversal lists, where:
+    // - N is the number of nodes in the tuple
+    // - M is the number of orginal traversal lists
+    // let newTraversalLists: Array<(right: TraversalResult | null) => TraversalResult>[] = []
+    tuple.members.forEach((node) => {
+      const traversals = buildTraversalForAccessNodes(node as NodeTypes.AccessAttributeNode)
+
+      originalTraversalLists.forEach((traversalList) => {
+        newTraversalLists.push([...traversalList.slice(), ...traversals])
+      })
+    })
+  }
+
+  return newTraversalLists
 }
 
 class GroqSyntaxError extends Error {

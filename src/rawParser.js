@@ -1,7 +1,5 @@
 'use strict'
 
-import {processTraversalsWithTuples} from './helpers/parserHelper'
-
 const WS = /^([\t\n\v\f\r \u0085\u00A0]|(\/\/[^\n]*\n))+/
 const NUM = /^\d+/
 const IDENT = /^[a-zA-Z_][a-zA-Z_0-9]*/
@@ -534,12 +532,6 @@ function parseExpr(str, pos, level) {
       }
     }
   }
-
-  // We process traversals containing tuples and accessors at this point to save complexity later
-  // when we process the marks. The two possible transformations are shown below.
-  // `foo.(title, subtitle)` => `(foo.title, foo.subtitle)`
-  // `(foo, bar).thing` => `(foo.thing, bar.thing)`
-  marks = processTraversalsWithTuples(marks)
 
   let failPosition = trav?.type === 'error' && trav.position
 

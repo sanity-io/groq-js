@@ -1,6 +1,8 @@
 import {parse} from '../src'
 
 import t from 'tap'
+import {AccessAttributeNode, FuncCallNode, SelectorNode} from '../src/nodeTypes'
+import {pathExpander} from './helpers'
 
 t.test('Basic parsing', async (t) => {
   t.test('Example query', async (t) => {
@@ -74,6 +76,33 @@ t.test('Diff extension', async (t) => {
     for (const query of queries) {
       t.doesNotThrow(() => parse(query))
     }
+  })
+
+  t.test('parses selectors properly', async (t) => {
+    // `diff` queries mapped to their desired selector paths.
+    // Resulting paths are formatted in human readable form.
+    const queryPaths: {[key: string]: string[]} = {
+      'diff::changedAny(a, b, foo)': ['foo'],
+      'diff::changedAny(a, b, foo.bar.baz)': ['foo.bar.baz'],
+      'diff::changedAny(a, b, (foo, bar, baz))': ['foo', 'bar', 'baz'],
+      'diff::changedAny(a, b, (a, b).foo.bar)': ['a.foo.bar', 'b.foo.bar'],
+      'diff::changedAny(a, b, (a.doc, b).foo.bar)': ['a.doc.foo.bar', 'b.foo.bar'],
+      'diff::changedAny(a, b, doc.(foo, bar))': ['doc.foo', 'doc.bar'],
+      'diff::changedAny(a, b, doc.(foo.a, bar))': ['doc.foo.a', 'doc.bar'],
+      'diff::changedAny(a, b, doc.foo.(b.c.d, bar))': ['doc.foo.b.c.d', 'doc.foo.bar'],
+      'diff::changedAny(a, b, doc.foo.a.b)': ['doc.foo.a.b'],
+      'diff::changedAny(a, b, doc.foo.(b.c, d.e, f))': ['doc.foo.b.c', 'doc.foo.d.e', 'doc.foo.f'],
+    }
+
+    Object.keys(queryPaths).forEach((query) => {
+      const result = parse(query) as FuncCallNode
+      const selector = result.args[2] as SelectorNode
+      const expandedSelectors = selector.paths.map((path) =>
+        pathExpander(path as AccessAttributeNode)
+      )
+
+      t.same(expandedSelectors, queryPaths[query])
+    })
   })
 })
 
