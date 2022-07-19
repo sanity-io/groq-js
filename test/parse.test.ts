@@ -52,6 +52,52 @@ t.test('Error reporting', async (t) => {
   })
 })
 
+t.test('Selector validation', async (t) => {
+  t.test('passes with valid selectors', async (t) => {
+    const queries = [
+      'diff::changedAny({}, {}, foo)',
+      'diff::changedAny({}, {}, foo.bar.baz)',
+      'diff::changedAny({}, {}, foo[])',
+      'diff::changedAny({}, {}, foo.bar[baz == 1])',
+      'diff::changedAny({}, {}, anywhere(foo))',
+    ]
+
+    queries.forEach((query) => {
+      t.doesNotThrow(() => parse(query))
+    })
+  })
+
+  t.test('fails with invalid selectors', async (t) => {
+    const queries = [
+      'diff::changedAny({}, {}, "foo")',
+      'diff::changedAny({}, {}, 1 + 2)',
+      'diff::changedAny({}, {}, 5)',
+      'diff::changedAny({}, {}, (foo, bar))', // BUG: fails because we don't support tuples yet
+      'diff::changedAny({}, {}, (foo))', // BUG: fails because we don't support groups yet
+    ]
+
+    queries.forEach((query) => {
+      try {
+        parse(query)
+      } catch (error: any) {
+        t.same(error.message, 'Invalid selector syntax')
+      }
+    })
+  })
+
+  // BUG: the below case throws a syntax error because we don't support the syntax *yet*.
+  // This is a valid selector according to the spec, but not according to our implementation.
+  t.test('fails due to syntax error', async (t) => {
+    const query = 'diff::changedAny({}, {}, a[].(foo, bar).b)'
+
+    try {
+      parse(query)
+    } catch (error: any) {
+      t.match(error.message, 'Syntax error in GROQ query at position')
+    }
+  })
+})
+
 t.test('Delta-GROQ', async (t) => {
   const queries = [
     `before().title == after().title`,

@@ -77,6 +77,12 @@ export type NamespaceSet = Record<string, FunctionSet | undefined>
 
 const global: FunctionSet = {}
 
+global.anywhere = async function anywhere() {
+  throw new Error('not implemented')
+}
+
+global.anywhere.arity = 1
+
 global.coalesce = async function coalesce(args, scope, execute) {
   for (const arg of args) {
     const value = await execute(arg, scope)

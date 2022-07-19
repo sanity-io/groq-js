@@ -37,6 +37,7 @@ export type ExprNode =
   | PosNode
   | ProjectionNode
   | SelectNode
+  | SelectorNode
   | SliceNode
   | ThisNode
   | TupleNode
@@ -207,6 +208,10 @@ export interface SelectNode extends BaseNode {
   type: 'Select'
   alternatives: SelectAlternativeNode[]
   fallback?: ExprNode
+}
+
+export interface SelectorNode extends BaseNode {
+  type: 'Selector'
 }
 
 export interface ThisNode extends BaseNode {
