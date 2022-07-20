@@ -59,12 +59,13 @@ t.test('Selector validation', async (t) => {
       'diff::changedAny({}, {}, foo.bar.baz)',
       'diff::changedAny({}, {}, foo[])',
       'diff::changedAny({}, {}, foo.bar[baz == 1])',
+      'diff::changedAny({}, {}, (foo))',
       'diff::changedAny({}, {}, anywhere(foo))',
     ]
 
-    queries.forEach((query) => {
+    for (const query of queries) {
       t.doesNotThrow(() => parse(query))
-    })
+    }
   })
 
   t.test('fails with invalid selectors', async (t) => {
@@ -72,28 +73,32 @@ t.test('Selector validation', async (t) => {
       'diff::changedAny({}, {}, "foo")',
       'diff::changedAny({}, {}, 1 + 2)',
       'diff::changedAny({}, {}, 5)',
-      'diff::changedAny({}, {}, (foo, bar))', // BUG: fails because we don't support tuples yet
-      'diff::changedAny({}, {}, (foo))', // BUG: fails because we don't support groups yet
+      'diff::changedAny({}, {}, (foo, bar))', // BUG: fails because we don't support tuples inside traversals yet
     ]
 
-    queries.forEach((query) => {
+    for (const query of queries) {
       try {
         parse(query)
       } catch (error: any) {
         t.same(error.message, 'Invalid selector syntax')
       }
-    })
+    }
   })
 
-  // BUG: the below case throws a syntax error because we don't support the syntax *yet*.
-  // This is a valid selector according to the spec, but not according to our implementation.
+  // BUG: the below cases throw syntax errors because we don't support their syntax *yet*.
+  // These are valid selectors according to the spec, but not according to our implementation.
   t.test('fails due to syntax error', async (t) => {
-    const query = 'diff::changedAny({}, {}, a[].(foo, bar).b)'
+    const queries = [
+      'diff::changedAny({}, {}, a.(foo).bar)',
+      'diff::changedAny({}, {}, a[].(foo, bar).b)',
+    ]
 
-    try {
-      parse(query)
-    } catch (error: any) {
-      t.match(error.message, 'Syntax error in GROQ query at position')
+    for (const query of queries) {
+      try {
+        parse(query)
+      } catch (error: any) {
+        t.match(error.message, 'Syntax error in GROQ query at position')
+      }
     }
   })
 })
