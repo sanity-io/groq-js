@@ -113,6 +113,10 @@ function replaceScoreWithPos(val) {
 }
 `)
 
+function isDisabled(testName) {
+  return DISABLED_TESTS.find((t) => (typeof t === 'string' ? t === testName : t.test(testName)))
+}
+
 const DOWNLOADING = new Set()
 
 function download(id, url) {
@@ -167,7 +171,10 @@ process.stdin
       }
 
       if (/perf/.test(entry.filename)) return
-      if (DISABLED_TESTS.includes(entry.name)) return
+      if (isDisabled(entry.name)) {
+        process.stderr.write(`[warning] Skipping disabled test: ${entry.name}\n`)
+        return
+      }
 
       openStack(`tap.test(${JSON.stringify(entry.name)}, async (t) => {BODY})`)
       write(`let query = ${JSON.stringify(entry.query)}`)
