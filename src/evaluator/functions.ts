@@ -348,7 +348,7 @@ array.compact = async function (args, scope, execute) {
     }
   })
 }
-array.compact.arity = 0
+array.compact.arity = 1
 
 const pt: FunctionSet = {}
 pt.text = async function (args, scope, execute) {
