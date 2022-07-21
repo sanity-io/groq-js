@@ -8,9 +8,19 @@ const fs = require('fs')
 const https = require('https')
 const semver = require('semver')
 
-const SUPPORTED_FEATURES = new Set(['scoring', 'namespaces', 'portableText'])
+const SUPPORTED_FEATURES = new Set([
+  'scoring',
+  'namespaces',
+  'portableText',
+  'experimentalFunctions',
+])
 const GROQ_VERSION = '2.0.0'
-const DISABLED_TESTS = ['Filters / documents, nested 3', 'Parameters / Undefined']
+const DISABLED_TESTS = [
+  'Filters / documents, nested 3',
+  'Parameters / Undefined',
+  /array::unique/,
+  /math::/,
+]
 
 const OUTPUT = process.stdout
 const STACK = []
