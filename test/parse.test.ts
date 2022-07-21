@@ -1,7 +1,6 @@
 import {parse} from '../src'
 
 import t from 'tap'
-import {MarkProcessor} from '../src/markProcessor'
 
 t.test('Basic parsing', async (t) => {
   t.test('Example query', async (t) => {
@@ -54,7 +53,28 @@ t.test('Error reporting', async (t) => {
 })
 
 t.test('Expression parsing', async (t) => {
+  t.test('when parsing strings', async (t) => {
+    t.test('handles unicode hex characters', async (t) => {
+      const queries = ['*[foo == "\\u{0040}"]', '*[foo == "\\u0040"]']
+
+      for (const query of queries) {
+        t.doesNotThrow(() => parse(query))
+      }
+    })
+  })
+
+  t.test('when parsing objects', async (t) => {
+    t.test('throws when the object is not terminated properly', async (t) => {
+      throwsWithMessage(() => parse('*{a, b'), 'Syntax error in GROQ query at position 5')
+    })
+  })
+
   t.test('when parsing functions', async (t) => {
+    t.test('throws when the function call is not terminated properly', async (t) => {
+      const query = 'count(*[]'
+      t.throws(() => parse(query), 'Syntax error in GROQ query at position 9')
+    })
+
     t.test('throws when using boost() when `allowBoost` is false', async (t) => {
       const query = 'boost()'
       t.throws(() => parse(query), 'unexpected boost')
@@ -64,6 +84,18 @@ t.test('Expression parsing', async (t) => {
       const query = 'invalid::func()'
       t.throws(() => parse(query), 'Undefined namespace: invalid')
     })
+  })
+
+  t.test('throws when nothing is passed', async (t) => {
+    throwsWithMessage(() => parse(''), 'Syntax error in GROQ query at position 0')
+  })
+
+  t.test('has support for tuples', async (t) => {
+    t.doesNotThrow(() => parse('(a, b, c)'))
+  })
+
+  t.test('throws when an open square bracket has no closing match', async (t) => {
+    throwsWithMessage(() => parse('*[foo == [1, 2'), 'Syntax error in GROQ query at position 13')
   })
 
   t.test('when parsing pipecalls', async (t) => {
@@ -117,3 +149,11 @@ t.test('Delta-GROQ', async (t) => {
     })
   }
 })
+
+function throwsWithMessage(funcUnderTest: () => {}, expectedMessage: string) {
+  try {
+    funcUnderTest()
+  } catch (error: any) {
+    t.same(error.message, expectedMessage)
+  }
+}
