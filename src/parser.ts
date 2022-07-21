@@ -363,7 +363,6 @@ const EXPR_BUILDER: MarkVisitor<NodeTypes.ExprNode> = {
         // being used. We expect the null valued arg to throw an error at evaluation time.
         p.process(SELECTOR_BUILDER)
         args.push({type: 'Selector'})
-        break
       } else {
         args.push(p.process(EXPR_BUILDER))
       }
@@ -778,9 +777,8 @@ const SELECTOR_BUILDER: MarkVisitor<null> = {
     throw new Error('Invalid selector syntax')
   },
 
-  func_call(p) {
-    p.unshift()
-    const func = p.process(EXPR_BUILDER) as NodeTypes.FuncCallNode
+  func_call(p, mark) {
+    const func = EXPR_BUILDER.func_call(p, mark) as NodeTypes.FuncCallNode
     if (func.name === 'anywhere' && func.args.length === 1) return null
 
     throw new Error('Invalid selector syntax')

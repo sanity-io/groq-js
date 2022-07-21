@@ -82,10 +82,6 @@ export class MarkProcessor {
     this.index += 1
   }
 
-  unshift(): void {
-    this.index -= 1
-  }
-
   process<T>(visitor: MarkVisitor<T>): T {
     const mark = this.marks[this.index]
     this.shift()
