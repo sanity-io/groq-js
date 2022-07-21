@@ -685,7 +685,6 @@ function parseFuncCall(str, startPos, pos) {
   }
 
   if (str[pos] !== ')') {
-    console.log('HITTING')
     return {type: 'error', position: pos}
   }
 

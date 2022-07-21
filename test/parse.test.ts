@@ -1,6 +1,7 @@
 import {parse} from '../src'
 
 import t from 'tap'
+import {throwsWithMessage} from './testUtils'
 
 t.test('Basic parsing', async (t) => {
   t.test('Example query', async (t) => {
@@ -149,11 +150,3 @@ t.test('Delta-GROQ', async (t) => {
     })
   }
 })
-
-function throwsWithMessage(funcUnderTest: () => {}, expectedMessage: string) {
-  try {
-    funcUnderTest()
-  } catch (error: any) {
-    t.same(error.message, expectedMessage)
-  }
-}
