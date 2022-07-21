@@ -72,18 +72,15 @@ t.test('Expression parsing', async (t) => {
 
   t.test('when parsing functions', async (t) => {
     t.test('throws when the function call is not terminated properly', async (t) => {
-      const query = 'count(*[]'
-      t.throws(() => parse(query), 'Syntax error in GROQ query at position 9')
+      throwsWithMessage(() => parse('count(*[]'), 'Syntax error in GROQ query at position 9')
     })
 
     t.test('throws when using boost() when `allowBoost` is false', async (t) => {
-      const query = 'boost()'
-      t.throws(() => parse(query), 'unexpected boost')
+      throwsWithMessage(() => parse('boost()'), 'unexpected boost')
     })
 
     t.test('throws when an undefined namespace is used', async (t) => {
-      const query = 'invalid::func()'
-      t.throws(() => parse(query), 'Undefined namespace: invalid')
+      throwsWithMessage(() => parse('invalid::func()'), 'Undefined namespace: invalid')
     })
   })
 
@@ -101,34 +98,29 @@ t.test('Expression parsing', async (t) => {
 
   t.test('when parsing pipecalls', async (t) => {
     t.test('throws when using a namespace other than `global`', async (t) => {
-      const query = '* | invalid::func()'
-      t.throws(() => parse(query), 'Undefined namespace: invalid')
+      throwsWithMessage(() => parse('* | invalid::func()'), 'Undefined namespace: invalid')
     })
 
     t.test('throws when using an invalid function', async (t) => {
-      const query = '* | func()'
-      t.throws(() => parse(query), 'Undefined pipe function: func')
+      throwsWithMessage(() => parse('* | func()'), 'Undefined pipe function: func')
     })
   })
 
   t.test('when parsing `desc`', async (t) => {
     t.test('throws when used unexpectedly', async (t) => {
-      const query = '*[_type desc]'
-      t.throws(() => parse(query), 'Unexpected desc')
+      throwsWithMessage(() => parse('*[_type desc]'), 'unexpected desc')
     })
   })
 
   t.test('when parsing slices', async (t) => {
     t.test('throws when a constant number is not used', async (t) => {
-      const query = '*[0..x]'
-      t.throws(() => parse(query), 'slicing must use constant numbers')
+      throwsWithMessage(() => parse('*[0..x]'), 'slicing must use constant numbers')
     })
   })
 
   t.test('when extracting property keys', async (t) => {
     t.test('throws when the key cannot be determined', async (t) => {
-      const query = '*{1}'
-      t.throws(() => parse(query), 'Cannot determine property key for type: Value')
+      throwsWithMessage(() => parse('*{1}'), 'Cannot determine property key for type: Value')
     })
   })
 })
