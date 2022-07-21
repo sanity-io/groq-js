@@ -340,15 +340,13 @@ array.compact = async function (args, scope, execute) {
     return NULL_VALUE
   }
 
-  const result: Array<any> = []
-  for await (const elem of arr) {
-    const val = await elem.get()
-    if (val !== null) {
-      result.push(val)
+  return new StreamValue(async function* () {
+    for await (const elem of arr) {
+      if (elem.type !== 'null') {
+        yield elem
+      }
     }
-  }
-
-  return fromJS(result)
+  })
 }
 array.compact.arity = 0
 
