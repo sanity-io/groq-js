@@ -1,8 +1,8 @@
 import t from 'tap'
 
-export function throwsWithMessage(funcUnderTest: () => {}, expectedMessage: string) {
+export async function throwsWithMessage(funcUnderTest: () => {}, expectedMessage: string) {
   try {
-    funcUnderTest()
+    await funcUnderTest()
   } catch (error: any) {
     t.same(error.message, expectedMessage)
   }

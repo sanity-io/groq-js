@@ -29,7 +29,7 @@ export class StaticValue<P, T extends GroqType> {
         }
       })(this.data)
     }
-    throw new Error(`Cannot iterate over: ${this.type}`)
+    throw new Error(`Cannot iterate over: ${this.type}`) //
   }
 }
 
@@ -128,7 +128,7 @@ export function getType(data: any): GroqType {
     return 'array'
   }
   if (data instanceof Path) {
-    return 'path'
+    return 'path' //
   }
   if (data instanceof DateTime) {
     return 'datetime'

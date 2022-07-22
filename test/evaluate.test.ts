@@ -1,6 +1,8 @@
 import {evaluate, parse} from '../src'
 
 import t from 'tap'
+import {throwsWithMessage} from './testUtils'
+import {ExprNode} from '../src/nodeTypes'
 
 t.test('Basic parsing', async (t) => {
   t.test('Example query', async (t) => {
@@ -137,6 +139,77 @@ t.test('Basic parsing', async (t) => {
     const value = await evaluate(tree, {dataset})
     const data = await value.get()
     t.same(data, [{_type: 'book', title: 'A Game of Thrones'}, {_type: 'tv-show'}])
+  })
+
+  t.test('Asc', async (t) => {
+    t.test('returns a null value', async (t) => {
+      const tree: ExprNode = {type: 'Asc', base: {type: 'AccessAttribute', name: 'title'}}
+      const value = await evaluate(tree, {})
+      const data = await value.get()
+      t.same(data, null)
+    })
+  })
+
+  t.test('Desc', async (t) => {
+    t.test('returns a null value', async (t) => {
+      const tree: ExprNode = {type: 'Desc', base: {type: 'AccessAttribute', name: 'title'}}
+      const value = await evaluate(tree, {})
+      const data = await value.get()
+      t.same(data, null)
+    })
+  })
+
+  t.test('Tuples', async (t) => {
+    t.test('throw errors on evaluation', async (t) => {
+      const tree = parse('(foo, bar)')
+      throwsWithMessage(() => evaluate(tree, {}), 'tuples can not be evaluated')
+    })
+  })
+
+  t.test('Objects', async (t) => {
+    t.test('throw errors when the node type is unknown', async (t) => {
+      const tree: ExprNode = {
+        type: 'Object',
+        // @ts-ignore (we want an invalid type for testing purposes)
+        attributes: [{type: 'AccessAttribute', name: 'b'}],
+      }
+
+      throwsWithMessage(async () => await evaluate(tree, {}), 'Unknown node type: AccessAttribute')
+    })
+  })
+
+  t.test('OpCall', async (t) => {
+    t.test('throws when an invalid operator function is used', async (t) => {
+      const tree: ExprNode = {
+        type: 'OpCall',
+        // @ts-ignore (we want an invalid operator for testing purposes)
+        op: '^',
+        left: {type: 'AccessAttribute', name: 'a'},
+        right: {type: 'AccessAttribute', name: 'b'},
+      }
+
+      throwsWithMessage(async () => await evaluate(tree, {}), 'Unknown operator: ^')
+    })
+  })
+
+  t.test('Parent', async (t) => {
+    t.test('returns null when no parent is present', async (t) => {
+      const dataset = [{_type: 'book', title: 'I, Robot'}]
+
+      // We intentionally access the higher scope to force the case when the scope's `parent` value is `null`
+      const tree = await parse('*[]{"parentName": ^.^.name}')
+      const value = await evaluate(tree, {dataset})
+      const data = await value.get()
+
+      t.same(data, [{parentName: null}])
+    })
+  })
+
+  t.test('Context', async (t) => {
+    t.test('throws when an unknown key is used', async (t) => {
+      const tree: ExprNode = {type: 'Context', key: 'foo'}
+      throwsWithMessage(async () => await evaluate(tree, {}), 'unknown context key: foo')
+    })
   })
 
   t.test('Paths', async (t) => {

@@ -29,4 +29,101 @@ t.test('Functions', async (t) => {
       t.same(data.deep.time, data.topTime)
     })
   })
+
+  t.test('upper()', async (t) => {
+    t.test('uppercases the given string', async (t) => {
+      const tree = parse('upper("abc")')
+      const value = await evaluate(tree, {})
+      const data = await value.get()
+      t.same(data, 'ABC')
+    })
+
+    t.test('returns null when target is not a string', async (t) => {
+      const tree = parse('upper(1)')
+      const value = await evaluate(tree, {})
+      const data = await value.get()
+      t.same(data, null)
+    })
+  })
+
+  t.test('lower()', async (t) => {
+    t.test('lowercases the given string', async (t) => {
+      const tree = parse('lower("ABC")')
+      const value = await evaluate(tree, {})
+      const data = await value.get()
+      t.same(data, 'abc')
+    })
+
+    t.test('returns null when target is not a string', async (t) => {
+      const tree = parse('lower(1)')
+      const value = await evaluate(tree, {})
+      const data = await value.get()
+      t.same(data, null)
+    })
+  })
+
+  t.test('startsWith()', async (t) => {
+    t.test('returns true if string starts with given prefix', async (t) => {
+      const tree = parse('string::startsWith("alphabet", "alpha")')
+      const value = await evaluate(tree, {})
+      const data = await value.get()
+      t.same(data, true)
+    })
+
+    t.test('returns false if string does not with given prefix', async (t) => {
+      const tree = parse('string::startsWith("alphabet", "beta")')
+      const value = await evaluate(tree, {})
+      const data = await value.get()
+      t.same(data, false)
+    })
+
+    t.test('returns null when prefix term is not a string', async (t) => {
+      const tree = parse('string::startsWith("alphabet", 1)')
+      const value = await evaluate(tree, {})
+      const data = await value.get()
+      t.same(data, null)
+    })
+
+    t.test('returns null when search term is not a string', async (t) => {
+      const tree = parse('string::startsWith(1, "alpha")')
+      const value = await evaluate(tree, {})
+      const data = await value.get()
+      t.same(data, null)
+    })
+  })
+
+  t.test('score()', async (t) => {
+    t.test('returns null when base is not an array', async (t) => {
+      const tree = parse('* | score(title match "Red" || title match "Fish")')
+      const value = await evaluate(tree, {})
+      const data = await value.get()
+      t.same(data, null)
+    })
+
+    t.test('evaluates scores as expected', async (t) => {
+      const dataset = [{title: 'Green Turtle'}, {title: 'Red Fish'}]
+      const expectedData = [
+        {title: 'Red Fish', _score: 1},
+        {title: 'Green Turtle', _score: 0},
+      ]
+
+      const tree = parse('*[] | score(title match "Red")')
+      const value = await evaluate(tree, {dataset})
+      const data = await value.get()
+      t.same(data, expectedData)
+    })
+
+    t.test('ignores documents that are not objects', async (t) => {
+      const dataset = [1, 'string', {title: 'Green Turtle'}, {title: 'Red Fish'}]
+      const expectedData = [
+        {title: 'Red Fish', _score: 1},
+        {title: 'Green Turtle', _score: 0},
+      ]
+
+      const tree = parse('*[] | score(title match "Red")')
+      const value = await evaluate(tree, {dataset})
+      const data = await value.get()
+      t.same(data, expectedData)
+    })
+  })
 })

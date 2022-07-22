@@ -69,6 +69,7 @@ export const operators: {[key in OpCall]: GroqOperatorFn} = {
   in: async function inop(left, right) {
     if (right.type === 'path') {
       if (left.type !== 'string') {
+        //
         return NULL_VALUE
       }
 
@@ -126,7 +127,7 @@ export const operators: {[key in OpCall]: GroqOperatorFn} = {
     }
 
     if (left.type === 'array' && right.type === 'array') {
-      return fromJS(left.data.concat(right.data))
+      return fromJS(left.data.concat(right.data)) //
     }
 
     if (left.isArray() && right.isArray()) {
