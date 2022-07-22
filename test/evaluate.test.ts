@@ -162,7 +162,7 @@ t.test('Basic parsing', async (t) => {
   t.test('Tuples', async (t) => {
     t.test('throw errors on evaluation', async (t) => {
       const tree = parse('(foo, bar)')
-      throwsWithMessage(() => evaluate(tree, {}), 'tuples can not be evaluated')
+      throwsWithMessage(t, () => evaluate(tree, {}), 'tuples can not be evaluated')
     })
   })
 
@@ -174,7 +174,7 @@ t.test('Basic parsing', async (t) => {
         attributes: [{type: 'AccessAttribute', name: 'b'}],
       }
 
-      throwsWithMessage(async () => await evaluate(tree, {}), 'Unknown node type: AccessAttribute')
+      throwsWithMessage(t, () => evaluate(tree, {}), 'Unknown node type: AccessAttribute')
     })
   })
 
@@ -188,7 +188,7 @@ t.test('Basic parsing', async (t) => {
         right: {type: 'AccessAttribute', name: 'b'},
       }
 
-      throwsWithMessage(async () => await evaluate(tree, {}), 'Unknown operator: ^')
+      throwsWithMessage(t, () => evaluate(tree, {}), 'Unknown operator: ^')
     })
   })
 
@@ -208,7 +208,7 @@ t.test('Basic parsing', async (t) => {
   t.test('Context', async (t) => {
     t.test('throws when an unknown key is used', async (t) => {
       const tree: ExprNode = {type: 'Context', key: 'foo'}
-      throwsWithMessage(async () => await evaluate(tree, {}), 'unknown context key: foo')
+      throwsWithMessage(t, () => evaluate(tree, {}), 'unknown context key: foo')
     })
   })
 

@@ -132,13 +132,17 @@ t.test('Functions', async (t) => {
     t.test('with delta mode enabled', async (t) => {
       t.test('throws `not implemented` error', async (t) => {
         const tree = parse('delta::changedOnly(foo)', {mode: 'delta'})
-        throwsWithMessage(async () => await evaluate(tree, {}), 'not implemented')
+        throwsWithMessage(t, async () => await evaluate(tree, {}), 'not implemented')
       })
     })
 
     t.test('without delta mode enabled', async (t) => {
       t.test('throws `Undefined function` error', async (t) => {
-        throwsWithMessage(() => parse('delta::changedOnly(foo)'), 'Undefined function: changedOnly')
+        throwsWithMessage(
+          t,
+          () => parse('delta::changedOnly(foo)'),
+          'Undefined function: changedOnly'
+        )
       })
     })
   })
@@ -147,13 +151,17 @@ t.test('Functions', async (t) => {
     t.test('with delta mode enabled', async (t) => {
       t.test('throws `not implemented` error', async (t) => {
         const tree = parse('delta::changedAny(foo)', {mode: 'delta'})
-        throwsWithMessage(async () => await evaluate(tree, {}), 'not implemented')
+        throwsWithMessage(t, async () => await evaluate(tree, {}), 'not implemented')
       })
     })
 
     t.test('without delta mode enabled', async (t) => {
       t.test('throws `Undefined function` error', async (t) => {
-        throwsWithMessage(() => parse('delta::changedAny(foo)'), 'Undefined function: changedAny')
+        throwsWithMessage(
+          t,
+          () => parse('delta::changedAny(foo)'),
+          'Undefined function: changedAny'
+        )
       })
     })
   })
@@ -161,14 +169,14 @@ t.test('Functions', async (t) => {
   t.test('diff::changedOnly()', async (t) => {
     t.test('throws `not implemented` error', async (t) => {
       const tree = parse('diff::changedOnly({}, {}, foo)')
-      throwsWithMessage(async () => await evaluate(tree, {}), 'not implemented')
+      throwsWithMessage(t, async () => await evaluate(tree, {}), 'not implemented')
     })
   })
 
   t.test('diff::changedAny()', async (t) => {
     t.test('throws `not implemented` error', async (t) => {
       const tree = parse('diff::changedAny({}, {}, foo)')
-      throwsWithMessage(async () => await evaluate(tree, {}), 'not implemented')
+      throwsWithMessage(t, async () => await evaluate(tree, {}), 'not implemented')
     })
   })
 })

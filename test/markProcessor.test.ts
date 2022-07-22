@@ -15,6 +15,6 @@ t.test('MarkProcessor', async (t) => {
     const input = ''
     const processor = new MarkProcessor(input, marks, {})
 
-    throwsWithMessage(() => processor.process(TestVisitor), 'Unknown handler: invalid')
+    throwsWithMessage(t, () => processor.process(TestVisitor), 'Unknown handler: invalid')
   })
 })

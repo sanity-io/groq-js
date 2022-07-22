@@ -20,7 +20,7 @@ t.test('traverseProjection', async (t) => {
     // @ts-ignore (we intentionally want to use an invalid `type` property for testing purposes)
     const right = {type: 'c-c', build: traversal} as TraversalResult
 
-    throwsWithMessage(() => traverseProjection(traversal, right), 'unknown type: c-c')
+    throwsWithMessage(t, () => traverseProjection(traversal, right), 'unknown type: c-c')
   })
 
   t.test('handles `b-a` type traversals correctly', async (t) => {
@@ -47,7 +47,7 @@ t.test('traverseElement', async (t) => {
     // @ts-ignore (we intentionally want to use an invalid `type` property for testing purposes)
     const right = {type: 'c-c', build: traversal} as TraversalResult
 
-    throwsWithMessage(() => traverseElement(traversal, right), 'unknown type: c-c')
+    throwsWithMessage(t, () => traverseElement(traversal, right), 'unknown type: c-c')
   })
 })
 
@@ -60,7 +60,7 @@ t.test('traversePlain', async (t) => {
     // @ts-ignore (we intentionally want to use an invalid `type` property for testing purposes)
     const right = {type: 'c-c', build: traversal} as TraversalResult
 
-    throwsWithMessage(() => traversePlain(traversal, right), 'unknown type: c-c')
+    throwsWithMessage(t, () => traversePlain(traversal, right), 'unknown type: c-c')
   })
 })
 
@@ -73,6 +73,6 @@ t.test('traverseArray', async (t) => {
     // @ts-ignore (we intentionally want to use an invalid `type` property for testing purposes)
     const right = {type: 'c-c', build: traversal} as TraversalResult
 
-    throwsWithMessage(() => traverseArray(traversal, right), 'unknown type: c-c')
+    throwsWithMessage(t, () => traverseArray(traversal, right), 'unknown type: c-c')
   })
 })

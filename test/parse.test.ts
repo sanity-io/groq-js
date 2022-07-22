@@ -66,26 +66,26 @@ t.test('Expression parsing', async (t) => {
 
   t.test('when parsing objects', async (t) => {
     t.test('throws when the object is not terminated properly', async (t) => {
-      throwsWithMessage(() => parse('*{a, b'), 'Syntax error in GROQ query at position 5')
+      throwsWithMessage(t, () => parse('*{a, b'), 'Syntax error in GROQ query at position 5')
     })
   })
 
   t.test('when parsing functions', async (t) => {
     t.test('throws when the function call is not terminated properly', async (t) => {
-      throwsWithMessage(() => parse('count(*[]'), 'Syntax error in GROQ query at position 9')
+      throwsWithMessage(t, () => parse('count(*[]'), 'Syntax error in GROQ query at position 9')
     })
 
     t.test('throws when using boost() when `allowBoost` is false', async (t) => {
-      throwsWithMessage(() => parse('boost()'), 'unexpected boost')
+      throwsWithMessage(t, () => parse('boost()'), 'unexpected boost')
     })
 
     t.test('throws when an undefined namespace is used', async (t) => {
-      throwsWithMessage(() => parse('invalid::func()'), 'Undefined namespace: invalid')
+      throwsWithMessage(t, () => parse('invalid::func()'), 'Undefined namespace: invalid')
     })
   })
 
   t.test('throws when nothing is passed', async (t) => {
-    throwsWithMessage(() => parse(''), 'Syntax error in GROQ query at position 0')
+    throwsWithMessage(t, () => parse(''), 'Syntax error in GROQ query at position 0')
   })
 
   t.test('has support for tuples', async (t) => {
@@ -93,34 +93,34 @@ t.test('Expression parsing', async (t) => {
   })
 
   t.test('throws when an open square bracket has no closing match', async (t) => {
-    throwsWithMessage(() => parse('*[foo == [1, 2'), 'Syntax error in GROQ query at position 13')
+    throwsWithMessage(t, () => parse('*[foo == [1, 2'), 'Syntax error in GROQ query at position 13')
   })
 
   t.test('when parsing pipecalls', async (t) => {
     t.test('throws when using a namespace other than `global`', async (t) => {
-      throwsWithMessage(() => parse('* | invalid::func()'), 'Undefined namespace: invalid')
+      throwsWithMessage(t, () => parse('* | invalid::func()'), 'Undefined namespace: invalid')
     })
 
     t.test('throws when using an invalid function', async (t) => {
-      throwsWithMessage(() => parse('* | func()'), 'Undefined pipe function: func')
+      throwsWithMessage(t, () => parse('* | func()'), 'Undefined pipe function: func')
     })
   })
 
   t.test('when parsing `desc`', async (t) => {
     t.test('throws when used unexpectedly', async (t) => {
-      throwsWithMessage(() => parse('*[_type desc]'), 'unexpected desc')
+      throwsWithMessage(t, () => parse('*[_type desc]'), 'unexpected desc')
     })
   })
 
   t.test('when parsing slices', async (t) => {
     t.test('throws when a constant number is not used', async (t) => {
-      throwsWithMessage(() => parse('*[0..x]'), 'slicing must use constant numbers')
+      throwsWithMessage(t, () => parse('*[0..x]'), 'slicing must use constant numbers')
     })
   })
 
   t.test('when extracting property keys', async (t) => {
     t.test('throws when the key cannot be determined', async (t) => {
-      throwsWithMessage(() => parse('*{1}'), 'Cannot determine property key for type: Value')
+      throwsWithMessage(t, () => parse('*{1}'), 'Cannot determine property key for type: Value')
     })
   })
 })
@@ -150,11 +150,7 @@ t.test('Selector validation', async (t) => {
     ]
 
     for (const query of queries) {
-      try {
-        parse(query)
-      } catch (error: any) {
-        t.same(error.message, 'Invalid selector syntax')
-      }
+      throwsWithMessage(t, () => parse(query), 'Invalid selector syntax')
     }
   })
 
