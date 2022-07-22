@@ -1,6 +1,7 @@
 import {evaluate, parse} from '../src'
 
 import t from 'tap'
+import {throwsWithMessage} from './testUtils'
 
 t.test('Functions', async (t) => {
   t.test('now()', async (t) => {
@@ -124,6 +125,50 @@ t.test('Functions', async (t) => {
       const value = await evaluate(tree, {dataset})
       const data = await value.get()
       t.same(data, expectedData)
+    })
+  })
+
+  t.test('delta::changedOnly()', async (t) => {
+    t.test('with delta mode enabled', async (t) => {
+      t.test('throws `not implemented` error', async (t) => {
+        const tree = parse('delta::changedOnly(foo)', {mode: 'delta'})
+        throwsWithMessage(async () => await evaluate(tree, {}), 'not implemented')
+      })
+    })
+
+    t.test('without delta mode enabled', async (t) => {
+      t.test('throws `Undefined function` error', async (t) => {
+        throwsWithMessage(() => parse('delta::changedOnly(foo)'), 'Undefined function: changedOnly')
+      })
+    })
+  })
+
+  t.test('delta::changedAny()', async (t) => {
+    t.test('with delta mode enabled', async (t) => {
+      t.test('throws `not implemented` error', async (t) => {
+        const tree = parse('delta::changedAny(foo)', {mode: 'delta'})
+        throwsWithMessage(async () => await evaluate(tree, {}), 'not implemented')
+      })
+    })
+
+    t.test('without delta mode enabled', async (t) => {
+      t.test('throws `Undefined function` error', async (t) => {
+        throwsWithMessage(() => parse('delta::changedAny(foo)'), 'Undefined function: changedAny')
+      })
+    })
+  })
+
+  t.test('diff::changedOnly()', async (t) => {
+    t.test('throws `not implemented` error', async (t) => {
+      const tree = parse('diff::changedOnly({}, {}, foo)')
+      throwsWithMessage(async () => await evaluate(tree, {}), 'not implemented')
+    })
+  })
+
+  t.test('diff::changedAny()', async (t) => {
+    t.test('throws `not implemented` error', async (t) => {
+      const tree = parse('diff::changedAny({}, {}, foo)')
+      throwsWithMessage(async () => await evaluate(tree, {}), 'not implemented')
     })
   })
 })

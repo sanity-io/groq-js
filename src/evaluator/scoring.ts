@@ -65,11 +65,11 @@ async function evaluateMatchScore(
   })
 
   if (!didSucceed) {
-    return 0 //
+    return 0
   }
 
   if (tokens.length === 0 || terms.length === 0) {
-    return 0 //
+    return 0
   }
 
   let score = 0

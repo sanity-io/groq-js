@@ -244,6 +244,9 @@ t.test('Basic parsing', async (t) => {
 
     let value3 = await evaluate(tree, {after: {title: 'A'}})
     t.same(await value3.get(), 'create')
+
+    let value4 = await evaluate(tree, {})
+    t.same(await value4.get(), null)
   })
 
   t.test('Override identity()', async (t) => {
