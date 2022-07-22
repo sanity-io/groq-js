@@ -8,9 +8,19 @@ const fs = require('fs')
 const https = require('https')
 const semver = require('semver')
 
-const SUPPORTED_FEATURES = new Set(['scoring', 'namespaces', 'portableText'])
+const SUPPORTED_FEATURES = new Set([
+  'scoring',
+  'namespaces',
+  'portableText',
+  'experimentalFunctions',
+])
 const GROQ_VERSION = '2.0.0'
-const DISABLED_TESTS = ['Filters / documents, nested 3', 'Parameters / Undefined']
+const DISABLED_TESTS = [
+  'Filters / documents, nested 3',
+  'Parameters / Undefined',
+  /array::unique/,
+  /math::/,
+]
 
 const OUTPUT = process.stdout
 const STACK = []
@@ -113,6 +123,10 @@ function replaceScoreWithPos(val) {
 }
 `)
 
+function isDisabled(testName) {
+  return DISABLED_TESTS.find((t) => (typeof t === 'string' ? t === testName : t.test(testName)))
+}
+
 const DOWNLOADING = new Set()
 
 function download(id, url) {
@@ -167,7 +181,10 @@ process.stdin
       }
 
       if (/perf/.test(entry.filename)) return
-      if (DISABLED_TESTS.includes(entry.name)) return
+      if (isDisabled(entry.name)) {
+        process.stderr.write(`[warning] Skipping disabled test: ${entry.name}\n`)
+        return
+      }
 
       openStack(`tap.test(${JSON.stringify(entry.name)}, async (t) => {BODY})`)
       write(`let query = ${JSON.stringify(entry.query)}`)

@@ -7,9 +7,10 @@ RESULT="$DIR"/suite.test.js
 if [[ "$GROQTEST_SUITE" != "" ]]; then
   node "$DIR"/generate.js < "$GROQTEST_SUITE" >"$RESULT"
 else
-  GROQTEST_SUITE_VERSION=${GROQTEST_SUITE_VERSION:-v0.1.33}
-  curl -sfL "https://github.com/sanity-io/groq-test-suite/releases/download/$GROQTEST_SUITE_VERSION/suite.ndjson" |
-    node "$DIR"/generate.js >"$RESULT"
+  GROQTEST_SUITE_VERSION=${GROQTEST_SUITE_VERSION:-v0.1.35}
+  url=https://github.com/sanity-io/groq-test-suite/releases/download/$GROQTEST_SUITE_VERSION/suite.ndjson
+  echo "Getting test suite: $url"
+  curl -sfL "$url" | node "$DIR"/generate.js >"$RESULT"
 fi
 
 $DIR/../node_modules/.bin/prettier --write "$RESULT"

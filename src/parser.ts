@@ -356,9 +356,18 @@ const EXPR_BUILDER: MarkVisitor<NodeTypes.ExprNode> = {
     }
 
     const args: NodeTypes.ExprNode[] = []
+
     while (p.getMark().name !== 'func_args_end') {
-      args.push(p.process(EXPR_BUILDER))
+      if (argumentShouldBeSelector(namespace, name, args.length)) {
+        // Since the diff/delta functions aren't validated yet we only want to validate the selector
+        // being used. We expect the null valued arg to throw an error at evaluation time.
+        p.process(SELECTOR_BUILDER)
+        args.push({type: 'Selector'})
+      } else {
+        args.push(p.process(EXPR_BUILDER))
+      }
     }
+
     p.shift()
 
     if (namespace === 'global' && (name === 'before' || name === 'after')) {
@@ -662,6 +671,152 @@ const TRAVERSE_BUILDER: MarkVisitor<(rhs: TraversalResult | null) => TraversalRe
   },
 }
 
+const SELECTOR_BUILDER: MarkVisitor<null> = {
+  group(p) {
+    p.process(SELECTOR_BUILDER)
+    return null
+  },
+
+  everything() {
+    throw new Error('Invalid selector syntax')
+  },
+
+  this() {
+    throw new Error('Invalid selector syntax')
+  },
+
+  parent() {
+    throw new Error('Invalid selector syntax')
+  },
+
+  dblparent(p) {
+    throw new Error('Invalid selector syntax')
+  },
+
+  traverse(p) {
+    p.process(SELECTOR_BUILDER)
+    while (p.getMark().name !== 'traversal_end') {
+      p.process(TRAVERSE_BUILDER)
+    }
+
+    p.shift()
+    return null
+  },
+
+  this_attr(p) {
+    p.processString()
+    return null
+  },
+
+  neg(p) {
+    throw new Error('Invalid selector syntax')
+  },
+
+  pos(p) {
+    throw new Error('Invalid selector syntax')
+  },
+
+  add(p) {
+    throw new Error('Invalid selector syntax')
+  },
+
+  sub(p) {
+    throw new Error('Invalid selector syntax')
+  },
+
+  mul(p) {
+    throw new Error('Invalid selector syntax')
+  },
+
+  div(p) {
+    throw new Error('Invalid selector syntax')
+  },
+
+  mod(p) {
+    throw new Error('Invalid selector syntax')
+  },
+
+  pow(p) {
+    throw new Error('Invalid selector syntax')
+  },
+
+  comp(p) {
+    throw new Error('Invalid selector syntax')
+  },
+
+  in_range(p) {
+    throw new Error('Invalid selector syntax')
+  },
+
+  str(p) {
+    throw new Error('Invalid selector syntax')
+  },
+
+  integer(p) {
+    throw new Error('Invalid selector syntax')
+  },
+
+  float(p) {
+    throw new Error('Invalid selector syntax')
+  },
+
+  sci(p) {
+    throw new Error('Invalid selector syntax')
+  },
+
+  object(p) {
+    throw new Error('Invalid selector syntax')
+  },
+
+  array(p) {
+    throw new Error('Invalid selector syntax')
+  },
+
+  tuple(p) {
+    // This should only throw an error until we add support for tuples in selectors.
+    throw new Error('Invalid selector syntax')
+  },
+
+  func_call(p, mark) {
+    const func = EXPR_BUILDER.func_call(p, mark) as NodeTypes.FuncCallNode
+    if (func.name === 'anywhere' && func.args.length === 1) return null
+
+    throw new Error('Invalid selector syntax')
+  },
+
+  pipecall(p) {
+    throw new Error('Invalid selector syntax')
+  },
+
+  pair(p) {
+    throw new Error('Invalid selector syntax')
+  },
+
+  and(p) {
+    throw new Error('Invalid selector syntax')
+  },
+
+  or(p) {
+    throw new Error('Invalid selector syntax')
+  },
+
+  not(p) {
+    throw new Error('Invalid selector syntax')
+  },
+
+  asc(p) {
+    throw new Error('Invalid selector syntax')
+  },
+
+  desc(p) {
+    throw new Error('Invalid selector syntax')
+  },
+
+  param(p) {
+    throw new Error('Invalid selector syntax')
+  },
+}
+
 function extractPropertyKey(node: NodeTypes.ExprNode): string {
   if (node.type === 'AccessAttribute' && !node.base) {
     return node.name
@@ -694,6 +849,12 @@ function validateArity(name: string, arity: GroqFunctionArity, count: number) {
       throw new GroqQueryError(`Incorrect number of arguments to function ${name}().`)
     }
   }
+}
+
+function argumentShouldBeSelector(namespace: string, functionName: string, argCount: number) {
+  const functionsRequiringSelectors = ['changedAny', 'changedOnly']
+
+  return namespace == 'diff' && argCount == 2 && functionsRequiringSelectors.includes(functionName)
 }
 
 class GroqSyntaxError extends Error {
