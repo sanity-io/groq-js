@@ -1,9 +1,9 @@
 # GROQ-JS
 
-GROQ-JS is a (work-in-progress) JavaScript implementation of [GROQ](https://www.sanity.io/docs/data-store/how-queries-work) which follows the official specification.
+GROQ-JS is a JavaScript implementation of [GROQ](https://www.sanity.io/docs/data-store/how-queries-work) which follows the official specification.
 
 ```javascript
-import {parse, evaluate} from 'groq-js'
+import {parse, evaluate} from 'groq-js/v2'
 
 let input = '*[_type == "user"]{name}'
 
@@ -22,6 +22,15 @@ let value = await evaluate(tree, {dataset})
 let result = await value.get()
 
 console.log(result)
+```
+
+** Note: TypeScript doesn't yet support export subpaths, to use this library with TypeScript you can do: **
+
+```typescript
+import {v2} from "groq-js";
+const {parse, evaluate} = v2
+
+...
 ```
 
 Table of contents:
@@ -52,6 +61,12 @@ See [API.md](API.md) for the public API.
 
 ## Versioning
 
+### GROQ
+
+The GROQ spec version is independent of the groq-js library version. When you import groq-js you need to be explicit on which GROQ version you want to use. The GROQ version is tied to the [groq-spec](https://github.com/sanity-io/groq). This allows us to update the library and its API independent of the GROQ version.
+
+### GROQ-JS
+
 GROQ-JS follows [SemVer](https://semver.org).
 See [the changelog](CHANGELOG.md) for recent changes.
 This is an "experimental" release and anything _may_ change at any time, but we're trying to keep changes as minimal as possible:
@@ -60,7 +75,7 @@ This is an "experimental" release and anything _may_ change at any time, but we'
 - The syntax tree is _not_ considered a public API and may change at any time.
 - This package always implements the latest version of [GROQ according to the specification](https://github.com/sanity-io/groq).
 
-## Releasing a new version
+## Releasing a new version of GROQ-JS
 
 We use the `np` package to roll out new versions to NPM. You can read up more on the package [here](https://github.com/sindresorhus/np).
 

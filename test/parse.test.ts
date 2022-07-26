@@ -1,4 +1,4 @@
-import {parse} from '../src'
+import {parse} from '../src/v2'
 
 import t from 'tap'
 
