@@ -12,7 +12,7 @@ let tree = parse(input)
 
 let dataset = [
   {_type: 'user', name: 'Michael'},
-  {_type: 'company', name: 'Bluth Company'}
+  {_type: 'company', name: 'Bluth Company'},
 ]
 
 // Evaluate a tree against a dataset
@@ -50,17 +50,47 @@ See [API.md](API.md) for the public API.
 
 [![Free egghead GROQ introduction course by John Lindquist](https://user-images.githubusercontent.com/6188161/142889665-fc04ac47-d0fa-492b-897b-4203c97e94ec.png)](https://egghead.io/courses/introduction-to-groq-query-language-6e9c6fc0?utm_source=github&utm_medium=cta&utm_term=GROQ)
 
-
 ## Versioning
 
-GROQ-JS follows [SemVer](https://semver.org) and is currently at version v0.2.
+GROQ-JS follows [SemVer](https://semver.org).
 See [the changelog](CHANGELOG.md) for recent changes.
 This is an "experimental" release and anything _may_ change at any time, but we're trying to keep changes as minimal as possible:
 
-- The public API of the parser/evaluator will most likely stay the same in future version.
+- The public API of the parser/evaluator will most likely stay the same in future versions.
 - The syntax tree is _not_ considered a public API and may change at any time.
 - This package always implements the latest version of [GROQ according to the specification](https://github.com/sanity-io/groq).
-- The goal is to release a v1.0.0 by the end of 2020.
+
+## Releasing a new version
+
+The following steps are required to release a new version. You should only release from the `main` branch.
+
+1. Update the CHANGELOG inline with the existing format (remember [SemVer](https://semver.org)!)
+2. Update the version field in `package.json` and commit it to version control
+3. Create a Git tag with the version number (`git tag vX.Y.Z`)
+4. Push upstream to the `main` branch of the GitHub repo
+5. Run `npm publish`
+6. Check the package was successfully published
+
+We use [this NPM package](https://github.com/sindresorhus/np) to handle steps 2 through 5.
+You need to install it on your system with:
+
+```bash
+npm install --global np
+```
+
+You can interactively update the version by running the following from the project root. Note that you'll need NPM publish permissions. We need to specify we don't want to create a GitHub release draft.
+
+```bash
+np --no-release-draft
+```
+
+You can preview the release process without running the tasks:
+
+```bash
+np --preview
+```
+
+For further context on the package and for instructions on how to bump versions in a non-interactive way [visit the README](https://github.com/sindresorhus/np).
 
 ## License
 
