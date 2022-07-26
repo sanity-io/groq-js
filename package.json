@@ -26,6 +26,7 @@
     "esbuild-register": "^3.2.0",
     "eslint-config-sanity": "^5.1.0",
     "ndjson": "^2.0.0",
+    "np": "^7.6.2",
     "prettier": "^2.2.1",
     "semver": "^7.3.5",
     "tap": "^15.0.6",

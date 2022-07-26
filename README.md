@@ -72,11 +72,8 @@ The following steps are required to release a new version. You should only relea
 6. Check the package was successfully published
 
 We use [this NPM package](https://github.com/sindresorhus/np) to handle steps 2 through 5.
-You need to install it on your system with:
-
-```bash
-npm install --global np
-```
+It's included as a dev dependency, you can install it with your package manager of choice by running the install command (see [Installation](#Installation)).
+It will be installed by default when you set this repo up for the first time.
 
 You can interactively update the version by running the following from the project root. Note that you'll need NPM publish permissions. We need to specify we don't want to create a GitHub release draft.
 
