@@ -78,13 +78,13 @@ It will be installed by default when you set this repo up for the first time.
 You can interactively update the version by running the following from the project root. Note that you'll need NPM publish permissions. We need to specify we don't want to create a GitHub release draft.
 
 ```bash
-np --no-release-draft
+npx np --no-release-draft
 ```
 
 You can preview the release process without running the tasks:
 
 ```bash
-np --preview
+npx np --preview
 ```
 
 For further context on the package and for instructions on how to bump versions in a non-interactive way [visit the README](https://github.com/sindresorhus/np).
