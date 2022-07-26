@@ -62,30 +62,26 @@ This is an "experimental" release and anything _may_ change at any time, but we'
 
 ## Releasing a new version
 
-The following steps are required to release a new version. You should only release from the `main` branch.
+We use the `np` package to roll out new versions to NPM. You can read up more on the package [here](https://github.com/sindresorhus/np).
 
-1. Update the CHANGELOG inline with the existing format (remember [SemVer](https://semver.org)!)
-2. Update the version field in `package.json` and commit it to version control
-3. Create a Git tag with the version number (`git tag vX.Y.Z`)
-4. Push upstream to the `main` branch of the GitHub repo
-5. Run `npm publish`
-6. Check the package was successfully published
+Make sure you update the CHANGELOG before releasing a new version. Use the previous updates as guidance for the desired formatting, and remember we use [SemVer](https://semver.org)!
 
-We use [this NPM package](https://github.com/sindresorhus/np) to handle steps 2 through 5.
-It's included as a dev dependency, you can install it with your package manager of choice by running the install command (see [Installation](#Installation)).
-It will be installed by default when you set this repo up for the first time.
-
-You can interactively update the version by running the following from the project root. Note that you'll need NPM publish permissions. We need to specify we don't want to create a GitHub release draft.
+To interactively release the version run the following:
 
 ```bash
 npx np --no-release-draft
 ```
 
-You can preview the release process without running the tasks:
+The `--no-release-draft` flag prevents a GitHub release draft being created.
 
-```bash
-npx np --preview
-```
+The above `np` command will:
+
+1. Update the `version` field in `package.json`
+2. Publish the new version to NPM
+3. Create a Git tag
+4. Commit the Git tag and the updated `package.json` to version control, then push the changes upstream
+
+It also peforms some pre-release checks, like running tests and ensuring you're releasing from the `main` branch.
 
 For further context on the package and for instructions on how to bump versions in a non-interactive way [visit the README](https://github.com/sindresorhus/np).
 
