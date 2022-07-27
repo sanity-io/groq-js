@@ -765,7 +765,6 @@ function parseString(str, pos) {
             marks.push({name: 'unicode_hex', position: pos + 3})
             pos = str.indexOf('}', pos + 3)
             marks.push({name: 'unicode_hex_end', position: pos})
-            pos++
           } else {
             marks.push({name: 'unicode_hex', position: pos + 2})
             marks.push({name: 'unicode_hex_end', position: pos + 6})
