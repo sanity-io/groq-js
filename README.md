@@ -67,14 +67,38 @@ The GROQ spec version is independent of the groq-js library version. When you im
 
 ### GROQ-JS
 
-GROQ-JS follows [SemVer](https://semver.org) and is currently at version v0.2.
+GROQ-JS follows [SemVer](https://semver.org).
 See [the changelog](CHANGELOG.md) for recent changes.
 This is an "experimental" release and anything _may_ change at any time, but we're trying to keep changes as minimal as possible:
 
-- The public API of the parser/evaluator will most likely stay the same in future version.
+- The public API of the parser/evaluator will most likely stay the same in future versions.
 - The syntax tree is _not_ considered a public API and may change at any time.
 - This package always implements the latest version of [GROQ according to the specification](https://github.com/sanity-io/groq).
-- The goal is to release a v1.0.0 by the end of 2020.
+
+## Releasing a new version of GROQ-JS
+
+We use the `np` package to roll out new versions to NPM. You can read up more on the package [here](https://github.com/sindresorhus/np).
+
+Make sure you update the CHANGELOG before releasing a new version. Use the previous updates as guidance for the desired formatting, and remember we use [SemVer](https://semver.org)!
+
+To interactively release the version run the following:
+
+```bash
+npx np --no-release-draft
+```
+
+The `--no-release-draft` flag prevents a GitHub release draft being created.
+
+The above `np` command will:
+
+1. Update the `version` field in `package.json`
+2. Publish the new version to NPM
+3. Create a Git tag
+4. Commit the Git tag and the updated `package.json` to version control, then push the changes upstream
+
+It also peforms some pre-release checks, like running tests and ensuring you're releasing from the `main` branch.
+
+For further context on the package and for instructions on how to bump versions in a non-interactive way [visit the README](https://github.com/sindresorhus/np).
 
 ## License
 
