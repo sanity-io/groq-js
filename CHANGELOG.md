@@ -1,5 +1,28 @@
 # Changelog
 
+## v1.0.0-rc - 2022-07-28
+
+New features:
+
+- Implement `array::unique`
+- Implement aggregation functions on the `math` namespace:
+  - `min()`
+  - `max()`
+  - `sum()`
+  - `avg()`
+- Implement functions on the `string` namespace:
+  - `startsWith()`
+  - `split()` (experimental)
+- Implement functions on the `array` namespace:
+  - `join()` (experimental)
+  - `compact()` (experimental)
+- Introduce support for using specific GROQ versions
+- Introduce validation for selector syntax
+
+Tooling changes:
+
+- Support local test via `$GROQTEST_SUITE`
+
 ## v0.4.0-beta.2 - 2022-03-21
 
 Bug fixes
