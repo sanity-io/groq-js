@@ -4,7 +4,7 @@
 
 New features:
 
-- Implement `array::unique`
+- Implement `array::unique()`
 - Implement aggregation functions on the `math` namespace:
   - `min()`
   - `max()`
@@ -12,10 +12,10 @@ New features:
   - `avg()`
 - Implement functions on the `string` namespace:
   - `startsWith()`
-  - `split()` (experimental)
+  - `split()`
 - Implement functions on the `array` namespace:
-  - `join()` (experimental)
-  - `compact()` (experimental)
+  - `join()`
+  - `compact()`
 - Introduce support for using specific GROQ versions
 - Introduce validation for selector syntax
 
