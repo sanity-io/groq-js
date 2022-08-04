@@ -3,27 +3,17 @@
   "version": "0.4.0-beta.2",
   "license": "MIT",
   "author": "Sanity.io <hello@sanity.io>",
-  "main": "./dist/groqjs.umd.cjs",
-  "types": "./dist/groqjs.umd.d.ts",
+  "main": "./dist/1.umd.cjs",
+  "types": "./dist/1.umd.d.ts",
   "exports": {
     ".": {
       "import": {
-        "default": "./dist/groqjs.esm.mjs",
-        "types": "./dist/groqjs.esm.d.ts"
+        "default": "./dist/1.esm.mjs",
+        "types": "./dist/1.esm.d.ts"
       },
       "require": {
-        "default": "./dist/groqjs.umd.cjs",
-        "types": "./dist/groqjs.umd.d.ts"
-      }
-    },
-    "./v2": {
-      "import": {
-        "default": "./dist/v2.esm.mjs",
-        "types": "./dist/v2.esm.d.ts"
-      },
-      "require": {
-        "default": "./dist/v2.umd.cjs",
-        "types": "./dist/v2.umd.d.ts"
+        "default": "./dist/1.umd.cjs",
+        "types": "./dist/1.umd.d.ts"
       }
     },
     "./package.json": "./package.json"

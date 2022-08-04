@@ -45,7 +45,7 @@ function space() {
 write(`const fs = require('fs')`)
 write(`const ndjson = require('ndjson')`)
 write(`const tap = require('tap')`)
-write(`const {evaluate, parse} = require('../src/v2')`)
+write(`const {evaluate, parse} = require('../src/1')`)
 space()
 
 write(`tap.setTimeout(0)`)
