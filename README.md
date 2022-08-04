@@ -3,7 +3,7 @@
 GROQ-JS is a JavaScript implementation of [GROQ](https://www.sanity.io/docs/data-store/how-queries-work) which follows the official specification.
 
 ```javascript
-import {parse, evaluate} from 'groq-js/v2'
+import {parse, evaluate} from 'groq-js'
 
 let input = '*[_type == "user"]{name}'
 
@@ -22,15 +22,6 @@ let value = await evaluate(tree, {dataset})
 let result = await value.get()
 
 console.log(result)
-```
-
-** Note: TypeScript doesn't yet support export subpaths, to use this library with TypeScript you can do: **
-
-```typescript
-import {v2} from "groq-js";
-const {parse, evaluate} = v2
-
-...
 ```
 
 Table of contents:

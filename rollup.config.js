@@ -27,9 +27,4 @@ function chunk(input, name, format, ext) {
   ]
 }
 
-export default [
-  ...chunk('index', 'groqjs', 'umd', 'cjs'),
-  ...chunk('index', 'groqjs', 'esm', 'mjs'),
-  ...chunk('v2', 'v2', 'umd', 'cjs'),
-  ...chunk('v2', 'v2', 'esm', 'mjs'),
-]
+export default [...chunk('1', '1', 'umd', 'cjs'), ...chunk('1', '1', 'esm', 'mjs')]

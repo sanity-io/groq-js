@@ -1,4 +1,4 @@
-import {parse} from '../src/v2'
+import {parse} from '../src/1'
 
 import t from 'tap'
 import {throwsWithMessage} from './testUtils'
