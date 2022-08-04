@@ -53,6 +53,12 @@ const EXECUTORS: ExecutorMap = {
     return scope.value
   },
 
+  Selector() {
+    // These should be evaluated separely using a different evaluator.
+    // At the mooment we haven't implemented this.
+    throw new Error('Selectors can not be evaluated')
+  },
+
   Everything(_, scope) {
     return scope.source
   },
