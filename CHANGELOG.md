@@ -1,6 +1,6 @@
 # Changelog
 
-## v1.0.0-rc - 2022-08-05
+## v1.0.0-rc0 - 2022-08-05
 
 New features:
 
@@ -9,7 +9,7 @@ New features:
 
 Tooling changes:
 
-- Support local test via `$GROQTEST_SUITE`
+- Support local use of the GROQ test suite via `$GROQTEST_SUITE`
 
 ## v0.4.0-beta.2 - 2022-03-21
 
