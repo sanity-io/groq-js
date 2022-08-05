@@ -63,36 +63,6 @@ t.test('Functions', async (t) => {
     })
   })
 
-  t.test('startsWith()', async (t) => {
-    t.test('returns true if string starts with given prefix', async (t) => {
-      const tree = parse('string::startsWith("alphabet", "alpha")')
-      const value = await evaluate(tree, {})
-      const data = await value.get()
-      t.same(data, true)
-    })
-
-    t.test('returns false if string does not with given prefix', async (t) => {
-      const tree = parse('string::startsWith("alphabet", "beta")')
-      const value = await evaluate(tree, {})
-      const data = await value.get()
-      t.same(data, false)
-    })
-
-    t.test('returns null when prefix term is not a string', async (t) => {
-      const tree = parse('string::startsWith("alphabet", 1)')
-      const value = await evaluate(tree, {})
-      const data = await value.get()
-      t.same(data, null)
-    })
-
-    t.test('returns null when search term is not a string', async (t) => {
-      const tree = parse('string::startsWith(1, "alpha")')
-      const value = await evaluate(tree, {})
-      const data = await value.get()
-      t.same(data, null)
-    })
-  })
-
   t.test('score()', async (t) => {
     t.test('returns null when base is not an array', async (t) => {
       const tree = parse('* | score(title match "Red" || title match "Fish")')
