@@ -8,12 +8,12 @@
   "exports": {
     ".": {
       "import": {
-        "default": "./dist/1.esm.mjs",
-        "types": "./dist/1.esm.d.ts"
+        "types": "./dist/1.esm.d.ts",
+        "default": "./dist/1.esm.mjs"
       },
       "require": {
-        "default": "./dist/1.umd.cjs",
-        "types": "./dist/1.umd.d.ts"
+        "types": "./dist/1.umd.d.ts",
+        "default": "./dist/1.umd.cjs"
       }
     },
     "./package.json": "./package.json"
