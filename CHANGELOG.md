@@ -1,6 +1,6 @@
 # Changelog
 
-## v1.0.0
+## v1.0.0 - 2022-08-15
 
 Official release!
 
