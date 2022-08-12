@@ -8,14 +8,15 @@ const fs = require('fs')
 const https = require('https')
 const semver = require('semver')
 
-const SUPPORTED_FEATURES = new Set([
-  'scoring',
-  'namespaces',
-  'portableText',
-  'experimentalFunctions',
-])
-const GROQ_VERSION = '2.0.0'
-const DISABLED_TESTS = ['Filters / documents, nested 3', 'Parameters / Undefined']
+const SUPPORTED_FEATURES = new Set(['portableText'])
+// We implement GROQ-1.revision1. The final patch has to be there for it to be a valid SemVer.
+const GROQ_VERSION = '1.1.0'
+const DISABLED_TESTS = [
+  'Filters / documents, nested 3', // very slow
+  'Parameters / Undefined',
+  /diff functions/, // we don't have full selector support yet
+  /score\(\) function \/ Illegal use/, // we're missing validation here
+]
 
 const OUTPUT = process.stdout
 const STACK = []
