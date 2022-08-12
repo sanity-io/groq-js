@@ -1,6 +1,16 @@
 # Changelog
 
-## v1.0.0-rc0 - 2022-08-05
+## v1.0.0
+
+Official release!
+
+## v1.0.1 - 2022-08-08
+
+Bug fixes:
+
+- Reorder export ordering in `package.json` to solve Webpack build errors
+
+## v1.0.0-0 - 2022-08-05
 
 New features:
 
