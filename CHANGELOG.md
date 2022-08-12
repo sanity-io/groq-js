@@ -4,7 +4,7 @@
 
 Official release!
 
-## v1.0.1 - 2022-08-08
+## v1.0.0-1 - 2022-08-08
 
 Bug fixes:
 
