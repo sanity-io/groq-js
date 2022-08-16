@@ -8,9 +8,10 @@ function canConstantEvaluate(node: ExprNode): boolean {
     case 'Group':
     case 'Value':
     case 'Parameter':
+      return true
     case 'Pos':
     case 'Neg':
-      return true
+      return canConstantEvaluate(node.base)
     case 'OpCall':
       switch (node.op) {
         case '+':
@@ -19,7 +20,7 @@ function canConstantEvaluate(node: ExprNode): boolean {
         case '/':
         case '%':
         case '**':
-          return true
+          return canConstantEvaluate(node.left) && canConstantEvaluate(node.right)
         default:
           return false
       }
@@ -36,26 +37,15 @@ const DUMMY_SCOPE = new Scope(
   null
 )
 
-class ConstantEvaluateError extends Error {
-  name = 'ConstantEvaluateError'
-}
-
 export function tryConstantEvaluate(node: ExprNode): Value | null {
-  try {
-    return constantEvaluate(node)
-  } catch (err) {
-    if (err instanceof ConstantEvaluateError) {
-      return null
-    }
-    throw err
+  if (!canConstantEvaluate(node)) {
+    return null
   }
+
+  return constantEvaluate(node)
 }
 
 function constantEvaluate(node: ExprNode): Value {
-  if (!canConstantEvaluate(node)) {
-    throw new ConstantEvaluateError('cannot constant evaluate')
-  }
-
   const value = evaluate(node, DUMMY_SCOPE, constantEvaluate)
   if ('then' in value) {
     throw new Error('BUG: constant evaluate should never return a promise')
