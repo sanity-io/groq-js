@@ -1,5 +1,11 @@
 # Changelog
 
+## v1.0.1 - 2022-08-18
+
+Bug fixes:
+
+- Fix "cannot constant evaluate" error that occured in Node.
+
 ## v1.0.0 - 2022-08-15
 
 Official release!
