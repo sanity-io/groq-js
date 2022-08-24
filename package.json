@@ -23,6 +23,9 @@
     "src",
     "README.md"
   ],
+  "engines": {
+    "node": ">= 14"
+  },
   "scripts": {
     "prepublishOnly": "npm run build",
     "build": "rimraf dist; rollup -c",
