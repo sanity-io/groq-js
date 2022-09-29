@@ -58,6 +58,5 @@
     "check-coverage": false
   },
   "dependencies": {
-    "just-compact": "^3.1.1"
   }
 }
