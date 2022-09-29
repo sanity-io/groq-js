@@ -16,6 +16,7 @@ import {
   Path,
   fromJS,
   StreamValue,
+  StaticValue,
 } from '../values'
 import {portableTextContent} from './pt'
 
@@ -382,6 +383,29 @@ array.unique = async function (args, scope, execute) {
   })
 }
 array.unique.arity = 1
+
+array.indexOf = async function (args, scope, execute) {
+  const [arr, element] = await Promise.all([
+    execute(args[0], scope),
+    execute(args[1], scope),
+  ])
+  if (!arr.isArray()) {
+    return NULL_VALUE
+  }
+
+  const elementValue = await element.get()
+  let index = 0
+
+  for await (const elem of arr) {
+    if (elem.type === element.type && await elem.get() === elementValue) {
+      return new StaticValue(index, 'number')
+    }
+    index += 1
+  }
+
+  return new StaticValue(-1, 'number')
+}
+array.indexOf.arity = 2
 
 const pt: FunctionSet = {}
 pt.text = async function (args, scope, execute) {

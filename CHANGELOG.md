@@ -1,5 +1,10 @@
 # Changelog
 
+
+## v1.1.0-custom.0 - 2022-09-29
+New features
+- Implemented `array::indexOf()`
+
 ## v1.0.0-rc - 2022-07-28
 
 New features:

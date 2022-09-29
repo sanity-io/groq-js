@@ -1,6 +1,6 @@
 {
-  "name": "groq-js",
-  "version": "1.1.0",
+  "name": "@freighter-studio/groq-js",
+  "version": "1.1.0-custom.0",
   "license": "MIT",
   "author": "Sanity.io <hello@sanity.io>",
   "main": "./dist/1.umd.cjs",
@@ -56,5 +56,8 @@
       "esbuild-register"
     ],
     "check-coverage": false
+  },
+  "dependencies": {
+    "just-compact": "^3.1.1"
   }
 }
