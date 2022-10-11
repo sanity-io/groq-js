@@ -554,6 +554,30 @@ function parseTraversal(str, pos) {
         position: pos,
       }
     }
+    case '=': {
+      if (str[pos + 1] !== '>') return {type: 'error', position: pos}
+      // ->
+
+      let marks = [{name: 'deref_array', position: startPos}]
+      pos += 2
+
+      let identPos = skipWS(str, pos)
+      let identLen = parseRegex(str, identPos, IDENT)
+      if (identLen) {
+        pos = identPos + identLen
+        marks.push(
+          {name: 'deref_attr', position: identPos},
+          {name: 'ident', position: identPos},
+          {name: 'ident_end', position: pos}
+        )
+      }
+
+      return {
+        type: 'success',
+        marks,
+        position: pos,
+      }
+    }
     case '-':
       if (str[pos + 1] !== '>') return {type: 'error', position: pos}
       // ->

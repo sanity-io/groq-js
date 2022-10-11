@@ -239,6 +239,34 @@ const EXECUTORS: ExecutorMap = {
     return fromJS(array.slice(leftIdx, rightIdx))
   },
 
+  async DerefArray({base}, scope, execute) {
+    const value = await execute(base, scope)
+
+    if (!scope.source.isArray()) {
+      return NULL_VALUE
+    }
+
+    if (value.type !== 'object') {
+      return NULL_VALUE
+    }
+
+    const id = value.data._ref
+    if (typeof id !== 'string') {
+      return NULL_VALUE
+    }
+
+    return new StreamValue(async function* () {
+      for await (const doc of scope.source) {
+        if (doc.type === 'object') {
+        console.log(doc.data._id)
+        }
+        if (doc.type === 'object' && id === doc.data._id) {
+          yield doc;
+        }
+      }
+    });
+  },
+
   async Deref({base}, scope, execute) {
     const value = await execute(base, scope)
 
@@ -255,13 +283,24 @@ const EXECUTORS: ExecutorMap = {
       return NULL_VALUE
     }
 
-    for await (const doc of scope.source) {
-      if (doc.type === 'object' && id === doc.data._id) {
-        return doc
+      for await (const doc of scope.source) {
+        if (doc.type === 'object' && id === doc.data._id) {
+          return doc;
+        }
       }
-    }
 
-    return NULL_VALUE
+      return NULL_VALUE;
+
+    // return new StreamValue(async function* () {
+    //   for await (const doc of scope.source) {
+    //     if (doc.type === 'object') {
+    //     console.log(doc.data._id)
+    //     }
+    //     if (doc.type === 'object' && id === doc.data._id) {
+    //       yield doc;
+    //     }
+    //   }
+    // });
   },
 
   Value({value}) {

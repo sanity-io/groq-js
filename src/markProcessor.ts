@@ -12,6 +12,7 @@ export type MarkName =
   | 'comp'
   | 'dblparent'
   | 'deref_field'
+  | 'deref_array'
   | 'deref'
   | 'desc'
   | 'div'

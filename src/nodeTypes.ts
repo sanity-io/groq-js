@@ -18,6 +18,7 @@ export type ExprNode =
   | AscNode
   | ContextNode
   | DerefNode
+  | DerefArrayNode
   | DescNode
   | EverythingNode
   | FilterNode
@@ -98,6 +99,11 @@ export interface ContextNode extends BaseNode {
 
 export interface DerefNode extends BaseNode {
   type: 'Deref'
+  base: ExprNode
+}
+
+export interface DerefArrayNode extends BaseNode {
+  type: 'DerefArray'
   base: ExprNode
 }
 

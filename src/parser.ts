@@ -644,6 +644,28 @@ const TRAVERSE_BUILDER: MarkVisitor<(rhs: TraversalResult | null) => TraversalRe
     return (right) => traversePlain((base) => ({type: 'AccessAttribute', base, name}), right)
   },
 
+  deref_array(p) {
+    let attr: string | null = null
+
+    if (p.getMark().name === 'deref_attr') {
+      p.shift()
+      attr = p.processString()
+    }
+
+    const wrap = (base: NodeTypes.ExprNode): NodeTypes.ExprNode =>
+      attr ? {type: 'AccessAttribute', base, name: attr} : base
+
+    return (right) =>
+      traversePlain(
+        (base) =>
+          wrap({
+            type: 'DerefArray',
+            base,
+          }),
+        right
+      )
+  },
+
   deref(p) {
     let attr: string | null = null
 
@@ -824,6 +846,7 @@ function extractPropertyKey(node: NodeTypes.ExprNode): string {
 
   if (
     node.type === 'Deref' ||
+    node.type === 'DerefArray' ||
     node.type === 'Map' ||
     node.type === 'Projection' ||
     node.type === 'Slice' ||
