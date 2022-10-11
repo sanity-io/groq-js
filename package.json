@@ -1,6 +1,6 @@
 {
   "name": "@freighter-studio/groq-js",
-  "version": "1.1.0-custom.0",
+  "version": "1.1.0-custom.1",
   "license": "MIT",
   "author": "Sanity.io <hello@sanity.io>",
   "main": "./dist/1.umd.cjs",

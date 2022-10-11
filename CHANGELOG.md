@@ -1,5 +1,9 @@
 # Changelog
 
+## v1.1.0-custom.1 - 2022-10-10
+New features
+- Added array dereferencing functionality allowing a single ref to link back to multiple objects with the same ID. (this is assuming there are entries with the same ID, this is of course an edge case). Exmaple: `ref=>[]{...}`
+
 
 ## v1.1.0-custom.0 - 2022-09-29
 New features
