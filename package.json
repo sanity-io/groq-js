@@ -14,7 +14,8 @@
       "require": {
         "types": "./dist/1.umd.d.ts",
         "default": "./dist/1.umd.cjs"
-      }
+      },
+      "default": "./dist/1.umd.cjs"
     },
     "./package.json": "./package.json"
   },
