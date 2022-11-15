@@ -37,6 +37,18 @@ t.test('Basic parsing', async (t) => {
     const tree = parse(query)
     t.matchSnapshot(tree)
   })
+
+  t.test('Complex query', async (t) => {
+    const query = `count(array::unique(
+      *[_type == 'page']{"_id": select(
+        _id in path("drafts.**") => _id,
+        "drafts." + _id
+      )}._id
+    ))`
+
+    const tree = parse(query)
+    t.matchSnapshot(tree)
+  })
 })
 
 t.test('Error reporting', async (t) => {
