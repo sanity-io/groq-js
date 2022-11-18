@@ -1,8 +1,6 @@
 import {Value} from '../values'
 
-export const isEqual = equality
-
-function equality(a: Value, b: Value): boolean {
+export function isEqual(a: Value, b: Value): boolean {
   if (
     (a.type === 'string' && b.type === 'string') ||
     (a.type === 'boolean' && b.type === 'boolean') ||
