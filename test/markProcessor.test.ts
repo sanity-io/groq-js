@@ -1,9 +1,10 @@
 import t from 'tap'
-import * as NodeTypes from '../src/nodeTypes'
+
 import {MarkProcessor, MarkVisitor} from '../src/markProcessor'
+import {ExprNode} from '../src/nodeTypes'
 import {throwsWithMessage} from './testUtils'
 
-const TestVisitor: MarkVisitor<NodeTypes.ExprNode> = {
+const TestVisitor: MarkVisitor<ExprNode> = {
   valid(p) {
     return {type: 'Everything'}
   },

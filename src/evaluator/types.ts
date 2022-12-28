@@ -1,8 +1,8 @@
-import * as NodeTypes from '../nodeTypes'
-import {Scope} from './scope'
+import {ExprNode} from '../nodeTypes'
 import {Value} from '../values'
+import {Scope} from './scope'
 
-export type Executor<N = NodeTypes.ExprNode> = (node: N, scope: Scope) => Value | PromiseLike<Value>
+export type Executor<N = ExprNode> = (node: N, scope: Scope) => Value | PromiseLike<Value>
 
 export interface EvaluateOptions {
   // The value that will be available as `@` in GROQ.

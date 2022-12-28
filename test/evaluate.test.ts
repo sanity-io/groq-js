@@ -1,8 +1,8 @@
-import {evaluate, parse} from '../src/1'
-
 import t from 'tap'
-import {throwsWithMessage} from './testUtils'
+
+import {evaluate, parse} from '../src/1'
 import {ExprNode} from '../src/nodeTypes'
+import {throwsWithMessage} from './testUtils'
 
 t.test('Basic parsing', async (t) => {
   t.test('Example query', async (t) => {
@@ -226,26 +226,26 @@ t.test('Basic parsing', async (t) => {
   })
 
   t.test('Delta-GROQ', async (t) => {
-    let tree = parse(`before().title == after().title`, {mode: 'delta'})
-    let value1 = await evaluate(tree, {before: {title: 'A'}, after: {title: 'A'}})
+    const tree = parse(`before().title == after().title`, {mode: 'delta'})
+    const value1 = await evaluate(tree, {before: {title: 'A'}, after: {title: 'A'}})
     t.same(await value1.get(), true)
 
-    let value2 = await evaluate(tree, {before: {title: 'A'}, after: {title: 'B'}})
+    const value2 = await evaluate(tree, {before: {title: 'A'}, after: {title: 'B'}})
     t.same(await value2.get(), false)
   })
 
   t.test('delta::operation()', async (t) => {
-    let tree = parse(`delta::operation()`, {mode: 'delta'})
-    let value1 = await evaluate(tree, {before: {title: 'A'}, after: {title: 'A'}})
+    const tree = parse(`delta::operation()`, {mode: 'delta'})
+    const value1 = await evaluate(tree, {before: {title: 'A'}, after: {title: 'A'}})
     t.same(await value1.get(), 'update')
 
-    let value2 = await evaluate(tree, {before: {title: 'A'}})
+    const value2 = await evaluate(tree, {before: {title: 'A'}})
     t.same(await value2.get(), 'delete')
 
-    let value3 = await evaluate(tree, {after: {title: 'A'}})
+    const value3 = await evaluate(tree, {after: {title: 'A'}})
     t.same(await value3.get(), 'create')
 
-    let value4 = await evaluate(tree, {})
+    const value4 = await evaluate(tree, {})
     t.same(await value4.get(), null)
   })
 

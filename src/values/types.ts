@@ -1,6 +1,6 @@
 import type {Path} from './Path'
-import type {StaticValue, DateTime} from './utils'
 import type {StreamValue} from './StreamValue'
+import type {DateTime, StaticValue} from './utils'
 
 /**
  * A type of a value in GROQ.

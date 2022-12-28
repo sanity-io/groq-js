@@ -1,18 +1,18 @@
 import {OpCall} from '../nodeTypes'
 import {
-  TRUE_VALUE,
   FALSE_VALUE,
-  NULL_VALUE,
-  fromNumber,
-  Value,
-  fromString,
-  fromJS,
   fromDateTime,
+  fromJS,
+  fromNumber,
+  fromString,
+  NULL_VALUE,
   StreamValue,
+  TRUE_VALUE,
+  Value,
 } from '../values'
 import {isEqual} from './equality'
+import {gatherText, matchAnalyzePattern, matchText, matchTokenize, Pattern, Token} from './matching'
 import {partialCompare} from './ordering'
-import {gatherText, Token, Pattern, matchText, matchTokenize, matchAnalyzePattern} from './matching'
 
 type GroqOperatorFn = (left: Value, right: Value) => Value | PromiseLike<Value>
 
