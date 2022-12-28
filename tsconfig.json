@@ -1,8 +1,15 @@
 {
   "compilerOptions": {
     "strict": true,
+    "target": "esnext",
+    "module": "esnext",
+    "noUnusedLocals": true,
     "esModuleInterop": true,
     "allowJs": true,
-    "moduleResolution": "node"
+    "isolatedModules": true,
+    "skipLibCheck": true,
+    "moduleResolution": "node",
+    "forceConsistentCasingInFileNames": true,
+    "outDir": "dist"
   }
 }

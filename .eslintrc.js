@@ -1,15 +1,17 @@
 module.exports = {
+  root: true,
   env: {node: true, browser: true, jest: true},
-  parserOptions: {
-    ecmaVersion: 9,
-    sourceType: 'module',
-    ecmaFeatures: {
-      modules: true,
-    },
-  },
-  extends: ['sanity/typescript', 'prettier/@typescript-eslint', 'prettier', 'prettier/react'],
+  extends: ['sanity/typescript', 'prettier'],
+  plugins: ['prettier', 'simple-import-sort'],
   rules: {
+    'no-undef': 'off',
     'callback-return': 'off',
     'no-unused-vars': 'off',
+    'no-shadow': 'off',
+    'require-await': 'off',
+    'max-nested-callbacks': 'off',
+    'no-return-await': 'off',
+    'simple-import-sort/imports': 'warn',
+    'simple-import-sort/exports': 'warn',
   },
 }

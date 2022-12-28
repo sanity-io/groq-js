@@ -1,4 +1,4 @@
-import {NULL_VALUE, Value} from '../values'
+import {Value} from '../values'
 
 export async function portableTextContent(value: Value): Promise<string | null> {
   if (value.type === 'object') {

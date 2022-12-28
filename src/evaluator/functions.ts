@@ -1,23 +1,23 @@
 import type {ExprNode} from '../nodeTypes'
+import {
+  DateTime,
+  FALSE_VALUE,
+  fromJS,
+  fromNumber,
+  fromPath,
+  fromString,
+  getType,
+  NULL_VALUE,
+  Path,
+  StreamValue,
+  TRUE_VALUE,
+  Value,
+} from '../values'
 import {totalCompare} from './ordering'
+import {portableTextContent} from './pt'
 import {Scope} from './scope'
 import {evaluateScore} from './scoring'
 import {Executor} from './types'
-import {
-  getType,
-  fromNumber,
-  TRUE_VALUE,
-  FALSE_VALUE,
-  NULL_VALUE,
-  Value,
-  DateTime,
-  fromString,
-  fromPath,
-  Path,
-  fromJS,
-  StreamValue,
-} from '../values'
-import {portableTextContent} from './pt'
 
 function hasReference(value: any, pathSet: Set<string>): boolean {
   switch (getType(value)) {
@@ -58,7 +58,7 @@ function countUTF8(str: string): number {
   return count
 }
 
-type GroqFunctionArg = ExprNode
+export type GroqFunctionArg = ExprNode
 type WithOptions<T> = T & {
   arity?: GroqFunctionArity
   mode?: 'normal' | 'delta'
@@ -76,15 +76,17 @@ export type FunctionSet = Record<string, WithOptions<GroqFunction> | undefined>
 
 export type NamespaceSet = Record<string, FunctionSet | undefined>
 
-const global: FunctionSet = {}
+// underscored to not collide with environments like jest that give variables named `global` special treatment
+const _global: FunctionSet = {}
 
-global.anywhere = async function anywhere() {
+// eslint-disable-next-line require-await
+_global.anywhere = async function anywhere() {
   throw new Error('not implemented')
 }
 
-global.anywhere.arity = 1
+_global.anywhere.arity = 1
 
-global.coalesce = async function coalesce(args, scope, execute) {
+_global.coalesce = async function coalesce(args, scope, execute) {
   for (const arg of args) {
     const value = await execute(arg, scope)
     if (value.type !== 'null') {
@@ -94,7 +96,7 @@ global.coalesce = async function coalesce(args, scope, execute) {
   return NULL_VALUE
 }
 
-global.count = async function count(args, scope, execute) {
+_global.count = async function count(args, scope, execute) {
   const inner = await execute(args[0], scope)
   if (!inner.isArray()) {
     return NULL_VALUE
@@ -107,9 +109,9 @@ global.count = async function count(args, scope, execute) {
   }
   return fromNumber(num)
 }
-global.count.arity = 1
+_global.count.arity = 1
 
-global.dateTime = async function dateTime(args, scope, execute) {
+_global.dateTime = async function dateTime(args, scope, execute) {
   const val = await execute(args[0], scope)
   if (val.type === 'datetime') {
     return val
@@ -119,21 +121,21 @@ global.dateTime = async function dateTime(args, scope, execute) {
   }
   return DateTime.parseToValue(val.data)
 }
-global.dateTime.arity = 1
+_global.dateTime.arity = 1
 
-global.defined = async function defined(args, scope, execute) {
+_global.defined = async function defined(args, scope, execute) {
   const inner = await execute(args[0], scope)
   return inner.type === 'null' ? FALSE_VALUE : TRUE_VALUE
 }
-global.defined.arity = 1
+_global.defined.arity = 1
 
 // eslint-disable-next-line require-await
-global.identity = async function identity(args, scope) {
+_global.identity = async function identity(args, scope) {
   return fromString(scope.context.identity)
 }
-global.identity.arity = 0
+_global.identity.arity = 0
 
-global.length = async function length(args, scope, execute) {
+_global.length = async function length(args, scope, execute) {
   const inner = await execute(args[0], scope)
 
   if (inner.type === 'string') {
@@ -151,9 +153,9 @@ global.length = async function length(args, scope, execute) {
 
   return NULL_VALUE
 }
-global.length.arity = 1
+_global.length.arity = 1
 
-global.path = async function path(args, scope, execute) {
+_global.path = async function path(args, scope, execute) {
   const inner = await execute(args[0], scope)
   if (inner.type !== 'string') {
     return NULL_VALUE
@@ -161,9 +163,9 @@ global.path = async function path(args, scope, execute) {
 
   return fromPath(new Path(inner.data))
 }
-global.path.arity = 1
+_global.path.arity = 1
 
-global.string = async function string(args, scope, execute) {
+_global.string = async function string(args, scope, execute) {
   const value = await execute(args[0], scope)
   switch (value.type) {
     case 'number':
@@ -175,9 +177,9 @@ global.string = async function string(args, scope, execute) {
       return NULL_VALUE
   }
 }
-global.string.arity = 1
+_global.string.arity = 1
 
-global.references = async function references(args, scope, execute) {
+_global.references = async function references(args, scope, execute) {
   const pathSet = new Set<string>()
   for (const arg of args) {
     const path = await execute(arg, scope)
@@ -199,9 +201,9 @@ global.references = async function references(args, scope, execute) {
   const scopeValue = await scope.value.get()
   return hasReference(scopeValue, pathSet) ? TRUE_VALUE : FALSE_VALUE
 }
-global.references.arity = (c) => c >= 1
+_global.references.arity = (c) => c >= 1
 
-global.round = async function round(args, scope, execute) {
+_global.round = async function round(args, scope, execute) {
   const value = await execute(args[0], scope)
   if (value.type !== 'number') {
     return NULL_VALUE
@@ -228,21 +230,21 @@ global.round = async function round(args, scope, execute) {
   }
   return fromNumber(Number(num.toFixed(prec)))
 }
-global.round.arity = (count) => count >= 1 && count <= 2
+_global.round.arity = (count) => count >= 1 && count <= 2
 
 // eslint-disable-next-line require-await
-global.now = async function now(args, scope) {
+_global.now = async function now(args, scope) {
   return fromString(scope.context.timestamp.toISOString())
 }
-global.now.arity = 0
+_global.now.arity = 0
 
 // eslint-disable-next-line require-await
-global.boost = async function boost() {
+_global.boost = async function boost() {
   // This should be handled by the scoring function.
   throw new Error('unexpected boost call')
 }
 
-global.boost.arity = 2
+_global.boost.arity = 2
 
 const string: FunctionSet = {}
 
@@ -289,8 +291,8 @@ string.split = async function (args, scope, execute) {
 }
 string.split.arity = 2
 
-global.lower = string.lower
-global.upper = string.upper
+_global.lower = string.lower
+_global.upper = string.upper
 
 string.startsWith = async function (args, scope, execute) {
   const str = await execute(args[0], scope)
@@ -518,6 +520,7 @@ pipeFunctions.score.arity = (count) => count >= 1
 type ObjectWithScore = Record<string, unknown> & {_score: number}
 
 const delta: FunctionSet = {}
+// eslint-disable-next-line require-await
 delta.operation = async function (args, scope) {
   const hasBefore = scope.context.before !== null
   const hasAfter = scope.context.after !== null
@@ -567,7 +570,7 @@ math.min = async function (args, scope, execute) {
     return NULL_VALUE
   }
 
-  let n: number | undefined = undefined
+  let n: number | undefined
   for await (const elem of arr) {
     if (elem.type === 'null') continue
     if (elem.type !== 'number') {
@@ -587,7 +590,7 @@ math.max = async function (args, scope, execute) {
     return NULL_VALUE
   }
 
-  let n: number | undefined = undefined
+  let n: number | undefined
   for await (const elem of arr) {
     if (elem.type === 'null') continue
     if (elem.type !== 'number') {
@@ -643,7 +646,7 @@ math.avg = async function (args, scope, execute) {
 math.avg.arity = 1
 
 export const namespaces: NamespaceSet = {
-  global,
+  global: _global,
   string,
   array,
   pt,

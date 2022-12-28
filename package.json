@@ -1,6 +1,6 @@
 {
   "name": "groq-js",
-  "version": "1.1.6",
+  "version": "1.2.1-beta.1",
   "keywords": [
     "sanity",
     "json",
@@ -10,22 +10,44 @@
   "license": "MIT",
   "author": "Sanity.io <hello@sanity.io>",
   "sideEffects": false,
+  "type": "commonjs",
   "exports": {
     ".": {
-      "import": {
-        "types": "./dist/1.esm.d.ts",
-        "default": "./dist/1.esm.mjs"
+      "types": "./dist/index.d.ts",
+      "source": "./src/1.ts",
+      "require": "./dist/index.js",
+      "node": {
+        "import": "./dist/index.cjs.mjs",
+        "require": "./dist/index.js"
       },
-      "require": {
-        "types": "./dist/1.umd.d.ts",
-        "default": "./dist/1.umd.cjs"
+      "import": "./dist/index.mjs",
+      "default": "./dist/index.js"
+    },
+    "./1": {
+      "types": "./dist/1.d.ts",
+      "source": "./src/1.ts",
+      "require": "./dist/1.js",
+      "node": {
+        "import": "./dist/1.cjs.mjs",
+        "require": "./dist/1.js"
       },
-      "default": "./dist/1.umd.cjs"
+      "import": "./dist/1.mjs",
+      "default": "./dist/1.js"
     },
     "./package.json": "./package.json"
   },
-  "main": "./dist/1.umd.cjs",
-  "types": "./dist/1.umd.d.ts",
+  "main": "./dist/index.js",
+  "module": "./dist/index.mjs",
+  "source": "./src/1.ts",
+  "types": "./dist/index.d.ts",
+  "typesVersions": {
+    "*": {
+      "1": [
+        "./dist/1.d.ts"
+      ]
+    }
+  },
+  "typings": "dist/index.d.ts",
   "files": [
     "dist",
     "src",
@@ -35,13 +57,17 @@
   ],
   "scripts": {
     "prebuild": "npx rimraf dist",
-    "build": "rollup -c",
+    "build": "pkg build --strict && pkg --strict",
     "prepublishOnly": "npm run build",
     "prettify": "prettier --write .",
     "prettify-check": "prettier --check .",
     "test": "tap --no-timeout test/*.test.*",
     "test:generate": "./test/generate.sh"
   },
+  "browserslist": [
+    "> 0.2% and supports es6-module and supports es6-module-dynamic-import and not dead and not IE 11",
+    "maintained node versions"
+  ],
   "tap": {
     "check-coverage": false,
     "node-arg": [
@@ -50,24 +76,25 @@
     ]
   },
   "devDependencies": {
-    "@rollup/plugin-typescript": "^8.3.3",
-    "@sanity/semantic-release-preset": "^3.0.2",
-    "@types/tap": "^15.0.5",
-    "@typescript-eslint/eslint-plugin": "^4.22.1",
-    "@typescript-eslint/parser": "^4.22.1",
-    "esbuild": "^0.14.2",
-    "esbuild-register": "^3.2.0",
-    "eslint-config-sanity": "^5.1.0",
+    "@sanity/pkg-utils": "^2.2.3",
+    "@sanity/semantic-release-preset": "^4.0.0",
+    "@types/tap": "^15.0.7",
+    "@typescript-eslint/eslint-plugin": "^5.50.0",
+    "@typescript-eslint/parser": "^5.50.0",
+    "esbuild": "^0.17.5",
+    "esbuild-register": "^3.4.2",
+    "eslint": "^8.33.0",
+    "eslint-config-prettier": "^8.6.0",
+    "eslint-config-sanity": "^6.0.0",
+    "eslint-plugin-prettier": "^4.2.1",
+    "eslint-plugin-simple-import-sort": "^10.0.0",
     "ndjson": "^2.0.0",
-    "prettier": "^2.2.1",
-    "prettier-plugin-packagejson": "^2.3.0",
-    "rimraf": "^3.0.2",
-    "rollup": "^2.75.7",
-    "rollup-plugin-dts": "^4.2.2",
-    "semver": "^7.3.5",
-    "tap": "^15.0.6",
-    "tslib": "^2.2.0",
-    "typescript": "^4.9.4"
+    "prettier": "^2.8.3",
+    "prettier-plugin-packagejson": "^2.4.2",
+    "rimraf": "^4.1.2",
+    "semver": "^7.3.8",
+    "tap": "^16.3.4",
+    "typescript": "^4.9.5"
   },
   "engines": {
     "node": ">= 14"

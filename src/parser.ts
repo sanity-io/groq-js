@@ -1,7 +1,17 @@
 /* eslint-disable camelcase */
-import * as NodeTypes from './nodeTypes'
-import {Mark, MarkProcessor, MarkVisitor} from './markProcessor'
+import {tryConstantEvaluate} from './evaluator'
 import {GroqFunctionArity, namespaces, pipeFunctions} from './evaluator/functions'
+import {Mark, MarkProcessor, MarkVisitor} from './markProcessor'
+import {
+  ArrayElementNode,
+  ExprNode,
+  FuncCallNode,
+  ObjectAttributeNode,
+  ObjectSplatNode,
+  OpCall,
+  ParentNode,
+  SelectNode,
+} from './nodeTypes'
 import {parse as rawParse} from './rawParser'
 import {
   TraversalResult,
@@ -10,7 +20,6 @@ import {
   traversePlain,
   traverseProjection,
 } from './traversal'
-import {tryConstantEvaluate} from './evaluator'
 import {ParseOptions} from './types'
 
 type EscapeSequences = "'" | '"' | '\\' | '/' | 'b' | 'f' | 'n' | 'r' | 't'
@@ -36,7 +45,7 @@ class GroqQueryError extends Error {
   public name = 'GroqQueryError'
 }
 
-const EXPR_BUILDER: MarkVisitor<NodeTypes.ExprNode> = {
+const EXPR_BUILDER: MarkVisitor<ExprNode> = {
   group(p) {
     const inner = p.process(EXPR_BUILDER)
     return {
@@ -61,7 +70,7 @@ const EXPR_BUILDER: MarkVisitor<NodeTypes.ExprNode> = {
   },
 
   dblparent(p) {
-    const next = p.process(EXPR_BUILDER) as NodeTypes.ParentNode
+    const next = p.process(EXPR_BUILDER) as ParentNode
     return {
       type: 'Parent',
       n: next.n + 1,
@@ -191,7 +200,7 @@ const EXPR_BUILDER: MarkVisitor<NodeTypes.ExprNode> = {
 
   comp(p) {
     const left = p.process(EXPR_BUILDER)
-    const op = p.processString() as NodeTypes.OpCall
+    const op = p.processString() as OpCall
     const right = p.process(EXPR_BUILDER)
     return {
       type: 'OpCall',
@@ -274,7 +283,7 @@ const EXPR_BUILDER: MarkVisitor<NodeTypes.ExprNode> = {
   },
 
   object(p) {
-    const attributes: NodeTypes.ObjectAttributeNode[] = []
+    const attributes: ObjectAttributeNode[] = []
     while (p.getMark().name !== 'object_end') {
       attributes.push(p.process(OBJECT_BUILDER))
     }
@@ -287,7 +296,7 @@ const EXPR_BUILDER: MarkVisitor<NodeTypes.ExprNode> = {
   },
 
   array(p) {
-    const elements: NodeTypes.ArrayElementNode[] = []
+    const elements: ArrayElementNode[] = []
     while (p.getMark().name !== 'array_end') {
       let isSplat = false
       if (p.getMark().name === 'array_splat') {
@@ -309,7 +318,7 @@ const EXPR_BUILDER: MarkVisitor<NodeTypes.ExprNode> = {
   },
 
   tuple(p) {
-    const members: NodeTypes.ExprNode[] = []
+    const members: ExprNode[] = []
     while (p.getMark().name !== 'tuple_end') {
       members.push(p.process(EXPR_BUILDER))
     }
@@ -329,7 +338,7 @@ const EXPR_BUILDER: MarkVisitor<NodeTypes.ExprNode> = {
 
     const name = p.processString()
     if (namespace === 'global' && name === 'select') {
-      const result: NodeTypes.SelectNode = {
+      const result: SelectNode = {
         type: 'Select',
         alternatives: [],
       }
@@ -355,7 +364,7 @@ const EXPR_BUILDER: MarkVisitor<NodeTypes.ExprNode> = {
       return result
     }
 
-    const args: NodeTypes.ExprNode[] = []
+    const args: ExprNode[] = []
 
     while (p.getMark().name !== 'func_args_end') {
       if (argumentShouldBeSelector(namespace, name, args.length)) {
@@ -421,7 +430,7 @@ const EXPR_BUILDER: MarkVisitor<NodeTypes.ExprNode> = {
     }
 
     const name = p.processString()
-    const args: NodeTypes.ExprNode[] = []
+    const args: ExprNode[] = []
 
     const oldAllowBoost = p.allowBoost
     if (name === 'score') {
@@ -527,7 +536,7 @@ const EXPR_BUILDER: MarkVisitor<NodeTypes.ExprNode> = {
   },
 }
 
-const OBJECT_BUILDER: MarkVisitor<NodeTypes.ObjectAttributeNode> = {
+const OBJECT_BUILDER: MarkVisitor<ObjectAttributeNode> = {
   object_expr(p) {
     if (p.getMark().name === 'pair') {
       p.shift()
@@ -562,7 +571,7 @@ const OBJECT_BUILDER: MarkVisitor<NodeTypes.ObjectAttributeNode> = {
     }
   },
 
-  object_splat(p): NodeTypes.ObjectSplatNode {
+  object_splat(p): ObjectSplatNode {
     const value = p.process(EXPR_BUILDER)
 
     return {
@@ -571,7 +580,7 @@ const OBJECT_BUILDER: MarkVisitor<NodeTypes.ObjectAttributeNode> = {
     }
   },
 
-  object_splat_this(): NodeTypes.ObjectSplatNode {
+  object_splat_this(): ObjectSplatNode {
     return {
       type: 'ObjectSplat',
       value: {type: 'This'},
@@ -652,7 +661,7 @@ const TRAVERSE_BUILDER: MarkVisitor<(rhs: TraversalResult | null) => TraversalRe
       attr = p.processString()
     }
 
-    const wrap = (base: NodeTypes.ExprNode): NodeTypes.ExprNode =>
+    const wrap = (base: ExprNode): ExprNode =>
       attr ? {type: 'AccessAttribute', base, name: attr} : base
 
     return (right) =>
@@ -778,7 +787,7 @@ const SELECTOR_BUILDER: MarkVisitor<null> = {
   },
 
   func_call(p, mark) {
-    const func = EXPR_BUILDER.func_call(p, mark) as NodeTypes.FuncCallNode
+    const func = EXPR_BUILDER.func_call(p, mark) as FuncCallNode
     if (func.name === 'anywhere' && func.args.length === 1) return null
 
     throw new Error('Invalid selector syntax')
@@ -817,7 +826,7 @@ const SELECTOR_BUILDER: MarkVisitor<null> = {
   },
 }
 
-function extractPropertyKey(node: NodeTypes.ExprNode): string {
+function extractPropertyKey(node: ExprNode): string {
   if (node.type === 'AccessAttribute' && !node.base) {
     return node.name
   }
@@ -870,7 +879,7 @@ class GroqSyntaxError extends Error {
 /**
  * Parses a GROQ query and returns a tree structure.
  */
-export function parse(input: string, options: ParseOptions = {}): NodeTypes.ExprNode {
+export function parse(input: string, options: ParseOptions = {}): ExprNode {
   const result = rawParse(input)
   if (result.type === 'error') {
     throw new GroqSyntaxError(result.position)

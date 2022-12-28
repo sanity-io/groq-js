@@ -1,11 +1,6 @@
-import * as NodeTypes from '../nodeTypes'
-import {operators} from './operators'
-import {Scope} from './scope'
-import {EvaluateOptions, Executor} from './types'
+import {ExprNode, FuncCallNode, PipeFuncCallNode} from '../nodeTypes'
 import {
-  DateTime,
   FALSE_VALUE,
-  fromDateTime,
   fromJS,
   fromNumber,
   NULL_VALUE,
@@ -13,10 +8,13 @@ import {
   TRUE_VALUE,
   Value,
 } from '../values'
+import {operators} from './operators'
 import {partialCompare} from './ordering'
+import {Scope} from './scope'
+import {EvaluateOptions, Executor} from './types'
 
 export function evaluate(
-  node: NodeTypes.ExprNode,
+  node: ExprNode,
   scope: Scope,
   execute: Executor = evaluate
 ): Value | PromiseLike<Value> {
@@ -27,8 +25,8 @@ export function evaluate(
 type NarrowNode<T, N> = T extends {type: N} ? T : never
 
 type ExecutorMap = {
-  [key in NodeTypes.ExprNode['type']]: (
-    node: NarrowNode<NodeTypes.ExprNode, key>,
+  [key in ExprNode['type']]: (
+    node: NarrowNode<ExprNode, key>,
     scope: Scope,
     exec: Executor
   ) => Value | PromiseLike<Value>
@@ -166,11 +164,11 @@ const EXECUTORS: ExecutorMap = {
     return execute(expr, newScope)
   },
 
-  FuncCall({func, args}: NodeTypes.FuncCallNode, scope: Scope, execute) {
+  FuncCall({func, args}: FuncCallNode, scope: Scope, execute) {
     return func(args, scope, execute)
   },
 
-  async PipeFuncCall({func, base, args}: NodeTypes.PipeFuncCallNode, scope: Scope, execute) {
+  async PipeFuncCall({func, base, args}: PipeFuncCallNode, scope: Scope, execute) {
     const baseValue = await execute(base, scope)
     return func(baseValue, args, scope, execute)
   },
@@ -457,7 +455,7 @@ const EXECUTORS: ExecutorMap = {
  * Evaluates a query.
  */
 export function evaluateQuery(
-  tree: NodeTypes.ExprNode,
+  tree: ExprNode,
   options: EvaluateOptions = {}
 ): Value | PromiseLike<Value> {
   const root = fromJS(options.root)

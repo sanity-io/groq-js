@@ -1,6 +1,6 @@
 import t from 'tap'
-import {ExprNode} from '../src/nodeTypes'
 
+import {ExprNode} from '../src/nodeTypes'
 import {
   TraversalResult,
   traverseArray,
@@ -8,7 +8,6 @@ import {
   traversePlain,
   traverseProjection,
 } from '../src/traversal'
-
 import {throwsWithMessage} from './testUtils'
 
 t.test('traverseProjection', async (t) => {

@@ -1,7 +1,7 @@
 import {ExprNode} from '../nodeTypes'
+import {NULL_VALUE, Value} from '../values'
 import {evaluate} from './evaluate'
 import {Scope} from './scope'
-import {NULL_VALUE, Value} from '../values'
 
 function canConstantEvaluate(node: ExprNode): boolean {
   switch (node.type) {

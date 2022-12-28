@@ -155,7 +155,9 @@ Object {
 }
 `
 
-exports[`test/parse.test.ts TAP Basic parsing Object expression starting with string > must match snapshot 1`] = `
+exports[
+  `test/parse.test.ts TAP Basic parsing Object expression starting with string > must match snapshot 1`
+] = `
 Object {
   "attributes": Array [
     Object {
@@ -182,7 +184,9 @@ Object {
 }
 `
 
-exports[`test/parse.test.ts TAP Basic parsing Space after field in objects > must match snapshot 1`] = `
+exports[
+  `test/parse.test.ts TAP Basic parsing Space after field in objects > must match snapshot 1`
+] = `
 Object {
   "attributes": Array [
     Object {
@@ -198,7 +202,9 @@ Object {
 }
 `
 
-exports[`test/parse.test.ts TAP Basic parsing Trailing comma in function call > must match snapshot 1`] = `
+exports[
+  `test/parse.test.ts TAP Basic parsing Trailing comma in function call > must match snapshot 1`
+] = `
 Object {
   "alternatives": Array [],
   "fallback": Object {
