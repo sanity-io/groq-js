@@ -5,6 +5,12 @@
 All notable changes to this project will be documented in this file. See
 [Conventional Commits](https://conventionalcommits.org) for commit guidelines.
 
+## [1.1.3](https://github.com/sanity-io/groq-js/compare/v1.1.2...v1.1.3) (2023-01-12)
+
+### Bug Fixes
+
+- **docs:** add pnpm example ([98010d2](https://github.com/sanity-io/groq-js/commit/98010d287c0ddcebf3052ed72a9d95f5400f1ecc))
+
 ## [1.1.2](https://github.com/sanity-io/groq-js/compare/v1.1.1...v1.1.2) (2023-01-12)
 
 ### Bug Fixes
