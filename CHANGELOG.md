@@ -5,6 +5,12 @@
 All notable changes to this project will be documented in this file. See
 [Conventional Commits](https://conventionalcommits.org) for commit guidelines.
 
+## [1.1.5](https://github.com/sanity-io/groq-js/compare/v1.1.4...v1.1.5) (2023-01-12)
+
+### Bug Fixes
+
+- add API.md to npm publish ([e92bb78](https://github.com/sanity-io/groq-js/commit/e92bb78e3f53465c3125d49c65f9d73dd6e91951))
+
 ## [1.1.4](https://github.com/sanity-io/groq-js/compare/v1.1.3...v1.1.4) (2023-01-12)
 
 ### Bug Fixes
