@@ -5,6 +5,14 @@
 All notable changes to this project will be documented in this file. See
 [Conventional Commits](https://conventionalcommits.org) for commit guidelines.
 
+## [1.1.2](https://github.com/sanity-io/groq-js/compare/v1.1.1...v1.1.2) (2023-01-12)
+
+### Bug Fixes
+
+- add `sideEffects: false` for better tree-shaking ([77b3366](https://github.com/sanity-io/groq-js/commit/77b3366f8f79aead50f6df0e53b8ba8a36266a20))
+- setup release automation ([f676dff](https://github.com/sanity-io/groq-js/commit/f676dff71722c88055d02d9f6234a72ff839268d))
+- support `swcMinify` in NextJS 13 ([9beabc1](https://github.com/sanity-io/groq-js/commit/9beabc1d46b7e9f59e1f3eb0c7f39edc9286435a))
+
 ## v1.0.0-rc - 2022-07-28
 
 New features:
