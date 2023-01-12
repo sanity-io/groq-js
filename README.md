@@ -77,7 +77,7 @@ This is an "experimental" release and anything _may_ change at any time, but we'
 
 ## Releasing a new version of GROQ-JS
 
-Run the ["CI & Release" workflow](https://github.com/sanity-io/groq-js/actions). Make sure to select the main branch and check "Release new version".
+Run the ["CI & Release" workflow](https://github.com/sanity-io/groq-js/actions/workflows/test.yml). Make sure to select the main branch and check "Release new version".
 
 Version will be automatically bumped based on [conventional commits](https://www.conventionalcommits.org/en/v1.0.0/) since the last release.
 
