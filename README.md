@@ -1,4 +1,9 @@
-# GROQ-JS
+# GROQ-JS<!-- omit in toc -->
+
+[![npm stat](https://img.shields.io/npm/dm/groq-js.svg?style=flat-square)](https://npm-stat.com/charts.html?package=groq-js)
+[![npm version](https://img.shields.io/npm/v/groq-js.svg?style=flat-square)](https://www.npmjs.com/package/groq-js)
+[![gzip size][gzip-badge]][bundlephobia]
+[![size][size-badge]][bundlephobia]
 
 GROQ-JS is a JavaScript implementation of [GROQ](https://www.sanity.io/docs/data-store/how-queries-work) which follows the official specification.
 
@@ -27,8 +32,12 @@ console.log(result)
 Table of contents:
 
 - [Installation](#installation)
-- [Documentation](API.md)
+- [Documentation](#documentation)
+- [Learn GROQ](#learn-groq)
 - [Versioning](#versioning)
+  - [GROQ](#groq)
+  - [GROQ-JS](#groq-js-1)
+- [Releasing a new version of GROQ-JS](#releasing-a-new-version-of-groq-js)
 - [License](#license)
 - [Tests](#tests)
 
@@ -68,28 +77,14 @@ This is an "experimental" release and anything _may_ change at any time, but we'
 
 ## Releasing a new version of GROQ-JS
 
-We use the `np` package to roll out new versions to NPM. You can read up more on the package [here](https://github.com/sindresorhus/np).
+Run the ["CI & Release" workflow](https://github.com/sanity-io/groq-js/actions). Make sure to select the main branch and check "Release new version".
 
-Make sure you update the CHANGELOG before releasing a new version. Use the previous updates as guidance for the desired formatting, and remember we use [SemVer](https://semver.org)!
+Version will be automatically bumped based on [conventional commits](https://www.conventionalcommits.org/en/v1.0.0/) since the last release.
 
-To interactively release the version run the following:
+Semantic release will only release on configured branches, so it is safe to run release on any branch.
 
-```bash
-npx np --no-release-draft
-```
-
-The `--no-release-draft` flag prevents a GitHub release draft being created.
-
-The above `np` command will:
-
-1. Update the `version` field in `package.json`
-2. Publish the new version to NPM
-3. Create a Git tag
-4. Commit the Git tag and the updated `package.json` to version control, then push the changes upstream
-
-It also peforms some pre-release checks, like running tests and ensuring you're releasing from the `main` branch.
-
-For further context on the package and for instructions on how to bump versions in a non-interactive way [visit the README](https://github.com/sindresorhus/np).
+Note: commits with `chore:` will be ignored. If you want updated dependencies to trigger
+a new version, use `fix(deps):` instead.
 
 ## License
 
@@ -134,3 +129,7 @@ The test arguments are passed to `tap`, so you can use arguments, e.g. to run a 
 ```shell
 npm test -g "array::join"
 ```
+
+[gzip-badge]: https://img.shields.io/bundlephobia/minzip/groq-js?label=gzip%20size&style=flat-square
+[size-badge]: https://img.shields.io/bundlephobia/min/groq-js?label=size&style=flat-square
+[bundlephobia]: https://bundlephobia.com/package/groq-js
