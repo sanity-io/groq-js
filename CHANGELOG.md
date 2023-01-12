@@ -5,6 +5,12 @@
 All notable changes to this project will be documented in this file. See
 [Conventional Commits](https://conventionalcommits.org) for commit guidelines.
 
+## [1.1.4](https://github.com/sanity-io/groq-js/compare/v1.1.3...v1.1.4) (2023-01-12)
+
+### Bug Fixes
+
+- add pkg keywords ([8f6fdad](https://github.com/sanity-io/groq-js/commit/8f6fdad53a5173339614f4e562e75afc1fa0d065))
+
 ## [1.1.3](https://github.com/sanity-io/groq-js/compare/v1.1.2...v1.1.3) (2023-01-12)
 
 ### Bug Fixes
