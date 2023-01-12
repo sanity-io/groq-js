@@ -30,6 +30,7 @@
     "dist",
     "src",
     "LICENSE",
+    "API.md",
     "README.md"
   ],
   "scripts": {
