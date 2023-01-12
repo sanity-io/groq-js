@@ -44,11 +44,15 @@ Table of contents:
 ## Installation
 
 ```bash
-# NPM
 npm i groq-js
+```
 
-# Yarn
+```bash
 yarn add groq-js
+```
+
+```bash
+pnpm install groq-js
 ```
 
 ## Documentation
