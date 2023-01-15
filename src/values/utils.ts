@@ -1,3 +1,4 @@
+import {introspectGroqType} from '../introspection'
 import {formatRFC3339, parseRFC3339} from './dateHelpers'
 import {Path} from './Path'
 import {StreamValue} from './StreamValue'
@@ -121,6 +122,11 @@ export function fromJS(val: any): Value {
  */
 // eslint-disable-next-line @typescript-eslint/explicit-module-boundary-types
 export function getType(data: any): GroqType {
+  // Allow overriding the type during introspection
+  if (typeof data == 'object' && data !== null && introspectGroqType in data) {
+    return data[introspectGroqType]
+  }
+
   if (data === null || typeof data === 'undefined') {
     return 'null'
   }
