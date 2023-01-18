@@ -663,6 +663,8 @@ function parseFuncCall(str, startPos, pos) {
     pos = skipWS(str, pos + nameLen)
     if (str[pos] !== '(') return {type: 'error', position: pos}
     pos++
+    // Consume any whitespace in front of the function argument.
+    pos = skipWS(str, pos)
   } else {
     marks.push({name: 'ident', position: startPos}, {name: 'ident_end', position: pos})
     pos = skipWS(str, pos + 1)
