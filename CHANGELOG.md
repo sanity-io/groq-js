@@ -5,6 +5,12 @@
 All notable changes to this project will be documented in this file. See
 [Conventional Commits](https://conventionalcommits.org) for commit guidelines.
 
+## [1.1.6](https://github.com/sanity-io/groq-js/compare/v1.1.5...v1.1.6) (2023-01-18)
+
+### Bug Fixes
+
+- namespaced functions should consume any whitespace before function arguments ([481e88d](https://github.com/sanity-io/groq-js/commit/481e88dcab348d43e3aba19d018f64a2c803cdb4))
+
 ## [1.1.5](https://github.com/sanity-io/groq-js/compare/v1.1.4...v1.1.5) (2023-01-12)
 
 ### Bug Fixes
