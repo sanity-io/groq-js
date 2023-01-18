@@ -12,6 +12,106 @@ Object {
 }
 `
 
+exports[`test/parse.test.ts TAP Basic parsing Complex query > must match snapshot 1`] = `
+Object {
+  "args": Array [
+    Object {
+      "args": Array [
+        Object {
+          "base": Object {
+            "base": Object {
+              "type": "Everything",
+            },
+            "expr": Object {
+              "left": Object {
+                "name": "_type",
+                "type": "AccessAttribute",
+              },
+              "op": "==",
+              "right": Object {
+                "type": "Value",
+                "value": "page",
+              },
+              "type": "OpCall",
+            },
+            "type": "Filter",
+          },
+          "expr": Object {
+            "base": Object {
+              "base": Object {
+                "type": "This",
+              },
+              "expr": Object {
+                "attributes": Array [
+                  Object {
+                    "name": "_id",
+                    "type": "ObjectAttributeValue",
+                    "value": Object {
+                      "alternatives": Array [
+                        Object {
+                          "condition": Object {
+                            "left": Object {
+                              "name": "_id",
+                              "type": "AccessAttribute",
+                            },
+                            "op": "in",
+                            "right": Object {
+                              "args": Array [
+                                Object {
+                                  "type": "Value",
+                                  "value": "drafts.**",
+                                },
+                              ],
+                              "func": AsyncFunction path(args, scope, execute),
+                              "name": "path",
+                              "type": "FuncCall",
+                            },
+                            "type": "OpCall",
+                          },
+                          "type": "SelectAlternative",
+                          "value": Object {
+                            "name": "_id",
+                            "type": "AccessAttribute",
+                          },
+                        },
+                      ],
+                      "fallback": Object {
+                        "left": Object {
+                          "type": "Value",
+                          "value": "drafts.",
+                        },
+                        "op": "+",
+                        "right": Object {
+                          "name": "_id",
+                          "type": "AccessAttribute",
+                        },
+                        "type": "OpCall",
+                      },
+                      "type": "Select",
+                    },
+                  },
+                ],
+                "type": "Object",
+              },
+              "type": "Projection",
+            },
+            "name": "_id",
+            "type": "AccessAttribute",
+          },
+          "type": "Map",
+        },
+      ],
+      "func": AsyncFunction (args, scope, execute),
+      "name": "unique",
+      "type": "FuncCall",
+    },
+  ],
+  "func": AsyncFunction count(args, scope, execute),
+  "name": "count",
+  "type": "FuncCall",
+}
+`
+
 exports[`test/parse.test.ts TAP Basic parsing Example query > must match snapshot 1`] = `
 Object {
   "base": Object {
