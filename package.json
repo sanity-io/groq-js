@@ -51,7 +51,7 @@
   },
   "devDependencies": {
     "@rollup/plugin-typescript": "^8.3.3",
-    "@sanity/semantic-release-preset": "^3.0.2",
+    "@sanity/semantic-release-preset": "^4.0.0",
     "@types/tap": "^15.0.5",
     "@typescript-eslint/eslint-plugin": "^4.22.1",
     "@typescript-eslint/parser": "^4.22.1",
