@@ -16,6 +16,10 @@ export class StaticValue<P, T extends GroqType> {
     return this.type === 'array'
   }
 
+  isMap(): boolean {
+    return this.type === 'map'
+  }
+
   // eslint-disable-next-line require-await
   async get(): Promise<any> {
     return this.data
@@ -29,6 +33,16 @@ export class StaticValue<P, T extends GroqType> {
         }
       })(this.data)
     }
+
+    if (this.data instanceof Map) {
+      return (function* (data) {
+        // This can be simplified when using es2015 target
+        for (const [id, value] of Array.from(data.entries())) {
+          yield fromJS(value)
+        }
+      })(this.data)
+    }
+
     throw new Error(`Cannot iterate over: ${this.type}`)
   }
 }
@@ -132,6 +146,9 @@ export function getType(data: any): GroqType {
   }
   if (data instanceof DateTime) {
     return 'datetime'
+  }
+  if (data instanceof Map) {
+    return 'map'
   }
   return typeof data as GroqType
 }

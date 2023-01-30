@@ -9,6 +9,7 @@ import {
   fromJS,
   fromNumber,
   NULL_VALUE,
+  ObjectValue,
   StreamValue,
   TRUE_VALUE,
   Value,
@@ -142,7 +143,7 @@ const EXECUTORS: ExecutorMap = {
 
   async Filter({base, expr}, scope, execute) {
     const baseValue = await execute(base, scope)
-    if (!baseValue.isArray()) {
+    if (!baseValue.isArray() && !baseValue.isMap()) {
       return NULL_VALUE
     }
     return new StreamValue(async function* () {
@@ -242,7 +243,7 @@ const EXECUTORS: ExecutorMap = {
   async Deref({base}, scope, execute) {
     const value = await execute(base, scope)
 
-    if (!scope.source.isArray()) {
+    if (!scope.source.isArray() && !scope.source.isMap()) {
       return NULL_VALUE
     }
 
@@ -255,9 +256,23 @@ const EXECUTORS: ExecutorMap = {
       return NULL_VALUE
     }
 
-    for await (const doc of scope.source) {
-      if (doc.type === 'object' && id === doc.data._id) {
-        return doc
+    if (scope.source.isArray()) {
+      for await (const doc of scope.source) {
+        if (doc.type === 'object' && id === doc.data._id) {
+          return doc
+        }
+      }
+    }
+
+    if (scope.source.isMap()) {
+      const map = (await scope.source.get()) as Map<any, any>
+      const doc = map.get(id)
+
+      if (doc) {
+        return {
+          type: 'object',
+          data: doc,
+        } as ObjectValue
       }
     }
 

@@ -19,6 +19,20 @@ t.test('Basic parsing', async (t) => {
     t.same(data, [{name: 'T-shirt'}, {name: 'Pants'}])
   })
 
+  t.test('Example query with Map as dataset', async (t) => {
+    const dataset = new Map([
+      ['a1', {_id: 'a1', _type: 'product', name: 'T-shirt'}],
+      ['b2', {_id: 'b2', _type: 'product', name: 'Pants'}],
+      ['c3', {_id: 'c3', _type: 'user', name: 'Bob'}],
+    ])
+    const query = `*[_type == "product"]{name}`
+    const tree = parse(query)
+
+    const value = await evaluate(tree, {dataset})
+    const data = await value.get()
+    t.same(data, [{name: 'T-shirt'}, {name: 'Pants'}])
+  })
+
   t.test('String function', async (t) => {
     const dataset = [
       {_type: 'color', color: 'red', shade: 500, rgb: {r: 255, g: 0, b: 0}},
@@ -101,6 +115,22 @@ t.test('Basic parsing', async (t) => {
     const value = await evaluate(tree, {dataset, params: {name: 'Michael'}})
     const data = await value.get()
     t.same(data, ['Michael'])
+  })
+
+  t.test('Referencing with Map as dataset', async (t) => {
+    const dataset = new Map([
+      ['a', {_id: 'a', _type: 'person', name: 'Michael'}],
+      ['b', {_id: 'b', _type: 'person', name: 'George Michael', father: {_ref: 'a'}}],
+    ])
+
+    const query = `*[_type == "person"]{_id, name, "father": father->name}`
+    const tree = parse(query)
+    const value = await evaluate(tree, {dataset})
+    const data = await value.get()
+    t.same(data, [
+      {_id: 'a', name: 'Michael', father: null},
+      {_id: 'b', name: 'George Michael', father: 'Michael'},
+    ])
   })
 
   t.test('Non-array documents', async (t) => {

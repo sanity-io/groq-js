@@ -35,6 +35,42 @@ The function will throw `GroqSyntaxError` if there's a syntax error in the query
 
 ## `evaluate`
 
+`evaluate` accepts a node returned by [`parse`](#parse) and evaluates the query. Example:
+
+```typescript
+let tree = parse('*[_type == "user"]{name}')
+
+let dataset = [
+  {_type: 'user', name: 'Michael'},
+  {_type: 'company', name: 'Bluth Company'},
+]
+
+// Evaluate a tree against a dataset
+let value = await evaluate(tree, {dataset})
+```
+
+`evaluate` accepts the `dataset` parameter in the following formats:
+
+**List of documents**
+
+```typescript
+let dataset = [
+  {_type: 'user', name: 'Michael'},
+  {_type: 'company', name: 'Bluth Company'},
+]
+```
+
+**ID-Document Map**
+
+```typescript
+let dataset = new Map([
+  ['abc123', {_id: 'abc123', _type: 'user', name: 'Michael'}],
+  ['def456', {_id: 'def456', _type: 'company', name: 'Bluth Company'},
+])
+```
+
+Other options:
+
 ```typescript
 interface EvaluateOptions {
   // The value that will be available as `@` in GROQ.
@@ -67,5 +103,3 @@ interface EvaluateOptions {
 
 declare async function evaluate(node: ExprNode, options: EvaluateOptions = {})
 ```
-
-`evaluate` accepts a node returned by [`parse`](#parse) and evaluates the query.
