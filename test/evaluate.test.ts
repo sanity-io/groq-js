@@ -142,12 +142,12 @@ t.test('Basic parsing', async (t) => {
       ]
       const query = `count(*)`
       const tree = parse(query)
-  
+
       const value = await evaluate(tree, {dataset})
       const data = await value.get()
       t.same(data, 3)
     })
-  
+
     t.test('Count function with map dataset', async (t) => {
       const dataset = new Map([
         ['a1', {_id: 'a1', _type: 'product', name: 'T-shirt'}],
@@ -156,12 +156,12 @@ t.test('Basic parsing', async (t) => {
       ])
       const query = `count(*)`
       const tree = parse(query)
-  
+
       const value = await evaluate(tree, {dataset})
       const data = await value.get()
       t.same(data, 3)
     })
-  });
+  })
 
   t.test('Non-array documents', async (t) => {
     const dataset = {data: [{person: {_ref: 'b'}}]}
