@@ -3,9 +3,15 @@ import {parse} from '../src/1'
 import t from 'tap'
 import {throwsWithMessage} from './testUtils'
 
-t.test('Basic parsing', async (t) => {
+t('Basic parsing', async (t) => {
   t.test('Example query', async (t) => {
     const query = `*[_type == "product"]{name}`
+    const tree = parse(query)
+    t.matchSnapshot(tree)
+  })
+  
+  t('Typed query', async (t) => {
+    const query = `*[_type == "product"]{name<string>}`
     const tree = parse(query)
     t.matchSnapshot(tree)
   })

@@ -234,6 +234,12 @@ function parseExpr(str, pos, level) {
             pos = result.position
             break
           }
+          case '<':
+            let result = parseType(str, startPos, pos)
+            if (result.type === 'error') return result
+            marks = result.marks
+            pos = result.position
+            break
           default: {
             marks = [
               {name: 'this_attr', position: startPos},
@@ -646,6 +652,31 @@ function parseTraversal(str, pos) {
   }
 
   return {type: 'error', position: pos}
+}
+
+function parseType(str, startPos, pos) {
+  let marks = [
+    { name: 'this_attr', position: startPos },
+    { name: 'ident', position: startPos },
+    { name: 'ident_end', position: pos },
+    { name: 'type_annotation', position: pos },
+  ]
+
+  pos = skipWS(str, pos + 1)
+  let typeLen = parseRegex(str, pos, IDENT)
+  if (!typeLen) return {type: 'error', position: pos}
+  marks.push({ name: 'ident', position: pos}, { name: 'ident_end', position: pos + typeLen })
+  pos = skipWS(str, pos + typeLen)
+
+  if (str[pos] !== '>') {
+    return {type: 'error', position: pos}
+  }
+  
+  return {
+    type: 'success',
+    marks,
+    position: pos + 1,
+  }
 }
 
 function parseFuncCall(str, startPos, pos) {

@@ -244,6 +244,7 @@ export interface AccessAttributeNode extends BaseNode {
   type: 'AccessAttribute'
   base?: ExprNode
   name: string
+  attributeType?: string
 }
 
 export interface AccessElementNode extends BaseNode {

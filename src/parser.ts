@@ -89,6 +89,12 @@ const EXPR_BUILDER: MarkVisitor<NodeTypes.ExprNode> = {
   this_attr(p) {
     const name = p.processString()
 
+    let attributeType = "string"
+    if (p.getMark().name === 'type_annotation') {
+      p.shift()
+      attributeType = p.processString()
+    }
+
     if (name === 'null') {
       return {type: 'Value', value: null}
     }
@@ -102,6 +108,7 @@ const EXPR_BUILDER: MarkVisitor<NodeTypes.ExprNode> = {
     return {
       type: 'AccessAttribute',
       name,
+      attributeType,
     }
   },
 

@@ -47,6 +47,7 @@ export type MarkName =
   | 'str_begin'
   | 'sub'
   | 'this'
+  | 'type_annotation'
 
 export interface Mark {
   name: string
