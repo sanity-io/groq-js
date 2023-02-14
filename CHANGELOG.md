@@ -5,6 +5,12 @@
 All notable changes to this project will be documented in this file. See
 [Conventional Commits](https://conventionalcommits.org) for commit guidelines.
 
+## [1.1.7](https://github.com/sanity-io/groq-js/compare/v1.1.6...v1.1.7) (2023-02-14)
+
+### Bug Fixes
+
+- use pkg-utils to generate JS and typings ([195352f](https://github.com/sanity-io/groq-js/commit/195352fb2f9dc1608178fcaac194a66acea20240))
+
 ## [1.1.6](https://github.com/sanity-io/groq-js/compare/v1.1.5...v1.1.6) (2023-01-18)
 
 ### Bug Fixes
