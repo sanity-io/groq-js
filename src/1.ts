@@ -3,6 +3,7 @@ export type {GroqFunction, GroqFunctionArg, GroqPipeFunction} from './evaluator/
 export type {Scope} from './evaluator/scope'
 export type {EvaluateOptions} from './evaluator/types'
 export type {Context, Executor} from './evaluator/types'
+export * from './introspection'
 export * from './nodeTypes'
 export {parse} from './parser'
 export type {ParseOptions} from './types'
