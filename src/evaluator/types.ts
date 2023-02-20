@@ -3,6 +3,12 @@ import {Value} from '../values'
 import {Scope} from './scope'
 
 export type Executor<N = ExprNode> = (node: N, scope: Scope) => Value | PromiseLike<Value>
+export type Document = {
+  _id?: string
+  _type?: string
+  [T: string]: unknown
+}
+export type DereferenceFunction = (obj: {_ref: string}) => PromiseLike<Document | null | undefined>
 
 export interface EvaluateOptions {
   // The value that will be available as `@` in GROQ.
@@ -31,6 +37,9 @@ export interface EvaluateOptions {
     projectId: string
     dataset: string
   }
+
+  // Custom function to resolve document references
+  dereference?: DereferenceFunction
 }
 
 export interface Context {
@@ -42,4 +51,5 @@ export interface Context {
     projectId: string
     dataset: string
   }
+  dereference?: DereferenceFunction
 }

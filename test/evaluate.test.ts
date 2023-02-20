@@ -282,4 +282,24 @@ t.test('Basic parsing', async (t) => {
     const data = await value.get()
     t.same(data, 'abcdef')
   })
+
+  t.test('Custom dereference function', async (t) => {
+    const dataset = [
+      {_id: 'a', name: 'Michael'},
+      {_id: 'b', name: 'George Michael', father: {_ref: 'a'}},
+    ]
+    const datasetAsMap = new Map(dataset.map((data) => [data._id, data]))
+
+    const query = `*[]{ name, "father": father->name }`
+    const tree = parse(query)
+    const value = await evaluate(tree, {
+      dataset,
+      dereference: ({_ref}) => Promise.resolve(datasetAsMap.get(_ref)),
+    })
+    const data = await value.get()
+    t.same(data, [
+      {name: 'Michael', father: null},
+      {name: 'George Michael', father: 'Michael'},
+    ])
+  })
 })

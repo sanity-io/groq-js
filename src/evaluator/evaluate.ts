@@ -253,6 +253,10 @@ const EXECUTORS: ExecutorMap = {
       return NULL_VALUE
     }
 
+    if (scope.context.dereference) {
+      return fromJS(await scope.context.dereference({_ref: id}))
+    }
+
     for await (const doc of scope.source) {
       if (doc.type === 'object' && id === doc.data._id) {
         return doc
@@ -472,6 +476,7 @@ export function evaluateQuery(
       sanity: options.sanity,
       after: options.after ? fromJS(options.after) : null,
       before: options.before ? fromJS(options.before) : null,
+      dereference: options.dereference,
     },
     null
   )
