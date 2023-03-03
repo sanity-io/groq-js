@@ -1,5 +1,3 @@
-import t from 'tap'
-
 export async function throwsWithMessage(
   t: Tap.Test,
   funcUnderTest: () => {},
