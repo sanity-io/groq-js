@@ -5,6 +5,12 @@
 All notable changes to this project will be documented in this file. See
 [Conventional Commits](https://conventionalcommits.org) for commit guidelines.
 
+## [1.1.8](https://github.com/sanity-io/groq-js/compare/v1.1.7...v1.1.8) (2023-03-06)
+
+### Bug Fixes
+
+- **deps:** update devdependencies (non-major) ([#100](https://github.com/sanity-io/groq-js/issues/100)) ([39dc24b](https://github.com/sanity-io/groq-js/commit/39dc24b774423c4fda0a3dc9169d768d771638fe))
+
 ## [1.1.7](https://github.com/sanity-io/groq-js/compare/v1.1.6...v1.1.7) (2023-02-14)
 
 ### Bug Fixes
