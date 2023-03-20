@@ -81,7 +81,7 @@
     "@types/tap": "^15.0.8",
     "@typescript-eslint/eslint-plugin": "^5.56.0",
     "@typescript-eslint/parser": "^5.56.0",
-    "esbuild": "^0.17.11",
+    "esbuild": "^0.17.12",
     "esbuild-register": "^3.4.2",
     "eslint": "^8.36.0",
     "eslint-config-prettier": "^8.7.0",
@@ -91,7 +91,7 @@
     "ndjson": "^2.0.0",
     "prettier": "^2.8.5",
     "prettier-plugin-packagejson": "^2.4.3",
-    "rimraf": "^4.3.0",
+    "rimraf": "^4.4.0",
     "semver": "^7.3.8",
     "tap": "^16.3.4",
     "typescript": "^5.0.2"
