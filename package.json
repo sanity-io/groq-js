@@ -84,7 +84,7 @@
     "esbuild": "^0.17.11",
     "esbuild-register": "^3.4.2",
     "eslint": "^8.36.0",
-    "eslint-config-prettier": "^8.7.0",
+    "eslint-config-prettier": "^8.8.0",
     "eslint-config-sanity": "^6.0.0",
     "eslint-plugin-prettier": "^4.2.1",
     "eslint-plugin-simple-import-sort": "^10.0.0",
