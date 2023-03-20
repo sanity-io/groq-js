@@ -76,7 +76,7 @@
     ]
   },
   "devDependencies": {
-    "@sanity/pkg-utils": "^2.2.8",
+    "@sanity/pkg-utils": "^2.2.13",
     "@sanity/semantic-release-preset": "^4.0.1",
     "@types/tap": "^15.0.8",
     "@typescript-eslint/eslint-plugin": "^5.56.0",
