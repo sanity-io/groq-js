@@ -5,6 +5,12 @@
 All notable changes to this project will be documented in this file. See
 [Conventional Commits](https://conventionalcommits.org) for commit guidelines.
 
+## [1.1.9](https://github.com/sanity-io/groq-js/compare/v1.1.8...v1.1.9) (2023-04-13)
+
+### Bug Fixes
+
+- **package.json:** add `repository` field ([3638394](https://github.com/sanity-io/groq-js/commit/3638394708b89e06895d8af50502c8d1ea3850a6))
+
 ## [1.1.8](https://github.com/sanity-io/groq-js/compare/v1.1.7...v1.1.8) (2023-03-06)
 
 ### Bug Fixes
