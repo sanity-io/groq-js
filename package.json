@@ -7,6 +7,10 @@
     "query",
     "groq"
   ],
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/sanity-io/groq-js.git"
+  },
   "license": "MIT",
   "author": "Sanity.io <hello@sanity.io>",
   "sideEffects": false,
