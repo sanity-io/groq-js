@@ -282,4 +282,20 @@ t.test('Basic parsing', async (t) => {
     const data = await value.get()
     t.same(data, 'abcdef')
   })
+
+  t.test('Apostrophe', async (t) => {
+    const dataset = [
+      {_type: 'color', obj: {prop: 1}},
+      {_type: 'color', obj: {prop: 5}},
+    ]
+    const query = `*[_type == "color"]{ "tada": obj's prop }`
+    const tree = parse(query)
+
+    const value = await evaluate(tree, {dataset})
+    const data = await value.get()
+    t.same(data, [
+      {tada: 1},
+      {tada: 5},
+    ])
+  })
 })

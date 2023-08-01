@@ -554,6 +554,25 @@ function parseTraversal(str, pos) {
         position: pos,
       }
     }
+    case '\'': {
+      if (str.substr(pos, 3) !== '\'s ') return {type: 'error', position: pos}
+
+      pos = skipWS(str, pos + 3)
+      let identStart = pos
+      let identLen = parseRegex(str, pos, IDENT)
+      if (!identLen) return {type: 'error', position: pos}
+      pos += identLen
+
+      return {
+        type: 'success',
+        marks: [
+          {name: 'attr_access', position: startPos},
+          {name: 'ident', position: identStart},
+          {name: 'ident_end', position: pos},
+        ],
+        position: pos,
+      }
+    }
     case '-':
       if (str[pos + 1] !== '>') return {type: 'error', position: pos}
       // ->
