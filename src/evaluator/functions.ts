@@ -69,7 +69,7 @@ export type GroqFunctionArity = number | ((count: number) => boolean)
 export type GroqFunction = (
   args: GroqFunctionArg[],
   scope: Scope,
-  execute: Executor
+  execute: Executor,
 ) => PromiseLike<Value>
 
 export type FunctionSet = Record<string, WithOptions<GroqFunction> | undefined>
@@ -421,7 +421,7 @@ export type GroqPipeFunction = (
   base: Value,
   args: ExprNode[],
   scope: Scope,
-  execute: Executor
+  execute: Executor,
 ) => PromiseLike<Value>
 
 export const pipeFunctions: {[key: string]: WithOptions<GroqPipeFunction>} = {}

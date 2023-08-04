@@ -29,7 +29,7 @@ export function matchAnalyzePattern(text: string): Pattern[] {
 export function matchPatternRegex(text: string): RegExp[] {
   const terms = text.replace(EDGE_CHARS, '').match(CHARS_WITH_WILDCARD) || []
   return terms.map(
-    (term) => new RegExp(`^${term.slice(0, MAX_TERM_LENGTH).replace(/\*/g, '.*')}$`, 'i')
+    (term) => new RegExp(`^${term.slice(0, MAX_TERM_LENGTH).replace(/\*/g, '.*')}$`, 'i'),
   )
 }
 

@@ -34,7 +34,7 @@ const DUMMY_SCOPE = new Scope(
   NULL_VALUE,
   NULL_VALUE,
   {timestamp: new Date(0), identity: 'me', before: null, after: null},
-  null
+  null,
 )
 
 export function tryConstantEvaluate(node: ExprNode): Value | null {
