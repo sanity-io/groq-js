@@ -93,7 +93,7 @@
     "eslint-plugin-prettier": "^4.2.1",
     "eslint-plugin-simple-import-sort": "^10.0.0",
     "ndjson": "^2.0.0",
-    "prettier": "^2.8.5",
+    "prettier": "^3.0.1",
     "prettier-plugin-packagejson": "^2.4.3",
     "rimraf": "^5.0.0",
     "semver": "^7.3.8",
