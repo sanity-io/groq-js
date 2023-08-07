@@ -5,6 +5,12 @@
 All notable changes to this project will be documented in this file. See
 [Conventional Commits](https://conventionalcommits.org) for commit guidelines.
 
+## [1.1.11](https://github.com/sanity-io/groq-js/compare/v1.1.10...v1.1.11) (2023-08-07)
+
+### Bug Fixes
+
+- add `node.module` condition for bundlers ([67365ac](https://github.com/sanity-io/groq-js/commit/67365acadbee7df79c06deedbb1f26ae331f8fb5))
+
 ## [1.1.10](https://github.com/sanity-io/groq-js/compare/v1.1.9...v1.1.10) (2023-08-04)
 
 ### Bug Fixes
