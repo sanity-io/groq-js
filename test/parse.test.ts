@@ -201,3 +201,7 @@ t.test('Delta-GROQ', async (t) => {
     })
   }
 })
+
+t.test('handles parenthesis inside filters (regression bug)', async (t) => {
+  t.doesNotThrow(() => parse('*[(_type == "foo")]'))
+})
