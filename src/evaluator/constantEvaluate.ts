@@ -6,6 +6,7 @@ import {Scope} from './scope'
 function canConstantEvaluate(node: ExprNode): boolean {
   switch (node.type) {
     case 'Group':
+      return canConstantEvaluate(node.base)
     case 'Value':
     case 'Parameter':
       return true
