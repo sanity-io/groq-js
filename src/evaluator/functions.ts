@@ -98,7 +98,7 @@ _global.coalesce = async function coalesce(args, scope, execute) {
 
 _global.count = async function count(args, scope, execute) {
   const inner = await execute(args[0], scope)
-  if (!inner.isArray()) {
+  if (!inner.isArray() && !inner.isMap()) {
     return NULL_VALUE
   }
 

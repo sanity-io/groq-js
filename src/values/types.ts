@@ -11,6 +11,7 @@ export type GroqType =
   | 'number'
   | 'string'
   | 'array'
+  | 'map'
   | 'object'
   | 'path'
   | 'datetime'
@@ -28,6 +29,7 @@ export type DateTimeValue = StaticValue<DateTime, 'datetime'>
 export type PathValue = StaticValue<Path, 'path'>
 export type ObjectValue = StaticValue<Record<string, unknown>, 'object'>
 export type ArrayValue = StaticValue<unknown[], 'array'>
+export type MapValue = StaticValue<Map<string, Value>, 'map'>
 
 export type AnyStaticValue =
   | StringValue
@@ -37,4 +39,5 @@ export type AnyStaticValue =
   | DateTimeValue
   | ObjectValue
   | ArrayValue
+  | MapValue
   | PathValue

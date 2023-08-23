@@ -19,6 +19,11 @@ export class StreamValue {
     return true
   }
 
+  // eslint-disable-next-line class-methods-use-this
+  isMap(): boolean {
+    return true
+  }
+
   async get(): Promise<any> {
     const result = []
     for await (const value of this) {
