@@ -123,7 +123,7 @@ export function traverseElement(mapper: Traversal, right: TraversalResult | null
 
 export function traverseProjection(
   mapper: Traversal,
-  right: TraversalResult | null
+  right: TraversalResult | null,
 ): TraversalResult {
   if (!right) {
     return {

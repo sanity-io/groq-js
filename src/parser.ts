@@ -610,7 +610,7 @@ const TRAVERSE_BUILDER: MarkVisitor<(rhs: TraversalResult | null) => TraversalRe
           base,
           expr,
         }),
-        right
+        right,
       )
   },
 
@@ -637,7 +637,7 @@ const TRAVERSE_BUILDER: MarkVisitor<(rhs: TraversalResult | null) => TraversalRe
           right: rightValue.data,
           isInclusive,
         }),
-        rhs
+        rhs,
       )
   },
 
@@ -671,7 +671,7 @@ const TRAVERSE_BUILDER: MarkVisitor<(rhs: TraversalResult | null) => TraversalRe
             type: 'Deref',
             base,
           }),
-        right
+        right,
       )
   },
 
@@ -850,7 +850,7 @@ function validateArity(name: string, arity: GroqFunctionArity, count: number) {
   if (typeof arity === 'number') {
     if (count !== arity) {
       throw new GroqQueryError(
-        `Incorrect number of arguments to function ${name}(). Expected ${arity}, got ${count}.`
+        `Incorrect number of arguments to function ${name}(). Expected ${arity}, got ${count}.`,
       )
     }
   } else if (arity) {

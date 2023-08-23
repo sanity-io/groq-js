@@ -141,7 +141,7 @@ t.test('Functions', async (t) => {
         throwsWithMessage(
           t,
           () => parse('delta::changedOnly(foo)'),
-          'Undefined function: changedOnly'
+          'Undefined function: changedOnly',
         )
       })
     })
@@ -160,7 +160,7 @@ t.test('Functions', async (t) => {
         throwsWithMessage(
           t,
           () => parse('delta::changedAny(foo)'),
-          'Undefined function: changedAny'
+          'Undefined function: changedAny',
         )
       })
     })

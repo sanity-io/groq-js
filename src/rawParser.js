@@ -568,7 +568,7 @@ function parseTraversal(str, pos) {
         marks.push(
           {name: 'deref_attr', position: identPos},
           {name: 'ident', position: identPos},
-          {name: 'ident_end', position: pos}
+          {name: 'ident_end', position: pos},
         )
       }
 

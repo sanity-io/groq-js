@@ -16,7 +16,7 @@ import {EvaluateOptions, Executor} from './types'
 export function evaluate(
   node: ExprNode,
   scope: Scope,
-  execute: Executor = evaluate
+  execute: Executor = evaluate,
 ): Value | PromiseLike<Value> {
   const func = EXECUTORS[node.type]
   return func(node as any, scope, execute)
@@ -28,7 +28,7 @@ type ExecutorMap = {
   [key in ExprNode['type']]: (
     node: NarrowNode<ExprNode, key>,
     scope: Scope,
-    exec: Executor
+    exec: Executor,
   ) => Value | PromiseLike<Value>
 }
 
@@ -37,7 +37,7 @@ type ExecutorMap = {
  */
 function promiselessApply(
   value: Value | PromiseLike<Value>,
-  cb: (val: Value) => Value
+  cb: (val: Value) => Value,
 ): Value | PromiseLike<Value> {
   if ('then' in value) {
     return value.then(cb)
@@ -460,7 +460,7 @@ const EXECUTORS: ExecutorMap = {
  */
 export function evaluateQuery(
   tree: ExprNode,
-  options: EvaluateOptions = {}
+  options: EvaluateOptions = {},
 ): Value | PromiseLike<Value> {
   const root = fromJS(options.root)
   const dataset = fromJS(options.dataset)
@@ -478,7 +478,7 @@ export function evaluateQuery(
       before: options.before ? fromJS(options.before) : null,
       dereference: options.dereference,
     },
-    null
+    null,
   )
   return evaluate(tree, scope)
 }

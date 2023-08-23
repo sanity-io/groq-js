@@ -1,7 +1,7 @@
 export async function throwsWithMessage(
   t: Tap.Test,
   funcUnderTest: () => {},
-  expectedMessage: string
+  expectedMessage: string,
 ) {
   let didThrow = false
 

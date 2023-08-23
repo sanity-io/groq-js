@@ -15,7 +15,7 @@ export class Scope {
     source: Value,
     value: Value,
     context: Context,
-    parent: Scope | null
+    parent: Scope | null,
   ) {
     this.params = params
     this.source = source

@@ -5,6 +5,36 @@
 All notable changes to this project will be documented in this file. See
 [Conventional Commits](https://conventionalcommits.org) for commit guidelines.
 
+## [1.1.12](https://github.com/sanity-io/groq-js/compare/v1.1.11...v1.1.12) (2023-08-10)
+
+### Bug Fixes
+
+- handle parenthesis directly inside filters ([abe94a9](https://github.com/sanity-io/groq-js/commit/abe94a9fca57108cef084e412307f992eaf93e79))
+
+## [1.1.11](https://github.com/sanity-io/groq-js/compare/v1.1.10...v1.1.11) (2023-08-07)
+
+### Bug Fixes
+
+- add `node.module` condition for bundlers ([67365ac](https://github.com/sanity-io/groq-js/commit/67365acadbee7df79c06deedbb1f26ae331f8fb5))
+
+## [1.1.10](https://github.com/sanity-io/groq-js/compare/v1.1.9...v1.1.10) (2023-08-04)
+
+### Bug Fixes
+
+- **deps:** update non-major ([#126](https://github.com/sanity-io/groq-js/issues/126)) ([f84fbda](https://github.com/sanity-io/groq-js/commit/f84fbda97f317bb484b8c65c850ea889be9d8ecb))
+
+## [1.1.9](https://github.com/sanity-io/groq-js/compare/v1.1.8...v1.1.9) (2023-04-13)
+
+### Bug Fixes
+
+- **package.json:** add `repository` field ([3638394](https://github.com/sanity-io/groq-js/commit/3638394708b89e06895d8af50502c8d1ea3850a6))
+
+## [1.1.8](https://github.com/sanity-io/groq-js/compare/v1.1.7...v1.1.8) (2023-03-06)
+
+### Bug Fixes
+
+- **deps:** update devdependencies (non-major) ([#100](https://github.com/sanity-io/groq-js/issues/100)) ([39dc24b](https://github.com/sanity-io/groq-js/commit/39dc24b774423c4fda0a3dc9169d768d771638fe))
+
 ## [1.1.7](https://github.com/sanity-io/groq-js/compare/v1.1.6...v1.1.7) (2023-02-14)
 
 ### Bug Fixes

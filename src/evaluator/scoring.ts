@@ -9,7 +9,7 @@ const BM25k = 1.2
 export async function evaluateScore(
   node: ExprNode,
   scope: Scope,
-  execute: Executor
+  execute: Executor,
 ): Promise<number> {
   if (node.type === 'OpCall' && node.op === 'match') {
     return evaluateMatchScore(node.left, node.right, scope, execute)
@@ -48,7 +48,7 @@ async function evaluateMatchScore(
   left: ExprNode,
   right: ExprNode,
   scope: Scope,
-  execute: Executor
+  execute: Executor,
 ): Promise<number> {
   const text = await execute(left, scope)
   const pattern = await execute(right, scope)

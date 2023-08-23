@@ -5,7 +5,7 @@
 [![gzip size][gzip-badge]][bundlephobia]
 [![size][size-badge]][bundlephobia]
 
-GROQ-JS is a JavaScript implementation of [GROQ](https://www.sanity.io/docs/data-store/how-queries-work) which follows the official specification.
+GROQ-JS is a JavaScript implementation of [GROQ](https://www.sanity.io/docs/how-queries-work) which follows the official specification.
 
 ```javascript
 import {parse, evaluate} from 'groq-js'
