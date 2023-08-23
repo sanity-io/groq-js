@@ -5,6 +5,12 @@
 All notable changes to this project will be documented in this file. See
 [Conventional Commits](https://conventionalcommits.org) for commit guidelines.
 
+## [1.2.0](https://github.com/sanity-io/groq-js/compare/v1.1.12...v1.2.0) (2023-08-23)
+
+### Features
+
+- add option to provide a custom dereference function ([#98](https://github.com/sanity-io/groq-js/issues/98)) ([7e5c789](https://github.com/sanity-io/groq-js/commit/7e5c7898b104e89ffe2a94b23ac0243b7c179d5f))
+
 ## [1.1.12](https://github.com/sanity-io/groq-js/compare/v1.1.11...v1.1.12) (2023-08-10)
 
 ### Bug Fixes
