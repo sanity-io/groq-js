@@ -8,3 +8,4 @@ node_modules
 /.nyc_output
 /dist
 .DS_Store
+.history
