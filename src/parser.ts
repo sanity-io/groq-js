@@ -411,6 +411,7 @@ const EXPR_BUILDER: MarkVisitor<ExprNode> = {
     return {
       type: 'FuncCall',
       func,
+      namespace,
       name,
       args,
     }
