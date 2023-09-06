@@ -64,6 +64,7 @@ Object {
                               ],
                               "func": AsyncFunction path(args, scope, execute),
                               "name": "path",
+                              "namespace": "global",
                               "type": "FuncCall",
                             },
                             "type": "OpCall",
@@ -103,11 +104,13 @@ Object {
       ],
       "func": AsyncFunction (args, scope, execute),
       "name": "unique",
+      "namespace": "array",
       "type": "FuncCall",
     },
   ],
   "func": AsyncFunction count(args, scope, execute),
   "name": "count",
+  "namespace": "global",
   "type": "FuncCall",
 }
 `

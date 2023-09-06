@@ -113,6 +113,7 @@ export interface EverythingNode extends BaseNode {
 export interface FuncCallNode extends BaseNode {
   type: 'FuncCall'
   func: GroqFunction
+  namespace: string
   name: string
   args: ExprNode[]
 }
