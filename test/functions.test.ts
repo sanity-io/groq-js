@@ -31,6 +31,25 @@ t.test('Functions', async (t) => {
     })
   })
 
+  t.test('dateTime::now()', async (t) => {
+    t.test('returns the same value as dateTime(now())', async (t) => {
+      const query = `{"a": dateTime(now()), "b": dateTime::now()}`
+      const tree = parse(query)
+      const value = await evaluate(tree)
+      const data = await value.get()
+      t.same(data.a, data.b)
+    })
+
+    t.test('is a dateTime object', async (t) => {
+      // This is not possible with `now()`:
+      const query = `string(dateTime::now() + 1000)`
+      const tree = parse(query)
+      const value = await evaluate(tree)
+      const data = await value.get()
+      t.type(data, 'string')
+    })
+  })
+
   t.test('upper()', async (t) => {
     t.test('uppercases the given string', async (t) => {
       const tree = parse('upper("abc")')

@@ -2,6 +2,7 @@ import type {ExprNode} from '../nodeTypes'
 import {
   DateTime,
   FALSE_VALUE,
+  fromDateTime,
   fromJS,
   fromNumber,
   fromPath,
@@ -645,6 +646,12 @@ math.avg = async function (args, scope, execute) {
 }
 math.avg.arity = 1
 
+const dateTime: FunctionSet = {}
+dateTime.now = async function now(args, scope, execute) {
+  return fromDateTime(new DateTime(scope.context.timestamp))
+}
+dateTime.now.arity = 0
+
 export const namespaces: NamespaceSet = {
   global: _global,
   string,
@@ -654,4 +661,5 @@ export const namespaces: NamespaceSet = {
   diff,
   sanity,
   math,
+  dateTime,
 }
