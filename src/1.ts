@@ -15,7 +15,6 @@ export type {
   AnyStaticValue,
   ArrayValue,
   BooleanValue,
-  DateTime,
   DateTimeValue,
   GroqType,
   NullValue,
@@ -28,3 +27,4 @@ export type {
   StringValue,
   Value,
 } from './values'
+export {DateTime} from './values'
