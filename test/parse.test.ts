@@ -135,6 +135,19 @@ t.test('Expression parsing', async (t) => {
       throwsWithMessage(t, () => parse('*{1}'), 'Cannot determine property key for type: Value')
     })
   })
+
+  t.test('when parsing operators', async (t) => {
+    t.test('comparison should be non-associative', async (t) => {
+      const ops = ['==', '!=', '>', '>=', '<=', 'in', 'match']
+      for (const a of ops) {
+        for (const b of ops) {
+          t.test(`${a} and ${b}`, async (t) => {
+            t.throws(() => parse(`left ${a} middle ${b} right`))
+          })
+        }
+      }
+    })
+  })
 })
 
 t.test('Selector validation', async (t) => {

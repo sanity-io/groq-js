@@ -293,7 +293,7 @@ function parseExpr(str, pos, level) {
           case '=': {
             // ==
             if (level > PREC_COMP || lhsLevel <= PREC_COMP) break loop
-            let rhs = parseExpr(str, skipWS(str, innerPos + 2), 5)
+            let rhs = parseExpr(str, skipWS(str, innerPos + 2), PREC_COMP + 1)
             if (rhs.type === 'error') return rhs
             marks.unshift({name: 'comp', position: startPos})
             marks.push({name: 'op', position: innerPos}, {name: 'op_end', position: innerPos + 2})
@@ -429,7 +429,7 @@ function parseExpr(str, pos, level) {
       case '!': {
         // !=
         if (str[innerPos + 1] !== '=') break loop
-        if (level > PREC_COMP || lhsLevel < PREC_COMP) break loop
+        if (level > PREC_COMP || lhsLevel <= PREC_COMP) break loop
         let rhs = parseExpr(str, skipWS(str, innerPos + 2), PREC_COMP + 1)
         if (rhs.type === 'error') return rhs
         marks.unshift({name: 'comp', position: startPos})
