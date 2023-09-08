@@ -5,6 +5,18 @@
 All notable changes to this project will be documented in this file. See
 [Conventional Commits](https://conventionalcommits.org) for commit guidelines.
 
+## [1.3.0](https://github.com/sanity-io/groq-js/compare/v1.2.0...v1.3.0) (2023-09-08)
+
+### Features
+
+- export `DateTime` class (fixes [#144](https://github.com/sanity-io/groq-js/issues/144)) ([4d4e397](https://github.com/sanity-io/groq-js/commit/4d4e397d1ed91e9f470093d007aa833c4861e5de))
+- expose `namespace` on FuncCall node (fixes [#145](https://github.com/sanity-io/groq-js/issues/145)) ([ea77e7e](https://github.com/sanity-io/groq-js/commit/ea77e7e36a5835e86836dbfa5171580249406e16))
+- implement dateTime namespace (fixes [#143](https://github.com/sanity-io/groq-js/issues/143)) ([932b2bc](https://github.com/sanity-io/groq-js/commit/932b2bcd4e3dd4123af7a8b272a891e198933d4e))
+
+### Bug Fixes
+
+- != should be non-associative (fixes [#147](https://github.com/sanity-io/groq-js/issues/147)) ([8c1a9e3](https://github.com/sanity-io/groq-js/commit/8c1a9e3d13b2d30a6ae34e74c890737b33ca1278))
+
 ## [1.2.0](https://github.com/sanity-io/groq-js/compare/v1.1.12...v1.2.0) (2023-08-23)
 
 ### Features
