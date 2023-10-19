@@ -37,7 +37,7 @@ jobs:
         node-version: ['14.x', '16.x', '18.x', '19.x']
 
     steps:
-      - uses: actions/checkout@v3
+      - uses: actions/checkout@v4
       - name: Use Node.js ${{ matrix.node-version }}
         uses: actions/setup-node@v3
         with:
@@ -62,7 +62,7 @@ jobs:
     if: github.event.inputs.release == 'true'
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v3
+      - uses: actions/checkout@v4
         with:
           # Need to fetch entire commit history to
           # analyze every commit since last release
