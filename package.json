@@ -89,7 +89,7 @@
     "esbuild-register": "^3.4.2",
     "eslint": "^8.48.0",
     "eslint-config-prettier": "^9.0.0",
-    "eslint-config-sanity": "^6.0.0",
+    "eslint-config-sanity": "^7.0.1",
     "eslint-plugin-prettier": "^5.0.0",
     "eslint-plugin-simple-import-sort": "^10.0.0",
     "ndjson": "^2.0.0",
