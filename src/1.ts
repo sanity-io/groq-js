@@ -20,11 +20,10 @@ export type {
   NullValue,
   NumberValue,
   ObjectValue,
-  Path,
   PathValue,
   StaticValue,
   StreamValue,
   StringValue,
   Value,
 } from './values'
-export {DateTime} from './values'
+export {DateTime, Path} from './values'
