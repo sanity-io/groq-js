@@ -1,0 +1,7 @@
+{
+  "extends": "./tsconfig.json",
+  "compilerOptions": {
+    // This is ironically needed to support ES6 modules in test files.
+    "module": "CommonJS"
+  }
+}

@@ -4,8 +4,7 @@ node_modules
 /test/datasets
 /groq-test-suite
 /docs
-/coverage
-/.nyc_output
+/.tap
 /dist
 .DS_Store
 .history
