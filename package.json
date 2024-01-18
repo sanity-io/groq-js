@@ -65,7 +65,7 @@
     "prepublishOnly": "npm run build",
     "prettify": "prettier --write .",
     "prettify-check": "prettier --check .",
-    "test": "tap --no-timeout test/*.test.*",
+    "test": "tap --timeout 0 test/*.test.*",
     "test:generate": "./test/generate.sh"
   },
   "browserslist": [
@@ -73,11 +73,9 @@
     "maintained node versions"
   ],
   "tap": {
-    "check-coverage": false,
-    "node-arg": [
-      "-r",
-      "esbuild-register"
-    ]
+    "disable-coverage": true,
+    "allow-incomplete-coverage": true,
+    "allow-empty-coverage": true
   },
   "devDependencies": {
     "@sanity/pkg-utils": "^2.4.8",
@@ -85,8 +83,6 @@
     "@types/tap": "^15.0.8",
     "@typescript-eslint/eslint-plugin": "^6.5.0",
     "@typescript-eslint/parser": "^6.5.0",
-    "esbuild": "^0.19.2",
-    "esbuild-register": "^3.4.2",
     "eslint": "^8.48.0",
     "eslint-config-prettier": "^9.0.0",
     "eslint-config-sanity": "^7.0.1",
@@ -97,7 +93,7 @@
     "prettier-plugin-packagejson": "^2.4.5",
     "rimraf": "^5.0.0",
     "semver": "^7.5.4",
-    "tap": "^16.3.8",
+    "tap": "^18.6.1",
     "typescript": "^5.2.2"
   },
   "engines": {
