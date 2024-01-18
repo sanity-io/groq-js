@@ -5,6 +5,12 @@
 All notable changes to this project will be documented in this file. See
 [Conventional Commits](https://conventionalcommits.org) for commit guidelines.
 
+## [1.4.0](https://github.com/sanity-io/groq-js/compare/v1.3.0...v1.4.0) (2024-01-18)
+
+### Features
+
+- export Path class ([c7a8a46](https://github.com/sanity-io/groq-js/commit/c7a8a46cefbede3ad16816137694410a3cbf827d))
+
 ## [1.3.0](https://github.com/sanity-io/groq-js/compare/v1.2.0...v1.3.0) (2023-09-08)
 
 ### Features
