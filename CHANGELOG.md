@@ -5,6 +5,12 @@
 All notable changes to this project will be documented in this file. See
 [Conventional Commits](https://conventionalcommits.org) for commit guidelines.
 
+## [1.4.1](https://github.com/sanity-io/groq-js/compare/v1.4.0...v1.4.1) (2024-01-25)
+
+### Bug Fixes
+
+- **deps:** update dependency @sanity/pkg-utils to v4 ([#163](https://github.com/sanity-io/groq-js/issues/163)) ([065f28f](https://github.com/sanity-io/groq-js/commit/065f28f7f96a2752a5253c2143e0ba6a69e6f3ce))
+
 ## [1.4.0](https://github.com/sanity-io/groq-js/compare/v1.3.0...v1.4.0) (2024-01-18)
 
 ### Features
