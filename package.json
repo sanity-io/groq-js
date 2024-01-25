@@ -68,10 +68,7 @@
     "test": "tap --no-timeout test/*.test.*",
     "test:generate": "./test/generate.sh"
   },
-  "browserslist": [
-    "> 0.2% and supports es6-module and supports es6-module-dynamic-import and not dead and not IE 11",
-    "maintained node versions"
-  ],
+  "browserslist": "extends @sanity/browserslist-config",
   "tap": {
     "check-coverage": false,
     "node-arg": [
