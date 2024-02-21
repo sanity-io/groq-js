@@ -134,6 +134,10 @@ t.test('Expression parsing', async (t) => {
     t.test('throws when the key cannot be determined', async (t) => {
       throwsWithMessage(t, () => parse('*{1}'), 'Cannot determine property key for type: Value')
     })
+
+    t.test('can extract from group', async (t) => {
+      t.matchSnapshot(parse('*{(id)}'))
+    })
   })
 
   t.test('when parsing operators', async (t) => {
