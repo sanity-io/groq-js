@@ -158,9 +158,7 @@ Object {
 }
 `
 
-exports[
-  `test/parse.test.ts TAP Basic parsing Object expression starting with string > must match snapshot 1`
-] = `
+exports[`test/parse.test.ts TAP Basic parsing Object expression starting with string > must match snapshot 1`] = `
 Object {
   "attributes": Array [
     Object {
@@ -187,9 +185,7 @@ Object {
 }
 `
 
-exports[
-  `test/parse.test.ts TAP Basic parsing Space after field in objects > must match snapshot 1`
-] = `
+exports[`test/parse.test.ts TAP Basic parsing Space after field in objects > must match snapshot 1`] = `
 Object {
   "attributes": Array [
     Object {
@@ -205,9 +201,7 @@ Object {
 }
 `
 
-exports[
-  `test/parse.test.ts TAP Basic parsing Trailing comma in function call > must match snapshot 1`
-] = `
+exports[`test/parse.test.ts TAP Basic parsing Trailing comma in function call > must match snapshot 1`] = `
 Object {
   "alternatives": Array [],
   "fallback": Object {
@@ -215,5 +209,36 @@ Object {
     "value": 123,
   },
   "type": "Select",
+}
+`
+
+exports[`test/parse.test.ts TAP Expression parsing when extracting property keys can extract from group > must match snapshot 1`] = `
+Object {
+  "base": Object {
+    "type": "Everything",
+  },
+  "expr": Object {
+    "base": Object {
+      "type": "This",
+    },
+    "expr": Object {
+      "attributes": Array [
+        Object {
+          "name": "id",
+          "type": "ObjectAttributeValue",
+          "value": Object {
+            "base": Object {
+              "name": "id",
+              "type": "AccessAttribute",
+            },
+            "type": "Group",
+          },
+        },
+      ],
+      "type": "Object",
+    },
+    "type": "Projection",
+  },
+  "type": "Map",
 }
 `
