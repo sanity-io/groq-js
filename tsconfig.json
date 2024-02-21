@@ -10,6 +10,6 @@
     "skipLibCheck": true,
     "moduleResolution": "node",
     "forceConsistentCasingInFileNames": true,
-    "outDir": "dist",
-  },
+    "outDir": "dist"
+  }
 }
