@@ -72,23 +72,23 @@ export function evaluateQueryType(query: string, schema: Schema): TypeNode {
   }
 
   const ast = parse(query)
-  $debug('evaluateQueryType.ast', JSON.stringify(ast, null, 2))
+  $debug('evaluateQueryType.ast %O', ast)
   const parsed = walk({
     node: ast,
     scope: createScope([], undefined, createContext(schema)),
   })
 
-  $trace('evaluateQueryType.parsed', JSON.stringify(parsed, null, 2))
+  $trace('evaluateQueryType.parsed %O', parsed)
 
   const optimized = optimizeUnions(parsed)
-  $trace('evaluateQueryType.optimized', JSON.stringify(optimized, null, 2))
+  $trace('evaluateQueryType.optimized %O', optimized)
 
   return optimized
 }
 
 function handleDerefNode(node: DerefNode, scope: Scope): TypeNode {
   const derferencedField = walk({node: node.base, scope})
-  $trace('deref.base', JSON.stringify(derferencedField, null, 2))
+  $trace('deref.base %O', derferencedField)
 
   return mapOptional(derferencedField, (field) => {
     if (field.type === 'null' || field.type === 'never' || field.type === 'unknown') {
@@ -149,8 +149,8 @@ function mapObjectSplat(
   }
 }
 function handleObjectNode(node: ObjectNode, scope: Scope) {
-  $trace('object.node', JSON.stringify(node, null, 2))
-  $trace('object.scope', JSON.stringify(scope, null, 2))
+  $trace('object.node %O', node)
+  $trace('object.scope %O', scope)
   const fields: Record<string, ObjectKeyValue<UnionTypeNode>> = {}
   for (const attr of node.attributes) {
     if (attr.type === 'ObjectAttributeValue') {
@@ -171,7 +171,7 @@ function handleObjectNode(node: ObjectNode, scope: Scope) {
 
     if (attr.type === 'ObjectSplat') {
       const value = walk({node: attr.value, scope})
-      $trace('object.splat.value', JSON.stringify(value, null, 2))
+      $trace('object.splat.value %O', value)
       const attributeFields: Record<string, TypeNode[]> = {}
 
       mapObjectSplat(value, scope, (node) => {
@@ -200,7 +200,7 @@ function handleObjectNode(node: ObjectNode, scope: Scope) {
     if (attr.type === 'ObjectConditionalSplat') {
       const attributeFields: Record<string, TypeNode[]> = {}
       const condition = resolveCondition(attr.condition, scope)
-      $trace('object.conditional.splat.condition', JSON.stringify(condition, null, 2))
+      $trace('object.conditional.splat.condition %O', condition)
       if (condition) {
         const value = walk({node: attr.value, scope})
 
@@ -396,7 +396,7 @@ function handleSelectNode(node: SelectNode, scope: Scope): TypeNode {
 
 function handleArrayCoerceNode(node: ArrayCoerceNode, scope: Scope): TypeNode {
   const base = walk({node: node.base, scope})
-  $trace('arrayCoerce.base', JSON.stringify(base, null, 2))
+  $trace('arrayCoerce.base %O', base)
   return mapOptional(base, (newBase) => {
     if (newBase.type !== 'array') {
       return {type: 'null'} satisfies NullTypeNode
@@ -416,7 +416,7 @@ function handleFlatMap(node: FlatMapNode, scope: Scope): TypeNode {
 }
 function handleMap(node: MapNode, scope: Scope): TypeNode {
   const base = walk({node: node.base, scope})
-  $trace('map.base', JSON.stringify(base, null, 2))
+  $trace('map.base %O', base)
   return mapOptional(base, (base) => {
     if (base.type !== 'array') {
       return {type: 'unknown'} satisfies UnknownTypeNode
@@ -424,7 +424,7 @@ function handleMap(node: MapNode, scope: Scope): TypeNode {
 
     if (base.of.type === 'union') {
       const value = walk({node: node.expr, scope: scope.subscope(base.of.of, true)}) // re use the current parent, this is a "sub" scope
-      $trace('map.expr', JSON.stringify(value, null, 2))
+      $trace('map.expr %O', value)
 
       return {
         type: 'array',
@@ -463,8 +463,8 @@ function mapProjectionInScope(
 
 function handleProjectionNode(node: ProjectionNode, scope: Scope): TypeNode {
   const base = walk({node: node.base, scope})
-  $trace('projection.base', JSON.stringify(base, null, 2))
-  $trace('projection.scope', JSON.stringify(scope.value, null, 2))
+  $trace('projection.base %O', base)
+  $trace('projection.scope %O', scope.value)
 
   return mapOptional(base, (newBase) => {
     if (newBase.type === 'unknown' || newBase.type === 'null' || newBase.type === 'never') {
@@ -492,14 +492,14 @@ function createFilterScope(base: TypeNode, scope: Scope): Scope {
 }
 function handleFilterNode(node: FilterNode, scope: Scope): TypeNode {
   const base = walk({node: node.base, scope})
-  $trace('filter.base', JSON.stringify(base, null, 2))
+  $trace('filter.base %O', base)
 
   return {
     type: 'array',
     of: mapOptional(base, (base) => {
-      $trace('filter.resolving', JSON.stringify(base, null, 2))
+      $trace('filter.resolving %O', base)
       const resolved = resolveFilter(node.expr, createFilterScope(base, scope))
-      $trace('filter.resolved', JSON.stringify(resolved, null, 2))
+      $trace('filter.resolved %O', resolved)
 
       if (resolved.type === 'never') {
         return {type: 'never'}
@@ -543,13 +543,13 @@ export function handleAccessAttributeNode(node: AccessAttributeNode, scope: Scop
   if (node.base) {
     attributeBase = walk({node: node.base, scope})
   }
-  $trace('accessAttribute.base', node.name, JSON.stringify(attributeBase, null, 2))
+  $trace('accessAttribute.base %s %O', node.name, attributeBase)
 
   return mapOptional(attributeBase, (base) =>
     mapFieldInScope(base, scope, (base) => {
       const field = base.fields.find((field) => field.key === node.name)
       if (field) {
-        $debug(`accessAttribute.field found ${node.name}`, JSON.stringify(field, null, 2))
+        $debug(`accessAttribute.field found ${node.name} %O`, field)
         return field.value
       }
       $warn(
@@ -565,7 +565,7 @@ function handleAccessElementNode(node: AccessElementNode, scope: Scope): TypeNod
     return {type: 'unknown'} satisfies UnknownTypeNode
   }
   const base = walk({node: node.base, scope})
-  $trace('accessElement.base', JSON.stringify(base, null, 2))
+  $trace('accessElement.base %O', base)
   if (base.type !== 'array') {
     return {type: 'null'} satisfies NullTypeNode
   }
@@ -626,7 +626,7 @@ function handleParentNode(node: ParentNode, scope: Scope): TypeNode {
   for (let n = node.n; n > 0; n--) {
     newScope = newScope?.parent
   }
-  $debug('parent.scope', node.n, JSON.stringify(newScope, null, 2))
+  $trace('parent.scope %n %O', node.n, newScope)
   if (newScope !== undefined) {
     return {type: 'array', of: newScope.value}
   }
@@ -729,7 +729,7 @@ export function walk({node, scope}: {node: ExprNode; scope: Scope}): TypeNode {
     }
 
     case 'This': {
-      $trace('this', JSON.stringify(scope.value, null, 2))
+      $trace('this %O', scope.value)
       return scope.value
     }
 
@@ -781,7 +781,7 @@ function walkAndIgnoreOptional({node, scope}: {node: ExprNode; scope: Scope}): T
 }
 
 function evaluateEquality(left: TypeNode, right: TypeNode): boolean | undefined {
-  $trace('opcall ==', JSON.stringify({left, right}, null, 2))
+  $trace('opcall == %O', {left, right})
   if (left.type === 'unknown' || right.type === 'unknown') {
     return false
   }
@@ -825,7 +825,7 @@ function evaluateEquality(left: TypeNode, right: TypeNode): boolean | undefined 
 
 // eslint-disable-next-line complexity, max-statements
 function resolveCondition(expr: ExprNode, scope: Scope): boolean | undefined {
-  $trace('resolveCondition.expr', JSON.stringify(expr, null, 2))
+  $trace('resolveCondition.expr %O', expr)
   switch (expr.type) {
     case 'Value': {
       const value = walk({node: expr, scope})
@@ -833,13 +833,13 @@ function resolveCondition(expr: ExprNode, scope: Scope): boolean | undefined {
     }
     case 'And': {
       const left = resolveCondition(expr.left, scope)
-      $trace('resolveCondition.and.left', JSON.stringify(left, null, 2))
+      $trace('resolveCondition.and.left %O', left)
       if (left === false) {
         return false
       }
 
       const right = resolveCondition(expr.right, scope)
-      $trace('resolveCondition.and.right', JSON.stringify(right, null, 2))
+      $trace('resolveCondition.and.right %O', right)
       if (right === false) {
         return false
       }
@@ -851,15 +851,15 @@ function resolveCondition(expr: ExprNode, scope: Scope): boolean | undefined {
       return true
     }
     case 'Or': {
-      $trace('resolveCondition.or.expr', JSON.stringify(expr, null, 2))
+      $trace('resolveCondition.or.expr %O', expr)
       const left = resolveCondition(expr.left, scope)
-      $trace('resolveCondition.or.left', JSON.stringify(left, null, 2))
+      $trace('resolveCondition.or.left %O', left)
       if (left === true) {
         return true
       }
 
       const right = resolveCondition(expr.right, scope)
-      $trace('resolveCondition.or.right', JSON.stringify(right, null, 2))
+      $trace('resolveCondition.or.right %O', right)
       if (right === true) {
         return true
       }
@@ -874,14 +874,14 @@ function resolveCondition(expr: ExprNode, scope: Scope): boolean | undefined {
         case '==': {
           const left = walkAndIgnoreOptional({node: expr.left, scope})
           const right = walkAndIgnoreOptional({node: expr.right, scope})
-          $trace('opcall ==', JSON.stringify({left, right}, null, 2))
+          $trace('opcall == %O', {left, right})
 
           return evaluateEquality(left, right)
         }
         case '!=': {
           const left = walkAndIgnoreOptional({node: expr.left, scope})
           const right = walkAndIgnoreOptional({node: expr.right, scope})
-          $trace('opcall !=', JSON.stringify({left, right}, null, 2))
+          $trace('opcall != %O', {left, right})
 
           const result = evaluateEquality(left, right)
           if (result === undefined) {
@@ -896,7 +896,7 @@ function resolveCondition(expr: ExprNode, scope: Scope): boolean | undefined {
             return false
           }
 
-          $trace('opcall in', JSON.stringify({left, right}, null, 2))
+          $trace('opcall in %O', {left, right})
           if (left.type === 'string' && right.type === 'array' && right.of.type === 'union') {
             return right.of.of
               .map((node) => isPrimitiveTypeNode(node) && node.value)
@@ -999,7 +999,7 @@ function resolveCondition(expr: ExprNode, scope: Scope): boolean | undefined {
 
 // eslint-disable-next-line complexity, max-statements
 function resolveFilter(expr: ExprNode, scope: Scope): TypeNode {
-  $trace('resolveFilter.expr', JSON.stringify(expr, null, 2))
+  $trace('resolveFilter.expr %O', expr)
   const filtered = scope.value.of.filter(
     (node) =>
       // create a new scope with the current scopes parent as the parent. It's only a temporary scope since we only want to resolve the condition
@@ -1007,8 +1007,8 @@ function resolveFilter(expr: ExprNode, scope: Scope): TypeNode {
       resolveCondition(expr, scope.subscope([node], true)) !== false,
   )
   $trace(
-    `resolveFilter ${expr.type === 'OpCall' ? `${expr.type}/${expr.op}` : expr.type}`,
-    JSON.stringify(filtered, null, 2),
+    `resolveFilter ${expr.type === 'OpCall' ? `${expr.type}/${expr.op}` : expr.type} %O`,
+    filtered,
   )
   return {type: 'union', of: filtered}
 }
