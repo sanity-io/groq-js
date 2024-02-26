@@ -1,40 +1,4 @@
-import {ReferenceTypeNode, TypeNode} from './types'
-
-export function optimizeDocumentReferences(field: TypeNode): TypeNode {
-  if (field.type === 'document') {
-    return {
-      type: 'reference',
-      to: field.name,
-      resolved: true,
-    } satisfies ReferenceTypeNode
-  }
-  if (field.type === 'optional') {
-    field.value = optimizeDocumentReferences(field.value)
-    return field
-  }
-
-  if (field.type === 'array' && field.of !== undefined) {
-    field.of = optimizeDocumentReferences(field.of)
-    return field
-  }
-
-  if (field.type === 'object') {
-    for (const idx in field.fields) {
-      if (!Object.hasOwn(field.fields, idx)) {
-        continue
-      }
-
-      field.fields[idx].value = optimizeDocumentReferences(field.fields[idx].value)
-    }
-  }
-
-  if (field.type === 'union') {
-    field.of = field.of.map((subField) => optimizeDocumentReferences(subField))
-    return field
-  }
-
-  return field
-}
+import {TypeNode} from './types'
 
 export function hashField(field: TypeNode): string | null {
   switch (field.type) {
@@ -78,10 +42,6 @@ export function hashField(field: TypeNode): string | null {
 
     case 'union': {
       return `${field.type}:${field.of.map(hashField).join(',')}`
-    }
-
-    case 'document': {
-      return `${field.type}:${field.name}`
     }
 
     default: {
