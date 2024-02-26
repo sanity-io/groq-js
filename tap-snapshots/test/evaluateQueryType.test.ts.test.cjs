@@ -80,9 +80,80 @@ Object {
 exports[`test/evaluateQueryType.test.ts TAP filter order doesnt matter > must match snapshot 1`] = `
 Object {
   "of": Object {
-    "resolved": true,
-    "to": "author",
-    "type": "reference",
+    "fields": Array [
+      Object {
+        "key": "_id",
+        "type": "objectKeyValue",
+        "value": Object {
+          "type": "string",
+        },
+      },
+      Object {
+        "key": "_type",
+        "type": "objectKeyValue",
+        "value": Object {
+          "type": "string",
+          "value": "author",
+        },
+      },
+      Object {
+        "key": "name",
+        "type": "objectKeyValue",
+        "value": Object {
+          "type": "string",
+        },
+      },
+      Object {
+        "key": "firstname",
+        "type": "objectKeyValue",
+        "value": Object {
+          "type": "string",
+        },
+      },
+      Object {
+        "key": "lastname",
+        "type": "objectKeyValue",
+        "value": Object {
+          "type": "string",
+        },
+      },
+      Object {
+        "key": "object",
+        "type": "objectKeyValue",
+        "value": Object {
+          "fields": Array [
+            Object {
+              "key": "subfield",
+              "type": "objectKeyValue",
+              "value": Object {
+                "type": "string",
+              },
+            },
+          ],
+          "type": "object",
+        },
+      },
+      Object {
+        "key": "optionalObject",
+        "type": "objectKeyValue",
+        "value": Object {
+          "type": "optional",
+          "value": Object {
+            "fields": Array [
+              Object {
+                "key": "subfield",
+                "type": "objectKeyValue",
+                "value": Object {
+                  "type": "string",
+                },
+              },
+            ],
+            "type": "object",
+          },
+        },
+      },
+    ],
+    "type": "object",
   },
   "type": "array",
 }

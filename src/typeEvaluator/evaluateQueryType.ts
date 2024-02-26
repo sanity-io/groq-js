@@ -30,7 +30,7 @@ import type {
 import {parse} from '../parser'
 import {StaticValue} from '../values'
 import {handleFuncCallNode} from './functions'
-import {optimizeDocumentReferences, optimizeUnions} from './optimizations'
+import {optimizeUnions} from './optimizations'
 import {createContext, createScope, Scope} from './scope'
 import type {
   ArrayTypeNode,
@@ -80,7 +80,7 @@ export function evaluateQueryType(query: string, schema: Schema): TypeNode {
 
   $trace('evaluateQueryType.parsed', JSON.stringify(parsed, null, 2))
 
-  const optimized = optimizeDocumentReferences(optimizeUnions(parsed))
+  const optimized = optimizeUnions(parsed)
   $trace('evaluateQueryType.optimized', JSON.stringify(optimized, null, 2))
 
   return optimized
@@ -144,7 +144,7 @@ function mapObjectSplat(
     }
   }
 
-  if (node.type === 'object' || node.type === 'document') {
+  if (node.type === 'object') {
     mapper(node)
   }
 }
@@ -532,7 +532,7 @@ function mapFieldInScope(
     return mapOptional(lookupField, (subField) => mapFieldInScope(subField, scope, mapper))
   }
 
-  if (field.type === 'document' || field.type === 'object') {
+  if (field.type === 'object') {
     return mapper(field)
   }
   return {type: 'unknown'} satisfies UnknownTypeNode
@@ -646,9 +646,14 @@ function handleEverythingNode(_: EverythingNode, scope: Scope): TypeNode {
     type: 'array',
     of: {
       type: 'union',
-      of: scope.context.schema.filter((obj): obj is Document => obj.type === 'document'),
+      of: scope.context.schema
+        .filter((obj): obj is Document => obj.type === 'document')
+        .map((doc) => ({
+          type: 'object',
+          fields: doc.fields,
+        })),
     },
-  } satisfies ArrayTypeNode<UnionTypeNode<Document>>
+  } satisfies ArrayTypeNode<UnionTypeNode<ObjectTypeNode>>
 }
 
 /**

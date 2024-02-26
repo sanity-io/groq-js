@@ -20,7 +20,10 @@ export function createContext(schema: Schema): Context {
       for (const val of this.schema) {
         if (val.type === 'document') {
           if (val.name === ref.to) {
-            return val
+            return {
+              type: 'object',
+              fields: val.fields,
+            }
           }
         }
       }
