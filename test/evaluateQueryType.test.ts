@@ -6,7 +6,6 @@ import {
   NeverTypeNode,
   ObjectTypeNode,
   OptionalTypeNode,
-  ReferenceTypeNode,
   Schema,
   TypeNode,
   UnionTypeNode,
@@ -366,11 +365,7 @@ t.test('no projection', (t) => {
   const res = evaluateQueryType(query, schemas)
   t.strictSame(res, {
     type: 'array',
-    of: {
-      type: 'reference',
-      to: 'author',
-      resolved: true,
-    },
+    of: findSchemaType('author'),
   })
   t.end()
 })
@@ -379,11 +374,7 @@ t.test('pipe func call', (t) => {
   const res = evaluateQueryType(query, schemas)
   t.strictSame(res, {
     type: 'array',
-    of: {
-      type: 'reference',
-      to: 'author',
-      resolved: true,
-    },
+    of: findSchemaType('author'),
   })
   t.end()
 })
@@ -393,11 +384,7 @@ t.test('element access', (t) => {
   const res = evaluateQueryType(query, schemas)
   t.strictSame(res, {
     type: 'optional',
-    value: {
-      type: 'reference',
-      to: 'author',
-      resolved: true,
-    },
+    value: findSchemaType('author'),
   })
   t.end()
 })
@@ -407,11 +394,7 @@ t.test('access attribute with objects', (t) => {
   const res = evaluateQueryType(query, schemas)
   t.strictSame(res, {
     type: 'optional',
-    value: {
-      type: 'reference',
-      to: 'author',
-      resolved: true,
-    },
+    value: findSchemaType('author'),
   })
   t.end()
 })
@@ -421,11 +404,7 @@ t.test('access attribute with derefences', (t) => {
   const res = evaluateQueryType(query, schemas)
   t.strictSame(res, {
     type: 'optional',
-    value: {
-      type: 'reference',
-      to: 'post',
-      resolved: true,
-    },
+    value: findSchemaType('post'),
   })
   t.end()
 })
@@ -434,13 +413,9 @@ t.test('parameters', (t) => {
   const query = `*[_type == "author" && _id == $id]`
   const res = evaluateQueryType(query, schemas)
   t.strictSame(res, {
-    of: {
-      to: 'author',
-      type: 'reference',
-      resolved: true,
-    },
+    of: findSchemaType('author'),
     type: 'array',
-  } satisfies ArrayTypeNode<ReferenceTypeNode>)
+  } satisfies ArrayTypeNode)
 
   t.end()
 })
@@ -449,13 +424,9 @@ t.test('filtering on sub-child', (t) => {
   const query = `*[_type == "author" && object.subfield == $slug]`
   const res = evaluateQueryType(query, schemas)
   t.strictSame(res, {
-    of: {
-      to: 'author',
-      type: 'reference',
-      resolved: true,
-    },
+    of: findSchemaType('author'),
     type: 'array',
-  } satisfies ArrayTypeNode<ReferenceTypeNode>)
+  } satisfies ArrayTypeNode)
 
   t.end()
 })
@@ -467,20 +438,9 @@ t.test('in operator', (t) => {
     type: 'array',
     of: {
       type: 'union',
-      of: [
-        {
-          type: 'reference',
-          to: 'post',
-          resolved: true,
-        },
-        {
-          type: 'reference',
-          to: 'author',
-          resolved: true,
-        },
-      ],
+      of: [findSchemaType('post'), findSchemaType('author')],
     },
-  } satisfies ArrayTypeNode<UnionTypeNode<ReferenceTypeNode>>)
+  } satisfies ArrayTypeNode<UnionTypeNode>)
 
   t.end()
 })
@@ -492,20 +452,9 @@ t.test('match operator', (t) => {
     type: 'array',
     of: {
       type: 'union',
-      of: [
-        {
-          type: 'reference',
-          to: 'namespace.one',
-          resolved: true,
-        },
-        {
-          type: 'reference',
-          to: 'namespace.two',
-          resolved: true,
-        },
-      ],
+      of: [findSchemaType('namespace.one'), findSchemaType('namespace.two')],
     },
-  } satisfies ArrayTypeNode<UnionTypeNode<ReferenceTypeNode>>)
+  } satisfies ArrayTypeNode<UnionTypeNode>)
 
   t.end()
 })
@@ -515,12 +464,8 @@ t.test('subfilter matches', (t) => {
   const res = evaluateQueryType(query, schemas)
   t.strictSame(res, {
     type: 'array',
-    of: {
-      type: 'reference',
-      to: 'namespace.one',
-      resolved: true,
-    },
-  } satisfies ArrayTypeNode<ReferenceTypeNode>)
+    of: findSchemaType('namespace.one'),
+  } satisfies ArrayTypeNode)
 
   t.end()
 })
@@ -874,11 +819,7 @@ t.test('deref', (t) => {
         {
           type: 'objectKeyValue',
           key: 'author',
-          value: {
-            type: 'reference',
-            to: 'author',
-            resolved: true,
-          },
+          value: findSchemaType('author'),
         },
       ],
     },
@@ -955,18 +896,7 @@ t.test('deref with projection union', (t) => {
             type: 'optional',
             value: {
               type: 'union',
-              of: [
-                {
-                  type: 'reference',
-                  to: 'author',
-                  resolved: true,
-                },
-                {
-                  type: 'reference',
-                  to: 'ghost',
-                  resolved: true,
-                },
-              ],
+              of: [findSchemaType('author'), findSchemaType('ghost')],
             },
           },
         },
@@ -1063,18 +993,7 @@ t.test('deref with projection union', (t) => {
             type: 'array',
             of: {
               type: 'union',
-              of: [
-                {
-                  type: 'reference',
-                  to: 'author',
-                  resolved: true,
-                },
-                {
-                  type: 'reference',
-                  to: 'ghost',
-                  resolved: true,
-                },
-              ],
+              of: [findSchemaType('author'), findSchemaType('ghost')],
             },
           }),
         },
@@ -1632,11 +1551,7 @@ t.test('filter with function', (t) => {
   const res = evaluateQueryType(query, schemas)
   t.strictSame(res, {
     type: 'array',
-    of: {
-      type: 'reference',
-      to: 'author',
-      resolved: true,
-    },
+    of: findSchemaType('author'),
   })
 
   t.end()
@@ -1644,14 +1559,7 @@ t.test('filter with function', (t) => {
 
 t.test('filter with type reference', (t) => {
   const res = evaluateQueryType(`*[_type == "post" && sluger.current == $foo][0]`, schemas)
-  t.strictSame(
-    res,
-    optional({
-      type: 'reference',
-      to: 'post',
-      resolved: true,
-    }),
-  )
+  t.strictSame(res, optional(findSchemaType('post')))
   t.end()
 })
 
@@ -1685,6 +1593,20 @@ t.test('flatmap', (t) => {
 
   t.end()
 })
+
+function findSchemaType(name: string): TypeNode {
+  const type = schemas.find((s) => s.name === name)
+  if (!type) {
+    throw new Error(`type ${name} not found`)
+  }
+  if (type.type === 'document') {
+    return {
+      type: 'object',
+      fields: type.fields,
+    }
+  }
+  return type.value
+}
 
 function optional(field: TypeNode): OptionalTypeNode {
   return {

@@ -78,7 +78,6 @@ export type TypeNode =
   | BooleanTypeNode
   | ArrayTypeNode
   | UnionTypeNode
-  | Document
   | ReferenceTypeNode
   | ConcatenationTypeNode
   | UnknownTypeNode
