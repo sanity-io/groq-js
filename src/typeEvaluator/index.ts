@@ -1,4 +1,4 @@
-export {evaluateQueryType} from './evaluateQueryType'
+export {evaluateNodeType, evaluateQueryType} from './evaluateQueryType'
 export type {
   ArrayTypeNode,
   BooleanTypeNode,
