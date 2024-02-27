@@ -58,6 +58,20 @@ const $debug = debug('typeEvaluator:evaluate::debug')
 $debug.log = console.log.bind(console) // eslint-disable-line no-console
 const $warn = debug('typeEvaluator:evaluate::warn')
 
+export function evaluateNodeType(ast: ExprNode, schema: Schema): TypeNode {
+  const parsed = walk({
+    node: ast,
+    scope: createScope([], undefined, createContext(schema)),
+  })
+
+  $trace('evaluateQueryType.parsed %O', parsed)
+
+  const optimized = optimizeUnions(parsed)
+  $trace('evaluateQueryType.optimized %O', optimized)
+
+  return optimized
+}
+
 /**
  * Evaluates the type of a query and schema.
  *
@@ -73,17 +87,7 @@ export function evaluateQueryType(query: string, schema: Schema): TypeNode {
 
   const ast = parse(query)
   $debug('evaluateQueryType.ast %O', ast)
-  const parsed = walk({
-    node: ast,
-    scope: createScope([], undefined, createContext(schema)),
-  })
-
-  $trace('evaluateQueryType.parsed %O', parsed)
-
-  const optimized = optimizeUnions(parsed)
-  $trace('evaluateQueryType.optimized %O', optimized)
-
-  return optimized
+  return evaluateNodeType(ast, schema)
 }
 
 function handleDerefNode(node: DerefNode, scope: Scope): TypeNode {
@@ -656,6 +660,17 @@ function handleEverythingNode(_: EverythingNode, scope: Scope): TypeNode {
   } satisfies ArrayTypeNode<UnionTypeNode<ObjectTypeNode>>
 }
 
+const OVERRIDE_TYPE_SYMBOL = Symbol('groq-js.type')
+
+/**
+ * `overrideTypeForNode` overrides the inferred type for a specific node: The
+ * type evaluator will ignore its built-in logic and instead _always_ return
+ * this type. This is intended to be used for testing.
+ */
+export function overrideTypeForNode(node: ExprNode, type: TypeNode): void {
+  ;(node as any)[OVERRIDE_TYPE_SYMBOL] = type
+}
+
 /**
  * Walks through the AST and evaluates the type of each node.
  *
@@ -665,6 +680,10 @@ function handleEverythingNode(_: EverythingNode, scope: Scope): TypeNode {
  */
 // eslint-disable-next-line complexity
 export function walk({node, scope}: {node: ExprNode; scope: Scope}): TypeNode {
+  if (OVERRIDE_TYPE_SYMBOL in node) {
+    return node[OVERRIDE_TYPE_SYMBOL] as TypeNode
+  }
+
   switch (node.type) {
     // Filtering, traversal & projections
     case 'Map': {
