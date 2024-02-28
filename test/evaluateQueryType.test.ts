@@ -10,6 +10,7 @@ import {
   TypeNode,
   UnionTypeNode,
 } from '../src/typeEvaluator/types'
+import {satisfies} from '../src/typeEvaluator/satisfies'
 
 const schemas = [
   {
@@ -1188,7 +1189,7 @@ t.test('subquery', (t) => {
   t.end()
 })
 
-t.test('3 fields with concetnation', (t) => {
+t.test('string concetnation', (t) => {
   const query = `*[_type == "author"]{
             name,
             "fullName": firstname + " " + lastname,
@@ -1211,24 +1212,13 @@ t.test('3 fields with concetnation', (t) => {
           type: 'objectKeyValue',
           key: 'fullName',
           value: {
-            type: 'concatenation',
-            fields: [
-              {
-                type: 'string',
-              },
-              {
-                type: 'string',
-                value: ' ',
-              },
-              {
-                type: 'string',
-              },
-            ],
+            type: 'string',
+            value: undefined,
           },
         },
       ],
     },
-  })
+  } satisfies ArrayTypeNode<ObjectTypeNode>)
 
   t.end()
 })
