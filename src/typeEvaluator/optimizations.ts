@@ -17,10 +17,6 @@ export function hashField(field: TypeNode): string | null {
       return `${field.type}:${field.to}`
     }
 
-    case 'optional': {
-      return `${field.type}:${hashField(field.value)}`
-    }
-
     case 'array': {
       return `${field.type}:${hashField(field.of)}`
     }
@@ -71,7 +67,6 @@ export function optimizeUnions(field: TypeNode): TypeNode {
       return optimizeUnions(field.of[0])
     }
 
-    let hasOptional = false
     // flatten union
     for (let idx = 0; field.of.length > idx; idx++) {
       const subField = field.of[idx]
@@ -81,21 +76,7 @@ export function optimizeUnions(field: TypeNode): TypeNode {
         continue
       }
 
-      if (subField.type === 'optional') {
-        field.of.splice(idx, 1, subField.value)
-        hasOptional = true
-        idx--
-        continue
-      }
-
       field.of[idx] = optimizeUnions(subField)
-    }
-
-    if (hasOptional) {
-      return {
-        type: 'optional',
-        value: field,
-      }
     }
 
     return field
@@ -114,11 +95,6 @@ export function optimizeUnions(field: TypeNode): TypeNode {
 
       field.fields[idx].value = optimizeUnions(field.fields[idx].value)
     }
-    return field
-  }
-
-  if (field.type === 'optional') {
-    field.value = optimizeUnions(field.value)
     return field
   }
 
