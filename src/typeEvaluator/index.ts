@@ -9,7 +9,6 @@ export type {
   ObjectKeyValue,
   ObjectTypeNode,
   OptionalTypeNode,
-  ParameterTypeNode,
   PrimitiveTypeNode,
   ReferenceTypeNode,
   Schema,

@@ -752,7 +752,7 @@ Object {
               "type": "string",
             },
             Object {
-              "type": "unknown",
+              "type": "null",
             },
           ],
           "type": "union",
