@@ -5,7 +5,7 @@ import {evaluate} from '../src/evaluator'
 import {operators} from '../src/evaluator/operators'
 import {ExprNode} from '../src/nodeTypes'
 import {TypeNode} from '../src/typeEvaluator'
-import {evaluateNodeType, overrideTypeForNode} from '../src/typeEvaluator/evaluateQueryType'
+import {typeEvaluate, overrideTypeForNode} from '../src/typeEvaluator/evaluateQueryType'
 import {satisfies} from '../src/typeEvaluator/satisfies'
 
 /**
@@ -237,7 +237,7 @@ function subtestUnary({
       for (const {desc, type} of annotatedValue.types) {
         t.test(desc, async (t) => {
           overrideTypeForNode(cachedResult.params[0], type)
-          const resultType = evaluateNodeType(cachedResult.node, SCHEMA)
+          const resultType = typeEvaluate(cachedResult.node, SCHEMA)
           const result = await cachedResult.result
           t.ok(satisfies(resultType, result), 'evaluation matches type', {result, resultType})
         })
@@ -272,7 +272,7 @@ function subtestBinary({
               t.test(`${desc1},${desc2}`, async (t) => {
                 overrideTypeForNode(cachedResult.params[0], type1)
                 overrideTypeForNode(cachedResult.params[1], type2)
-                const evaluatedNodeType = evaluateNodeType(cachedResult.node, SCHEMA)
+                const evaluatedNodeType = typeEvaluate(cachedResult.node, SCHEMA)
                 const expectedValue = await cachedResult.result
                 t.ok(satisfies(evaluatedNodeType, expectedValue), 'evaluation should match type', {
                   expectedValue,
