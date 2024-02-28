@@ -3,68 +3,83 @@ import t from 'tap'
 import {evaluateQueryType} from '../src/typeEvaluator/evaluateQueryType'
 import {
   ArrayTypeNode,
+  Document,
+  ObjectAttribute,
   ObjectTypeNode,
   Schema,
+  TypeDeclaration,
   TypeNode,
   UnionTypeNode,
 } from '../src/typeEvaluator/types'
+import {satisfies} from '../src/typeEvaluator/satisfies'
 
-const schemas = [
-  {
-    type: 'document',
-    name: 'post',
-    fields: [
-      {
-        type: 'objectKeyValue',
-        key: '_id',
-        value: {
-          type: 'string',
-        },
+const postDocument = {
+  type: 'document',
+  name: 'post',
+  attributes: {
+    _id: {
+      type: 'objectAttribute',
+      value: {
+        type: 'string',
       },
-      {
-        type: 'objectKeyValue',
-        key: '_type',
-        value: {
-          type: 'string',
-          value: 'post',
-        },
+    } satisfies ObjectAttribute,
+    _type: {
+      type: 'objectAttribute',
+      value: {
+        type: 'string',
+        value: 'post',
       },
-      {
-        type: 'objectKeyValue',
-        key: 'name',
-        value: {
-          type: 'string',
-        },
+    } satisfies ObjectAttribute,
+    name: {
+      type: 'objectAttribute',
+      value: {
+        type: 'string',
       },
-      {
-        type: 'objectKeyValue',
-        key: 'lastname',
-        value: {
-          type: 'string',
-        },
-        optional: true,
+    } satisfies ObjectAttribute,
+    lastname: {
+      type: 'objectAttribute',
+      value: {
+        type: 'string',
       },
-      {
-        type: 'objectKeyValue',
-        key: 'author',
-        value: {
-          type: 'reference',
-          to: 'author',
-        },
+      optional: true,
+    } satisfies ObjectAttribute,
+    author: {
+      type: 'objectAttribute',
+      value: {
+        type: 'reference',
+        to: 'author',
       },
-      {
-        type: 'objectKeyValue',
-        key: 'sluger',
-        value: {
-          type: 'reference',
-          to: 'slug',
-        },
-        optional: true,
+    } satisfies ObjectAttribute,
+    sluger: {
+      type: 'objectAttribute',
+      value: {
+        type: 'reference',
+        to: 'slug',
       },
-      {
-        type: 'objectKeyValue',
-        key: 'authorOrGhost',
-        value: {
+      optional: true,
+    } satisfies ObjectAttribute,
+    authorOrGhost: {
+      type: 'objectAttribute',
+      value: {
+        type: 'union',
+        of: [
+          {
+            type: 'reference',
+            to: 'author',
+          },
+          {
+            type: 'reference',
+            to: 'ghost',
+          },
+        ],
+      },
+      optional: true,
+    } satisfies ObjectAttribute,
+    allAuthorOrGhost: {
+      type: 'objectAttribute',
+      value: {
+        type: 'array',
+        of: {
           type: 'union',
           of: [
             {
@@ -77,269 +92,236 @@ const schemas = [
             },
           ],
         },
-        optional: true,
       },
-      {
-        type: 'objectKeyValue',
-        key: 'allAuthorOrGhost',
-        value: {
-          type: 'array',
-          of: {
-            type: 'union',
-            of: [
-              {
-                type: 'reference',
-                to: 'author',
-              },
-              {
-                type: 'reference',
-                to: 'ghost',
-              },
-            ],
-          },
-        },
-        optional: true,
-      },
-    ],
+      optional: true,
+    } satisfies ObjectAttribute,
   },
-  {
-    type: 'document',
-    name: 'author',
-    fields: [
-      {
-        type: 'objectKeyValue',
-        key: '_id',
-        value: {
-          type: 'string',
-        },
+} satisfies Document
+
+const authorDocument = {
+  type: 'document',
+  name: 'author',
+  attributes: {
+    _id: {
+      type: 'objectAttribute',
+      value: {
+        type: 'string',
       },
-      {
-        type: 'objectKeyValue',
-        key: '_type',
-        value: {
-          type: 'string',
-          value: 'author',
-        },
+    },
+    _type: {
+      type: 'objectAttribute',
+      value: {
+        type: 'string',
+        value: 'author',
       },
-      {
-        type: 'objectKeyValue',
-        key: 'name',
-        value: {
-          type: 'string',
-        },
+    },
+    name: {
+      type: 'objectAttribute',
+      value: {
+        type: 'string',
       },
-      {
-        type: 'objectKeyValue',
-        key: 'firstname',
-        value: {
-          type: 'string',
-        },
+    },
+    firstname: {
+      type: 'objectAttribute',
+      value: {
+        type: 'string',
       },
-      {
-        type: 'objectKeyValue',
-        key: 'lastname',
-        value: {
-          type: 'string',
-        },
+    },
+    lastname: {
+      type: 'objectAttribute',
+      value: {
+        type: 'string',
       },
-      {
-        type: 'objectKeyValue',
-        key: 'object',
-        value: {
-          type: 'object',
-          fields: [
-            {
-              key: 'subfield',
-              type: 'objectKeyValue',
-              value: {
-                type: 'string',
-              },
+    },
+    object: {
+      type: 'objectAttribute',
+      value: {
+        type: 'object',
+        attributes: {
+          subfield: {
+            type: 'objectAttribute',
+            value: {
+              type: 'string',
             },
-          ],
-        },
-      },
-      {
-        type: 'objectKeyValue',
-        key: 'optionalObject',
-        value: {
-          type: 'object',
-          fields: [
-            {
-              key: 'subfield',
-              type: 'objectKeyValue',
-              value: {
-                type: 'string',
-              },
-            },
-          ],
-        },
-        optional: true,
-      },
-    ],
-  },
-  {
-    type: 'document',
-    name: 'ghost',
-    fields: [
-      {
-        type: 'objectKeyValue',
-        key: '_id',
-        value: {
-          type: 'string',
-        },
-      },
-      {
-        type: 'objectKeyValue',
-        key: '_type',
-        value: {
-          type: 'string',
-          value: 'ghost',
-        },
-      },
-      {
-        type: 'objectKeyValue',
-        key: 'name',
-        value: {
-          type: 'string',
-        },
-      },
-      {
-        type: 'objectKeyValue',
-        key: 'concepts',
-        value: {
-          type: 'array',
-          of: {
-            type: 'reference',
-            to: 'concept',
           },
         },
       },
-    ],
+    },
+    optionalObject: {
+      type: 'objectAttribute',
+      optional: true,
+      value: {
+        type: 'object',
+        attributes: {
+          subfield: {
+            type: 'objectAttribute',
+            value: {
+              type: 'string',
+            },
+          },
+        },
+      },
+    },
   },
-  {
-    type: 'document',
-    name: 'namespace.one',
-    fields: [
-      {
-        type: 'objectKeyValue',
-        key: '_type',
-        value: {
-          type: 'string',
-          value: 'namespace.one',
+} satisfies Document
+const ghostDocument = {
+  type: 'document',
+  name: 'ghost',
+  attributes: {
+    _id: {
+      type: 'objectAttribute',
+      value: {
+        type: 'string',
+      },
+    },
+    _type: {
+      type: 'objectAttribute',
+      value: {
+        type: 'string',
+        value: 'ghost',
+      },
+    },
+    name: {
+      type: 'objectAttribute',
+      value: {
+        type: 'string',
+      },
+    },
+    concepts: {
+      type: 'objectAttribute',
+      value: {
+        type: 'array',
+        of: {
+          type: 'reference',
+          to: 'concept',
         },
       },
-      {
-        type: 'objectKeyValue',
-        key: 'name',
+    },
+  },
+} satisfies Document
+
+const namespaceOneDocument = {
+  type: 'document',
+  name: 'namespace.one',
+  attributes: {
+    _type: {
+      type: 'objectAttribute',
+      value: {
+        type: 'string',
+        value: 'namespace.one',
+      },
+    } satisfies ObjectAttribute,
+    name: {
+      type: 'objectAttribute',
+      value: {
+        type: 'string',
+      },
+    } satisfies ObjectAttribute,
+    boolField: {
+      type: 'objectAttribute',
+      value: {
+        type: 'boolean',
+      },
+    } satisfies ObjectAttribute,
+  },
+} satisfies Document
+
+const namespaceTwoDocument = {
+  type: 'document',
+  name: 'namespace.two',
+  attributes: {
+    _type: {
+      type: 'objectAttribute',
+      value: {
+        type: 'string',
+        value: 'namespace.two',
+      },
+    } satisfies ObjectAttribute,
+    name: {
+      type: 'objectAttribute',
+      value: {
+        type: 'string',
+      },
+    } satisfies ObjectAttribute,
+  },
+} satisfies Document
+const conceptType = {
+  type: 'type',
+  name: 'concept',
+  value: {
+    type: 'object',
+    attributes: {
+      name: {
+        type: 'objectAttribute',
         value: {
           type: 'string',
         },
       },
-      {
-        type: 'objectKeyValue',
-        key: 'boolField',
+      enabled: {
+        type: 'objectAttribute',
         value: {
           type: 'boolean',
         },
       },
-    ],
-  },
-  {
-    type: 'document',
-    name: 'namespace.two',
-    fields: [
-      {
-        type: 'objectKeyValue',
-        key: '_type',
+      posts: {
+        type: 'objectAttribute',
         value: {
-          type: 'string',
-          value: 'namespace.two',
+          type: 'array',
+          of: {
+            type: 'reference',
+            to: 'post',
+          },
         },
       },
-      {
-        type: 'objectKeyValue',
-        key: 'name',
+    },
+  },
+} satisfies TypeDeclaration
+const slugType = {
+  name: 'slug',
+  type: 'type',
+  value: {
+    type: 'object',
+    attributes: {
+      current: {
+        type: 'objectAttribute',
         value: {
           type: 'string',
         },
+        optional: true,
       },
-    ],
-  },
-  {
-    type: 'type',
-    name: 'concept',
-    value: {
-      type: 'object',
-      fields: [
-        {
-          key: 'name',
-          type: 'objectKeyValue',
-          value: {
-            type: 'string',
-          },
+      source: {
+        type: 'objectAttribute',
+        value: {
+          type: 'string',
         },
-        {
-          key: 'enabled',
-          type: 'objectKeyValue',
-          value: {
-            type: 'boolean',
-          },
+        optional: true,
+      },
+      _type: {
+        type: 'objectAttribute',
+        value: {
+          type: 'string',
+          value: 'slug',
         },
-        {
-          key: 'posts',
-          type: 'objectKeyValue',
-          value: {
-            type: 'array',
-            of: {
-              type: 'reference',
-              to: 'post',
-            },
-          },
+      },
+      _key: {
+        type: 'objectAttribute',
+        value: {
+          type: 'string',
         },
-      ],
+        optional: true,
+      },
     },
   },
-  {
-    name: 'slug',
-    type: 'type',
-    value: {
-      type: 'object',
-      fields: [
-        {
-          type: 'objectKeyValue',
-          key: 'current',
-          value: {
-            type: 'string',
-          },
-          optional: true,
-        },
-        {
-          type: 'objectKeyValue',
-          key: 'source',
-          value: {
-            type: 'string',
-          },
-          optional: true,
-        },
-        {
-          type: 'objectKeyValue',
-          key: '_type',
-          value: {
-            type: 'string',
-            value: 'slug',
-          },
-        },
-        {
-          type: 'objectKeyValue',
-          key: '_key',
-          value: {
-            type: 'string',
-          },
-          optional: true,
-        },
-      ],
-    },
-  },
+} satisfies TypeDeclaration
+
+const schemas = [
+  postDocument,
+  authorDocument,
+  ghostDocument,
+  namespaceOneDocument,
+  namespaceTwoDocument,
+  conceptType,
+  slugType,
 ] satisfies Schema
 
 t.test('no projection', (t) => {
@@ -473,23 +455,21 @@ t.test('subfilter with projection', (t) => {
     type: 'array',
     of: {
       type: 'object',
-      fields: [
-        {
-          key: 'name',
-          type: 'objectKeyValue',
+      attributes: {
+        name: {
+          type: 'objectAttribute',
           value: {
             type: 'string',
           },
         },
-        {
-          key: '_type',
-          type: 'objectKeyValue',
+        _type: {
+          type: 'objectAttribute',
           value: {
             type: 'string',
             value: 'namespace.one',
           },
         },
-      ],
+      },
     },
   } satisfies ArrayTypeNode<ObjectTypeNode>)
 
@@ -518,7 +498,7 @@ t.test('coerce reference', (t) => {
       type: 'reference',
       to: 'author',
     },
-  })
+  } satisfies TypeNode)
 
   t.end()
 })
@@ -562,17 +542,16 @@ t.test('simple', (t) => {
     type: 'array',
     of: {
       type: 'object',
-      fields: [
-        {
-          key: 'name',
-          type: 'objectKeyValue',
+      attributes: {
+        name: {
+          type: 'objectAttribute',
           value: {
             type: 'string',
           },
         },
-      ],
+      },
     },
-  })
+  } satisfies TypeNode)
 
   t.end()
 })
@@ -603,129 +582,113 @@ t.test('values in projection', (t) => {
     type: 'array',
     of: {
       type: 'object',
-      fields: [
-        {
-          type: 'objectKeyValue',
-          key: 'isAuthor',
+      attributes: {
+        isAuthor: {
+          type: 'objectAttribute',
           value: {
             type: 'boolean',
             value: true,
           },
         },
-        {
-          type: 'objectKeyValue',
-          key: 'greaterThan',
+        greaterThan: {
+          type: 'objectAttribute',
           value: {
             type: 'boolean',
             value: true,
           },
         },
-        {
-          type: 'objectKeyValue',
-          key: 'lessThan',
+        lessThan: {
+          type: 'objectAttribute',
           value: {
             type: 'boolean',
             value: false,
           },
         },
-        {
-          type: 'objectKeyValue',
-          key: 'greaterThanOrEq',
+        greaterThanOrEq: {
+          type: 'objectAttribute',
           value: {
             type: 'boolean',
             value: true,
           },
         },
-        {
-          type: 'objectKeyValue',
-          key: 'lessThanOrEq',
+        lessThanOrEq: {
+          type: 'objectAttribute',
           value: {
             type: 'boolean',
             value: true,
           },
         },
-        {
-          type: 'objectKeyValue',
-          key: 'notEqual',
+        notEqual: {
+          type: 'objectAttribute',
           value: {
             type: 'boolean',
             value: true,
           },
         },
-        {
-          type: 'objectKeyValue',
-          key: 'notEqualObject',
+        notEqualObject: {
+          type: 'objectAttribute',
           value: {
             type: 'boolean',
             value: true,
           },
         },
-        {
-          type: 'objectKeyValue',
-          key: 'plus',
+        plus: {
+          type: 'objectAttribute',
           value: {
             type: 'number',
             value: 5,
           },
         },
-        {
-          type: 'objectKeyValue',
-          key: 'plusStr',
+        plusStr: {
+          type: 'objectAttribute',
           value: {
             type: 'string',
             value: '32',
           },
         },
-        {
-          type: 'objectKeyValue',
-          key: 'plusVar',
+        plusVar: {
+          type: 'objectAttribute',
           value: {
             type: 'number',
           },
         },
-        {
-          type: 'objectKeyValue',
-          key: 'minus',
+        minus: {
+          type: 'objectAttribute',
           value: {
             type: 'number',
             value: 1,
           },
         },
-        {
-          type: 'objectKeyValue',
-          key: 'mul',
+        mul: {
+          type: 'objectAttribute',
           value: {
             type: 'number',
             value: 9,
           },
         },
-        {
-          type: 'objectKeyValue',
-          key: 'div',
+        div: {
+          type: 'objectAttribute',
           value: {
             type: 'number',
             value: 20,
           },
         },
-        {
-          type: 'objectKeyValue',
-          key: 'exp',
+        exp: {
+          type: 'objectAttribute',
           value: {
             type: 'number',
             value: 27,
           },
         },
-        {
-          type: 'objectKeyValue',
-          key: 'mod',
+        mod: {
+          type: 'objectAttribute',
           value: {
             type: 'number',
             value: 1,
           },
         },
-        {
-          type: 'objectKeyValue',
-          key: 'arr',
+        arr: {
+          type: 'objectAttribute',
           value: {
             type: 'array',
             of: {
@@ -759,23 +722,21 @@ t.test('values in projection', (t) => {
             },
           },
         },
-        {
-          type: 'objectKeyValue',
-          key: 'and',
+        and: {
+          type: 'objectAttribute',
           value: {
             type: 'boolean',
             value: undefined,
           },
         },
-        {
-          type: 'objectKeyValue',
-          key: 'or',
+        or: {
+          type: 'objectAttribute',
           value: {
             type: 'boolean',
             value: undefined,
           },
         },
-      ],
+      },
     },
   } satisfies ArrayTypeNode<ObjectTypeNode>)
 
@@ -792,22 +753,20 @@ t.test('deref', (t) => {
     type: 'array',
     of: {
       type: 'object',
-      fields: [
-        {
-          type: 'objectKeyValue',
-          key: 'name',
+      attributes: {
+        name: {
+          type: 'objectAttribute',
           value: {
             type: 'string',
           },
         },
-        {
-          type: 'objectKeyValue',
-          key: 'author',
+        author: {
+          type: 'objectAttribute',
           value: findSchemaType('author'),
         },
-      ],
+      },
     },
-  })
+  } satisfies TypeNode)
 
   t.end()
 })
@@ -827,65 +786,57 @@ t.test('deref with projection union', (t) => {
     type: 'array',
     of: {
       type: 'object',
-      fields: [
-        {
-          type: 'objectKeyValue',
-          key: '_id',
+      attributes: {
+        _id: {
+          type: 'objectAttribute',
           value: {
             type: 'string',
           },
         },
-        {
-          type: 'objectKeyValue',
-          key: '_type',
+        _type: {
+          type: 'objectAttribute',
           value: {
             type: 'string',
             value: 'post',
           },
         },
-        {
-          type: 'objectKeyValue',
-          key: 'name',
+        name: {
+          type: 'objectAttribute',
           value: {
             type: 'string',
           },
         },
-        {
-          type: 'objectKeyValue',
-          key: 'lastname',
+        lastname: {
+          type: 'objectAttribute',
           value: {
             type: 'string',
           },
           optional: true,
         },
-        {
-          type: 'objectKeyValue',
-          key: 'author',
+        author: {
+          type: 'objectAttribute',
           value: {
             type: 'reference',
             to: 'author',
           },
         },
-        {
-          type: 'objectKeyValue',
-          key: 'sluger',
+        sluger: {
+          type: 'objectAttribute',
           value: {
             type: 'reference',
             to: 'slug',
           },
           optional: true,
         },
-        {
-          type: 'objectKeyValue',
-          key: 'authorOrGhost',
+        authorOrGhost: {
+          type: 'objectAttribute',
           value: {
             type: 'union',
             of: [findSchemaType('author'), findSchemaType('ghost')],
           },
         },
-        {
-          type: 'objectKeyValue',
-          key: 'allAuthorOrGhost',
+        allAuthorOrGhost: {
+          type: 'objectAttribute',
           optional: true,
           value: {
             type: 'array',
@@ -904,72 +855,64 @@ t.test('deref with projection union', (t) => {
             },
           },
         },
-        {
-          type: 'objectKeyValue',
-          key: 'authorName',
+        authorName: {
+          type: 'objectAttribute',
           value: {
             type: 'string',
           },
         },
-        {
-          type: 'objectKeyValue',
-          key: 'authorOrGhostName',
+        authorOrGhostName: {
+          type: 'objectAttribute',
           value: {
             type: 'string',
           },
         },
-        {
-          type: 'objectKeyValue',
-          key: 'authorOrGhostProjected',
+        authorOrGhostProjected: {
+          type: 'objectAttribute',
           value: {
             type: 'union',
             of: [
               {
                 type: 'object',
-                fields: [
-                  {
-                    type: 'objectKeyValue',
-                    key: 'name',
+                attributes: {
+                  name: {
+                    type: 'objectAttribute',
                     value: {
                       type: 'string',
                     },
                   },
-                  {
-                    type: 'objectKeyValue',
-                    key: '_type',
+                  _type: {
+                    type: 'objectAttribute',
                     value: {
                       type: 'string',
                       value: 'author',
                     },
                   },
-                ],
+                },
               },
               {
                 type: 'object',
-                fields: [
-                  {
-                    type: 'objectKeyValue',
-                    key: 'name',
+                attributes: {
+                  name: {
+                    type: 'objectAttribute',
                     value: {
                       type: 'string',
                     },
                   },
-                  {
-                    type: 'objectKeyValue',
-                    key: '_type',
+                  _type: {
+                    type: 'objectAttribute',
                     value: {
                       type: 'string',
                       value: 'ghost',
                     },
                   },
-                ],
+                },
               },
             ],
           },
         },
-        {
-          type: 'objectKeyValue',
-          key: 'resolvedAllAuthorOrGhost',
+        resolvedAllAuthorOrGhost: {
+          type: 'objectAttribute',
           value: {
             type: 'array',
             of: {
@@ -978,9 +921,9 @@ t.test('deref with projection union', (t) => {
             },
           },
         },
-      ],
+      },
     },
-  })
+  } satisfies TypeNode)
 
   t.end()
 })
@@ -995,40 +938,36 @@ t.test('deref with projection', (t) => {
     type: 'array',
     of: {
       type: 'object',
-      fields: [
-        {
-          type: 'objectKeyValue',
-          key: 'name',
+      attributes: {
+        name: {
+          type: 'objectAttribute',
           value: {
             type: 'string',
           },
         },
-        {
-          type: 'objectKeyValue',
-          key: 'author',
+        author: {
+          type: 'objectAttribute',
           value: {
             type: 'object',
-            fields: [
-              {
-                type: 'objectKeyValue',
-                key: '_id',
+            attributes: {
+              _id: {
+                type: 'objectAttribute',
                 value: {
                   type: 'string',
                 },
               },
-              {
-                type: 'objectKeyValue',
-                key: 'name',
+              name: {
+                type: 'objectAttribute',
                 value: {
                   type: 'string',
                 },
               },
-            ],
+            },
           },
         },
-      ],
+      },
     },
-  })
+  } satisfies TypeNode)
 
   t.end()
 })
@@ -1044,38 +983,34 @@ t.test('deref with projection and element access', (t) => {
     of: [
       {
         type: 'object',
-        fields: [
-          {
-            type: 'objectKeyValue',
-            key: 'name',
+        attributes: {
+          name: {
+            type: 'objectAttribute',
             value: {
               type: 'string',
             },
           },
-          {
-            type: 'objectKeyValue',
-            key: 'author',
+          author: {
+            type: 'objectAttribute',
             value: {
               type: 'object',
-              fields: [
-                {
-                  type: 'objectKeyValue',
-                  key: '_id',
+              attributes: {
+                _id: {
+                  type: 'objectAttribute',
                   value: {
                     type: 'string',
                   },
                 },
-                {
-                  type: 'objectKeyValue',
-                  key: 'name',
+                name: {
+                  type: 'objectAttribute',
                   value: {
                     type: 'string',
                   },
                 },
-              ],
+              },
             },
           },
-        ],
+        },
       },
       {type: 'null'},
     ],
@@ -1095,38 +1030,34 @@ t.test('deref with element access, then projection ', (t) => {
     of: [
       {
         type: 'object',
-        fields: [
-          {
-            type: 'objectKeyValue',
-            key: 'name',
+        attributes: {
+          name: {
+            type: 'objectAttribute',
             value: {
               type: 'string',
             },
           },
-          {
-            type: 'objectKeyValue',
-            key: 'author',
+          author: {
+            type: 'objectAttribute',
             value: {
               type: 'object',
-              fields: [
-                {
-                  type: 'objectKeyValue',
-                  key: '_id',
+              attributes: {
+                _id: {
+                  type: 'objectAttribute',
                   value: {
                     type: 'string',
                   },
                 },
-                {
-                  type: 'objectKeyValue',
-                  key: 'name',
+                name: {
+                  type: 'objectAttribute',
                   value: {
                     type: 'string',
                   },
                 },
-              ],
+              },
             },
           },
-        ],
+        },
       },
       {type: 'null'},
     ],
@@ -1142,35 +1073,33 @@ t.test('subquery', (t) => {
             }
           }`
 
-  const res = evaluateQueryType(query, schemas)
+  const res = evaluateQueryType(query, [authorDocument, postDocument])
   t.strictSame(res, {
     type: 'array',
     of: {
       type: 'object',
-      fields: [
-        {
-          type: 'objectKeyValue',
-          key: 'posts',
+      attributes: {
+        posts: {
+          type: 'objectAttribute',
           value: {
             type: 'array',
             of: {
               type: 'object',
-              fields: [
-                {
-                  type: 'objectKeyValue',
-                  key: 'publishedAfterAuthor',
+              attributes: {
+                publishedAfterAuthor: {
+                  type: 'objectAttribute',
                   value: {
                     type: 'boolean',
                     value: undefined,
                   },
                 },
-              ],
+              },
             },
           },
         },
-      ],
+      },
     } satisfies TypeNode,
-  })
+  } satisfies TypeNode)
 
   t.end()
 })
@@ -1186,23 +1115,21 @@ t.test('string concetnation', (t) => {
     type: 'array',
     of: {
       type: 'object',
-      fields: [
-        {
-          type: 'objectKeyValue',
-          key: 'name',
+      attributes: {
+        name: {
+          type: 'objectAttribute',
           value: {
             type: 'string',
           },
         },
-        {
-          type: 'objectKeyValue',
-          key: 'fullName',
+        fullName: {
+          type: 'objectAttribute',
           value: {
             type: 'string',
             value: undefined,
           },
         },
-      ],
+      },
     },
   } satisfies ArrayTypeNode<ObjectTypeNode>)
 
@@ -1225,47 +1152,43 @@ t.test('with select', (t) => {
       of: [
         {
           type: 'object',
-          fields: [
-            {
-              type: 'objectKeyValue',
-              key: '_type',
+          attributes: {
+            _type: {
+              type: 'objectAttribute',
               value: {
                 type: 'string',
                 value: 'post',
               },
             },
-            {
-              type: 'objectKeyValue',
-              key: 'authorName',
+            authorName: {
+              type: 'objectAttribute',
               value: {
                 type: 'string',
               },
             },
-          ],
+          },
         },
         {
           type: 'object',
-          fields: [
-            {
-              type: 'objectKeyValue',
-              key: '_type',
+          attributes: {
+            _type: {
+              type: 'objectAttribute',
               value: {
                 type: 'string',
                 value: 'author',
               },
             },
-            {
-              type: 'objectKeyValue',
-              key: 'authorName',
+            authorName: {
+              type: 'objectAttribute',
               value: {
                 type: 'string',
               },
             },
-          ],
+          },
         },
       ],
     },
-  })
+  } satisfies TypeNode)
 
   t.end()
 })
@@ -1286,18 +1209,16 @@ t.test('with select, not guaranteed & with fallback', (t) => {
       of: [
         {
           type: 'object',
-          fields: [
-            {
-              type: 'objectKeyValue',
-              key: '_type',
+          attributes: {
+            _type: {
+              type: 'objectAttribute',
               value: {
                 type: 'string',
                 value: 'post',
               },
             },
-            {
-              type: 'objectKeyValue',
-              key: 'something',
+            something: {
+              type: 'objectAttribute',
               value: {
                 type: 'union',
                 of: [
@@ -1311,22 +1232,20 @@ t.test('with select, not guaranteed & with fallback', (t) => {
                 ],
               },
             },
-          ],
+          },
         },
         {
           type: 'object',
-          fields: [
-            {
-              type: 'objectKeyValue',
-              key: '_type',
+          attributes: {
+            _type: {
+              type: 'objectAttribute',
               value: {
                 type: 'string',
                 value: 'author',
               },
             },
-            {
-              type: 'objectKeyValue',
-              key: 'something',
+            something: {
+              type: 'objectAttribute',
               value: {
                 type: 'union',
                 of: [
@@ -1340,11 +1259,11 @@ t.test('with select, not guaranteed & with fallback', (t) => {
                 ],
               },
             },
-          ],
+          },
         },
       ],
     },
-  })
+  } satisfies TypeNode)
 
   t.end()
 })
@@ -1360,86 +1279,76 @@ t.test('with splat', (t) => {
     type: 'array',
     of: {
       type: 'object',
-      fields: [
-        {
-          type: 'objectKeyValue',
-          key: '_id',
+      attributes: {
+        _id: {
+          type: 'objectAttribute',
           value: {
             type: 'string',
           },
         },
-        {
-          type: 'objectKeyValue',
-          key: '_type',
+        _type: {
+          type: 'objectAttribute',
           value: {
             type: 'string',
             value: 'author',
           },
         },
-        {
-          type: 'objectKeyValue',
-          key: 'name',
+        name: {
+          type: 'objectAttribute',
           value: {
             type: 'string',
           },
         },
-        {
-          type: 'objectKeyValue',
-          key: 'firstname',
+        firstname: {
+          type: 'objectAttribute',
           value: {
             type: 'string',
           },
         },
-        {
-          type: 'objectKeyValue',
-          key: 'lastname',
+        lastname: {
+          type: 'objectAttribute',
           value: {
             type: 'string',
           },
         },
-        {
-          type: 'objectKeyValue',
-          key: 'object',
+        object: {
+          type: 'objectAttribute',
           value: {
             type: 'object',
-            fields: [
-              {
-                key: 'subfield',
-                type: 'objectKeyValue',
+            attributes: {
+              subfield: {
+                type: 'objectAttribute',
                 value: {
                   type: 'string',
                 },
               },
-            ],
+            },
           },
         },
-        {
-          type: 'objectKeyValue',
-          key: 'optionalObject',
+        optionalObject: {
+          type: 'objectAttribute',
           optional: true,
           value: {
             type: 'object',
-            fields: [
-              {
-                key: 'subfield',
-                type: 'objectKeyValue',
+            attributes: {
+              subfield: {
+                type: 'objectAttribute',
                 value: {
                   type: 'string',
                 },
               },
-            ],
+            },
           },
         },
-        {
-          type: 'objectKeyValue',
-          key: 'otherName',
+        otherName: {
+          type: 'objectAttribute',
           value: {
             type: 'string',
           },
         },
-      ],
+      },
     },
-  })
+  } satisfies TypeNode)
 
   t.end()
 })
@@ -1509,16 +1418,15 @@ t.test('object', (t) => {
   const res = evaluateQueryType(query, schemas)
   t.strictSame(res, {
     type: 'object',
-    fields: [
-      {
-        type: 'objectKeyValue',
-        key: 'hello',
+    attributes: {
+      hello: {
+        type: 'objectAttribute',
         value: {
           type: 'string',
           value: 'world',
         },
       },
-    ],
+    },
   } satisfies TypeNode)
 
   t.end()
@@ -1530,7 +1438,7 @@ t.test('filter with function', (t) => {
   t.strictSame(res, {
     type: 'array',
     of: findSchemaType('author'),
-  })
+  } satisfies TypeNode)
 
   t.end()
 })
@@ -1561,7 +1469,7 @@ t.test('misc', (t) => {
       "andWithAttriute": !false && !someAttriute,
       "pt": pt::text(block)
     }`
-  const res = evaluateQueryType(query, [{type: 'document', name: 'foo', fields: []}])
+  const res = evaluateQueryType(query, [{type: 'document', name: 'foo', attributes: {}}])
   t.matchSnapshot(res)
 
   t.end()
@@ -1583,7 +1491,7 @@ function findSchemaType(name: string): TypeNode {
   if (type.type === 'document') {
     return {
       type: 'object',
-      fields: type.fields,
+      attributes: type.attributes,
     }
   }
   return type.value

@@ -22,7 +22,7 @@ export function createContext(schema: Schema): Context {
           if (val.name === ref.to) {
             return {
               type: 'object',
-              fields: val.fields,
+              attributes: val.attributes,
             }
           }
         }

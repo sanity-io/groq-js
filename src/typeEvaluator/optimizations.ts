@@ -22,7 +22,7 @@ export function hashField(field: TypeNode): string | null {
     }
 
     case 'object': {
-      return `${field.type}:${Object.entries(field.fields)
+      return `${field.type}:${Object.entries(field.attributes)
         .map(([key, value]) => `${key}:${hashField(value.value)}`)
         .join(',')}`
     }
@@ -88,12 +88,12 @@ export function optimizeUnions(field: TypeNode): TypeNode {
   }
 
   if (field.type === 'object') {
-    for (const idx in field.fields) {
-      if (!Object.hasOwn(field.fields, idx)) {
+    for (const idx in field.attributes) {
+      if (!Object.hasOwn(field.attributes, idx)) {
         continue
       }
 
-      field.fields[idx].value = optimizeUnions(field.fields[idx].value)
+      field.attributes[idx].value = optimizeUnions(field.attributes[idx].value)
     }
     return field
   }
