@@ -38,7 +38,7 @@ import type {
   Document,
   NullTypeNode,
   NumberTypeNode,
-  ObjectKeyValue,
+  ObjectAttribute,
   ObjectTypeNode,
   PrimitiveTypeNode,
   Schema,
@@ -143,13 +143,12 @@ function mapObjectSplat(
 function handleObjectNode(node: ObjectNode, scope: Scope) {
   $trace('object.node %O', node)
   $trace('object.scope %O', scope)
-  const fields: Record<string, ObjectKeyValue> = {}
+  const attributes: Record<string, ObjectAttribute> = {}
   for (const attr of node.attributes) {
     if (attr.type === 'ObjectAttributeValue') {
       const field = optimizeUnions(walk({node: attr.value, scope}))
-      fields[attr.name] = {
-        type: 'objectKeyValue',
-        key: attr.name,
+      attributes[attr.name] = {
+        type: 'objectAttribute',
         value: field,
       }
     }
@@ -158,8 +157,12 @@ function handleObjectNode(node: ObjectNode, scope: Scope) {
       const value = walk({node: attr.value, scope})
       $trace('object.splat.value %O', value)
       mapObjectSplat(value, scope, (node) => {
-        for (const field of node.fields) {
-          fields[field.key] = field
+        for (const name in node.attributes) {
+          if (!Object.hasOwn(node.attributes, name)) {
+            continue
+          }
+
+          attributes[name] = node.attributes[name]
         }
       })
     }
@@ -170,16 +173,20 @@ function handleObjectNode(node: ObjectNode, scope: Scope) {
         const value = walk({node: attr.value, scope})
 
         mapObjectSplat(value, scope, (node) => {
-          node.fields.forEach((field) => {
-            fields[field.key] = field
-          })
+          for (const name in node.attributes) {
+            if (!Object.hasOwn(node.attributes, name)) {
+              continue
+            }
+
+            attributes[name] = node.attributes[name]
+          }
         })
       }
     }
   }
   return {
     type: 'object',
-    fields: Object.values(fields),
+    attributes,
   } satisfies ObjectTypeNode
 }
 
@@ -467,17 +474,17 @@ export function handleAccessAttributeNode(node: AccessAttributeNode, scope: Scop
   $trace('accessAttribute.base %s %O', node.name, attributeBase)
 
   return mapFieldInScope(attributeBase, scope, (base) => {
-    const field = base.fields.find((field) => field.key === node.name)
-    if (field) {
-      $debug(`accessAttribute.field found ${node.name} %O`, field)
-      if (isPrimitiveTypeNode(field.value) && field.value.value !== undefined) {
-        return field.value
+    const attribute = base.attributes[node.name]
+    if (attribute !== undefined) {
+      $debug(`accessAttribute.attribute found ${node.name} %O`, attribute)
+      if (isPrimitiveTypeNode(attribute.value) && attribute.value.value !== undefined) {
+        return attribute.value
       }
 
-      return field.value
+      return attribute.value
     }
     $warn(
-      `field "${node.name}" not found in ${base.type === 'document' ? `document "${base.name}"` : 'object'}`,
+      `attribute "${node.name}" not found in ${base.type === 'document' ? `document "${base.name}"` : 'object'}`,
     )
     return {type: 'null'}
   })
@@ -572,7 +579,7 @@ function handleEverythingNode(_: EverythingNode, scope: Scope): TypeNode {
         .filter((obj): obj is Document => obj.type === 'document')
         .map((doc) => ({
           type: 'object',
-          fields: doc.fields,
+          attributes: doc.attributes,
         })),
     },
   } satisfies ArrayTypeNode<UnionTypeNode<ObjectTypeNode>>
