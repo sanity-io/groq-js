@@ -1,7 +1,7 @@
 export interface Document {
   type: 'document'
   name: string
-  fields: ObjectKeyValue<TypeNode>[]
+  attributes: Record<string, ObjectAttribute>
 }
 
 export interface TypeDeclaration {
@@ -33,12 +33,11 @@ export interface NullTypeNode {
 
 export interface ObjectTypeNode<T extends TypeNode = TypeNode> {
   type: 'object'
-  fields: ObjectKeyValue<T>[]
+  attributes: Record<string, ObjectAttribute<T>>
 }
 
-export interface ObjectKeyValue<T extends TypeNode = TypeNode> {
-  type: 'objectKeyValue'
-  key: string
+export interface ObjectAttribute<T extends TypeNode = TypeNode> {
+  type: 'objectAttribute'
   value: T
   optional?: boolean
 }

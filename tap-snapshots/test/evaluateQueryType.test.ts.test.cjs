@@ -8,10 +8,31 @@
 exports[`test/evaluateQueryType.test.ts TAP coalesce only > must match snapshot 1`] = `
 Object {
   "of": Object {
-    "fields": Array [
-      Object {
-        "key": "name",
-        "type": "objectKeyValue",
+    "attributes": Object {
+      "maybe": Object {
+        "type": "objectAttribute",
+        "value": Object {
+          "of": Array [
+            Object {
+              "attributes": Object {
+                "subfield": Object {
+                  "type": "objectAttribute",
+                  "value": Object {
+                    "type": "string",
+                  },
+                },
+              },
+              "type": "object",
+            },
+            Object {
+              "type": "null",
+            },
+          ],
+          "type": "union",
+        },
+      },
+      "name": Object {
+        "type": "objectAttribute",
         "value": Object {
           "of": Array [
             Object {
@@ -25,31 +46,7 @@ Object {
           "type": "union",
         },
       },
-      Object {
-        "key": "maybe",
-        "type": "objectKeyValue",
-        "value": Object {
-          "of": Array [
-            Object {
-              "fields": Array [
-                Object {
-                  "key": "subfield",
-                  "type": "objectKeyValue",
-                  "value": Object {
-                    "type": "string",
-                  },
-                },
-              ],
-              "type": "object",
-            },
-            Object {
-              "type": "null",
-            },
-          ],
-          "type": "union",
-        },
-      },
-    ],
+    },
     "type": "object",
   },
   "type": "array",
@@ -60,37 +57,33 @@ exports[`test/evaluateQueryType.test.ts TAP coalesce with projection > must matc
 Object {
   "of": Array [
     Object {
-      "fields": Array [
-        Object {
-          "key": "_type",
-          "type": "objectKeyValue",
+      "attributes": Object {
+        "_type": Object {
+          "type": "objectAttribute",
           "value": Object {
             "type": "string",
             "value": "author",
           },
         },
-        Object {
-          "key": "foo",
-          "type": "objectKeyValue",
+        "foo": Object {
+          "type": "objectAttribute",
           "value": Object {
             "of": Array [
               Object {
-                "fields": Array [
-                  Object {
-                    "key": "subfield",
-                    "type": "objectKeyValue",
-                    "value": Object {
-                      "type": "string",
-                    },
-                  },
-                  Object {
-                    "key": "ref",
-                    "type": "objectKeyValue",
+                "attributes": Object {
+                  "ref": Object {
+                    "type": "objectAttribute",
                     "value": Object {
                       "type": "null",
                     },
                   },
-                ],
+                  "subfield": Object {
+                    "type": "objectAttribute",
+                    "value": Object {
+                      "type": "string",
+                    },
+                  },
+                },
                 "type": "object",
               },
               Object {
@@ -100,7 +93,7 @@ Object {
             "type": "union",
           },
         },
-      ],
+      },
       "type": "object",
     },
     Object {
@@ -114,77 +107,68 @@ Object {
 exports[`test/evaluateQueryType.test.ts TAP filter order doesnt matter > must match snapshot 1`] = `
 Object {
   "of": Object {
-    "fields": Array [
-      Object {
-        "key": "_id",
-        "type": "objectKeyValue",
+    "attributes": Object {
+      "_id": Object {
+        "type": "objectAttribute",
         "value": Object {
           "type": "string",
         },
       },
-      Object {
-        "key": "_type",
-        "type": "objectKeyValue",
+      "_type": Object {
+        "type": "objectAttribute",
         "value": Object {
           "type": "string",
           "value": "author",
         },
       },
-      Object {
-        "key": "name",
-        "type": "objectKeyValue",
+      "firstname": Object {
+        "type": "objectAttribute",
         "value": Object {
           "type": "string",
         },
       },
-      Object {
-        "key": "firstname",
-        "type": "objectKeyValue",
+      "lastname": Object {
+        "type": "objectAttribute",
         "value": Object {
           "type": "string",
         },
       },
-      Object {
-        "key": "lastname",
-        "type": "objectKeyValue",
+      "name": Object {
+        "type": "objectAttribute",
         "value": Object {
           "type": "string",
         },
       },
-      Object {
-        "key": "object",
-        "type": "objectKeyValue",
+      "object": Object {
+        "type": "objectAttribute",
         "value": Object {
-          "fields": Array [
-            Object {
-              "key": "subfield",
-              "type": "objectKeyValue",
+          "attributes": Object {
+            "subfield": Object {
+              "type": "objectAttribute",
               "value": Object {
                 "type": "string",
               },
             },
-          ],
+          },
           "type": "object",
         },
       },
-      Object {
-        "key": "optionalObject",
+      "optionalObject": Object {
         "optional": true,
-        "type": "objectKeyValue",
+        "type": "objectAttribute",
         "value": Object {
-          "fields": Array [
-            Object {
-              "key": "subfield",
-              "type": "objectKeyValue",
+          "attributes": Object {
+            "subfield": Object {
+              "type": "objectAttribute",
               "value": Object {
                 "type": "string",
               },
             },
-          ],
+          },
           "type": "object",
         },
       },
-    ],
+    },
     "type": "object",
   },
   "type": "array",
@@ -213,53 +197,47 @@ Object {
 exports[`test/evaluateQueryType.test.ts TAP misc > must match snapshot 1`] = `
 Object {
   "of": Object {
-    "fields": Array [
-      Object {
-        "key": "group",
-        "type": "objectKeyValue",
+    "attributes": Object {
+      "andWithAttriute": Object {
+        "type": "objectAttribute",
+        "value": Object {
+          "type": "boolean",
+          "value": true,
+        },
+      },
+      "group": Object {
+        "type": "objectAttribute",
         "value": Object {
           "type": "number",
           "value": 35,
         },
       },
-      Object {
-        "key": "notBool",
-        "type": "objectKeyValue",
+      "notBool": Object {
+        "type": "objectAttribute",
         "value": Object {
           "type": "boolean",
           "value": true,
         },
       },
-      Object {
-        "key": "notField",
-        "type": "objectKeyValue",
+      "notField": Object {
+        "type": "objectAttribute",
         "value": Object {
           "type": "boolean",
         },
       },
-      Object {
-        "key": "unknownParent",
-        "type": "objectKeyValue",
-        "value": Object {
-          "type": "null",
-        },
-      },
-      Object {
-        "key": "andWithAttriute",
-        "type": "objectKeyValue",
-        "value": Object {
-          "type": "boolean",
-          "value": true,
-        },
-      },
-      Object {
-        "key": "pt",
-        "type": "objectKeyValue",
+      "pt": Object {
+        "type": "objectAttribute",
         "value": Object {
           "type": "string",
         },
       },
-    ],
+      "unknownParent": Object {
+        "type": "objectAttribute",
+        "value": Object {
+          "type": "null",
+        },
+      },
+    },
     "type": "object",
   },
   "type": "array",
@@ -269,32 +247,22 @@ Object {
 exports[`test/evaluateQueryType.test.ts TAP object references > must match snapshot 1`] = `
 Object {
   "of": Object {
-    "fields": Array [
-      Object {
-        "key": "_id",
-        "type": "objectKeyValue",
+    "attributes": Object {
+      "_id": Object {
+        "type": "objectAttribute",
         "value": Object {
           "type": "string",
         },
       },
-      Object {
-        "key": "_type",
-        "type": "objectKeyValue",
+      "_type": Object {
+        "type": "objectAttribute",
         "value": Object {
           "type": "string",
           "value": "ghost",
         },
       },
-      Object {
-        "key": "name",
-        "type": "objectKeyValue",
-        "value": Object {
-          "type": "string",
-        },
-      },
-      Object {
-        "key": "concepts",
-        "type": "objectKeyValue",
+      "concepts": Object {
+        "type": "objectAttribute",
         "value": Object {
           "of": Object {
             "to": "concept",
@@ -303,37 +271,40 @@ Object {
           "type": "array",
         },
       },
-      Object {
-        "key": "enabledConcepts",
-        "type": "objectKeyValue",
+      "disabledConcepts": Object {
+        "type": "objectAttribute",
         "value": Object {
           "of": Object {
-            "fields": Array [
-              Object {
-                "key": "name",
-                "type": "objectKeyValue",
+            "to": "concept",
+            "type": "reference",
+          },
+          "type": "array",
+        },
+      },
+      "enabledConcepts": Object {
+        "type": "objectAttribute",
+        "value": Object {
+          "of": Object {
+            "attributes": Object {
+              "name": Object {
+                "type": "objectAttribute",
                 "value": Object {
                   "type": "string",
                 },
               },
-            ],
+            },
             "type": "object",
           },
           "type": "array",
         },
       },
-      Object {
-        "key": "disabledConcepts",
-        "type": "objectKeyValue",
+      "name": Object {
+        "type": "objectAttribute",
         "value": Object {
-          "of": Object {
-            "to": "concept",
-            "type": "reference",
-          },
-          "type": "array",
+          "type": "string",
         },
       },
-    ],
+    },
     "type": "object",
   },
   "type": "array",
@@ -342,34 +313,31 @@ Object {
 
 exports[`test/evaluateQueryType.test.ts TAP with conditional splat > must match snapshot 1`] = `
 Object {
-  "fields": Array [
-    Object {
-      "key": "not match",
-      "type": "objectKeyValue",
+  "attributes": Object {
+    "not match": Object {
+      "type": "objectAttribute",
       "value": Object {
-        "fields": Array [
-          Object {
-            "key": "match",
-            "type": "objectKeyValue",
+        "attributes": Object {
+          "match": Object {
+            "type": "objectAttribute",
             "value": Object {
-              "fields": Array [
-                Object {
-                  "key": "foo",
-                  "type": "objectKeyValue",
+              "attributes": Object {
+                "foo": Object {
+                  "type": "objectAttribute",
                   "value": Object {
                     "type": "number",
                     "value": 1,
                   },
                 },
-              ],
+              },
               "type": "object",
             },
           },
-        ],
+        },
         "type": "object",
       },
     },
-  ],
+  },
   "type": "object",
 }
 `
