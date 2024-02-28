@@ -27,8 +27,6 @@ export function satisfies(type: TypeNode, value: unknown): boolean {
       return value === null || satisfies(type.value, value)
     case 'unknown':
       return true
-    case 'concatenation':
-      return typeof value === 'string'
     case 'object':
       if (typeof value !== 'object' || value === null) return false
       return type.fields.every(

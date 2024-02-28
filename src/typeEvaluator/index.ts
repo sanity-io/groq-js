@@ -2,7 +2,6 @@ export {typeEvaluate as evaluateNodeType, evaluateQueryType} from './evaluateQue
 export type {
   ArrayTypeNode,
   BooleanTypeNode,
-  ConcatenationTypeNode,
   Document,
   NeverTypeNode,
   NullTypeNode,

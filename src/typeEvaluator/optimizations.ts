@@ -26,10 +26,6 @@ export function hashField(field: TypeNode): string | null {
       return `${field.type}:${hashField(field.value)}`
     }
 
-    case 'concatenation': {
-      return `${field.type}:${field.fields.map(hashField).join(',')}`
-    }
-
     case 'array': {
       return `${field.type}:${hashField(field.of)}`
     }
