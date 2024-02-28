@@ -447,9 +447,6 @@ function mapFieldInScope(
       of: field.of.map((subField) => mapFieldInScope(subField, scope, mapper)),
     }
   }
-  if (field.type === 'array') {
-    return mapFieldInScope(field.of, scope, mapper)
-  }
 
   if (field.type === 'reference') {
     const lookupField = scope.context.lookupType(field)
@@ -551,9 +548,9 @@ function handleParentNode(node: ParentNode, scope: Scope): TypeNode {
   for (let n = node.n; n > 0; n--) {
     newScope = newScope?.parent
   }
-  $trace('parent.scope %n %O', node.n, newScope)
+  $trace('parent.scope %d %O', node.n, newScope)
   if (newScope !== undefined) {
-    return {type: 'array', of: newScope.value}
+    return newScope.value
   }
   return {type: 'null'} satisfies NullTypeNode
 }
