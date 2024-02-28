@@ -522,7 +522,7 @@ function mapFieldInScope(
   if (field.type === 'object') {
     return mapper(field)
   }
-  return {type: 'unknown'} satisfies UnknownTypeNode
+  return {type: 'null'}
 }
 
 export function handleAccessAttributeNode(node: AccessAttributeNode, scope: Scope): TypeNode {
@@ -542,7 +542,7 @@ export function handleAccessAttributeNode(node: AccessAttributeNode, scope: Scop
       $warn(
         `field "${node.name}" not found in ${base.type === 'document' ? `document "${base.name}"` : 'object'}`,
       )
-      return {type: 'unknown'} satisfies UnknownTypeNode
+      return {type: 'null'}
     }),
   )
 }
@@ -749,8 +749,7 @@ export function walk({node, scope}: {node: ExprNode; scope: Scope}): TypeNode {
     }
     case 'Parameter': {
       return {
-        type: 'parameter',
-        name: node.name,
+        type: 'unknown',
       }
     }
 
@@ -785,13 +784,10 @@ function walkAndIgnoreOptional({node, scope}: {node: ExprNode; scope: Scope}): T
 function evaluateEquality(left: TypeNode, right: TypeNode): boolean | undefined {
   $trace('opcall == %O', {left, right})
   if (left.type === 'unknown' || right.type === 'unknown') {
-    return false
+    return undefined
   }
   if (left.type === 'null' && right.type === 'null') {
     return true
-  }
-  if (left.type === 'parameter' || right.type === 'parameter') {
-    return undefined
   }
 
   if (
