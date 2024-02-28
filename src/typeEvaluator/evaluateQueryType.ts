@@ -58,7 +58,7 @@ const $debug = debug('typeEvaluator:evaluate::debug')
 $debug.log = console.log.bind(console) // eslint-disable-line no-console
 const $warn = debug('typeEvaluator:evaluate::warn')
 
-export function evaluateNodeType(ast: ExprNode, schema: Schema): TypeNode {
+export function typeEvaluate(ast: ExprNode, schema: Schema): TypeNode {
   const parsed = walk({
     node: ast,
     scope: createScope([], undefined, createContext(schema)),
@@ -87,7 +87,7 @@ export function evaluateQueryType(query: string, schema: Schema): TypeNode {
 
   const ast = parse(query)
   $debug('evaluateQueryType.ast %O', ast)
-  return evaluateNodeType(ast, schema)
+  return typeEvaluate(ast, schema)
 }
 
 function handleDerefNode(node: DerefNode, scope: Scope): TypeNode {
