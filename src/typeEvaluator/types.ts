@@ -40,6 +40,7 @@ export interface ObjectKeyValue<T extends TypeNode = TypeNode> {
   type: 'objectKeyValue'
   key: string
   value: T
+  optional?: boolean
 }
 
 export interface ReferenceTypeNode {
@@ -57,10 +58,6 @@ export interface ArrayTypeNode<T extends TypeNode = TypeNode> {
   type: 'array'
   of: T
 }
-export interface OptionalTypeNode<T extends TypeNode = TypeNode> {
-  type: 'optional'
-  value: T
-}
 
 export type UnknownTypeNode = {type: 'unknown'}
 
@@ -74,4 +71,3 @@ export type TypeNode =
   | UnionTypeNode
   | ReferenceTypeNode
   | UnknownTypeNode
-  | OptionalTypeNode
