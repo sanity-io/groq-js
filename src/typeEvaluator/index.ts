@@ -7,7 +7,6 @@ export type {
   NumberTypeNode,
   ObjectKeyValue,
   ObjectTypeNode,
-  OptionalTypeNode,
   PrimitiveTypeNode,
   ReferenceTypeNode,
   Schema,
@@ -17,3 +16,33 @@ export type {
   UnionTypeNode,
   UnknownTypeNode,
 } from './types'
+
+// @internal
+export type {
+  AnyStaticValue,
+  ArrayValue,
+  BooleanValue,
+  Context,
+  DateTime,
+  DateTimeValue,
+  DereferenceFunction,
+  Document as EvalDocument,
+  Executor,
+  ExprNode,
+  GroqFunction,
+  GroqFunctionArg,
+  GroqPipeFunction,
+  GroqType,
+  NullValue,
+  NumberValue,
+  ObjectValue,
+  Path,
+  PathValue,
+  Scope,
+  StaticValue,
+  StreamValue,
+  StringValue,
+  Value,
+} from '../1'
+// @internal
+export * from '../nodeTypes'

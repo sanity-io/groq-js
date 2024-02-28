@@ -3,9 +3,7 @@ import t from 'tap'
 import {evaluateQueryType} from '../src/typeEvaluator/evaluateQueryType'
 import {
   ArrayTypeNode,
-  NullTypeNode,
   ObjectTypeNode,
-  OptionalTypeNode,
   Schema,
   TypeNode,
   UnionTypeNode,
@@ -42,11 +40,9 @@ const schemas = [
         type: 'objectKeyValue',
         key: 'lastname',
         value: {
-          type: 'optional',
-          value: {
-            type: 'string',
-          },
+          type: 'string',
         },
+        optional: true,
       },
       {
         type: 'objectKeyValue',
@@ -60,19 +56,35 @@ const schemas = [
         type: 'objectKeyValue',
         key: 'sluger',
         value: {
-          type: 'optional',
-          value: {
-            type: 'reference',
-            to: 'slug',
-          },
+          type: 'reference',
+          to: 'slug',
         },
+        optional: true,
       },
       {
         type: 'objectKeyValue',
         key: 'authorOrGhost',
         value: {
-          type: 'optional',
-          value: {
+          type: 'union',
+          of: [
+            {
+              type: 'reference',
+              to: 'author',
+            },
+            {
+              type: 'reference',
+              to: 'ghost',
+            },
+          ],
+        },
+        optional: true,
+      },
+      {
+        type: 'objectKeyValue',
+        key: 'allAuthorOrGhost',
+        value: {
+          type: 'array',
+          of: {
             type: 'union',
             of: [
               {
@@ -86,29 +98,7 @@ const schemas = [
             ],
           },
         },
-      },
-      {
-        type: 'objectKeyValue',
-        key: 'allAuthorOrGhost',
-        value: {
-          type: 'optional',
-          value: {
-            type: 'array',
-            of: {
-              type: 'union',
-              of: [
-                {
-                  type: 'reference',
-                  to: 'author',
-                },
-                {
-                  type: 'reference',
-                  to: 'ghost',
-                },
-              ],
-            },
-          },
-        },
+        optional: true,
       },
     ],
   },
@@ -172,20 +162,18 @@ const schemas = [
         type: 'objectKeyValue',
         key: 'optionalObject',
         value: {
-          type: 'optional',
-          value: {
-            type: 'object',
-            fields: [
-              {
-                key: 'subfield',
-                type: 'objectKeyValue',
-                value: {
-                  type: 'string',
-                },
+          type: 'object',
+          fields: [
+            {
+              key: 'subfield',
+              type: 'objectKeyValue',
+              value: {
+                type: 'string',
               },
-            ],
-          },
+            },
+          ],
         },
+        optional: true,
       },
     ],
   },
@@ -321,21 +309,17 @@ const schemas = [
           type: 'objectKeyValue',
           key: 'current',
           value: {
-            type: 'optional',
-            value: {
-              type: 'string',
-            },
+            type: 'string',
           },
+          optional: true,
         },
         {
           type: 'objectKeyValue',
           key: 'source',
           value: {
-            type: 'optional',
-            value: {
-              type: 'string',
-            },
+            type: 'string',
           },
+          optional: true,
         },
         {
           type: 'objectKeyValue',
@@ -349,11 +333,9 @@ const schemas = [
           type: 'objectKeyValue',
           key: '_key',
           value: {
-            type: 'optional',
-            value: {
-              type: 'string',
-            },
+            type: 'string',
           },
+          optional: true,
         },
       ],
     },
@@ -366,7 +348,7 @@ t.test('no projection', (t) => {
   t.strictSame(res, {
     type: 'array',
     of: findSchemaType('author'),
-  })
+  } satisfies TypeNode)
   t.end()
 })
 t.test('pipe func call', (t) => {
@@ -375,7 +357,7 @@ t.test('pipe func call', (t) => {
   t.strictSame(res, {
     type: 'array',
     of: findSchemaType('author'),
-  })
+  } satisfies TypeNode)
   t.end()
 })
 
@@ -383,9 +365,9 @@ t.test('element access', (t) => {
   const query = `*[_type == "author"][0]`
   const res = evaluateQueryType(query, schemas)
   t.strictSame(res, {
-    type: 'optional',
-    value: findSchemaType('author'),
-  })
+    type: 'union',
+    of: [findSchemaType('author'), {type: 'null'}],
+  } satisfies TypeNode)
   t.end()
 })
 
@@ -393,9 +375,9 @@ t.test('access attribute with objects', (t) => {
   const query = `*[_type == "author" && object.subfield == "foo"][0]`
   const res = evaluateQueryType(query, schemas)
   t.strictSame(res, {
-    type: 'optional',
-    value: findSchemaType('author'),
-  })
+    type: 'union',
+    of: [findSchemaType('author'), {type: 'null'}],
+  } satisfies TypeNode)
   t.end()
 })
 
@@ -403,9 +385,9 @@ t.test('access attribute with derefences', (t) => {
   const query = `*[authorOrGhost->name == "foo"][0]`
   const res = evaluateQueryType(query, schemas)
   t.strictSame(res, {
-    type: 'optional',
-    value: findSchemaType('post'),
-  })
+    type: 'union',
+    of: [findSchemaType('post'), {type: 'null'}],
+  } satisfies TypeNode)
   t.end()
 })
 
@@ -476,9 +458,10 @@ t.test('subfilter doesnt match', (t) => {
   t.strictSame(res, {
     type: 'array',
     of: {
-      type: 'null',
+      type: 'union',
+      of: [],
     },
-  } satisfies ArrayTypeNode<NullTypeNode>)
+  } satisfies TypeNode)
 
   t.end()
 })
@@ -521,7 +504,7 @@ t.test('attribute access', (t) => {
     of: {
       type: 'string',
     },
-  })
+  } satisfies TypeNode)
 
   t.end()
 })
@@ -561,9 +544,10 @@ t.test('never', (t) => {
   t.strictSame(res, {
     type: 'array',
     of: {
-      type: 'null',
+      type: 'union',
+      of: [],
     },
-  } satisfies ArrayTypeNode<NullTypeNode>)
+  } satisfies ArrayTypeNode)
 
   t.end()
 })
@@ -869,9 +853,10 @@ t.test('deref with projection union', (t) => {
         {
           type: 'objectKeyValue',
           key: 'lastname',
-          value: optional({
+          value: {
             type: 'string',
-          }),
+          },
+          optional: true,
         },
         {
           type: 'objectKeyValue',
@@ -884,26 +869,25 @@ t.test('deref with projection union', (t) => {
         {
           type: 'objectKeyValue',
           key: 'sluger',
-          value: optional({
+          value: {
             type: 'reference',
             to: 'slug',
-          }),
+          },
+          optional: true,
         },
         {
           type: 'objectKeyValue',
           key: 'authorOrGhost',
           value: {
-            type: 'optional',
-            value: {
-              type: 'union',
-              of: [findSchemaType('author'), findSchemaType('ghost')],
-            },
+            type: 'union',
+            of: [findSchemaType('author'), findSchemaType('ghost')],
           },
         },
         {
           type: 'objectKeyValue',
           key: 'allAuthorOrGhost',
-          value: optional({
+          optional: true,
+          value: {
             type: 'array',
             of: {
               type: 'union',
@@ -918,7 +902,7 @@ t.test('deref with projection union', (t) => {
                 },
               ],
             },
-          }),
+          },
         },
         {
           type: 'objectKeyValue',
@@ -931,16 +915,13 @@ t.test('deref with projection union', (t) => {
           type: 'objectKeyValue',
           key: 'authorOrGhostName',
           value: {
-            type: 'optional',
-            value: {
-              type: 'string',
-            },
+            type: 'string',
           },
         },
         {
           type: 'objectKeyValue',
           key: 'authorOrGhostProjected',
-          value: optional({
+          value: {
             type: 'union',
             of: [
               {
@@ -984,18 +965,18 @@ t.test('deref with projection union', (t) => {
                 ],
               },
             ],
-          }),
+          },
         },
         {
           type: 'objectKeyValue',
           key: 'resolvedAllAuthorOrGhost',
-          value: optional({
+          value: {
             type: 'array',
             of: {
               type: 'union',
               of: [findSchemaType('author'), findSchemaType('ghost')],
             },
-          }),
+          },
         },
       ],
     },
@@ -1059,42 +1040,45 @@ t.test('deref with projection and element access', (t) => {
           }[0]`
   const res = evaluateQueryType(query, schemas)
   t.strictSame(res, {
-    type: 'optional',
-    value: {
-      type: 'object',
-      fields: [
-        {
-          type: 'objectKeyValue',
-          key: 'name',
-          value: {
-            type: 'string',
+    type: 'union',
+    of: [
+      {
+        type: 'object',
+        fields: [
+          {
+            type: 'objectKeyValue',
+            key: 'name',
+            value: {
+              type: 'string',
+            },
           },
-        },
-        {
-          type: 'objectKeyValue',
-          key: 'author',
-          value: {
-            type: 'object',
-            fields: [
-              {
-                type: 'objectKeyValue',
-                key: '_id',
-                value: {
-                  type: 'string',
+          {
+            type: 'objectKeyValue',
+            key: 'author',
+            value: {
+              type: 'object',
+              fields: [
+                {
+                  type: 'objectKeyValue',
+                  key: '_id',
+                  value: {
+                    type: 'string',
+                  },
                 },
-              },
-              {
-                type: 'objectKeyValue',
-                key: 'name',
-                value: {
-                  type: 'string',
+                {
+                  type: 'objectKeyValue',
+                  key: 'name',
+                  value: {
+                    type: 'string',
+                  },
                 },
-              },
-            ],
+              ],
+            },
           },
-        },
-      ],
-    },
+        ],
+      },
+      {type: 'null'},
+    ],
   } satisfies TypeNode)
 
   t.end()
@@ -1107,42 +1091,45 @@ t.test('deref with element access, then projection ', (t) => {
           }`
   const res = evaluateQueryType(query, schemas)
   t.strictSame(res, {
-    type: 'optional',
-    value: {
-      type: 'object',
-      fields: [
-        {
-          type: 'objectKeyValue',
-          key: 'name',
-          value: {
-            type: 'string',
+    type: 'union',
+    of: [
+      {
+        type: 'object',
+        fields: [
+          {
+            type: 'objectKeyValue',
+            key: 'name',
+            value: {
+              type: 'string',
+            },
           },
-        },
-        {
-          type: 'objectKeyValue',
-          key: 'author',
-          value: {
-            type: 'object',
-            fields: [
-              {
-                type: 'objectKeyValue',
-                key: '_id',
-                value: {
-                  type: 'string',
+          {
+            type: 'objectKeyValue',
+            key: 'author',
+            value: {
+              type: 'object',
+              fields: [
+                {
+                  type: 'objectKeyValue',
+                  key: '_id',
+                  value: {
+                    type: 'string',
+                  },
                 },
-              },
-              {
-                type: 'objectKeyValue',
-                key: 'name',
-                value: {
-                  type: 'string',
+                {
+                  type: 'objectKeyValue',
+                  key: 'name',
+                  value: {
+                    type: 'string',
+                  },
                 },
-              },
-            ],
+              ],
+            },
           },
-        },
-      ],
-    },
+        ],
+      },
+      {type: 'null'},
+    ],
   } satisfies TypeNode)
 
   t.end()
@@ -1223,7 +1210,7 @@ t.test('string concetnation', (t) => {
 })
 t.test('with select', (t) => {
   const query = `*[_type == "author" || _type == "post"] {
-      _type,
+        _type,
         "authorName": select(
           _type == "author" => name,
           _type == "post" => lastname,
@@ -1250,9 +1237,9 @@ t.test('with select', (t) => {
             {
               type: 'objectKeyValue',
               key: 'authorName',
-              value: optional({
+              value: {
                 type: 'string',
-              }),
+              },
             },
           ],
         },
@@ -1429,7 +1416,8 @@ t.test('with splat', (t) => {
         {
           type: 'objectKeyValue',
           key: 'optionalObject',
-          value: optional({
+          optional: true,
+          value: {
             type: 'object',
             fields: [
               {
@@ -1440,7 +1428,7 @@ t.test('with splat', (t) => {
                 },
               },
             ],
-          }),
+          },
         },
         {
           type: 'objectKeyValue',
@@ -1467,9 +1455,10 @@ t.test('with conditional splat', (t) => {
   t.end()
 })
 
-t.test('coalesce', async (t) => {
+t.test('coalesce only', async (t) => {
   const query = `*[_type == "author"]{
           "name": coalesce(name, "unknown"),
+          "maybe": coalesce(optionalObject, dontExists)
         }`
   const res = evaluateQueryType(query, schemas)
   t.matchSnapshot(res)
@@ -1548,7 +1537,10 @@ t.test('filter with function', (t) => {
 
 t.test('filter with type reference', (t) => {
   const res = evaluateQueryType(`*[_type == "post" && sluger.current == $foo][0]`, schemas)
-  t.strictSame(res, optional(findSchemaType('post')))
+  t.strictSame(res, {
+    type: 'union',
+    of: [findSchemaType('post'), {type: 'null'}],
+  } satisfies TypeNode)
   t.end()
 })
 
@@ -1564,12 +1556,12 @@ t.test('misc', (t) => {
   const query = `*[]{
       "group": ((3 + 4) * 5),
       "notBool": !false,
-      "notField": !someField,
+      "notField": !someAttriute,
       "unknownParent": ^._id,
-      "and": !false && !field,
+      "andWithAttriute": !false && !someAttriute,
       "pt": pt::text(block)
     }`
-  const res = evaluateQueryType(query, schemas)
+  const res = evaluateQueryType(query, [{type: 'document', name: 'foo', fields: []}])
   t.matchSnapshot(res)
 
   t.end()
@@ -1688,11 +1680,4 @@ function findSchemaType(name: string): TypeNode {
     }
   }
   return type.value
-}
-
-function optional(field: TypeNode): OptionalTypeNode {
-  return {
-    type: 'optional',
-    value: field,
-  }
 }

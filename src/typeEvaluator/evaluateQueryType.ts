@@ -40,7 +40,6 @@ import type {
   NumberTypeNode,
   ObjectKeyValue,
   ObjectTypeNode,
-  OptionalTypeNode,
   PrimitiveTypeNode,
   Schema,
   StringTypeNode,
@@ -89,51 +88,41 @@ export function evaluateQueryType(query: string, schema: Schema): TypeNode {
   return typeEvaluate(ast, schema)
 }
 
+function mapDeref(base: TypeNode, scope: Scope): TypeNode {
+  if (base.type === 'union') {
+    return {
+      type: 'union',
+      of: base.of.map((node) => mapDeref(node, scope)),
+    }
+  }
+
+  if (base.type === 'array') {
+    return {
+      type: 'array',
+      of: mapDeref(base.of, scope),
+    }
+  }
+
+  if (base.type === 'reference') {
+    const lookupBase = scope.context.lookupRef(base)
+    return lookupBase
+  }
+
+  return base
+}
+
 function handleDerefNode(node: DerefNode, scope: Scope): TypeNode {
-  const derferencedField = walk({node: node.base, scope})
-  $trace('deref.base %O', derferencedField)
+  const base = walk({node: node.base, scope})
+  $trace('deref.base %O', base)
 
-  return mapOptional(derferencedField, (field) => {
-    if (field.type === 'null' || field.type === 'unknown') {
-      return {type: 'null'} satisfies NullTypeNode
-    }
+  if (base.type === 'null' || base.type === 'unknown') {
+    return {type: 'null'} satisfies NullTypeNode
+  }
 
-    if (field.type === 'reference') {
-      return scope.context.lookupRef(field)
-    }
+  const derefedNode = mapDeref(base, scope)
+  $trace('deref.derefedNode %O', derefedNode)
 
-    if (field.type === 'union') {
-      return {
-        type: 'union',
-        of: field.of.map((v) =>
-          mapOptional(v, (f) => {
-            if (f.type === 'reference') {
-              return scope.context.lookupRef(f)
-            }
-            return f
-          }),
-        ),
-      }
-    }
-
-    if (field.type === 'array' && field.of?.type === 'union') {
-      return {
-        type: 'array',
-        of: {
-          type: 'union',
-          of: field.of.of.map((v) =>
-            mapOptional(v, (f) => {
-              if (f.type === 'reference') {
-                return scope.context.lookupRef(f)
-              }
-              return f
-            }),
-          ),
-        },
-      }
-    }
-    return field
-  })
+  return derefedNode
 }
 
 function mapObjectSplat(
@@ -154,54 +143,27 @@ function mapObjectSplat(
 function handleObjectNode(node: ObjectNode, scope: Scope) {
   $trace('object.node %O', node)
   $trace('object.scope %O', scope)
-  const fields: Record<string, ObjectKeyValue<UnionTypeNode>> = {}
+  const fields: Record<string, ObjectKeyValue> = {}
   for (const attr of node.attributes) {
     if (attr.type === 'ObjectAttributeValue') {
       const field = optimizeUnions(walk({node: attr.value, scope}))
       fields[attr.name] = {
         type: 'objectKeyValue',
         key: attr.name,
-        value: {
-          type: 'union',
-          of: [field],
-        },
-      }
-
-      if (field.type === 'unknown') {
-        continue
+        value: field,
       }
     }
 
     if (attr.type === 'ObjectSplat') {
       const value = walk({node: attr.value, scope})
       $trace('object.splat.value %O', value)
-      const attributeFields: Record<string, TypeNode[]> = {}
-
       mapObjectSplat(value, scope, (node) => {
         for (const field of node.fields) {
-          if (attributeFields[field.key] === undefined) {
-            attributeFields[field.key] = []
-          }
-          attributeFields[field.key].push(field.value)
+          fields[field.key] = field
         }
       })
-      for (const fieldKey in attributeFields) {
-        if (!Object.hasOwn(attributeFields, fieldKey)) {
-          continue
-        }
-        fields[fieldKey] = {
-          type: 'objectKeyValue',
-          key: fieldKey,
-          value: {
-            type: 'union',
-            of: [...attributeFields[fieldKey]],
-          },
-        }
-      }
     }
-
     if (attr.type === 'ObjectConditionalSplat') {
-      const attributeFields: Record<string, TypeNode[]> = {}
       const condition = resolveCondition(attr.condition, scope)
       $trace('object.conditional.splat.condition %O', condition)
       if (condition) {
@@ -209,26 +171,9 @@ function handleObjectNode(node: ObjectNode, scope: Scope) {
 
         mapObjectSplat(value, scope, (node) => {
           node.fields.forEach((field) => {
-            if (attributeFields[field.key] === undefined) {
-              attributeFields[field.key] = []
-            }
-            attributeFields[field.key].push(field.value)
+            fields[field.key] = field
           })
         })
-      }
-
-      for (const fieldKey in attributeFields) {
-        if (!Object.hasOwn(attributeFields, fieldKey)) {
-          continue
-        }
-        fields[fieldKey] = {
-          type: 'objectKeyValue',
-          key: fieldKey,
-          value: {
-            type: 'union',
-            of: [...attributeFields[fieldKey]],
-          },
-        }
       }
     }
   }
@@ -384,27 +329,28 @@ function handleSelectNode(node: SelectNode, scope: Scope): TypeNode {
 function handleArrayCoerceNode(node: ArrayCoerceNode, scope: Scope): TypeNode {
   const base = walk({node: node.base, scope})
   $trace('arrayCoerce.base %O', base)
-  return mapOptional(base, (newBase) => {
-    if (newBase.type !== 'array') {
+  return mapUnion(base, (base) => {
+    if (base.type !== 'array') {
       return {type: 'null'} satisfies NullTypeNode
     }
 
-    return newBase
+    return base
   })
 }
 function handleFlatMap(node: FlatMapNode, scope: Scope): TypeNode {
   const base = walk({node: node.base, scope})
-  return mapOptional(base, (base) => {
+  return mapUnion(base, (base) => {
     if (base.type !== 'array') {
       return {type: 'null'}
     }
+
     return walk({node: node.expr, scope: scope.subscope([base.of], true)})
   })
 }
 function handleMap(node: MapNode, scope: Scope): TypeNode {
   const base = walk({node: node.base, scope})
   $trace('map.base %O', base)
-  return mapOptional(base, (base) => {
+  return mapUnion(base, (base) => {
     if (base.type !== 'array') {
       return {type: 'unknown'} satisfies UnknownTypeNode
     }
@@ -432,9 +378,7 @@ function mapProjectionInScope(
     if (base.of.length === 1) {
       return mapProjectionInScope(base.of[0], scope, mapper)
     }
-    const of = base.of
-      .filter((f) => f.type !== 'unknown' && f.type !== 'null')
-      .map((f) => mapOptional(f, (f) => mapProjectionInScope(f, scope, mapper)))
+    const of = base.of.map((node) => mapProjectionInScope(node, scope, mapper))
     return {
       type: 'union',
       of,
@@ -453,17 +397,18 @@ function handleProjectionNode(node: ProjectionNode, scope: Scope): TypeNode {
   $trace('projection.base %O', base)
   $trace('projection.scope %O', scope.value)
 
-  return mapOptional(base, (newBase) => {
-    if (newBase.type === 'unknown' || newBase.type === 'null') {
+  if (base.type === 'unknown' || base.type === 'null') {
+    return {type: 'null'}
+  }
+
+  return mapProjectionInScope(base, scope, (field) => {
+    if (field.type === 'null' || field.type === 'unknown') {
       return {type: 'null'}
     }
-
-    return mapProjectionInScope(newBase, scope, (field) =>
-      walk({
-        node: node.expr,
-        scope: scope.subscope([field]),
-      }),
-    )
+    return walk({
+      node: node.expr,
+      scope: scope.subscope([field]),
+    })
   })
 }
 
@@ -481,18 +426,13 @@ function handleFilterNode(node: FilterNode, scope: Scope): TypeNode {
   const base = walk({node: node.base, scope})
   $trace('filter.base %O', base)
 
+  $trace('filter.resolving %O', base)
+  const resolved = resolveFilter(node.expr, createFilterScope(base, scope))
+  $trace('filter.resolved %O', resolved)
+
   return {
     type: 'array',
-    of: mapOptional(base, (base) => {
-      $trace('filter.resolving %O', base)
-      const resolved = resolveFilter(node.expr, createFilterScope(base, scope))
-      $trace('filter.resolved %O', resolved)
-
-      if (resolved.type === 'union' && resolved.of.length === 0) {
-        return {type: 'null'}
-      }
-      return resolved
-    }),
+    of: resolved,
   }
 }
 
@@ -513,7 +453,7 @@ function mapFieldInScope(
 
   if (field.type === 'reference') {
     const lookupField = scope.context.lookupType(field)
-    return mapOptional(lookupField, (subField) => mapFieldInScope(subField, scope, mapper))
+    return mapFieldInScope(lookupField, scope, mapper)
   }
 
   if (field.type === 'object') {
@@ -529,19 +469,21 @@ export function handleAccessAttributeNode(node: AccessAttributeNode, scope: Scop
   }
   $trace('accessAttribute.base %s %O', node.name, attributeBase)
 
-  return mapOptional(attributeBase, (base) =>
-    mapFieldInScope(base, scope, (base) => {
-      const field = base.fields.find((field) => field.key === node.name)
-      if (field) {
-        $debug(`accessAttribute.field found ${node.name} %O`, field)
+  return mapFieldInScope(attributeBase, scope, (base) => {
+    const field = base.fields.find((field) => field.key === node.name)
+    if (field) {
+      $debug(`accessAttribute.field found ${node.name} %O`, field)
+      if (isPrimitiveTypeNode(field.value) && field.value.value !== undefined) {
         return field.value
       }
-      $warn(
-        `field "${node.name}" not found in ${base.type === 'document' ? `document "${base.name}"` : 'object'}`,
-      )
-      return {type: 'null'}
-    }),
-  )
+
+      return field.value
+    }
+    $warn(
+      `field "${node.name}" not found in ${base.type === 'document' ? `document "${base.name}"` : 'object'}`,
+    )
+    return {type: 'null'}
+  })
 }
 
 function handleAccessElementNode(node: AccessElementNode, scope: Scope): TypeNode {
@@ -550,17 +492,16 @@ function handleAccessElementNode(node: AccessElementNode, scope: Scope): TypeNod
   }
   const base = walk({node: node.base, scope})
   $trace('accessElement.base %O', base)
-  if (base.type !== 'array') {
-    return {type: 'null'} satisfies NullTypeNode
-  }
-  if (base.of.type === 'optional') {
-    return base.of
-  }
+  return mapUnion(base, (base) => {
+    if (base.type !== 'array') {
+      return {type: 'null'} satisfies NullTypeNode
+    }
 
-  return {
-    type: 'optional',
-    value: base.of,
-  } satisfies OptionalTypeNode
+    return {
+      type: 'union',
+      of: [base.of, {type: 'null'}],
+    } satisfies UnionTypeNode
+  })
 }
 
 function handleArrayNode(node: ArrayNode, scope: Scope): TypeNode {
@@ -774,10 +715,6 @@ function isPrimitiveTypeNode(node: TypeNode): node is PrimitiveTypeNode {
   return node.type === 'string' || node.type === 'number' || node.type === 'boolean'
 }
 
-function walkAndIgnoreOptional({node, scope}: {node: ExprNode; scope: Scope}): TypeNode {
-  return ignoreOptional(walk({node, scope}))
-}
-
 function evaluateEquality(left: TypeNode, right: TypeNode): boolean | undefined {
   $trace('opcall == %O', {left, right})
   if (left.type === 'unknown' || right.type === 'unknown') {
@@ -867,15 +804,15 @@ function resolveCondition(expr: ExprNode, scope: Scope): boolean | undefined {
     case 'OpCall': {
       switch (expr.op) {
         case '==': {
-          const left = walkAndIgnoreOptional({node: expr.left, scope})
-          const right = walkAndIgnoreOptional({node: expr.right, scope})
+          const left = walk({node: expr.left, scope})
+          const right = walk({node: expr.right, scope})
           $trace('opcall == %O', {left, right})
 
           return evaluateEquality(left, right)
         }
         case '!=': {
-          const left = walkAndIgnoreOptional({node: expr.left, scope})
-          const right = walkAndIgnoreOptional({node: expr.right, scope})
+          const left = walk({node: expr.left, scope})
+          const right = walk({node: expr.right, scope})
           $trace('opcall != %O', {left, right})
 
           const result = evaluateEquality(left, right)
@@ -885,8 +822,8 @@ function resolveCondition(expr: ExprNode, scope: Scope): boolean | undefined {
           return !result
         }
         case 'in': {
-          const left = walkAndIgnoreOptional({node: expr.left, scope})
-          const right = walkAndIgnoreOptional({node: expr.right, scope})
+          const left = walk({node: expr.left, scope})
+          const right = walk({node: expr.right, scope})
           if (left.type === 'unknown' || right.type === 'unknown') {
             return false
           }
@@ -901,8 +838,8 @@ function resolveCondition(expr: ExprNode, scope: Scope): boolean | undefined {
           return undefined
         }
         case 'match': {
-          const left = walkAndIgnoreOptional({node: expr.left, scope})
-          const right = walkAndIgnoreOptional({node: expr.right, scope})
+          const left = walk({node: expr.left, scope})
+          const right = walk({node: expr.right, scope})
           if (left.type === 'unknown' || right.type === 'unknown') {
             return false
           }
@@ -930,8 +867,8 @@ function resolveCondition(expr: ExprNode, scope: Scope): boolean | undefined {
           return matchText(tokens, patterns)
         }
         case '<': {
-          const left = walkAndIgnoreOptional({node: expr.left, scope})
-          const right = walkAndIgnoreOptional({node: expr.right, scope})
+          const left = walk({node: expr.left, scope})
+          const right = walk({node: expr.right, scope})
           if (isPrimitiveTypeNode(left) && isPrimitiveTypeNode(right)) {
             if (left.value === undefined || right.value === undefined) {
               return undefined
@@ -942,8 +879,8 @@ function resolveCondition(expr: ExprNode, scope: Scope): boolean | undefined {
           return undefined
         }
         case '<=': {
-          const left = walkAndIgnoreOptional({node: expr.left, scope})
-          const right = walkAndIgnoreOptional({node: expr.right, scope})
+          const left = walk({node: expr.left, scope})
+          const right = walk({node: expr.right, scope})
           if (isPrimitiveTypeNode(left) && isPrimitiveTypeNode(right)) {
             if (left.value === undefined || right.value === undefined) {
               return undefined
@@ -954,8 +891,8 @@ function resolveCondition(expr: ExprNode, scope: Scope): boolean | undefined {
           return undefined
         }
         case '>': {
-          const left = walkAndIgnoreOptional({node: expr.left, scope})
-          const right = walkAndIgnoreOptional({node: expr.right, scope})
+          const left = walk({node: expr.left, scope})
+          const right = walk({node: expr.right, scope})
           if (isPrimitiveTypeNode(left) && isPrimitiveTypeNode(right)) {
             if (left.value === undefined || right.value === undefined) {
               return undefined
@@ -966,8 +903,8 @@ function resolveCondition(expr: ExprNode, scope: Scope): boolean | undefined {
           return undefined
         }
         case '>=': {
-          const left = walkAndIgnoreOptional({node: expr.left, scope})
-          const right = walkAndIgnoreOptional({node: expr.right, scope})
+          const left = walk({node: expr.left, scope})
+          const right = walk({node: expr.right, scope})
           if (isPrimitiveTypeNode(left) && isPrimitiveTypeNode(right)) {
             if (left.value === undefined || right.value === undefined) {
               return undefined
@@ -1008,28 +945,12 @@ function resolveFilter(expr: ExprNode, scope: Scope): TypeNode {
   return {type: 'union', of: filtered}
 }
 
-function mapOptional<T extends TypeNode = TypeNode>(
-  field: TypeNode,
-  mapper: (f: TypeNode) => T,
-): T | OptionalTypeNode<T> {
-  if (field.type === 'optional') {
-    if (field.value.type === 'optional') {
-      return mapOptional(field.value, mapper)
-    }
-
-    return {
-      type: 'optional',
-      value: mapper(field.value),
-    } satisfies OptionalTypeNode<T>
+function mapUnion(node: TypeNode, mapper: (node: TypeNode) => TypeNode): TypeNode {
+  if (node.type === 'union') {
+    return optimizeUnions({
+      type: 'union',
+      of: node.of.map((subNode) => mapUnion(subNode, mapper)),
+    })
   }
-
-  return mapper(field)
-}
-
-function ignoreOptional<T extends TypeNode = TypeNode>(field: T | OptionalTypeNode<T>): TypeNode {
-  if (field.type === 'optional') {
-    return ignoreOptional(field.value)
-  }
-
-  return field
+  return mapper(node)
 }
