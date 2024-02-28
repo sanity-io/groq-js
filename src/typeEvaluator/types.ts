@@ -57,10 +57,6 @@ export interface ArrayTypeNode<T extends TypeNode = TypeNode> {
   type: 'array'
   of: T
 }
-export interface ConcatenationTypeNode {
-  type: 'concatenation'
-  fields: Array<TypeNode>
-}
 export interface OptionalTypeNode<T extends TypeNode = TypeNode> {
   type: 'optional'
   value: T
@@ -79,7 +75,6 @@ export type TypeNode =
   | ArrayTypeNode
   | UnionTypeNode
   | ReferenceTypeNode
-  | ConcatenationTypeNode
   | UnknownTypeNode
   | NeverTypeNode
   | OptionalTypeNode

@@ -35,7 +35,6 @@ import {createContext, createScope, Scope} from './scope'
 import type {
   ArrayTypeNode,
   BooleanTypeNode,
-  ConcatenationTypeNode,
   Document,
   NullTypeNode,
   NumberTypeNode,
@@ -259,30 +258,14 @@ function handleOpCallNode(node: OpCallNode, scope: Scope): TypeNode {
       } satisfies BooleanTypeNode
     }
     case '+': {
-      if (
-        left.type === 'string' &&
-        right.type === 'string' &&
-        left.value !== undefined &&
-        right.value !== undefined
-      ) {
+      if (left.type === 'string' && right.type === 'string') {
         return {
           type: 'string',
-          value: left.value + right.value,
+          value:
+            left.value !== undefined && right.value !== undefined
+              ? left.value + right.value
+              : undefined,
         }
-      }
-
-      if (left.type === 'string') {
-        const rhs = right.type === 'concatenation' ? right.fields : [right]
-        return {
-          type: 'concatenation',
-          fields: [left, ...rhs],
-        } satisfies ConcatenationTypeNode
-      }
-      if (left.type === 'concatenation') {
-        return {
-          type: 'concatenation',
-          fields: [...left.fields, right],
-        } satisfies ConcatenationTypeNode
       }
 
       if (left.type === 'number' && right.type === 'number') {
