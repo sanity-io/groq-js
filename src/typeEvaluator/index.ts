@@ -3,7 +3,6 @@ export type {
   ArrayTypeNode,
   BooleanTypeNode,
   Document,
-  NeverTypeNode,
   NullTypeNode,
   NumberTypeNode,
   ObjectKeyValue,

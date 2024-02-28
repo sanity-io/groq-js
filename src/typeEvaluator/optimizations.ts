@@ -9,8 +9,7 @@ export function hashField(field: TypeNode): string | null {
     }
 
     case 'null':
-    case 'unknown':
-    case 'never': {
+    case 'unknown': {
       return field.type
     }
 
