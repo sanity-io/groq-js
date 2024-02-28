@@ -200,7 +200,8 @@ type CachedResult = {
 type Cacher = (annotatedValues: AnnotatedValue[]) => CachedResult
 
 /**
- * Builds a cacher which
+ * Builds a "cacher" which takes in an annotated value and caches as much as possible.
+ * We use this to be able to speed up the tests since they often work on the same values.
  */
 const buildCacher = (build: (params: ExprNode[]) => ExprNode): Cacher => {
   const cache: Record<string, CachedResult> = {}
@@ -271,11 +272,11 @@ function subtestBinary({
               t.test(`${desc1},${desc2}`, async (t) => {
                 overrideTypeForNode(cachedResult.params[0], type1)
                 overrideTypeForNode(cachedResult.params[1], type2)
-                const resultType = evaluateNodeType(cachedResult.node, SCHEMA)
-                const result = await cachedResult.result
-                t.ok(satisfies(resultType, result), 'evaluation should match type', {
-                  result,
-                  resultType,
+                const evaluatedNodeType = evaluateNodeType(cachedResult.node, SCHEMA)
+                const expectedValue = await cachedResult.result
+                t.ok(satisfies(evaluatedNodeType, expectedValue), 'evaluation should match type', {
+                  expectedValue,
+                  evaluatedNodeType,
                 })
               })
             }
