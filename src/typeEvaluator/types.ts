@@ -64,7 +64,6 @@ export interface OptionalTypeNode<T extends TypeNode = TypeNode> {
 
 export type UnknownTypeNode = {type: 'unknown'}
 export type NeverTypeNode = {type: 'never'}
-export type ParameterTypeNode = {type: 'parameter'; name: string}
 
 export type TypeNode =
   | ObjectTypeNode
@@ -78,4 +77,3 @@ export type TypeNode =
   | UnknownTypeNode
   | NeverTypeNode
   | OptionalTypeNode
-  | ParameterTypeNode

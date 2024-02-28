@@ -14,10 +14,6 @@ export function hashField(field: TypeNode): string | null {
       return field.type
     }
 
-    case 'parameter': {
-      return `${field.type}:${field.name}`
-    }
-
     case 'reference': {
       return `${field.type}:${field.to}`
     }
