@@ -3,7 +3,7 @@ import t from 'tap'
 
 import {evaluate} from '../src/evaluator'
 import {operators} from '../src/evaluator/operators'
-import {ExprNode} from '../src/nodeTypes'
+import {ExprNode, OpCall} from '../src/nodeTypes'
 import {TypeNode} from '../src/typeEvaluator'
 import {typeEvaluate, overrideTypeForNode} from '../src/typeEvaluator/evaluateQueryType'
 import {satisfies} from '../src/typeEvaluator/satisfies'
@@ -301,7 +301,8 @@ t.test('AccessAttribute missing', async (t) => {
   })
 })
 
-for (const op of Object.keys(operators)) {
+const ops = Object.keys(operators) as OpCall[]
+for (const op of ops) {
   t.test(`OpCall ${op}`, async (t) => {
     subtestBinary({
       t,

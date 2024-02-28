@@ -23,8 +23,6 @@ export function satisfies(type: TypeNode, value: unknown): boolean {
       return Array.isArray(value) && value.every((item) => satisfies(type.of, item))
     case 'union':
       return type.of.some((other) => satisfies(other, value))
-    case 'optional':
-      return value === null || satisfies(type.value, value)
     case 'unknown':
       return true
     case 'object':
