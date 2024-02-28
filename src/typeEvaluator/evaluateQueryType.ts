@@ -94,7 +94,7 @@ function handleDerefNode(node: DerefNode, scope: Scope): TypeNode {
   $trace('deref.base %O', derferencedField)
 
   return mapOptional(derferencedField, (field) => {
-    if (field.type === 'null' || field.type === 'never' || field.type === 'unknown') {
+    if (field.type === 'null' || field.type === 'unknown') {
       return {type: 'null'} satisfies NullTypeNode
     }
 
@@ -433,7 +433,7 @@ function mapProjectionInScope(
       return mapProjectionInScope(base.of[0], scope, mapper)
     }
     const of = base.of
-      .filter((f) => f.type !== 'unknown' && f.type !== 'null' && f.type !== 'never')
+      .filter((f) => f.type !== 'unknown' && f.type !== 'null')
       .map((f) => mapOptional(f, (f) => mapProjectionInScope(f, scope, mapper)))
     return {
       type: 'union',
@@ -454,7 +454,7 @@ function handleProjectionNode(node: ProjectionNode, scope: Scope): TypeNode {
   $trace('projection.scope %O', scope.value)
 
   return mapOptional(base, (newBase) => {
-    if (newBase.type === 'unknown' || newBase.type === 'null' || newBase.type === 'never') {
+    if (newBase.type === 'unknown' || newBase.type === 'null') {
       return {type: 'null'}
     }
 
@@ -488,11 +488,8 @@ function handleFilterNode(node: FilterNode, scope: Scope): TypeNode {
       const resolved = resolveFilter(node.expr, createFilterScope(base, scope))
       $trace('filter.resolved %O', resolved)
 
-      if (resolved.type === 'never') {
-        return {type: 'never'}
-      }
       if (resolved.type === 'union' && resolved.of.length === 0) {
-        return {type: 'never'}
+        return {type: 'null'}
       }
       return resolved
     }),

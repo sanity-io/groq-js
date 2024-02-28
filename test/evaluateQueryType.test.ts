@@ -3,14 +3,13 @@ import t from 'tap'
 import {evaluateQueryType} from '../src/typeEvaluator/evaluateQueryType'
 import {
   ArrayTypeNode,
-  NeverTypeNode,
+  NullTypeNode,
   ObjectTypeNode,
   OptionalTypeNode,
   Schema,
   TypeNode,
   UnionTypeNode,
 } from '../src/typeEvaluator/types'
-import {satisfies} from '../src/typeEvaluator/satisfies'
 
 const schemas = [
   {
@@ -477,9 +476,9 @@ t.test('subfilter doesnt match', (t) => {
   t.strictSame(res, {
     type: 'array',
     of: {
-      type: 'never',
+      type: 'null',
     },
-  } satisfies ArrayTypeNode<NeverTypeNode>)
+  } satisfies ArrayTypeNode<NullTypeNode>)
 
   t.end()
 })
@@ -562,9 +561,9 @@ t.test('never', (t) => {
   t.strictSame(res, {
     type: 'array',
     of: {
-      type: 'never',
+      type: 'null',
     },
-  } satisfies ArrayTypeNode<NeverTypeNode>)
+  } satisfies ArrayTypeNode<NullTypeNode>)
 
   t.end()
 })
