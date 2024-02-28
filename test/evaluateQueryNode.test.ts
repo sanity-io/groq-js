@@ -130,7 +130,7 @@ function inObject(input: AnnotatedValue[], name: string): AnnotatedValue[] {
       desc: `{${name}=${desc}}`,
       type: {
         type: 'object',
-        fields: [{type: 'objectKeyValue', key: name, value: type}],
+        attributes: {[name]: {type: 'objectAttribute', value: type}},
       },
     })),
   }))

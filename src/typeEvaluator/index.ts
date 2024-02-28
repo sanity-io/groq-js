@@ -5,7 +5,7 @@ export type {
   Document,
   NullTypeNode,
   NumberTypeNode,
-  ObjectKeyValue,
+  ObjectAttribute as ObjectKeyValue,
   ObjectTypeNode,
   PrimitiveTypeNode,
   ReferenceTypeNode,
