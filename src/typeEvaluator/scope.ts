@@ -5,63 +5,62 @@ import {NullTypeNode, ReferenceTypeNode, Schema, TypeNode, UnionTypeNode} from '
 const $trace = debug('typeEvaluator:scope:trace')
 $trace.log = console.log.bind(console) // eslint-disable-line no-console
 
-export interface Context {
+export class Context {
   readonly schema: Schema
 
-  lookupRef(ref: ReferenceTypeNode): TypeNode
-  lookupType(name: ReferenceTypeNode): TypeNode
-}
+  constructor(schema: Schema) {
+    this.schema = schema
+  }
 
-export function createContext(schema: Schema): Context {
-  return {
-    schema,
-
-    lookupRef(ref) {
-      for (const val of this.schema) {
-        if (val.type === 'document') {
-          if (val.name === ref.to) {
-            return {
-              type: 'object',
-              attributes: val.attributes,
-            }
+  lookupRef(ref: ReferenceTypeNode): TypeNode {
+    for (const val of this.schema) {
+      if (val.type === 'document') {
+        if (val.name === ref.to) {
+          return {
+            type: 'object',
+            attributes: val.attributes,
           }
         }
       }
-      return {type: 'null'} satisfies NullTypeNode
-    },
+    }
+    return {type: 'null'} satisfies NullTypeNode
+  }
 
-    lookupType(ref) {
-      for (const val of this.schema) {
-        if (val.type === 'type') {
-          if (val.name === ref.to) {
-            return val.value
-          }
+  lookupType(ref: ReferenceTypeNode): TypeNode {
+    for (const val of this.schema) {
+      if (val.type === 'type') {
+        if (val.name === ref.to) {
+          return val.value
         }
       }
-      return {type: 'null'} satisfies NullTypeNode
-    },
+    }
+    return {type: 'null'} satisfies NullTypeNode
   }
 }
 
-export interface Scope {
-  value: UnionTypeNode
-  parent: Scope | undefined
-  context: Context
+export class Scope {
+  public value: UnionTypeNode
+  public parent: Scope | undefined
+  public context: Context
+  public isHidden: boolean
 
-  subscope(value: TypeNode[], hidden?: boolean): Scope
-}
-export function createScope(value: TypeNode[], parent?: Scope, context?: Context): Scope {
-  $trace('createScope', JSON.stringify({value, hasParent: parent !== undefined}, null, 2))
-  return {
-    value: {type: 'union', of: value} satisfies UnionTypeNode,
-    parent,
-    context: context || parent?.context || createContext([]),
+  constructor(value: TypeNode[], parent?: Scope, context?: Context) {
+    this.value = {type: 'union', of: value} satisfies UnionTypeNode
+    this.parent = parent
+    this.context = context || parent?.context || new Context([])
+    this.isHidden = false
+  }
 
-    subscope(value, hidden = false) {
-      if (hidden) {
-        return createScope(value, this.parent, this.context)
-      }
-      return createScope(value, this, this.context)
-    },
+  createNested(value: TypeNode[]): Scope {
+    if (this.isHidden) {
+      return new Scope(value, this.parent, this.context)
+    }
+    return new Scope(value, this, this.context)
+  }
+
+  createHidden(value: TypeNode[]): Scope {
+    const result = this.createNested(value)
+    result.isHidden = true
+    return result
   }
 }
