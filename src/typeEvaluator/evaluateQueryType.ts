@@ -29,7 +29,7 @@ import type {
 import {parse} from '../parser'
 import {handleFuncCallNode} from './functions'
 import {optimizeUnions} from './optimizations'
-import {createContext, createScope, Scope} from './scope'
+import {Context, Scope} from './scope'
 import type {
   ArrayTypeNode,
   BooleanTypeNode,
@@ -57,7 +57,7 @@ const $warn = debug('typeEvaluator:evaluate::warn')
 export function typeEvaluate(ast: ExprNode, schema: Schema): TypeNode {
   const parsed = walk({
     node: ast,
-    scope: createScope([], undefined, createContext(schema)),
+    scope: new Scope([], undefined, new Context(schema)),
   })
 
   $trace('evaluateQueryType.parsed %O', parsed)
@@ -352,7 +352,7 @@ function handleSelectNode(node: SelectNode, scope: Scope): TypeNode {
     const conditionValue = walk({node: alternative.condition, scope})
     const conditionScope = resolveFilter(alternative.condition, scope)
     if (conditionScope.type === 'union' && conditionScope.of.length > 0) {
-      values.push(walk({node: alternative.value, scope: scope.subscope(conditionScope.of, true)}))
+      values.push(walk({node: alternative.value, scope: scope.createHidden(conditionScope.of)}))
     }
     if (conditionValue.type === 'boolean' && conditionValue.value === true) {
       guaranteed = true
@@ -388,7 +388,7 @@ function handleFlatMap(node: FlatMapNode, scope: Scope): TypeNode {
       return {type: 'null'}
     }
 
-    return walk({node: node.expr, scope: scope.subscope([base.of], true)})
+    return walk({node: node.expr, scope: scope.createHidden([base.of])})
   })
 }
 function handleMap(node: MapNode, scope: Scope): TypeNode {
@@ -400,7 +400,7 @@ function handleMap(node: MapNode, scope: Scope): TypeNode {
     }
 
     if (base.of.type === 'union') {
-      const value = walk({node: node.expr, scope: scope.subscope(base.of.of, true)}) // re use the current parent, this is a "sub" scope
+      const value = walk({node: node.expr, scope: scope.createHidden(base.of.of)}) // re use the current parent, this is a "sub" scope
       $trace('map.expr %O', value)
 
       return {
@@ -451,7 +451,7 @@ function handleProjectionNode(node: ProjectionNode, scope: Scope): TypeNode {
     }
     return walk({
       node: node.expr,
-      scope: scope.subscope([field]),
+      scope: scope.createNested([field]),
     })
   })
 }
@@ -459,12 +459,12 @@ function handleProjectionNode(node: ProjectionNode, scope: Scope): TypeNode {
 function createFilterScope(base: TypeNode, scope: Scope): Scope {
   if (base.type === 'array') {
     if (base.of.type === 'union') {
-      return scope.subscope(base.of.of)
+      return scope.createNested(base.of.of)
     }
-    return scope.subscope([base.of])
+    return scope.createNested([base.of])
   }
 
-  return scope.subscope([base])
+  return scope.createNested([base])
 }
 function handleFilterNode(node: FilterNode, scope: Scope): TypeNode {
   const base = walk({node: node.base, scope})
@@ -612,16 +612,20 @@ function handleValueNode(node: ValueNode, scope: Scope): TypeNode {
   }
 }
 
-function handleParentNode(node: ParentNode, scope: Scope): TypeNode {
-  let newScope: Scope | undefined = scope
-  for (let n = node.n; n > 0; n--) {
-    newScope = newScope?.parent
+function handleParentNode({n}: ParentNode, scope: Scope): TypeNode {
+  let current: Scope = scope
+  for (let i = 0; i < n; i++) {
+    if (!current.parent) {
+      return {type: 'null'} satisfies NullTypeNode
+    }
+    current = current.parent
   }
-  $trace('parent.scope %d %O', node.n, newScope)
-  if (newScope !== undefined) {
-    return newScope.value
+  $trace('parent.scope %d %O', n, current.value)
+  if (current.value.of.length === 0) {
+    return {type: 'null'} satisfies NullTypeNode
   }
-  return {type: 'null'} satisfies NullTypeNode
+
+  return current.value
 }
 
 function handleNotNode(node: NotNode, scope: Scope): TypeNode {
@@ -1066,7 +1070,7 @@ function resolveFilter(expr: ExprNode, scope: Scope): TypeNode {
     (node) =>
       // create a new scope with the current scopes parent as the parent. It's only a temporary scope since we only want to resolve the condition
       // check if the result is true or undefined. Undefined means that the condition can't be resolved, and we should keep the node
-      resolveCondition(expr, scope.subscope([node], true)) !== false,
+      resolveCondition(expr, scope.createHidden([node])) !== false,
   )
   $trace(
     `resolveFilter ${expr.type === 'OpCall' ? `${expr.type}/${expr.op}` : expr.type} %O`,
