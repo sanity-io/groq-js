@@ -190,23 +190,52 @@ function handleObjectNode(node: ObjectNode, scope: Scope) {
   } satisfies ObjectTypeNode
 }
 
-// eslint-disable-next-line complexity
+// eslint-disable-next-line complexity, max-statements
 function handleOpCallNode(node: OpCallNode, scope: Scope): TypeNode {
   const left = walk({node: node.left, scope})
   const right = walk({node: node.right, scope})
 
   switch (node.op) {
     case '==':
-    case '!=':
-    case '>':
-    case '>=':
-    case '<':
-    case '<=':
-    case 'in':
-    case 'match': {
+    case '!=': {
       return {
         type: 'boolean',
         value: resolveCondition(node, scope),
+      } satisfies BooleanTypeNode
+    }
+    case '>':
+    case '>=':
+    case '<':
+    case '<=': {
+      if (left.type !== right.type) {
+        return {type: 'null'}
+      }
+      if (isPrimitiveTypeNode(left)) {
+        const resolved = resolveCondition(node, scope)
+        return {
+          type: 'boolean',
+          value: resolved,
+        } satisfies BooleanTypeNode
+      }
+
+      return {type: 'null'}
+    }
+    case 'in': {
+      if (right.type === 'array') {
+        const resolved = resolveCondition(node, scope)
+        return {
+          type: 'boolean',
+          value: resolved,
+        } satisfies BooleanTypeNode
+      }
+      return {type: 'null'}
+    }
+    case 'match': {
+      const resolved = resolveCondition(node, scope)
+
+      return {
+        type: 'boolean',
+        value: resolved,
       } satisfies BooleanTypeNode
     }
     case '+': {
@@ -238,7 +267,13 @@ function handleOpCallNode(node: OpCallNode, scope: Scope): TypeNode {
           },
         } satisfies ArrayTypeNode
       }
-      return {type: 'number'}
+      if (left.type === 'object' && right.type === 'object') {
+        return {
+          type: 'object',
+          attributes: {...left.attributes, ...right.attributes},
+        } satisfies ObjectTypeNode
+      }
+      return {type: 'null'}
     }
     case '-': {
       if (left.type === 'number' && right.type === 'number') {
@@ -250,7 +285,7 @@ function handleOpCallNode(node: OpCallNode, scope: Scope): TypeNode {
               : undefined,
         }
       }
-      return {type: 'number'}
+      return {type: 'null'}
     }
     case '*': {
       if (left.type === 'number' && right.type === 'number') {
@@ -262,7 +297,7 @@ function handleOpCallNode(node: OpCallNode, scope: Scope): TypeNode {
               : undefined,
         }
       }
-      return {type: 'number'}
+      return {type: 'null'}
     }
     case '/': {
       if (left.type === 'number' && right.type === 'number') {
@@ -274,7 +309,7 @@ function handleOpCallNode(node: OpCallNode, scope: Scope): TypeNode {
               : undefined,
         }
       }
-      return {type: 'number'}
+      return {type: 'null'}
     }
     case '**': {
       if (left.type === 'number' && right.type === 'number') {
@@ -286,7 +321,7 @@ function handleOpCallNode(node: OpCallNode, scope: Scope): TypeNode {
               : undefined,
         }
       }
-      return {type: 'number'}
+      return {type: 'null'}
     }
     case '%': {
       if (left.type === 'number' && right.type === 'number') {
@@ -298,7 +333,7 @@ function handleOpCallNode(node: OpCallNode, scope: Scope): TypeNode {
               : undefined,
         }
       }
-      return {type: 'number'}
+      return {type: 'null'}
     }
     default: {
       return {
@@ -525,7 +560,7 @@ function handleArrayNode(node: ArrayNode, scope: Scope): TypeNode {
   } satisfies ArrayTypeNode
 }
 
-function handleValueNode(node: ValueNode): TypeNode {
+function handleValueNode(node: ValueNode, scope: Scope): TypeNode {
   if (node.value === null) {
     return {type: 'null'} satisfies NullTypeNode
   }
@@ -545,6 +580,31 @@ function handleValueNode(node: ValueNode): TypeNode {
         type: 'boolean',
         value: node.value,
       } satisfies BooleanTypeNode
+    case 'object':
+      if (node.value === null) {
+        return {type: 'null'} satisfies NullTypeNode
+      }
+      if (Array.isArray(node.value)) {
+        return {
+          type: 'array',
+          of: {
+            type: 'union',
+            of: node.value.map((value) => walk({node: {type: 'Value', value}, scope})),
+          },
+        } satisfies ArrayTypeNode
+      }
+      return {
+        type: 'object',
+        attributes: Object.fromEntries(
+          Object.entries(node.value).map(([key, value]) => [
+            key,
+            {
+              type: 'objectAttribute',
+              value: walk({node: {type: 'Value', value}, scope}),
+            },
+          ]),
+        ),
+      } satisfies ObjectTypeNode
     default:
       return {type: 'unknown'} satisfies UnknownTypeNode
   }
@@ -661,7 +721,7 @@ export function walk({node, scope}: {node: ExprNode; scope: Scope}): TypeNode {
       return handleObjectNode(node, scope)
     }
     case 'Value': {
-      return handleValueNode(node)
+      return handleValueNode(node, scope)
     }
     case 'Array': {
       return handleArrayNode(node, scope)
@@ -828,51 +888,145 @@ function resolveCondition(expr: ExprNode, scope: Scope): boolean | undefined {
         case 'in': {
           const left = walk({node: expr.left, scope})
           const right = walk({node: expr.right, scope})
+          $trace('opcall "in" %O', {left, right})
+
           if (left.type === 'unknown' || right.type === 'unknown') {
-            return false
+            return undefined
           }
 
-          $trace('opcall in %O', {left, right})
-          if (left.type === 'string' && right.type === 'array' && right.of.type === 'union') {
-            return right.of.of
-              .map((node) => isPrimitiveTypeNode(node) && node.value)
-              .includes(left.value)
+          if (right.type === 'array') {
+            if (left.type === 'null' && right.of.type === 'unknown') {
+              return undefined
+            }
+            if (left.type === 'null' && right.of.type === 'null') {
+              return true
+            }
+            if (isPrimitiveTypeNode(left)) {
+              // eslint-disable-next-line max-depth
+              if (right.of.type === 'unknown') {
+                return undefined
+              }
+              // eslint-disable-next-line max-depth
+              if (left.value === undefined) {
+                return undefined
+              }
+
+              // eslint-disable-next-line max-depth
+              if (isPrimitiveTypeNode(right.of)) {
+                // eslint-disable-next-line max-depth
+                if (right.of.value === undefined) {
+                  return undefined
+                }
+                return left.value === right.of.value
+              }
+              // eslint-disable-next-line max-depth
+              if (right.of.type === 'union') {
+                // eslint-disable-next-line max-depth
+                for (const node of right.of.of) {
+                  // eslint-disable-next-line max-depth
+                  if (node.type === 'unknown') {
+                    return undefined
+                  }
+                  // eslint-disable-next-line max-depth
+                  if (isPrimitiveTypeNode(node) && left.value === node.value) {
+                    return true
+                  }
+                  // eslint-disable-next-line max-depth
+                  if (left.type === node.type) {
+                    return undefined
+                  }
+                }
+              }
+            }
           }
 
-          return undefined
+          return false
         }
         case 'match': {
           const left = walk({node: expr.left, scope})
           const right = walk({node: expr.right, scope})
+          $trace('opcall "match" %O', {left, right})
+
           if (left.type === 'unknown' || right.type === 'unknown') {
-            return false
-          }
-
-          if (left.type !== 'string' || right.type !== 'string') {
-            return false
-          }
-
-          if (left.value === undefined || right.value === undefined) {
             return undefined
           }
 
+          let tokens: Token[] = []
           let patterns: Pattern[] = []
-          const didSucceed = gatherText(new StaticValue(right.value, 'string'), (part) => {
-            patterns = patterns.concat(matchAnalyzePattern(part))
-          })
-          if (!didSucceed) {
-            return false
+          if (left.type === 'string') {
+            if (left.value === undefined) {
+              return undefined
+            }
+            tokens = tokens.concat(matchTokenize(left.value))
+          }
+          if (left.type === 'array') {
+            if (left.of.type === 'unknown') {
+              return undefined
+            }
+            if (left.of.type === 'string') {
+              // eslint-disable-next-line max-depth
+              if (left.of.value === undefined) {
+                return undefined
+              }
+
+              tokens = tokens.concat(matchTokenize(left.of.value))
+            }
+            if (left.of.type === 'union') {
+              // eslint-disable-next-line max-depth
+              for (const node of left.of.of) {
+                // eslint-disable-next-line max-depth
+                if (node.type === 'string' && node.value !== undefined) {
+                  tokens = tokens.concat(matchTokenize(node.value))
+                }
+              }
+            }
           }
 
-          let tokens: Token[] = []
-          gatherText(new StaticValue(left.value, 'string'), (part) => {
-            tokens = tokens.concat(matchTokenize(part))
-          })
+          if (right.type === 'string') {
+            if (right.value === undefined) {
+              return undefined
+            }
+            patterns = patterns.concat(matchAnalyzePattern(right.value))
+          }
+          if (right.type === 'array') {
+            if (right.of.type === 'unknown') {
+              return undefined
+            }
+            if (right.of.type === 'string') {
+              // eslint-disable-next-line max-depth
+              if (right.of.value === undefined) {
+                return undefined
+              }
+              patterns = patterns.concat(matchAnalyzePattern(right.of.value))
+            }
+            if (right.of.type === 'union') {
+              // eslint-disable-next-line max-depth
+              for (const node of right.of.of) {
+                // eslint-disable-next-line max-depth
+                if (node.type === 'string') {
+                  // eslint-disable-next-line max-depth
+                  if (node.value === undefined) {
+                    return undefined
+                  }
+                  patterns = patterns.concat(matchAnalyzePattern(node.value))
+                }
+
+                // eslint-disable-next-line max-depth
+                if (node.type !== 'string') {
+                  return false
+                }
+              }
+            }
+          }
           return matchText(tokens, patterns)
         }
         case '<': {
           const left = walk({node: expr.left, scope})
           const right = walk({node: expr.right, scope})
+          if (left.type === 'unknown' || right.type === 'unknown') {
+            return undefined
+          }
+
           if (isPrimitiveTypeNode(left) && isPrimitiveTypeNode(right)) {
             if (left.value === undefined || right.value === undefined) {
               return undefined
@@ -913,7 +1067,7 @@ function resolveCondition(expr: ExprNode, scope: Scope): boolean | undefined {
             if (left.value === undefined || right.value === undefined) {
               return undefined
             }
-            return left.value > right.value
+            return left.value >= right.value
           }
 
           return undefined
