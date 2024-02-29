@@ -643,6 +643,12 @@ exports[`test/evaluateQueryType.test.ts TAP filter order doesnt matter > must ma
 Object {
   "of": Object {
     "attributes": Object {
+      "_createdAt": Object {
+        "type": "objectAttribute",
+        "value": Object {
+          "type": "string",
+        },
+      },
       "_id": Object {
         "type": "objectAttribute",
         "value": Object {
@@ -654,6 +660,12 @@ Object {
         "value": Object {
           "type": "string",
           "value": "author",
+        },
+      },
+      "age": Object {
+        "type": "objectAttribute",
+        "value": Object {
+          "type": "number",
         },
       },
       "firstname": Object {

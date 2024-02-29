@@ -11,7 +11,6 @@ import {
   TypeNode,
   UnionTypeNode,
 } from '../src/typeEvaluator/types'
-import {satisfies} from '../src/typeEvaluator/satisfies'
 
 const postDocument = {
   type: 'document',
@@ -37,6 +36,13 @@ const postDocument = {
       },
     } satisfies ObjectAttribute,
     lastname: {
+      type: 'objectAttribute',
+      value: {
+        type: 'string',
+      },
+      optional: true,
+    } satisfies ObjectAttribute,
+    publishedAt: {
       type: 'objectAttribute',
       value: {
         type: 'string',
@@ -128,6 +134,12 @@ const authorDocument = {
       },
     },
     lastname: {
+      type: 'objectAttribute',
+      value: {
+        type: 'string',
+      },
+    },
+    _createdAt: {
       type: 'objectAttribute',
       value: {
         type: 'string',
@@ -820,6 +832,13 @@ t.test('deref with projection union', (t) => {
           },
           optional: true,
         },
+        publishedAt: {
+          type: 'objectAttribute',
+          value: {
+            type: 'string',
+          },
+          optional: true,
+        },
         author: {
           type: 'objectAttribute',
           value: {
@@ -1316,6 +1335,18 @@ t.test('with splat', (t) => {
           type: 'objectAttribute',
           value: {
             type: 'string',
+          },
+        },
+        _createdAt: {
+          type: 'objectAttribute',
+          value: {
+            type: 'string',
+          },
+        },
+        age: {
+          type: 'objectAttribute',
+          value: {
+            type: 'number',
           },
         },
         object: {
