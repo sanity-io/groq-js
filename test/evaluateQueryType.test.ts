@@ -133,6 +133,12 @@ const authorDocument = {
         type: 'string',
       },
     },
+    age: {
+      type: 'objectAttribute',
+      value: {
+        type: 'number',
+      },
+    },
     object: {
       type: 'objectAttribute',
       value: {
@@ -567,7 +573,7 @@ t.test('values in projection', (t) => {
             "notEqualObject": 3 != {},
             "plus": 3 + 2,
             "plusStr": "3" + "2",
-            "plusVar": 3 + field,
+            "plusVar": 3 + age,
             "minus": 3 - 2,
             "mul": 3 * 3,
             "div": 100 / 5,
@@ -650,6 +656,7 @@ t.test('values in projection', (t) => {
           type: 'objectAttribute',
           value: {
             type: 'number',
+            value: undefined,
           },
         },
         minus: {

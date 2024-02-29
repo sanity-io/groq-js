@@ -158,6 +158,7 @@ function inArray(input: AnnotatedValue[]): AnnotatedValue[] {
  * We have four different categories. This is mainly here so that we can exclude.
  */
 enum Category {
+  /** primitives + unknown. */
   PRIMITIVES,
   /** Objects of primitives + unknown. */
   OBJECTS,
@@ -178,8 +179,8 @@ const objects1InArrays = inArray(objects1)
 // object values actually have different keys. This tests a bit more stuff.
 
 const valuesForCategories: AnnotatedValue[][][] = [
-  [primitives, objects0, arrays, objects0InArrays],
-  [primitives, objects1, arrays, objects1InArrays],
+  [primitivesWithUnknown, objects0, arrays, objects0InArrays],
+  [primitivesWithUnknown, objects1, arrays, objects1InArrays],
 ]
 
 const SCHEMA: [] = []
