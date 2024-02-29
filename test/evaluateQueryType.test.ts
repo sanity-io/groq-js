@@ -1594,6 +1594,99 @@ t.test('flatmap', (t) => {
   t.end()
 })
 
+// Fetch posts with detailed author, ghost, and concept information
+t.test('complex', (t) => {
+  const query = `*[_type == "post"]{
+    _id,
+    _type,
+    name,
+    lastname,
+    "authorDetails": author->{
+      _id,
+      _type,
+      name,
+      firstname,
+      lastname,
+      object,
+      optionalObject
+    },
+    "slugerDetails": sluger->{
+      _type,
+      current,
+      source,
+      _key
+    },
+    "authorOrGhost": authorOrGhost->{
+      _type,
+      name,
+      "details": select(
+        _type == "author" => {
+          firstname,
+          lastname,
+          object,
+          optionalObject
+        },
+        _type == "ghost" => {
+          concepts[]->{
+            name,
+            enabled,
+            posts[]->{_id, name}
+          }
+        }
+      )
+    },
+    "allAuthorsOrGhosts": allAuthorOrGhost[]->{
+      _type,
+      name,
+      "details": select(
+        _type == "author" => {
+          firstname,
+          lastname,
+          object,
+          optionalObject
+        },
+        _type == "ghost" => {
+          concepts[]->{
+            name,
+            enabled,
+            posts[]->{_id, name}
+          }
+        }
+      )
+    }
+  }`
+
+  const res = evaluateQueryType(query, schemas)
+  t.matchSnapshot(res)
+
+  t.end()
+})
+
+// Fetch posts with complex filtering on optional fields and references
+t.test('complex 2', (t) => {
+  const query = `*[_type == "post" && defined(sluger) && (author->firstname match "Emily*" || authorOrGhost->name match "Ghost*")]{
+    _id,
+    name,
+    "authorFullName": author->firstname + " " + author->lastname,
+    "slug": sluger->current,
+    "relatedConcepts": authorOrGhost->concepts[]->{
+      name,
+      "isActive": enabled,
+      "relatedPostsCount": count(posts)
+    },
+    "collaborators": allAuthorOrGhost[]->{
+      _type,
+      name,
+      "collaboratorPosts": *[_type == "post" && references(^._id)].name
+    }
+  }`
+
+  const res = evaluateQueryType(query, schemas)
+  t.matchSnapshot(res)
+
+  t.end()
+})
+
 function findSchemaType(name: string): TypeNode {
   const type = schemas.find((s) => s.name === name)
   if (!type) {
