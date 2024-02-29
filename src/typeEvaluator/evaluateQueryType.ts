@@ -1,7 +1,6 @@
 import debug from 'debug'
 
 import {
-  gatherText,
   matchAnalyzePattern,
   matchText,
   matchTokenize,
@@ -28,7 +27,6 @@ import type {
   ValueNode,
 } from '../nodeTypes'
 import {parse} from '../parser'
-import {StaticValue} from '../values'
 import {handleFuncCallNode} from './functions'
 import {optimizeUnions} from './optimizations'
 import {createContext, createScope, Scope} from './scope'
@@ -194,6 +192,10 @@ function handleObjectNode(node: ObjectNode, scope: Scope) {
 function handleOpCallNode(node: OpCallNode, scope: Scope): TypeNode {
   const left = walk({node: node.left, scope})
   const right = walk({node: node.right, scope})
+  $trace('opCallNode "%s" %O', node.op, {left, right})
+  if (left.type === 'unknown' || right.type === 'unknown') {
+    return {type: 'unknown'} satisfies UnknownTypeNode
+  }
 
   switch (node.op) {
     case '==':
@@ -780,10 +782,7 @@ function isPrimitiveTypeNode(node: TypeNode): node is PrimitiveTypeNode {
 }
 
 function evaluateEquality(left: TypeNode, right: TypeNode): boolean | undefined {
-  $trace('opcall == %O', {left, right})
-  if (left.type === 'unknown' || right.type === 'unknown') {
-    return undefined
-  }
+  $trace('evaluateEquality %O', {left, right})
   if (left.type === 'null' && right.type === 'null') {
     return true
   }
@@ -822,6 +821,7 @@ function evaluateEquality(left: TypeNode, right: TypeNode): boolean | undefined 
 // eslint-disable-next-line complexity, max-statements
 function resolveCondition(expr: ExprNode, scope: Scope): boolean | undefined {
   $trace('resolveCondition.expr %O', expr)
+
   switch (expr.type) {
     case 'Value': {
       const value = walk({node: expr, scope})
@@ -866,19 +866,19 @@ function resolveCondition(expr: ExprNode, scope: Scope): boolean | undefined {
       return false
     }
     case 'OpCall': {
+      const left = walk({node: expr.left, scope})
+      const right = walk({node: expr.right, scope})
+      $trace('opcall "%s" %O', expr.op, {left, right})
+
+      if (left.type === 'unknown' || right.type === 'unknown') {
+        return undefined
+      }
+
       switch (expr.op) {
         case '==': {
-          const left = walk({node: expr.left, scope})
-          const right = walk({node: expr.right, scope})
-          $trace('opcall == %O', {left, right})
-
           return evaluateEquality(left, right)
         }
         case '!=': {
-          const left = walk({node: expr.left, scope})
-          const right = walk({node: expr.right, scope})
-          $trace('opcall != %O', {left, right})
-
           const result = evaluateEquality(left, right)
           if (result === undefined) {
             return undefined
@@ -886,14 +886,6 @@ function resolveCondition(expr: ExprNode, scope: Scope): boolean | undefined {
           return !result
         }
         case 'in': {
-          const left = walk({node: expr.left, scope})
-          const right = walk({node: expr.right, scope})
-          $trace('opcall "in" %O', {left, right})
-
-          if (left.type === 'unknown' || right.type === 'unknown') {
-            return undefined
-          }
-
           if (right.type === 'array') {
             if (left.type === 'null' && right.of.type === 'unknown') {
               return undefined
@@ -932,7 +924,7 @@ function resolveCondition(expr: ExprNode, scope: Scope): boolean | undefined {
                     return true
                   }
                   // eslint-disable-next-line max-depth
-                  if (left.type === node.type) {
+                  if (left.type === node.type && node.value === undefined) {
                     return undefined
                   }
                 }
@@ -943,14 +935,6 @@ function resolveCondition(expr: ExprNode, scope: Scope): boolean | undefined {
           return false
         }
         case 'match': {
-          const left = walk({node: expr.left, scope})
-          const right = walk({node: expr.right, scope})
-          $trace('opcall "match" %O', {left, right})
-
-          if (left.type === 'unknown' || right.type === 'unknown') {
-            return undefined
-          }
-
           let tokens: Token[] = []
           let patterns: Pattern[] = []
           if (left.type === 'string') {
@@ -1021,12 +1005,6 @@ function resolveCondition(expr: ExprNode, scope: Scope): boolean | undefined {
           return matchText(tokens, patterns)
         }
         case '<': {
-          const left = walk({node: expr.left, scope})
-          const right = walk({node: expr.right, scope})
-          if (left.type === 'unknown' || right.type === 'unknown') {
-            return undefined
-          }
-
           if (isPrimitiveTypeNode(left) && isPrimitiveTypeNode(right)) {
             if (left.value === undefined || right.value === undefined) {
               return undefined
@@ -1037,8 +1015,6 @@ function resolveCondition(expr: ExprNode, scope: Scope): boolean | undefined {
           return undefined
         }
         case '<=': {
-          const left = walk({node: expr.left, scope})
-          const right = walk({node: expr.right, scope})
           if (isPrimitiveTypeNode(left) && isPrimitiveTypeNode(right)) {
             if (left.value === undefined || right.value === undefined) {
               return undefined
@@ -1049,8 +1025,6 @@ function resolveCondition(expr: ExprNode, scope: Scope): boolean | undefined {
           return undefined
         }
         case '>': {
-          const left = walk({node: expr.left, scope})
-          const right = walk({node: expr.right, scope})
           if (isPrimitiveTypeNode(left) && isPrimitiveTypeNode(right)) {
             if (left.value === undefined || right.value === undefined) {
               return undefined
@@ -1061,8 +1035,6 @@ function resolveCondition(expr: ExprNode, scope: Scope): boolean | undefined {
           return undefined
         }
         case '>=': {
-          const left = walk({node: expr.left, scope})
-          const right = walk({node: expr.right, scope})
           if (isPrimitiveTypeNode(left) && isPrimitiveTypeNode(right)) {
             if (left.value === undefined || right.value === undefined) {
               return undefined
