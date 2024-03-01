@@ -198,8 +198,8 @@ Object {
           "of": Array [
             Object {
               "of": Object {
-                "to": "concept",
-                "type": "reference",
+                "name": "concept",
+                "type": "inline",
               },
               "type": "array",
             },
@@ -328,8 +328,8 @@ Object {
                           "type": "objectAttribute",
                           "value": Object {
                             "of": Object {
-                              "to": "concept",
-                              "type": "reference",
+                              "name": "concept",
+                              "type": "inline",
                             },
                             "type": "array",
                           },
@@ -507,8 +507,8 @@ Object {
                         "type": "objectAttribute",
                         "value": Object {
                           "of": Object {
-                            "to": "concept",
-                            "type": "reference",
+                            "name": "concept",
+                            "type": "inline",
                           },
                           "type": "array",
                         },
@@ -643,12 +643,68 @@ Object {
   "of": Object {
     "of": Array [
       Object {
-        "to": "author",
-        "type": "reference",
+        "attributes": Object {
+          "_key": Object {
+            "type": "objectAttribute",
+            "value": Object {
+              "type": "string",
+            },
+          },
+          "_ref": Object {
+            "type": "objectAttribute",
+            "value": Object {
+              "type": "string",
+            },
+          },
+          "_type": Object {
+            "type": "objectAttribute",
+            "value": Object {
+              "type": "string",
+              "value": "reference",
+            },
+          },
+          "_weak": Object {
+            "optional": true,
+            "type": "objectAttribute",
+            "value": Object {
+              "type": "boolean",
+            },
+          },
+        },
+        "dereferencesTo": "author",
+        "type": "object",
       },
       Object {
-        "to": "ghost",
-        "type": "reference",
+        "attributes": Object {
+          "_key": Object {
+            "type": "objectAttribute",
+            "value": Object {
+              "type": "string",
+            },
+          },
+          "_ref": Object {
+            "type": "objectAttribute",
+            "value": Object {
+              "type": "string",
+            },
+          },
+          "_type": Object {
+            "type": "objectAttribute",
+            "value": Object {
+              "type": "string",
+              "value": "reference",
+            },
+          },
+          "_weak": Object {
+            "optional": true,
+            "type": "objectAttribute",
+            "value": Object {
+              "type": "boolean",
+            },
+          },
+        },
+        "dereferencesTo": "ghost",
+        "type": "object",
       },
     ],
     "type": "union",
@@ -728,8 +784,8 @@ Object {
         "type": "objectAttribute",
         "value": Object {
           "of": Object {
-            "to": "concept",
-            "type": "reference",
+            "name": "concept",
+            "type": "inline",
           },
           "type": "array",
         },
@@ -738,8 +794,8 @@ Object {
         "type": "objectAttribute",
         "value": Object {
           "of": Object {
-            "to": "concept",
-            "type": "reference",
+            "name": "concept",
+            "type": "inline",
           },
           "type": "array",
         },

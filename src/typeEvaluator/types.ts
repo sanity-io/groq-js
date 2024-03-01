@@ -31,21 +31,23 @@ export interface NullTypeNode {
   type: 'null'
 }
 
+// InlineTypeNode inlines a type from a type declaration
+export interface InlineTypeNode {
+  type: 'inline'
+  name: string
+}
+
 export interface ObjectTypeNode<T extends TypeNode = TypeNode> {
   type: 'object'
   attributes: Record<string, ObjectAttribute<T>>
+  rest?: ObjectTypeNode | UnknownTypeNode | InlineTypeNode
+  dereferencesTo?: string // the name of the document this object dereferences to
 }
 
 export interface ObjectAttribute<T extends TypeNode = TypeNode> {
   type: 'objectAttribute'
   value: T
   optional?: boolean
-}
-
-export interface ReferenceTypeNode {
-  type: 'reference'
-  to: string
-  resolved?: boolean
 }
 
 export interface UnionTypeNode<T extends TypeNode = TypeNode> {
@@ -68,5 +70,5 @@ export type TypeNode =
   | BooleanTypeNode
   | ArrayTypeNode
   | UnionTypeNode
-  | ReferenceTypeNode
+  | InlineTypeNode
   | UnknownTypeNode

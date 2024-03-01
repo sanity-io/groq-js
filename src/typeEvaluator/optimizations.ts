@@ -16,22 +16,22 @@ export function hashField(field: TypeNode): string {
       return field.type
     }
 
-    case 'reference': {
-      return `${field.type}:${field.to}`
-    }
-
     case 'array': {
       return `${field.type}:${hashField(field.of)}`
     }
 
     case 'object': {
-      return `${field.type}:${Object.entries(field.attributes)
+      return `${field.type}:ref-${field.dereferencesTo}:${Object.entries(field.attributes)
         .map(([key, value]) => `${key}:${hashField(value.value)}`)
-        .join(',')}`
+        .join(',')}:${field.rest ? hashField(field.rest) : 'no-rest'}`
     }
 
     case 'union': {
       return `${field.type}:${field.of.map(hashField).join(',')}`
+    }
+
+    case 'inline': {
+      return `${field.type}:${field.name}`
     }
 
     default: {
