@@ -1,11 +1,14 @@
 import {TypeNode} from './types'
 
-export function hashField(field: TypeNode): string | null {
+export function hashField(field: TypeNode): string {
   switch (field.type) {
     case 'string':
     case 'number':
     case 'boolean': {
-      return `${field.type}:${field.value}`
+      if (field.value !== undefined) {
+        return `${field.type}:${field.value}`
+      }
+      return `${field.type}`
     }
 
     case 'null':
@@ -78,6 +81,14 @@ export function optimizeUnions(field: TypeNode): TypeNode {
 
       field.of[idx] = optimizeUnions(subField)
     }
+
+    const compare = new Intl.Collator('en').compare
+    field.of.sort((a, b) => {
+      if (a.type === 'null') {
+        return 1
+      }
+      return compare(hashField(a), hashField(b))
+    })
 
     return field
   }
