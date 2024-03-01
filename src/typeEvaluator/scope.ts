@@ -1,6 +1,6 @@
 import debug from 'debug'
 
-import {NullTypeNode, ReferenceTypeNode, Schema, TypeNode, UnionTypeNode} from './types'
+import {InlineTypeNode, NullTypeNode, Schema, TypeNode, UnionTypeNode} from './types'
 
 const $trace = debug('typeEvaluator:scope:trace')
 $trace.log = console.log.bind(console) // eslint-disable-line no-console
@@ -12,10 +12,10 @@ export class Context {
     this.schema = schema
   }
 
-  lookupRef(ref: ReferenceTypeNode): TypeNode {
+  lookupRef(refTo: string): TypeNode {
     for (const val of this.schema) {
       if (val.type === 'document') {
-        if (val.name === ref.to) {
+        if (val.name === refTo) {
           return {
             type: 'object',
             attributes: val.attributes,
@@ -26,10 +26,10 @@ export class Context {
     return {type: 'null'} satisfies NullTypeNode
   }
 
-  lookupType(ref: ReferenceTypeNode): TypeNode {
+  lookupTypeDeclaration(alias: InlineTypeNode): TypeNode {
     for (const val of this.schema) {
       if (val.type === 'type') {
-        if (val.name === ref.to) {
+        if (val.name === alias.name) {
           return val.value
         }
       }

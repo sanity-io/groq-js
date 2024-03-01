@@ -1,14 +1,16 @@
 export {typeEvaluate as evaluateNodeType, evaluateQueryType} from './evaluateQueryType'
+// @internal
+export {createReferenceTypeNode} from './typeHelpers'
 export type {
   ArrayTypeNode,
   BooleanTypeNode,
   Document,
+  InlineTypeNode,
   NullTypeNode,
   NumberTypeNode,
-  ObjectAttribute as ObjectKeyValue,
+  ObjectAttribute,
   ObjectTypeNode,
   PrimitiveTypeNode,
-  ReferenceTypeNode,
   Schema,
   StringTypeNode,
   TypeDeclaration,
