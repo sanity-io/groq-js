@@ -1,6 +1,7 @@
 import t from 'tap'
 
 import {evaluateQueryType} from '../src/typeEvaluator/evaluateQueryType'
+import {createReferenceTypeNode} from '../src/typeEvaluator/typeHelpers'
 import {
   ArrayTypeNode,
   Document,
@@ -51,16 +52,13 @@ const postDocument = {
     } satisfies ObjectAttribute,
     author: {
       type: 'objectAttribute',
-      value: {
-        type: 'reference',
-        to: 'author',
-      },
+      value: createReferenceTypeNode('author'),
     } satisfies ObjectAttribute,
     sluger: {
       type: 'objectAttribute',
       value: {
-        type: 'reference',
-        to: 'slug',
+        type: 'inline',
+        name: 'slug',
       },
       optional: true,
     } satisfies ObjectAttribute,
@@ -68,16 +66,7 @@ const postDocument = {
       type: 'objectAttribute',
       value: {
         type: 'union',
-        of: [
-          {
-            type: 'reference',
-            to: 'author',
-          },
-          {
-            type: 'reference',
-            to: 'ghost',
-          },
-        ],
+        of: [createReferenceTypeNode('author'), createReferenceTypeNode('ghost')],
       },
       optional: true,
     } satisfies ObjectAttribute,
@@ -87,16 +76,7 @@ const postDocument = {
         type: 'array',
         of: {
           type: 'union',
-          of: [
-            {
-              type: 'reference',
-              to: 'author',
-            },
-            {
-              type: 'reference',
-              to: 'ghost',
-            },
-          ],
+          of: [createReferenceTypeNode('author', true), createReferenceTypeNode('ghost', true)],
         },
       },
       optional: true,
@@ -210,8 +190,8 @@ const ghostDocument = {
       value: {
         type: 'array',
         of: {
-          type: 'reference',
-          to: 'concept',
+          type: 'inline',
+          name: 'concept',
         },
       },
     },
@@ -285,10 +265,7 @@ const conceptType = {
         type: 'objectAttribute',
         value: {
           type: 'array',
-          of: {
-            type: 'reference',
-            to: 'post',
-          },
+          of: createReferenceTypeNode('post', true),
         },
       },
     },
@@ -538,10 +515,7 @@ t.test('coerce reference', (t) => {
   const res = evaluateQueryType(query, schemas)
   t.strictSame(res, {
     type: 'array',
-    of: {
-      type: 'reference',
-      to: 'author',
-    },
+    of: createReferenceTypeNode('author'),
   } satisfies TypeNode)
 
   t.end()
@@ -867,16 +841,13 @@ t.test('deref with projection union', (t) => {
         },
         author: {
           type: 'objectAttribute',
-          value: {
-            type: 'reference',
-            to: 'author',
-          },
+          value: createReferenceTypeNode('author'),
         },
         sluger: {
           type: 'objectAttribute',
           value: {
-            type: 'reference',
-            to: 'slug',
+            type: 'inline',
+            name: 'slug',
           },
           optional: true,
         },
@@ -894,16 +865,7 @@ t.test('deref with projection union', (t) => {
             type: 'array',
             of: {
               type: 'union',
-              of: [
-                {
-                  type: 'reference',
-                  to: 'author',
-                },
-                {
-                  type: 'reference',
-                  to: 'ghost',
-                },
-              ],
+              of: [createReferenceTypeNode('author', true), createReferenceTypeNode('ghost', true)],
             },
           },
         },

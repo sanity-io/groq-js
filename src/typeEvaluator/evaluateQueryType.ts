@@ -101,15 +101,15 @@ function mapDeref(base: TypeNode, scope: Scope): TypeNode {
     }
   }
 
-  if (base.type === 'reference') {
-    const lookupBase = scope.context.lookupRef(base)
-    return lookupBase
+  if (base.type === 'object' && base.dereferencesTo !== undefined) {
+    return scope.context.lookupRef(base.dereferencesTo)
   }
 
-  return base
+  return {type: 'null'}
 }
 
 function handleDerefNode(node: DerefNode, scope: Scope): TypeNode {
+  $trace('deref.node %O', node)
   const base = walk({node: node.base, scope})
   $trace('deref.base %O', base)
 
@@ -480,6 +480,15 @@ function handleFilterNode(node: FilterNode, scope: Scope): TypeNode {
   }
 }
 
+function mergeInlineObject(dst: ObjectTypeNode, src: ObjectTypeNode): ObjectTypeNode {
+  return {
+    type: 'object',
+    attributes: {...dst.attributes, ...src.attributes},
+    rest: dst.rest,
+    dereferencesTo: dst.dereferencesTo,
+  }
+}
+
 function mapFieldInScope(
   field: TypeNode,
   scope: Scope,
@@ -492,14 +501,35 @@ function mapFieldInScope(
     }
   }
 
-  if (field.type === 'reference') {
-    const lookupField = scope.context.lookupType(field)
-    return mapFieldInScope(lookupField, scope, mapper)
+  if (field.type === 'inline') {
+    return mapFieldInScope(scope.context.lookupTypeDeclaration(field), scope, mapper)
   }
 
   if (field.type === 'object') {
-    return mapper(field)
+    // If the rest is not defined we can just map the object
+    if (field.rest === undefined) {
+      return mapper(field)
+    }
+
+    // If it's an unknown type it means that it's an open object and we can't be sure of the types
+    if (field.rest.type === 'unknown') {
+      return {type: 'unknown'}
+    }
+
+    // If it's an inline type we need to merge the inline type with the rest type
+    // throw an error if the rest type is not an object
+    if (field.rest.type === 'inline') {
+      const rest = scope.context.lookupTypeDeclaration(field.rest)
+      if (rest.type !== 'object') {
+        throw new Error(`rest inline type must be an object, got ${rest.type}`)
+      }
+      return mapper(mergeInlineObject(field, rest))
+    }
+
+    // We need to merge the rest type, which could now only be an object, with the current object
+    return mapper(mergeInlineObject(field, field.rest))
   }
+
   return {type: 'null'}
 }
 
@@ -514,10 +544,6 @@ export function handleAccessAttributeNode(node: AccessAttributeNode, scope: Scop
     const attribute = base.attributes[node.name]
     if (attribute !== undefined) {
       $debug(`accessAttribute.attribute found ${node.name} %O`, attribute)
-      if (isPrimitiveTypeNode(attribute.value) && attribute.value.value !== undefined) {
-        return attribute.value
-      }
-
       return attribute.value
     }
     $warn(
