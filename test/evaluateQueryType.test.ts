@@ -420,7 +420,7 @@ t.test('in operator', (t) => {
     type: 'array',
     of: {
       type: 'union',
-      of: [findSchemaType('post'), findSchemaType('author')],
+      of: [findSchemaType('author'), findSchemaType('post')],
     },
   } satisfies ArrayTypeNode<UnionTypeNode>)
 
@@ -1183,7 +1183,7 @@ t.test('with select', (t) => {
               type: 'objectAttribute',
               value: {
                 type: 'string',
-                value: 'post',
+                value: 'author',
               },
             },
             authorName: {
@@ -1201,7 +1201,7 @@ t.test('with select', (t) => {
               type: 'objectAttribute',
               value: {
                 type: 'string',
-                value: 'author',
+                value: 'post',
               },
             },
             authorName: {
@@ -1240,7 +1240,7 @@ t.test('with select, not guaranteed & with fallback', (t) => {
               type: 'objectAttribute',
               value: {
                 type: 'string',
-                value: 'post',
+                value: 'author',
               },
             },
             something: {
@@ -1267,7 +1267,7 @@ t.test('with select, not guaranteed & with fallback', (t) => {
               type: 'objectAttribute',
               value: {
                 type: 'string',
-                value: 'author',
+                value: 'post',
               },
             },
             something: {
