@@ -385,7 +385,7 @@ function handleFlatMap(node: FlatMapNode, scope: Scope): TypeNode {
   const base = walk({node: node.base, scope})
   return mapUnion(base, (base) => {
     if (base.type !== 'array') {
-      return {type: 'null'}
+      return base
     }
 
     return walk({node: node.expr, scope: scope.createHidden([base.of])})
@@ -396,7 +396,7 @@ function handleMap(node: MapNode, scope: Scope): TypeNode {
   $trace('map.base %O', base)
   return mapUnion(base, (base) => {
     if (base.type !== 'array') {
-      return {type: 'unknown'} satisfies UnknownTypeNode
+      return base
     }
 
     if (base.of.type === 'union') {

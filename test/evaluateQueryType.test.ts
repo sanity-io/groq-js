@@ -371,6 +371,32 @@ t.test('element access', (t) => {
   t.end()
 })
 
+t.test('element access with attribute access', (t) => {
+  const query = `*[_type == "post"][0].allAuthorOrGhost[] { _ref}`
+  const res = evaluateQueryType(query, schemas)
+  t.strictSame(res, {
+    type: 'union',
+    of: [
+      {
+        type: 'array',
+        of: {
+          type: 'object',
+          attributes: {
+            _ref: {
+              type: 'objectAttribute',
+              value: {
+                type: 'string',
+              },
+            },
+          },
+        },
+      },
+      {type: 'null'},
+    ],
+  } satisfies TypeNode)
+  t.end()
+})
+
 t.test('access attribute with objects', (t) => {
   const query = `*[_type == "author" && object.subfield == "foo"][0]`
   const res = evaluateQueryType(query, schemas)
