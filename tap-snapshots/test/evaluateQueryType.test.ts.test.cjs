@@ -204,7 +204,7 @@ Object {
               "type": "array",
             },
             Object {
-              "type": "unknown",
+              "type": "null",
             },
           ],
           "type": "union",
