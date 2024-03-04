@@ -5,6 +5,12 @@
 All notable changes to this project will be documented in this file. See
 [Conventional Commits](https://conventionalcommits.org) for commit guidelines.
 
+## [1.4.4-canary.1](https://github.com/sanity-io/groq-js/compare/v1.4.3...v1.4.4-canary.1) (2024-03-04)
+
+### Bug Fixes
+
+- test canary release channel ([bd3e753](https://github.com/sanity-io/groq-js/commit/bd3e753f705ade81ee63b0a5be2f4145b41fdb48))
+
 ## [1.4.3](https://github.com/sanity-io/groq-js/compare/v1.4.2...v1.4.3) (2024-02-21)
 
 ### Bug Fixes
