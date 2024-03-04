@@ -26,7 +26,6 @@ import type {
   SelectNode,
   ValueNode,
 } from '../nodeTypes'
-import {parse} from '../parser'
 import {handleFuncCallNode} from './functions'
 import {optimizeUnions} from './optimizations'
 import {Context, Scope} from './scope'
@@ -54,6 +53,14 @@ const $debug = debug('typeEvaluator:evaluate::debug')
 $debug.log = console.log.bind(console) // eslint-disable-line no-console
 const $warn = debug('typeEvaluator:evaluate::warn')
 
+/**
+ * Evaluates the type of a query and schema.
+ *
+ * @param ast - The query ast to evaluate.
+ * @param schema - The schemas to use for type evaluation.
+ * @returns The type of the query.
+ * @beta
+ */
 export function typeEvaluate(ast: ExprNode, schema: Schema): TypeNode {
   const parsed = walk({
     node: ast,
@@ -61,29 +68,10 @@ export function typeEvaluate(ast: ExprNode, schema: Schema): TypeNode {
   })
 
   $trace('evaluateQueryType.parsed %O', parsed)
-
   const optimized = optimizeUnions(parsed)
   $trace('evaluateQueryType.optimized %O', optimized)
 
   return optimized
-}
-
-/**
- * Evaluates the type of a query and schema.
- *
- * @param query - The query string to evaluate.
- * @param schema - The schemas to use for type evaluation.
- * @returns The type of the query.
- * @throws Error if the query is empty or can't be parsed.
- */
-export function evaluateQueryType(query: string, schema: Schema): TypeNode {
-  if (query === '') {
-    throw new Error(`query can't be empty`)
-  }
-
-  const ast = parse(query)
-  $debug('evaluateQueryType.ast %O', ast)
-  return typeEvaluate(ast, schema)
 }
 
 function mapDeref(base: TypeNode, scope: Scope): TypeNode {
@@ -683,6 +671,7 @@ const OVERRIDE_TYPE_SYMBOL = Symbol('groq-js.type')
  * `overrideTypeForNode` overrides the inferred type for a specific node: The
  * type evaluator will ignore its built-in logic and instead _always_ return
  * this type. This is intended to be used for testing.
+ * @internal - This is only exported for testing purposes.
  */
 export function overrideTypeForNode(node: ExprNode, type: TypeNode): void {
   ;(node as any)[OVERRIDE_TYPE_SYMBOL] = type
@@ -694,6 +683,7 @@ export function overrideTypeForNode(node: ExprNode, type: TypeNode): void {
  * @param node - The AST node to evaluate.
  * @param scope - The current scope.
  * @returns The evaluated type of the node.
+ * @internal
  */
 // eslint-disable-next-line complexity
 export function walk({node, scope}: {node: ExprNode; scope: Scope}): TypeNode {

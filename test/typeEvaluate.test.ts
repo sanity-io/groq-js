@@ -1,6 +1,7 @@
 import t from 'tap'
 
-import {evaluateQueryType} from '../src/typeEvaluator/evaluateQueryType'
+import {parse} from '../src/parser'
+import {typeEvaluate} from '../src/typeEvaluator/typeEvaluate'
 import {createReferenceTypeNode} from '../src/typeEvaluator/typeHelpers'
 import {
   ArrayTypeNode,
@@ -321,7 +322,8 @@ const schemas = [
 
 t.test('no projection', (t) => {
   const query = `*[_type == "author" && _id == "123"]`
-  const res = evaluateQueryType(query, schemas)
+  const ast = parse(query)
+  const res = typeEvaluate(ast, schemas)
   t.strictSame(res, {
     type: 'array',
     of: findSchemaType('author'),
@@ -330,7 +332,8 @@ t.test('no projection', (t) => {
 })
 t.test('pipe func call', (t) => {
   const query = `*[_type == "author" && defined(slug.current)] | order(_createdAt desc)`
-  const res = evaluateQueryType(query, schemas)
+  const ast = parse(query)
+  const res = typeEvaluate(ast, schemas)
   t.strictSame(res, {
     type: 'array',
     of: findSchemaType('author'),
@@ -340,7 +343,8 @@ t.test('pipe func call', (t) => {
 
 t.test('element access', (t) => {
   const query = `*[_type == "author"][0]`
-  const res = evaluateQueryType(query, schemas)
+  const ast = parse(query)
+  const res = typeEvaluate(ast, schemas)
   t.strictSame(res, {
     type: 'union',
     of: [findSchemaType('author'), {type: 'null'}],
@@ -350,7 +354,8 @@ t.test('element access', (t) => {
 
 t.test('element access with attribute access', (t) => {
   const query = `*[_type == "post"][0].allAuthorOrGhost[] { _ref}`
-  const res = evaluateQueryType(query, schemas)
+  const ast = parse(query)
+  const res = typeEvaluate(ast, schemas)
   t.strictSame(res, {
     type: 'union',
     of: [
@@ -376,7 +381,8 @@ t.test('element access with attribute access', (t) => {
 
 t.test('access attribute with objects', (t) => {
   const query = `*[_type == "author" && object.subfield == "foo"][0]`
-  const res = evaluateQueryType(query, schemas)
+  const ast = parse(query)
+  const res = typeEvaluate(ast, schemas)
   t.strictSame(res, {
     type: 'union',
     of: [findSchemaType('author'), {type: 'null'}],
@@ -386,7 +392,8 @@ t.test('access attribute with objects', (t) => {
 
 t.test('access attribute with derefences', (t) => {
   const query = `*[authorOrGhost->name == "foo"][0]`
-  const res = evaluateQueryType(query, schemas)
+  const ast = parse(query)
+  const res = typeEvaluate(ast, schemas)
   t.strictSame(res, {
     type: 'union',
     of: [findSchemaType('post'), {type: 'null'}],
@@ -396,7 +403,8 @@ t.test('access attribute with derefences', (t) => {
 
 t.test('parameters', (t) => {
   const query = `*[_type == "author" && _id == $id]`
-  const res = evaluateQueryType(query, schemas)
+  const ast = parse(query)
+  const res = typeEvaluate(ast, schemas)
   t.strictSame(res, {
     of: findSchemaType('author'),
     type: 'array',
@@ -407,7 +415,8 @@ t.test('parameters', (t) => {
 
 t.test('filtering on sub-child', (t) => {
   const query = `*[_type == "author" && object.subfield == $slug]`
-  const res = evaluateQueryType(query, schemas)
+  const ast = parse(query)
+  const res = typeEvaluate(ast, schemas)
   t.strictSame(res, {
     of: findSchemaType('author'),
     type: 'array',
@@ -418,7 +427,8 @@ t.test('filtering on sub-child', (t) => {
 
 t.test('in operator', (t) => {
   const query = `*[_type in ["author", "post"]]`
-  const res = evaluateQueryType(query, schemas)
+  const ast = parse(query)
+  const res = typeEvaluate(ast, schemas)
   t.strictSame(res, {
     type: 'array',
     of: {
@@ -432,7 +442,8 @@ t.test('in operator', (t) => {
 
 t.test('match operator', (t) => {
   const query = `*[_type match "namespace.**"  &&  !(_id in path("drafts.**"))]`
-  const res = evaluateQueryType(query, schemas)
+  const ast = parse(query)
+  const res = typeEvaluate(ast, schemas)
   t.strictSame(res, {
     type: 'array',
     of: {
@@ -446,7 +457,8 @@ t.test('match operator', (t) => {
 
 t.test('subfilter matches', (t) => {
   const query = `*[_type match "namespace.**"][boolField == true]`
-  const res = evaluateQueryType(query, schemas)
+  const ast = parse(query)
+  const res = typeEvaluate(ast, schemas)
   t.strictSame(res, {
     type: 'array',
     of: findSchemaType('namespace.one'),
@@ -457,7 +469,8 @@ t.test('subfilter matches', (t) => {
 
 t.test('subfilter doesnt match', (t) => {
   const query = `*[_type == "namespace.two"][boolField == true]`
-  const res = evaluateQueryType(query, schemas)
+  const ast = parse(query)
+  const res = typeEvaluate(ast, schemas)
   t.strictSame(res, {
     type: 'array',
     of: {
@@ -471,7 +484,8 @@ t.test('subfilter doesnt match', (t) => {
 
 t.test('subfilter with projection', (t) => {
   const query = `*[_type == "namespace.one"] {name, _type} [_type == "namespace.one"]`
-  const res = evaluateQueryType(query, schemas)
+  const ast = parse(query)
+  const res = typeEvaluate(ast, schemas)
   t.strictSame(res, {
     type: 'array',
     of: {
@@ -499,7 +513,8 @@ t.test('subfilter with projection', (t) => {
 
 t.test('attribute access', (t) => {
   const query = `*[_type == "author"][].object.subfield`
-  const res = evaluateQueryType(query, schemas)
+  const ast = parse(query)
+  const res = typeEvaluate(ast, schemas)
   t.strictSame(res, {
     type: 'array',
     of: {
@@ -512,7 +527,8 @@ t.test('attribute access', (t) => {
 
 t.test('coerce reference', (t) => {
   const query = `*[_type == "post" && defined(author.name)][].author`
-  const res = evaluateQueryType(query, schemas)
+  const ast = parse(query)
+  const res = typeEvaluate(ast, schemas)
   t.strictSame(res, {
     type: 'array',
     of: createReferenceTypeNode('author'),
@@ -529,7 +545,8 @@ t.test('object references', (t) => {
       },
       "disabledConcepts": concepts[enabled == false],
     }`
-  const res = evaluateQueryType(query, schemas)
+  const ast = parse(query)
+  const res = typeEvaluate(ast, schemas)
   t.matchSnapshot(res)
   t.end()
 })
@@ -538,7 +555,8 @@ t.test('never', (t) => {
   const query = `*[1 == 1 && 1 == 2]{
         name,
       }`
-  const res = evaluateQueryType(query, schemas)
+  const ast = parse(query)
+  const res = typeEvaluate(ast, schemas)
   t.strictSame(res, {
     type: 'array',
     of: {
@@ -554,7 +572,8 @@ t.test('simple', (t) => {
   const query = `*[_type == "post"]{
             name,
           }`
-  const res = evaluateQueryType(query, schemas)
+  const ast = parse(query)
+  const res = typeEvaluate(ast, schemas)
 
   t.strictSame(res, {
     type: 'array',
@@ -595,7 +614,8 @@ t.test('values in projection', (t) => {
             "and": 3 > foo && 3 > bar,
             "or": 3 > foo || 3 > bar,
           }`
-  const res = evaluateQueryType(query, schemas)
+  const ast = parse(query)
+  const res = typeEvaluate(ast, schemas)
   t.strictSame(res, {
     type: 'array',
     of: {
@@ -767,7 +787,8 @@ t.test('deref', (t) => {
             name,
             author->
           }`
-  const res = evaluateQueryType(query, schemas)
+  const ast = parse(query)
+  const res = typeEvaluate(ast, schemas)
   t.strictSame(res, {
     type: 'array',
     of: {
@@ -800,7 +821,8 @@ t.test('deref with projection union', (t) => {
             "authorOrGhostProjected": authorOrGhost->{name, _type},
             "resolvedAllAuthorOrGhost": allAuthorOrGhost->,
           }`
-  const res = evaluateQueryType(query, schemas)
+  const ast = parse(query)
+  const res = typeEvaluate(ast, schemas)
   t.strictSame(res, {
     type: 'array',
     of: {
@@ -947,7 +969,8 @@ t.test('deref with projection', (t) => {
             name,
             author->{_id, name}
           }`
-  const res = evaluateQueryType(query, schemas)
+  const ast = parse(query)
+  const res = typeEvaluate(ast, schemas)
   t.strictSame(res, {
     type: 'array',
     of: {
@@ -991,7 +1014,8 @@ t.test('deref with projection and element access', (t) => {
             name,
             author->{_id, name}
           }[0]`
-  const res = evaluateQueryType(query, schemas)
+  const ast = parse(query)
+  const res = typeEvaluate(ast, schemas)
   t.strictSame(res, {
     type: 'union',
     of: [
@@ -1038,7 +1062,8 @@ t.test('deref with element access, then projection ', (t) => {
             name,
             author->{_id, name}
           }`
-  const res = evaluateQueryType(query, schemas)
+  const ast = parse(query)
+  const res = typeEvaluate(ast, schemas)
   t.strictSame(res, {
     type: 'union',
     of: [
@@ -1087,7 +1112,8 @@ t.test('subquery', (t) => {
             }
           }`
 
-  const res = evaluateQueryType(query, [authorDocument, postDocument])
+  const ast = parse(query)
+  const res = typeEvaluate(ast, [authorDocument, postDocument])
   t.strictSame(res, {
     type: 'array',
     of: {
@@ -1123,7 +1149,8 @@ t.test('string concetnation', (t) => {
             name,
             "fullName": firstname + " " + lastname,
           }`
-  const res = evaluateQueryType(query, schemas)
+  const ast = parse(query)
+  const res = typeEvaluate(ast, schemas)
 
   t.strictSame(res, {
     type: 'array',
@@ -1158,7 +1185,8 @@ t.test('with select', (t) => {
           "unknown name"
         )
       }`
-  const res = evaluateQueryType(query, schemas)
+  const ast = parse(query)
+  const res = typeEvaluate(ast, schemas)
   t.strictSame(res, {
     type: 'array',
     of: {
@@ -1215,7 +1243,8 @@ t.test('with select, not guaranteed & with fallback', (t) => {
           "old id"
         )
       }`
-  const res = evaluateQueryType(query, schemas)
+  const ast = parse(query)
+  const res = typeEvaluate(ast, schemas)
   t.strictSame(res, {
     type: 'array',
     of: {
@@ -1287,7 +1316,8 @@ t.test('with splat', (t) => {
         ...,
         "otherName": name
       }`
-  const res = evaluateQueryType(query, schemas)
+  const ast = parse(query)
+  const res = typeEvaluate(ast, schemas)
 
   t.strictSame(res, {
     type: 'array',
@@ -1385,7 +1415,8 @@ t.test('with conditional splat', (t) => {
     "match": {1 == 1 => {...}}}
   
   }`
-  const res = evaluateQueryType(query, schemas)
+  const ast = parse(query)
+  const res = typeEvaluate(ast, schemas)
   t.matchSnapshot(res)
   t.end()
 })
@@ -1395,7 +1426,8 @@ t.test('coalesce only', async (t) => {
           "name": coalesce(name, "unknown"),
           "maybe": coalesce(optionalObject, dontExists)
         }`
-  const res = evaluateQueryType(query, schemas)
+  const ast = parse(query)
+  const res = typeEvaluate(ast, schemas)
   t.matchSnapshot(res)
   t.end()
 })
@@ -1408,14 +1440,16 @@ t.test('coalesce with projection', async (t) => {
             ref->
           },
         }`
-  const res = evaluateQueryType(query, schemas)
+  const ast = parse(query)
+  const res = typeEvaluate(ast, schemas)
   t.matchSnapshot(res)
   t.end()
 })
 
 t.test('number', (t) => {
   const query = `3`
-  const res = evaluateQueryType(query, schemas)
+  const ast = parse(query)
+  const res = typeEvaluate(ast, schemas)
   t.strictSame(res, {
     type: 'number',
     value: 3,
@@ -1424,7 +1458,8 @@ t.test('number', (t) => {
 })
 t.test('string', (t) => {
   const query = `"hello"`
-  const res = evaluateQueryType(query, schemas)
+  const ast = parse(query)
+  const res = typeEvaluate(ast, schemas)
   t.strictSame(res, {
     type: 'string',
     value: 'hello',
@@ -1433,7 +1468,8 @@ t.test('string', (t) => {
 })
 t.test('null', (t) => {
   const query = `null`
-  const res = evaluateQueryType(query, schemas)
+  const ast = parse(query)
+  const res = typeEvaluate(ast, schemas)
   t.strictSame(res, {
     type: 'null',
   })
@@ -1441,7 +1477,8 @@ t.test('null', (t) => {
 })
 t.test('object', (t) => {
   const query = `{ "hello": "world" }`
-  const res = evaluateQueryType(query, schemas)
+  const ast = parse(query)
+  const res = typeEvaluate(ast, schemas)
   t.strictSame(res, {
     type: 'object',
     attributes: {
@@ -1460,7 +1497,8 @@ t.test('object', (t) => {
 
 t.test('filter with function', (t) => {
   const query = `*[_type == "author" && defined(slug.current)]`
-  const res = evaluateQueryType(query, schemas)
+  const ast = parse(query)
+  const res = typeEvaluate(ast, schemas)
   t.strictSame(res, {
     type: 'array',
     of: findSchemaType('author'),
@@ -1470,7 +1508,8 @@ t.test('filter with function', (t) => {
 })
 
 t.test('filter with type reference', (t) => {
-  const res = evaluateQueryType(`*[_type == "post" && sluger.current == $foo][0]`, schemas)
+  const ast = parse(`*[_type == "post" && sluger.current == $foo][0]`)
+  const res = typeEvaluate(ast, schemas)
   t.strictSame(res, {
     type: 'union',
     of: [findSchemaType('post'), {type: 'null'}],
@@ -1479,8 +1518,8 @@ t.test('filter with type reference', (t) => {
 })
 
 t.test('filter order doesnt matter', (t) => {
-  const res = evaluateQueryType(`*[_type == "author" && _id == "123"]`, schemas)
-  t.strictSame(res, evaluateQueryType(`*["author" == _type &&  "123" == _id]`, schemas))
+  const res = typeEvaluate(parse(`*[_type == "author" && _id == "123"]`), schemas)
+  t.strictSame(res, typeEvaluate(parse(`*["author" == _type &&  "123" == _id]`), schemas))
   t.matchSnapshot(res)
 
   t.end()
@@ -1495,7 +1534,8 @@ t.test('misc', (t) => {
       "andWithAttriute": !false && !someAttriute,
       "pt": pt::text(block)
     }`
-  const res = evaluateQueryType(query, [{type: 'document', name: 'foo', attributes: {}}])
+  const ast = parse(query)
+  const res = typeEvaluate(ast, [{type: 'document', name: 'foo', attributes: {}}])
   t.matchSnapshot(res)
 
   t.end()
@@ -1503,7 +1543,8 @@ t.test('misc', (t) => {
 
 t.test('flatmap', (t) => {
   const query = `*[_type == "post"].allAuthorOrGhost[]`
-  const res = evaluateQueryType(query, schemas)
+  const ast = parse(query)
+  const res = typeEvaluate(ast, schemas)
   t.matchSnapshot(res)
 
   t.end()
@@ -1571,7 +1612,8 @@ t.test('complex', (t) => {
     }
   }`
 
-  const res = evaluateQueryType(query, schemas)
+  const ast = parse(query)
+  const res = typeEvaluate(ast, schemas)
   t.matchSnapshot(res)
 
   t.end()
@@ -1596,7 +1638,8 @@ t.test('complex 2', (t) => {
     }
   }`
 
-  const res = evaluateQueryType(query, schemas)
+  const ast = parse(query)
+  const res = typeEvaluate(ast, schemas)
   t.matchSnapshot(res)
 
   t.end()

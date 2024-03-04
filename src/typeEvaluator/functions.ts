@@ -1,6 +1,6 @@
 import {FuncCallNode} from '../nodeTypes'
-import {walk} from './evaluateQueryType'
 import {Scope} from './scope'
+import {walk} from './typeEvaluate'
 import {NullTypeNode, TypeNode} from './types'
 
 function unionWithoutNull(unionTypeNode: TypeNode): TypeNode {
