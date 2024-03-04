@@ -1,4 +1,4 @@
-# GROQ-JS<!-- omit in toc --> 
+# GROQ-JS<!-- omit in toc -->
 
 [![npm stat](https://img.shields.io/npm/dm/groq-js.svg?style=flat-square)](https://npm-stat.com/charts.html?package=groq-js)
 [![npm version](https://img.shields.io/npm/v/groq-js.svg?style=flat-square)](https://www.npmjs.com/package/groq-js)
