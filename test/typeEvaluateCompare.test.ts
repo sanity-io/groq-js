@@ -5,7 +5,7 @@ import {evaluate} from '../src/evaluator'
 import {operators} from '../src/evaluator/operators'
 import {ExprNode, OpCall} from '../src/nodeTypes'
 import {TypeNode} from '../src/typeEvaluator'
-import {typeEvaluate, overrideTypeForNode} from '../src/typeEvaluator/evaluateQueryType'
+import {typeEvaluate, overrideTypeForNode} from '../src/typeEvaluator/typeEvaluate'
 import {satisfies} from '../src/typeEvaluator/satisfies'
 
 /**

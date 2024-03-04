@@ -5,7 +5,7 @@
  * Make sure to inspect the output below.  Do not ignore changes!
  */
 'use strict'
-exports[`test/evaluateQueryType.test.ts TAP coalesce only > must match snapshot 1`] = `
+exports[`test/typeEvaluate.test.ts TAP coalesce only > must match snapshot 1`] = `
 Object {
   "of": Object {
     "attributes": Object {
@@ -53,7 +53,7 @@ Object {
 }
 `
 
-exports[`test/evaluateQueryType.test.ts TAP coalesce with projection > must match snapshot 1`] = `
+exports[`test/typeEvaluate.test.ts TAP coalesce with projection > must match snapshot 1`] = `
 Object {
   "of": Array [
     Object {
@@ -104,7 +104,7 @@ Object {
 }
 `
 
-exports[`test/evaluateQueryType.test.ts TAP complex 2 > must match snapshot 1`] = `
+exports[`test/typeEvaluate.test.ts TAP complex 2 > must match snapshot 1`] = `
 Object {
   "of": Object {
     "attributes": Object {
@@ -223,7 +223,7 @@ Object {
 }
 `
 
-exports[`test/evaluateQueryType.test.ts TAP complex > must match snapshot 1`] = `
+exports[`test/typeEvaluate.test.ts TAP complex > must match snapshot 1`] = `
 Object {
   "of": Object {
     "attributes": Object {
@@ -555,7 +555,7 @@ Object {
 }
 `
 
-exports[`test/evaluateQueryType.test.ts TAP filter order doesnt matter > must match snapshot 1`] = `
+exports[`test/typeEvaluate.test.ts TAP filter order doesnt matter > must match snapshot 1`] = `
 Object {
   "of": Object {
     "attributes": Object {
@@ -638,7 +638,7 @@ Object {
 }
 `
 
-exports[`test/evaluateQueryType.test.ts TAP flatmap > must match snapshot 1`] = `
+exports[`test/typeEvaluate.test.ts TAP flatmap > must match snapshot 1`] = `
 Object {
   "of": Object {
     "of": Array [
@@ -713,7 +713,7 @@ Object {
 }
 `
 
-exports[`test/evaluateQueryType.test.ts TAP misc > must match snapshot 1`] = `
+exports[`test/typeEvaluate.test.ts TAP misc > must match snapshot 1`] = `
 Object {
   "of": Object {
     "attributes": Object {
@@ -763,7 +763,7 @@ Object {
 }
 `
 
-exports[`test/evaluateQueryType.test.ts TAP object references > must match snapshot 1`] = `
+exports[`test/typeEvaluate.test.ts TAP object references > must match snapshot 1`] = `
 Object {
   "of": Object {
     "attributes": Object {
@@ -830,7 +830,7 @@ Object {
 }
 `
 
-exports[`test/evaluateQueryType.test.ts TAP with conditional splat > must match snapshot 1`] = `
+exports[`test/typeEvaluate.test.ts TAP with conditional splat > must match snapshot 1`] = `
 Object {
   "attributes": Object {
     "not match": Object {

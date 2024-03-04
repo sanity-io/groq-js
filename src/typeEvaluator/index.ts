@@ -1,4 +1,4 @@
-export {typeEvaluate as evaluateNodeType, evaluateQueryType} from './evaluateQueryType'
+export {typeEvaluate} from './typeEvaluate'
 // @internal
 export {createReferenceTypeNode} from './typeHelpers'
 export type {
