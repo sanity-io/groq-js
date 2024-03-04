@@ -1,5 +1,13 @@
 import {ObjectAttribute, ObjectTypeNode} from './types'
 
+/**
+ * createReferenceTypeNode creates a ObjectTypeNode representing a reference type
+ * it adds required attributes for a reference type.
+ * @param name - The name of the reference type
+ * @param inArray - Whether the reference is in an array
+ * @returns A ObjectTypeNode representing a reference type
+ * @internal
+ */
 export function createReferenceTypeNode(name: string, inArray: boolean = false): ObjectTypeNode {
   const attributes: Record<string, ObjectAttribute> = {
     _ref: {
