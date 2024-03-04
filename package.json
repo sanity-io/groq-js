@@ -38,17 +38,6 @@
       "import": "./dist/1.mjs",
       "default": "./dist/1.js"
     },
-    "./typeEvaluator": {
-      "types": "./dist/typeEvaluator/index.d.ts",
-      "source": "./src/typeEvaluator/index.ts",
-      "require": "./dist/typeEvaluator/index.js",
-      "node": {
-        "module": "./dist/typeEvaluator/index.mjs",
-        "import": "./dist/typeEvaluator/index.cjs.mjs"
-      },
-      "import": "./dist/typeEvaluator/index.mjs",
-      "default": "./dist/typeEvaluator/index.js"
-    },
     "./package.json": "./package.json"
   },
   "main": "./dist/index.js",
