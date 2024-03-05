@@ -7,7 +7,8 @@ import {parse, evaluate} from 'groq-js'
 ```
 
 - [`parse`](#parse)
-- [`evalute`](#evaluate)
+- [`evaluate`](#evaluate)
+- [`typeEvaluate`](#typeEvaluate)
 
 ## `parse`
 
@@ -69,3 +70,13 @@ declare async function evaluate(node: ExprNode, options: EvaluateOptions = {})
 ```
 
 `evaluate` accepts a node returned by [`parse`](#parse) and evaluates the query.
+
+## `typeEvaluate`
+
+_**Beta**_
+
+```typescript
+export declare function typeEvaluate(ast: ExprNode, schema: SchemaType): TypeNode
+```
+
+`typeEvaluate` accepts a node returned by [`parse`](#parse) and a schema and evaluates the type that would be returned by the query in combination with the schema.
