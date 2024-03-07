@@ -1645,6 +1645,17 @@ t.test('complex 2', (t) => {
   t.end()
 })
 
+t.test('InRange', (t) => {
+  const query = `*[_type == "post"][0..5]`
+
+  const ast = parse(query)
+  const res = typeEvaluate(ast, schemas)
+  t.same(res.type, 'array')
+  t.matchSnapshot(res)
+
+  t.end()
+})
+
 function findSchemaType(name: string): TypeNode {
   const type = schemas.find((s) => s.name === name)
   if (!type) {
