@@ -24,6 +24,7 @@ import type {
   ParentNode,
   ProjectionNode,
   SelectNode,
+  SliceNode,
   ValueNode,
 } from '../nodeTypes'
 import {handleFuncCallNode} from './functions'
@@ -48,7 +49,7 @@ import type {
 const $trace = debug('typeEvaluator:evaluate:trace')
 $trace.log = console.log.bind(console) // eslint-disable-line no-console
 // log to stdout
-const $debug = debug('typeEvaluator:evaluate::debug')
+const $debug = debug('typeEvaluator:evaluate:debug')
 // log to stdout
 $debug.log = console.log.bind(console) // eslint-disable-line no-console
 const $warn = debug('typeEvaluator:evaluate::warn')
@@ -62,6 +63,7 @@ const $warn = debug('typeEvaluator:evaluate::warn')
  * @beta
  */
 export function typeEvaluate(ast: ExprNode, schema: Schema): TypeNode {
+  $debug('evaluateQueryType.ast %O', ast)
   const parsed = walk({
     node: ast,
     scope: new Scope([], undefined, new Context(schema)),
@@ -69,7 +71,7 @@ export function typeEvaluate(ast: ExprNode, schema: Schema): TypeNode {
 
   $trace('evaluateQueryType.parsed %O', parsed)
   const optimized = optimizeUnions(parsed)
-  $trace('evaluateQueryType.optimized %O', optimized)
+  $debug('evaluateQueryType.optimized %O', optimized)
 
   return optimized
 }
@@ -626,6 +628,19 @@ function handleValueNode(node: ValueNode, scope: Scope): TypeNode {
   }
 }
 
+function handleSlice(node: SliceNode, scope: Scope): TypeNode {
+  $trace('slice.node %O', node)
+
+  const base = walk({node: node.base, scope})
+  return mapUnion(base, (base) => {
+    if (base.type !== 'array') {
+      return {type: 'null'} satisfies NullTypeNode
+    }
+
+    return base
+  })
+}
+
 function handleParentNode({n}: ParentNode, scope: Scope): TypeNode {
   let current: Scope = scope
   for (let i = 0; i < n; i++) {
@@ -777,6 +792,9 @@ export function walk({node, scope}: {node: ExprNode; scope: Scope}): TypeNode {
       }
     }
 
+    case 'Slice': {
+      return handleSlice(node, scope)
+    }
     // everything else
     case 'Asc':
     case 'Desc':
