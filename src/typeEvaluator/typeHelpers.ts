@@ -1,4 +1,4 @@
-import {ObjectAttribute, ObjectTypeNode} from './types'
+import type {ObjectAttribute, ObjectTypeNode, TypeNode, UnionTypeNode} from './types'
 
 /**
  * createReferenceTypeNode creates a ObjectTypeNode representing a reference type
@@ -46,4 +46,18 @@ export function createReferenceTypeNode(name: string, inArray: boolean = false):
     attributes,
     dereferencesTo: name,
   } satisfies ObjectTypeNode
+}
+
+export function nullUnion(node: TypeNode): UnionTypeNode {
+  if (node.type === 'union') {
+    return {
+      type: 'union',
+      of: [...node.of, {type: 'null'}],
+    } satisfies UnionTypeNode
+  }
+
+  return {
+    type: 'union',
+    of: [node, {type: 'null'}],
+  } satisfies UnionTypeNode
 }
