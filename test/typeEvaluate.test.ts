@@ -2,7 +2,7 @@ import t from 'tap'
 
 import {parse} from '../src/parser'
 import {typeEvaluate} from '../src/typeEvaluator/typeEvaluate'
-import {createReferenceTypeNode} from '../src/typeEvaluator/typeHelpers'
+import {createReferenceTypeNode, nullUnion} from '../src/typeEvaluator/typeHelpers'
 import {
   ArrayTypeNode,
   Document,
@@ -904,7 +904,7 @@ t.test('deref with projection union', (t) => {
           type: 'objectAttribute',
           value: {
             type: 'union',
-            of: [findSchemaType('author'), findSchemaType('ghost')],
+            of: [findSchemaType('author'), findSchemaType('ghost'), {type: 'null'}],
           },
         },
         allAuthorOrGhost: {
@@ -926,9 +926,9 @@ t.test('deref with projection union', (t) => {
         },
         authorOrGhostName: {
           type: 'objectAttribute',
-          value: {
+          value: nullUnion({
             type: 'string',
-          },
+          }),
         },
         authorOrGhostProjected: {
           type: 'objectAttribute',
@@ -971,18 +971,19 @@ t.test('deref with projection union', (t) => {
                   },
                 },
               },
+              {type: 'null'},
             ],
           },
         },
         resolvedAllAuthorOrGhost: {
           type: 'objectAttribute',
-          value: {
+          value: nullUnion({
             type: 'array',
             of: {
               type: 'union',
               of: [findSchemaType('author'), findSchemaType('ghost')],
             },
-          },
+          }),
         },
       },
     },
@@ -1155,10 +1156,10 @@ t.test('subquery', (t) => {
               attributes: {
                 publishedAfterAuthor: {
                   type: 'objectAttribute',
-                  value: {
+                  value: nullUnion({
                     type: 'boolean',
                     value: undefined,
-                  },
+                  }),
                 },
               },
             },
@@ -1249,9 +1250,9 @@ t.test('with select', (t) => {
             },
             authorName: {
               type: 'objectAttribute',
-              value: {
+              value: nullUnion({
                 type: 'string',
-              },
+              }),
             },
           },
         },
