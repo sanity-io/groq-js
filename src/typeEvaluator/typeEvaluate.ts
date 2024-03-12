@@ -389,17 +389,29 @@ function handleMap(node: MapNode, scope: Scope): TypeNode {
       return base
     }
 
-    if (base.of.type === 'union') {
-      const value = walk({node: node.expr, scope: scope.createHidden(base.of.of)}) // re use the current parent, this is a "sub" scope
-      $trace('map.expr %O', value)
+    // if this is an inline type we resolve it since we want to map over the actual value.
+    return maybeResolveInline(base.of, scope, (base) => {
+      if (base.type === 'union') {
+        const value = walk({node: node.expr, scope: scope.createHidden(base.of)}) // re use the current parent, this is a "sub" scope
+        $trace('map.expr %O', value)
 
-      return {
-        type: 'array',
-        of: value,
-      } satisfies ArrayTypeNode
-    }
+        return {
+          type: 'array',
+          of: value,
+        } satisfies ArrayTypeNode
+      }
+      if (base.type === 'object') {
+        const value = walk({node: node.expr, scope: scope.createHidden([base])}) // re use the current parent, this is a "sub" scope
+        $trace('map.expr %O', value)
 
-    return base
+        return {
+          type: 'array',
+          of: value,
+        } satisfies ArrayTypeNode
+      }
+
+      return {type: 'unknown'} satisfies UnknownTypeNode
+    })
   })
 }
 
@@ -429,7 +441,6 @@ function mapProjectionInScope(
 function handleProjectionNode(node: ProjectionNode, scope: Scope): TypeNode {
   const base = walk({node: node.base, scope})
   $trace('projection.base %O', base)
-  $trace('projection.scope %O', scope.value)
 
   if (base.type === 'unknown' || base.type === 'null') {
     return {type: 'null'}
@@ -1119,6 +1130,18 @@ function mapUnion(node: TypeNode, mapper: (node: TypeNode) => TypeNode): TypeNod
       type: 'union',
       of: node.of.map((subNode) => mapUnion(subNode, mapper)),
     })
+  }
+  return mapper(node)
+}
+
+function maybeResolveInline(
+  node: TypeNode,
+  scope: Scope,
+  mapper: (node: TypeNode) => TypeNode,
+): TypeNode {
+  if (node.type === 'inline') {
+    const resolvedInline = scope.context.lookupTypeDeclaration(node)
+    return mapper(resolvedInline)
   }
   return mapper(node)
 }
