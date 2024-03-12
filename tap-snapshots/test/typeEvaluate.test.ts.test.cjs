@@ -416,8 +416,27 @@ Object {
           "of": Array [
             Object {
               "of": Object {
-                "name": "concept",
-                "type": "inline",
+                "attributes": Object {
+                  "isActive": Object {
+                    "type": "objectAttribute",
+                    "value": Object {
+                      "type": "boolean",
+                    },
+                  },
+                  "name": Object {
+                    "type": "objectAttribute",
+                    "value": Object {
+                      "type": "string",
+                    },
+                  },
+                  "relatedPostsCount": Object {
+                    "type": "objectAttribute",
+                    "value": Object {
+                      "type": "unknown",
+                    },
+                  },
+                },
+                "type": "object",
               },
               "type": "array",
             },
@@ -546,8 +565,44 @@ Object {
                           "type": "objectAttribute",
                           "value": Object {
                             "of": Object {
-                              "name": "concept",
-                              "type": "inline",
+                              "attributes": Object {
+                                "enabled": Object {
+                                  "type": "objectAttribute",
+                                  "value": Object {
+                                    "type": "boolean",
+                                  },
+                                },
+                                "name": Object {
+                                  "type": "objectAttribute",
+                                  "value": Object {
+                                    "type": "string",
+                                  },
+                                },
+                                "posts": Object {
+                                  "type": "objectAttribute",
+                                  "value": Object {
+                                    "of": Object {
+                                      "attributes": Object {
+                                        "_id": Object {
+                                          "type": "objectAttribute",
+                                          "value": Object {
+                                            "type": "string",
+                                          },
+                                        },
+                                        "name": Object {
+                                          "type": "objectAttribute",
+                                          "value": Object {
+                                            "type": "string",
+                                          },
+                                        },
+                                      },
+                                      "type": "object",
+                                    },
+                                    "type": "array",
+                                  },
+                                },
+                              },
+                              "type": "object",
                             },
                             "type": "array",
                           },
@@ -725,8 +780,44 @@ Object {
                         "type": "objectAttribute",
                         "value": Object {
                           "of": Object {
-                            "name": "concept",
-                            "type": "inline",
+                            "attributes": Object {
+                              "enabled": Object {
+                                "type": "objectAttribute",
+                                "value": Object {
+                                  "type": "boolean",
+                                },
+                              },
+                              "name": Object {
+                                "type": "objectAttribute",
+                                "value": Object {
+                                  "type": "string",
+                                },
+                              },
+                              "posts": Object {
+                                "type": "objectAttribute",
+                                "value": Object {
+                                  "of": Object {
+                                    "attributes": Object {
+                                      "_id": Object {
+                                        "type": "objectAttribute",
+                                        "value": Object {
+                                          "type": "string",
+                                        },
+                                      },
+                                      "name": Object {
+                                        "type": "objectAttribute",
+                                        "value": Object {
+                                          "type": "string",
+                                        },
+                                      },
+                                    },
+                                    "type": "object",
+                                  },
+                                  "type": "array",
+                                },
+                              },
+                            },
+                            "type": "object",
                           },
                           "type": "array",
                         },

@@ -440,6 +440,33 @@ t.test('in operator', (t) => {
   t.end()
 })
 
+t.test('attribute access on inline types', (t) => {
+  const query = `*[_type == "ghost"] {
+    "conceptNames": concepts[].name
+  }`
+  const ast = parse(query)
+  const res = typeEvaluate(ast, schemas)
+  t.strictSame(res, {
+    type: 'array',
+    of: {
+      type: 'object',
+      attributes: {
+        conceptNames: {
+          type: 'objectAttribute',
+          value: {
+            type: 'array',
+            of: {
+              type: 'string',
+            },
+          },
+        },
+      },
+    },
+  } satisfies ArrayTypeNode)
+
+  t.end()
+})
+
 t.test('match operator', (t) => {
   const query = `*[_type match "namespace.**"  &&  !(_id in path("drafts.**"))]`
   const ast = parse(query)
@@ -1583,7 +1610,7 @@ t.test('complex', (t) => {
           optionalObject
         },
         _type == "ghost" => {
-          concepts[]->{
+          concepts[] {
             name,
             enabled,
             posts[]->{_id, name}
@@ -1602,7 +1629,7 @@ t.test('complex', (t) => {
           optionalObject
         },
         _type == "ghost" => {
-          concepts[]->{
+          concepts[] {
             name,
             enabled,
             posts[]->{_id, name}
@@ -1626,7 +1653,7 @@ t.test('complex 2', (t) => {
     name,
     "authorFullName": author->firstname + " " + author->lastname,
     "slug": sluger->current,
-    "relatedConcepts": authorOrGhost->concepts[]->{
+    "relatedConcepts": authorOrGhost->concepts[] {
       name,
       "isActive": enabled,
       "relatedPostsCount": count(posts)
