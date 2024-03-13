@@ -709,7 +709,6 @@ export function walk({node, scope}: {node: ExprNode; scope: Scope}): TypeNode {
     case 'Desc':
     case 'Neg':
     case 'Pos':
-    case 'Slice':
     case 'Context':
     case 'Tuple':
     case 'Selector':
