@@ -717,7 +717,7 @@ export function walk({node, scope}: {node: ExprNode; scope: Scope}): TypeNode {
     }
 
     default: {
-      // @ts-expect-error
+      // @ts-expect-error - we should have handled all cases
       throw new Error(`unknown node type ${node.type}`)
     }
   }
