@@ -5,6 +5,18 @@
 All notable changes to this project will be documented in this file. See
 [Conventional Commits](https://conventionalcommits.org) for commit guidelines.
 
+## [1.5.0-canary.2](https://github.com/sanity-io/groq-js/compare/v1.5.0-canary.1...v1.5.0-canary.2) (2024-03-13)
+
+### Features
+
+- access optinal attributes should return null ([8e3f7e4](https://github.com/sanity-io/groq-js/commit/8e3f7e41298739fca9a1fe6b86cada2d2cf7fb07))
+- add support for slice in type evaluator ([7877990](https://github.com/sanity-io/groq-js/commit/7877990477defe7bbc9e55d024b2e9430ba580c8))
+- add tsdoc to describe the type nodes ([65cbc41](https://github.com/sanity-io/groq-js/commit/65cbc41ac209cadd716ed0f35ec225745f9ffa96))
+
+### Bug Fixes
+
+- **typeEvaluate:** resolve inline when mapping type ([7a3742c](https://github.com/sanity-io/groq-js/commit/7a3742c69a3ed278a0e7e083ea9a2ce9a1216123))
+
 ## [1.5.0-canary.1](https://github.com/sanity-io/groq-js/compare/v1.4.4-canary.1...v1.5.0-canary.1) (2024-03-05)
 
 ### Features
