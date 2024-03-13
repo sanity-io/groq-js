@@ -2,7 +2,7 @@ import t from 'tap'
 
 import {parse} from '../src/parser'
 import {typeEvaluate} from '../src/typeEvaluator/typeEvaluate'
-import {createReferenceTypeNode} from '../src/typeEvaluator/typeHelpers'
+import {createReferenceTypeNode, nullUnion} from '../src/typeEvaluator/typeHelpers'
 import {
   ArrayTypeNode,
   Document,
@@ -436,6 +436,33 @@ t.test('in operator', (t) => {
       of: [findSchemaType('author'), findSchemaType('post')],
     },
   } satisfies ArrayTypeNode<UnionTypeNode>)
+
+  t.end()
+})
+
+t.test('attribute access on inline types', (t) => {
+  const query = `*[_type == "ghost"] {
+    "conceptNames": concepts[].name
+  }`
+  const ast = parse(query)
+  const res = typeEvaluate(ast, schemas)
+  t.strictSame(res, {
+    type: 'array',
+    of: {
+      type: 'object',
+      attributes: {
+        conceptNames: {
+          type: 'objectAttribute',
+          value: {
+            type: 'array',
+            of: {
+              type: 'string',
+            },
+          },
+        },
+      },
+    },
+  } satisfies ArrayTypeNode)
 
   t.end()
 })
@@ -877,7 +904,7 @@ t.test('deref with projection union', (t) => {
           type: 'objectAttribute',
           value: {
             type: 'union',
-            of: [findSchemaType('author'), findSchemaType('ghost')],
+            of: [findSchemaType('author'), findSchemaType('ghost'), {type: 'null'}],
           },
         },
         allAuthorOrGhost: {
@@ -899,9 +926,9 @@ t.test('deref with projection union', (t) => {
         },
         authorOrGhostName: {
           type: 'objectAttribute',
-          value: {
+          value: nullUnion({
             type: 'string',
-          },
+          }),
         },
         authorOrGhostProjected: {
           type: 'objectAttribute',
@@ -944,18 +971,19 @@ t.test('deref with projection union', (t) => {
                   },
                 },
               },
+              {type: 'null'},
             ],
           },
         },
         resolvedAllAuthorOrGhost: {
           type: 'objectAttribute',
-          value: {
+          value: nullUnion({
             type: 'array',
             of: {
               type: 'union',
               of: [findSchemaType('author'), findSchemaType('ghost')],
             },
-          },
+          }),
         },
       },
     },
@@ -1128,10 +1156,10 @@ t.test('subquery', (t) => {
               attributes: {
                 publishedAfterAuthor: {
                   type: 'objectAttribute',
-                  value: {
+                  value: nullUnion({
                     type: 'boolean',
                     value: undefined,
-                  },
+                  }),
                 },
               },
             },
@@ -1222,9 +1250,9 @@ t.test('with select', (t) => {
             },
             authorName: {
               type: 'objectAttribute',
-              value: {
+              value: nullUnion({
                 type: 'string',
-              },
+              }),
             },
           },
         },
@@ -1583,7 +1611,7 @@ t.test('complex', (t) => {
           optionalObject
         },
         _type == "ghost" => {
-          concepts[]->{
+          concepts[] {
             name,
             enabled,
             posts[]->{_id, name}
@@ -1602,7 +1630,7 @@ t.test('complex', (t) => {
           optionalObject
         },
         _type == "ghost" => {
-          concepts[]->{
+          concepts[] {
             name,
             enabled,
             posts[]->{_id, name}
@@ -1626,7 +1654,7 @@ t.test('complex 2', (t) => {
     name,
     "authorFullName": author->firstname + " " + author->lastname,
     "slug": sluger->current,
-    "relatedConcepts": authorOrGhost->concepts[]->{
+    "relatedConcepts": authorOrGhost->concepts[] {
       name,
       "isActive": enabled,
       "relatedPostsCount": count(posts)
@@ -1640,6 +1668,17 @@ t.test('complex 2', (t) => {
 
   const ast = parse(query)
   const res = typeEvaluate(ast, schemas)
+  t.matchSnapshot(res)
+
+  t.end()
+})
+
+t.test('InRange', (t) => {
+  const query = `*[_type == "post"][0..5]`
+
+  const ast = parse(query)
+  const res = typeEvaluate(ast, schemas)
+  t.same(res.type, 'array')
   t.matchSnapshot(res)
 
   t.end()

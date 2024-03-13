@@ -1,9 +1,9 @@
 # API
 
-GROQ-JS exposes two functions:
+GROQ-JS exposes three functions:
 
 ```typescript
-import {parse, evaluate} from 'groq-js'
+import {parse, evaluate, typeEvaluate} from 'groq-js'
 ```
 
 - [`parse`](#parse)
