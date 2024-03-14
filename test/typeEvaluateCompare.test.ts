@@ -155,41 +155,55 @@ function inArray(input: AnnotatedValue[]): AnnotatedValue[] {
 }
 
 /**
- * We have four different categories. This is mainly here so that we can exclude.
+ * We have five different categories. This is mainly here so that we can exclude.
  */
 enum Category {
   /** primitives + unknown. */
   PRIMITIVES,
+  /** A single object + unknown. */
+  OBJECT,
+  /** A single array + unknown. */
+  ARRAY,
   /** Objects of primitives + unknown. */
   OBJECTS,
   /** Arrays of primitives + unknown. */
   ARRAYS,
   /** Array of objects of primities. */
   OBJECTS_IN_ARRAYS,
+  /** Arrays of arrays. */
+  ARRAYS_IN_ARRAYS,
 }
 
+const num = primitives[1]
+
 const primitivesWithUnknown = withUnknown(primitives)
-const objects0 = inObject(primitivesWithUnknown, 'i0')
-const objects1 = inObject(primitivesWithUnknown, 'i1')
-const arrays = inArray(primitivesWithUnknown)
-const objects0InArrays = inArray(objects0)
-const objects1InArrays = inArray(objects1)
+const object = withUnknown(inObject([num], 'i0'))
+const array = withUnknown(inArray([num]))
+const objects0 = withUnknown(inObject(primitivesWithUnknown, 'i0'))
+const objects1 = withUnknown(inObject(primitivesWithUnknown, 'i1'))
+const arrays = withUnknown(inArray(primitivesWithUnknown))
+const objects0InArrays = withUnknown(inArray(objects0))
+const objects1InArrays = withUnknown(inArray(objects1))
+const arraysInArrays = withUnknown(inArray(arrays).concat(inArray(objects0InArrays)))
 
 // For the tests where we need _two_ annotated values we make sure that the
 // object values actually have different keys. This tests a bit more stuff.
 
 const valuesForCategories: AnnotatedValue[][][] = [
-  [primitivesWithUnknown, objects0, arrays, objects0InArrays],
-  [primitivesWithUnknown, objects1, arrays, objects1InArrays],
+  [primitivesWithUnknown, object, array, objects0, arrays, objects0InArrays, arraysInArrays],
+  [primitivesWithUnknown, object, array, objects1, arrays, objects1InArrays, arraysInArrays],
 ]
 
 const SCHEMA: [] = []
 
 const ALL_CATEGORIES = [
   Category.PRIMITIVES,
+  Category.OBJECT,
+  Category.ARRAY,
   Category.OBJECTS,
   Category.ARRAYS,
   Category.OBJECTS_IN_ARRAYS,
+  Category.ARRAYS_IN_ARRAYS,
 ]
 
 type CachedResult = {
@@ -302,11 +316,101 @@ t.test('AccessAttribute missing', async (t) => {
   })
 })
 
+t.test('FlatMap base', async (t) => {
+  subtestUnary({
+    t,
+    build: (param) => ({type: 'FlatMap', base: param, expr: {type: 'This'}}),
+  })
+})
+
+t.test('FlatMap expr', async (t) => {
+  subtestUnary({
+    t,
+    build: (param) => ({
+      type: 'FlatMap',
+      base: {
+        type: 'Array',
+        elements: [
+          {
+            type: 'ArrayElement',
+            value: {type: 'Value', value: 1},
+            isSplat: false,
+          },
+        ],
+      },
+      expr: param,
+    }),
+  })
+})
+
+t.test('Map', async (t) => {
+  subtestUnary({
+    t,
+    build: (param) => ({type: 'Map', base: param, expr: {type: 'This'}}),
+  })
+})
+
+t.test('Projection base', async (t) => {
+  subtestUnary({
+    t,
+    build: (param) => ({type: 'Projection', base: param, expr: {type: 'This'}}),
+  })
+})
+
+t.test('Projection expr', async (t) => {
+  subtestUnary({
+    t,
+    build: (param) => ({type: 'Projection', base: {type: 'Object', attributes: []}, expr: param}),
+  })
+})
+
+t.test('AccessElement', async (t) => {
+  subtestUnary({
+    t,
+    build: (param) => ({type: 'AccessElement', base: param, index: 0}),
+  })
+})
+
+t.test('Slice', async (t) => {
+  subtestUnary({
+    t,
+    build: (param) => ({type: 'Slice', base: param, left: 0, right: 0, isInclusive: true}),
+  })
+})
+
+// It's too much to test _every_ possible combination of binary operations. For
+// each operator we therefore keep track of which variants are interesting to
+// test for. We already know that many operations don't care about deeply nested
+// objects/arrays so we avoid testing for those.
+
+const trivialVariant = [Category.PRIMITIVES, Category.OBJECT, Category.ARRAY]
+
+const opVariants: Record<OpCall, Category[]> = {
+  // + is very polymorphic so we want to test it for everything.
+  '+': ALL_CATEGORIES,
+  '%': trivialVariant,
+  '*': trivialVariant,
+  '==': trivialVariant,
+  '!=': trivialVariant,
+  '>': trivialVariant,
+  '<': trivialVariant,
+  '<=': trivialVariant,
+  '>=': trivialVariant,
+  '-': trivialVariant,
+  '/': trivialVariant,
+  '**': trivialVariant,
+  in: [Category.PRIMITIVES, Category.ARRAYS],
+  match: [Category.PRIMITIVES, Category.ARRAYS],
+}
+
 const ops = Object.keys(operators) as OpCall[]
+
 for (const op of ops) {
   t.test(`OpCall ${op}`, async (t) => {
     subtestBinary({
       t,
+      variants1: opVariants[op],
+      variants2: opVariants[op],
       build: (left, right) => ({type: 'OpCall', op, left, right}),
     })
   })

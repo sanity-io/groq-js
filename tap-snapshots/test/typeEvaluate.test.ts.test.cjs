@@ -1003,6 +1003,12 @@ Object {
   "of": Array [
     Object {
       "of": Object {
+        "type": "null",
+      },
+      "type": "array",
+    },
+    Object {
+      "of": Object {
         "of": Array [
           Object {
             "attributes": Object {
@@ -1072,9 +1078,6 @@ Object {
         "type": "union",
       },
       "type": "array",
-    },
-    Object {
-      "type": "null",
     },
   ],
   "type": "union",
