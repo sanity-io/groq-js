@@ -369,98 +369,59 @@ function handleSelectNode(node: SelectNode, scope: Scope): TypeNode {
 function handleArrayCoerceNode(node: ArrayCoerceNode, scope: Scope): TypeNode {
   const base = walk({node: node.base, scope})
   $trace('arrayCoerce.base %O', base)
-  return mapUnion(base, (base) => {
-    if (base.type !== 'array') {
-      return {type: 'null'} satisfies NullTypeNode
-    }
-
-    return base
-  })
+  return mapArray(base, scope, (base) => base)
 }
 function handleFlatMap(node: FlatMapNode, scope: Scope): TypeNode {
   const base = walk({node: node.base, scope})
-  return mapUnion(base, (base) => {
-    if (base.type !== 'array') {
-      return base
-    }
+  return mapArray(base, scope, (base) => {
+    const inner = walk({node: node.expr, scope: scope.createHidden([base.of])})
 
-    return walk({node: node.expr, scope: scope.createHidden([base.of])})
+    return mapConcrete(
+      inner,
+      scope,
+      (inner) => {
+        if (inner.type === 'array') {
+          return inner
+        }
+
+        return {type: 'array', of: inner}
+      },
+      (nodes) => {
+        const inner: TypeNode[] = []
+        for (const node of nodes) {
+          // Bail out early if we've detected an unknown.
+          if (node.type === 'unknown') return {type: 'array', of: node}
+          // The mapper above ensures that all types returned are arrays.
+          if (node.type !== 'array') throw new Error(`Unexpected type: ${node.type}`)
+          inner.push(node.of)
+        }
+        return {
+          type: 'array',
+          of: optimizeUnions({type: 'union', of: inner}),
+        }
+      },
+    )
   })
 }
 function handleMap(node: MapNode, scope: Scope): TypeNode {
   const base = walk({node: node.base, scope})
   $trace('map.base %O', base)
-  return mapUnion(base, (base) => {
-    if (base.type !== 'array') {
-      return base
-    }
 
-    // if this is an inline type we resolve it since we want to map over the actual value.
-    return maybeResolveInline(base.of, scope, (base) => {
-      if (base.type === 'union') {
-        const value = walk({node: node.expr, scope: scope.createHidden(base.of)}) // re use the current parent, this is a "sub" scope
-        $trace('map.expr %O', value)
-
-        return {
-          type: 'array',
-          of: value,
-        } satisfies ArrayTypeNode
-      }
-      if (base.type === 'object') {
-        const value = walk({node: node.expr, scope: scope.createHidden([base])}) // re use the current parent, this is a "sub" scope
-        $trace('map.expr %O', value)
-
-        return {
-          type: 'array',
-          of: value,
-        } satisfies ArrayTypeNode
-      }
-
-      return {type: 'unknown'} satisfies UnknownTypeNode
-    })
-  })
-}
-
-function mapProjectionInScope(
-  base: TypeNode,
-  scope: Scope,
-  mapper: (field: TypeNode) => TypeNode,
-): TypeNode {
-  if (base.type === 'union') {
-    if (base.of.length === 1) {
-      return mapProjectionInScope(base.of[0], scope, mapper)
-    }
-    const of = base.of.map((node) => mapProjectionInScope(node, scope, mapper))
+  return mapArray(base, scope, (base) => {
     return {
-      type: 'union',
-      of,
+      type: 'array',
+      of: walk({node: node.expr, scope: scope.createHidden([base.of])}),
     }
-  }
-
-  if (base.type === 'array') {
-    return mapper(base.of)
-  }
-
-  return mapper(base)
+  })
 }
 
 function handleProjectionNode(node: ProjectionNode, scope: Scope): TypeNode {
   const base = walk({node: node.base, scope})
   $trace('projection.base %O', base)
 
-  if (base.type === 'unknown' || base.type === 'null') {
-    return {type: 'null'}
-  }
-
-  return mapProjectionInScope(base, scope, (field) => {
-    if (field.type === 'null' || field.type === 'unknown') {
-      return {type: 'null'}
-    }
-    return walk({
-      node: node.expr,
-      scope: scope.createNested([field]),
-    })
-  })
+  return mapObject(base, scope, (base) =>
+    walk({node: node.expr, scope: scope.createNested([base])}),
+  )
 }
 
 function createFilterScope(base: TypeNode, scope: Scope): Scope {
@@ -487,67 +448,15 @@ function handleFilterNode(node: FilterNode, scope: Scope): TypeNode {
   }
 }
 
-function mergeInlineObject(dst: ObjectTypeNode, src: ObjectTypeNode): ObjectTypeNode {
-  return {
-    type: 'object',
-    attributes: {...dst.attributes, ...src.attributes},
-    rest: dst.rest,
-    dereferencesTo: dst.dereferencesTo,
-  }
-}
-
-function mapFieldInScope(
-  field: TypeNode,
-  scope: Scope,
-  mapper: (field: Document | ObjectTypeNode) => TypeNode,
-): TypeNode {
-  if (field.type === 'union') {
-    return {
-      type: 'union',
-      of: field.of.map((subField) => mapFieldInScope(subField, scope, mapper)),
-    }
-  }
-
-  if (field.type === 'inline') {
-    return mapFieldInScope(scope.context.lookupTypeDeclaration(field), scope, mapper)
-  }
-
-  if (field.type === 'object') {
-    // If the rest is not defined we can just map the object
-    if (field.rest === undefined) {
-      return mapper(field)
-    }
-
-    // If it's an unknown type it means that it's an open object and we can't be sure of the types
-    if (field.rest.type === 'unknown') {
-      return {type: 'unknown'}
-    }
-
-    // If it's an inline type we need to merge the inline type with the rest type
-    // throw an error if the rest type is not an object
-    if (field.rest.type === 'inline') {
-      const rest = scope.context.lookupTypeDeclaration(field.rest)
-      if (rest.type !== 'object') {
-        throw new Error(`rest inline type must be an object, got ${rest.type}`)
-      }
-      return mapper(mergeInlineObject(field, rest))
-    }
-
-    // We need to merge the rest type, which could now only be an object, with the current object
-    return mapper(mergeInlineObject(field, field.rest))
-  }
-
-  return {type: 'null'}
-}
-
 export function handleAccessAttributeNode(node: AccessAttributeNode, scope: Scope): TypeNode {
   let attributeBase: TypeNode = scope.value
   if (node.base) {
     attributeBase = walk({node: node.base, scope})
   }
+
   $trace('accessAttribute.base %s %O', node.name, attributeBase)
 
-  return mapFieldInScope(attributeBase, scope, (base) => {
+  return mapObject(attributeBase, scope, (base) => {
     const attribute = base.attributes[node.name]
     if (attribute !== undefined) {
       $debug(`accessAttribute.attribute found ${node.name} %O`, attribute)
@@ -557,29 +466,15 @@ export function handleAccessAttributeNode(node: AccessAttributeNode, scope: Scop
 
       return attribute.value
     }
-    $warn(
-      `attribute "${node.name}" not found in ${base.type === 'document' ? `document "${base.name}"` : 'object'}`,
-    )
+    $warn(`attribute "${node.name}" not found in object`)
     return {type: 'null'}
   })
 }
 
 function handleAccessElementNode(node: AccessElementNode, scope: Scope): TypeNode {
-  if (!node.base) {
-    return {type: 'unknown'} satisfies UnknownTypeNode
-  }
   const base = walk({node: node.base, scope})
   $trace('accessElement.base %O', base)
-  return mapUnion(base, (base) => {
-    if (base.type !== 'array') {
-      return {type: 'null'} satisfies NullTypeNode
-    }
-
-    return {
-      type: 'union',
-      of: [base.of, {type: 'null'}],
-    } satisfies UnionTypeNode
-  })
+  return mapArray(base, scope, (base) => nullUnion(base.of))
 }
 
 function handleArrayNode(node: ArrayNode, scope: Scope): TypeNode {
@@ -651,15 +546,8 @@ function handleValueNode(node: ValueNode, scope: Scope): TypeNode {
 
 function handleSlice(node: SliceNode, scope: Scope): TypeNode {
   $trace('slice.node %O', node)
-
   const base = walk({node: node.base, scope})
-  return mapUnion(base, (base) => {
-    if (base.type !== 'array') {
-      return {type: 'null'} satisfies NullTypeNode
-    }
-
-    return base
-  })
+  return mapArray(base, scope, (base) => base)
 }
 
 function handleParentNode({n}: ParentNode, scope: Scope): TypeNode {
@@ -821,7 +709,6 @@ export function walk({node, scope}: {node: ExprNode; scope: Scope}): TypeNode {
     case 'Desc':
     case 'Neg':
     case 'Pos':
-    case 'Slice':
     case 'Context':
     case 'Tuple':
     case 'Selector':
@@ -830,7 +717,7 @@ export function walk({node, scope}: {node: ExprNode; scope: Scope}): TypeNode {
     }
 
     default: {
-      // @ts-expect-error
+      // @ts-expect-error - we should have handled all cases
       throw new Error(`unknown node type ${node.type}`)
     }
   }
@@ -1144,14 +1031,68 @@ function mapUnion(node: TypeNode, mapper: (node: TypeNode) => TypeNode): TypeNod
   return mapper(node)
 }
 
-function maybeResolveInline(
+type ConcreteTypeNode =
+  | BooleanTypeNode
+  | NullTypeNode
+  | NumberTypeNode
+  | StringTypeNode
+  | ArrayTypeNode
+  | ObjectTypeNode
+
+/**
+ * mapConcrete extracts a _concrete type_ from a type node, applies the mapping
+ * function to it and returns. Most notably, this will work through unions
+ * (applying the mapping function for each variant) and inline (resolving the
+ * reference).
+ *
+ * An `unknown` input type causes it to return `unknown` as well.
+ *
+ * After encountering unions the resulting types gets passed into `mergeUnions`.
+ * By default this will just union them together again.
+ */
+function mapConcrete(
   node: TypeNode,
   scope: Scope,
-  mapper: (node: TypeNode) => TypeNode,
+  mapper: (node: ConcreteTypeNode) => TypeNode,
+  mergeUnions: (nodes: TypeNode[]) => TypeNode = (nodes) =>
+    optimizeUnions({type: 'union', of: nodes}),
 ): TypeNode {
-  if (node.type === 'inline') {
-    const resolvedInline = scope.context.lookupTypeDeclaration(node)
-    return mapper(resolvedInline)
+  switch (node.type) {
+    case 'boolean':
+    case 'array':
+    case 'null':
+    case 'object':
+    case 'string':
+    case 'number':
+      return mapper(node)
+    case 'unknown':
+      return node
+    case 'union':
+      return mergeUnions(node.of.map((inner) => mapConcrete(inner, scope, mapper), mergeUnions))
+    case 'inline': {
+      const resolvedInline = scope.context.lookupTypeDeclaration(node)
+      return mapConcrete(resolvedInline, scope, mapper, mergeUnions)
+    }
+    default:
+      // @ts-expect-error
+      throw new Error(`Unknown type: ${node.type}`)
   }
-  return mapper(node)
+}
+
+function mapArray(
+  node: TypeNode,
+  scope: Scope,
+  mapper: (node: ArrayTypeNode) => TypeNode,
+): TypeNode {
+  return mapConcrete(node, scope, (base) => (base.type === 'array' ? mapper(base) : {type: 'null'}))
+}
+
+function mapObject(
+  node: TypeNode,
+  scope: Scope,
+  mapper: (node: ObjectTypeNode) => TypeNode,
+): TypeNode {
+  return mapConcrete(node, scope, (base) =>
+    base.type === 'object' ? mapper(base) : {type: 'null'},
+  )
 }

@@ -1000,84 +1000,79 @@ Object {
 
 exports[`test/typeEvaluate.test.ts TAP flatmap > must match snapshot 1`] = `
 Object {
-  "of": Array [
-    Object {
-      "of": Object {
-        "of": Array [
-          Object {
-            "attributes": Object {
-              "_key": Object {
-                "type": "objectAttribute",
-                "value": Object {
-                  "type": "string",
-                },
-              },
-              "_ref": Object {
-                "type": "objectAttribute",
-                "value": Object {
-                  "type": "string",
-                },
-              },
-              "_type": Object {
-                "type": "objectAttribute",
-                "value": Object {
-                  "type": "string",
-                  "value": "reference",
-                },
-              },
-              "_weak": Object {
-                "optional": true,
-                "type": "objectAttribute",
-                "value": Object {
-                  "type": "boolean",
-                },
-              },
+  "of": Object {
+    "of": Array [
+      Object {
+        "attributes": Object {
+          "_key": Object {
+            "type": "objectAttribute",
+            "value": Object {
+              "type": "string",
             },
-            "dereferencesTo": "author",
-            "type": "object",
           },
-          Object {
-            "attributes": Object {
-              "_key": Object {
-                "type": "objectAttribute",
-                "value": Object {
-                  "type": "string",
-                },
-              },
-              "_ref": Object {
-                "type": "objectAttribute",
-                "value": Object {
-                  "type": "string",
-                },
-              },
-              "_type": Object {
-                "type": "objectAttribute",
-                "value": Object {
-                  "type": "string",
-                  "value": "reference",
-                },
-              },
-              "_weak": Object {
-                "optional": true,
-                "type": "objectAttribute",
-                "value": Object {
-                  "type": "boolean",
-                },
-              },
+          "_ref": Object {
+            "type": "objectAttribute",
+            "value": Object {
+              "type": "string",
             },
-            "dereferencesTo": "ghost",
-            "type": "object",
           },
-        ],
-        "type": "union",
+          "_type": Object {
+            "type": "objectAttribute",
+            "value": Object {
+              "type": "string",
+              "value": "reference",
+            },
+          },
+          "_weak": Object {
+            "optional": true,
+            "type": "objectAttribute",
+            "value": Object {
+              "type": "boolean",
+            },
+          },
+        },
+        "dereferencesTo": "author",
+        "type": "object",
       },
-      "type": "array",
-    },
-    Object {
-      "type": "null",
-    },
-  ],
-  "type": "union",
+      Object {
+        "attributes": Object {
+          "_key": Object {
+            "type": "objectAttribute",
+            "value": Object {
+              "type": "string",
+            },
+          },
+          "_ref": Object {
+            "type": "objectAttribute",
+            "value": Object {
+              "type": "string",
+            },
+          },
+          "_type": Object {
+            "type": "objectAttribute",
+            "value": Object {
+              "type": "string",
+              "value": "reference",
+            },
+          },
+          "_weak": Object {
+            "optional": true,
+            "type": "objectAttribute",
+            "value": Object {
+              "type": "boolean",
+            },
+          },
+        },
+        "dereferencesTo": "ghost",
+        "type": "object",
+      },
+      Object {
+        "type": "null",
+      },
+    ],
+    "type": "union",
+  },
+  "type": "array",
 }
 `
 
