@@ -5,6 +5,14 @@
 All notable changes to this project will be documented in this file. See
 [Conventional Commits](https://conventionalcommits.org) for commit guidelines.
 
+## [1.5.0-canary.3](https://github.com/sanity-io/groq-js/compare/v1.5.0-canary.2...v1.5.0-canary.3) (2024-03-18)
+
+### Bug Fixes
+
+- handle flatmap over unions correctly ([70dc0c3](https://github.com/sanity-io/groq-js/commit/70dc0c3497961a7576f3c3017759171a78043395))
+- remove un-evaluated Slice-case ([349645b](https://github.com/sanity-io/groq-js/commit/349645b6c66471c5878e5cd4d524aaea28b990b0))
+- various type evaluation bugs ([3da42d7](https://github.com/sanity-io/groq-js/commit/3da42d774d3265a167b167bd1418db2180100cc0))
+
 ## [1.5.0-canary.2](https://github.com/sanity-io/groq-js/compare/v1.5.0-canary.1...v1.5.0-canary.2) (2024-03-13)
 
 ### Features
