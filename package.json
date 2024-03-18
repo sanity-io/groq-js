@@ -80,7 +80,7 @@
     ]
   },
   "devDependencies": {
-    "@sanity/pkg-utils": "^5.0.3",
+    "@sanity/pkg-utils": "^5.0.4",
     "@sanity/semantic-release-preset": "^4.1.7",
     "@types/debug": "^4.1.12",
     "@types/tap": "^15.0.11",
