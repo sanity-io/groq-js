@@ -1000,87 +1000,79 @@ Object {
 
 exports[`test/typeEvaluate.test.ts TAP flatmap > must match snapshot 1`] = `
 Object {
-  "of": Array [
-    Object {
-      "of": Object {
+  "of": Object {
+    "of": Array [
+      Object {
+        "attributes": Object {
+          "_key": Object {
+            "type": "objectAttribute",
+            "value": Object {
+              "type": "string",
+            },
+          },
+          "_ref": Object {
+            "type": "objectAttribute",
+            "value": Object {
+              "type": "string",
+            },
+          },
+          "_type": Object {
+            "type": "objectAttribute",
+            "value": Object {
+              "type": "string",
+              "value": "reference",
+            },
+          },
+          "_weak": Object {
+            "optional": true,
+            "type": "objectAttribute",
+            "value": Object {
+              "type": "boolean",
+            },
+          },
+        },
+        "dereferencesTo": "author",
+        "type": "object",
+      },
+      Object {
+        "attributes": Object {
+          "_key": Object {
+            "type": "objectAttribute",
+            "value": Object {
+              "type": "string",
+            },
+          },
+          "_ref": Object {
+            "type": "objectAttribute",
+            "value": Object {
+              "type": "string",
+            },
+          },
+          "_type": Object {
+            "type": "objectAttribute",
+            "value": Object {
+              "type": "string",
+              "value": "reference",
+            },
+          },
+          "_weak": Object {
+            "optional": true,
+            "type": "objectAttribute",
+            "value": Object {
+              "type": "boolean",
+            },
+          },
+        },
+        "dereferencesTo": "ghost",
+        "type": "object",
+      },
+      Object {
         "type": "null",
       },
-      "type": "array",
-    },
-    Object {
-      "of": Object {
-        "of": Array [
-          Object {
-            "attributes": Object {
-              "_key": Object {
-                "type": "objectAttribute",
-                "value": Object {
-                  "type": "string",
-                },
-              },
-              "_ref": Object {
-                "type": "objectAttribute",
-                "value": Object {
-                  "type": "string",
-                },
-              },
-              "_type": Object {
-                "type": "objectAttribute",
-                "value": Object {
-                  "type": "string",
-                  "value": "reference",
-                },
-              },
-              "_weak": Object {
-                "optional": true,
-                "type": "objectAttribute",
-                "value": Object {
-                  "type": "boolean",
-                },
-              },
-            },
-            "dereferencesTo": "author",
-            "type": "object",
-          },
-          Object {
-            "attributes": Object {
-              "_key": Object {
-                "type": "objectAttribute",
-                "value": Object {
-                  "type": "string",
-                },
-              },
-              "_ref": Object {
-                "type": "objectAttribute",
-                "value": Object {
-                  "type": "string",
-                },
-              },
-              "_type": Object {
-                "type": "objectAttribute",
-                "value": Object {
-                  "type": "string",
-                  "value": "reference",
-                },
-              },
-              "_weak": Object {
-                "optional": true,
-                "type": "objectAttribute",
-                "value": Object {
-                  "type": "boolean",
-                },
-              },
-            },
-            "dereferencesTo": "ghost",
-            "type": "object",
-          },
-        ],
-        "type": "union",
-      },
-      "type": "array",
-    },
-  ],
-  "type": "union",
+    ],
+    "type": "union",
+  },
+  "type": "array",
 }
 `
 

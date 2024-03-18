@@ -376,13 +376,31 @@ function handleFlatMap(node: FlatMapNode, scope: Scope): TypeNode {
   return mapArray(base, scope, (base) => {
     const inner = walk({node: node.expr, scope: scope.createHidden([base.of])})
 
-    return mapConcrete(inner, scope, (inner) => {
-      if (inner.type === 'array') {
-        return inner
-      }
+    return mapConcrete(
+      inner,
+      scope,
+      (inner) => {
+        if (inner.type === 'array') {
+          return inner
+        }
 
-      return {type: 'array', of: inner}
-    })
+        return {type: 'array', of: inner}
+      },
+      (nodes) => {
+        const inner: TypeNode[] = []
+        for (const node of nodes) {
+          // Bail out early if we've detected an unknown.
+          if (node.type === 'unknown') return {type: 'array', of: node}
+          // The mapper above ensures that all types returned are arrays.
+          if (node.type !== 'array') throw new Error(`Unexpected type: ${node.type}`)
+          inner.push(node.of)
+        }
+        return {
+          type: 'array',
+          of: optimizeUnions({type: 'union', of: inner}),
+        }
+      },
+    )
   })
 }
 function handleMap(node: MapNode, scope: Scope): TypeNode {
@@ -1027,13 +1045,18 @@ type ConcreteTypeNode =
  * function to it and returns. Most notably, this will work through unions
  * (applying the mapping function for each variant) and inline (resolving the
  * reference).
- * 
+ *
  * An `unknown` input type causes it to return `unknown` as well.
+ *
+ * After encountering unions the resulting types gets passed into `mergeUnions`.
+ * By default this will just union them together again.
  */
 function mapConcrete(
   node: TypeNode,
   scope: Scope,
   mapper: (node: ConcreteTypeNode) => TypeNode,
+  mergeUnions: (nodes: TypeNode[]) => TypeNode = (nodes) =>
+    optimizeUnions({type: 'union', of: nodes}),
 ): TypeNode {
   switch (node.type) {
     case 'boolean':
@@ -1046,13 +1069,10 @@ function mapConcrete(
     case 'unknown':
       return node
     case 'union':
-      return optimizeUnions({
-        type: 'union',
-        of: node.of.map((inner) => mapConcrete(inner, scope, mapper)),
-      })
+      return mergeUnions(node.of.map((inner) => mapConcrete(inner, scope, mapper), mergeUnions))
     case 'inline': {
       const resolvedInline = scope.context.lookupTypeDeclaration(node)
-      return mapConcrete(resolvedInline, scope, mapper)
+      return mapConcrete(resolvedInline, scope, mapper, mergeUnions)
     }
     default:
       // @ts-expect-error
