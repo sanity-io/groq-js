@@ -5,6 +5,35 @@
 All notable changes to this project will be documented in this file. See
 [Conventional Commits](https://conventionalcommits.org) for commit guidelines.
 
+## [1.5.0](https://github.com/sanity-io/groq-js/compare/v1.4.3...v1.5.0) (2024-03-19)
+
+### Features
+
+- access optinal attributes should return null ([8e3f7e4](https://github.com/sanity-io/groq-js/commit/8e3f7e41298739fca9a1fe6b86cada2d2cf7fb07))
+- add support for slice in type evaluator ([7877990](https://github.com/sanity-io/groq-js/commit/7877990477defe7bbc9e55d024b2e9430ba580c8))
+- add tsdoc to describe the type nodes ([65cbc41](https://github.com/sanity-io/groq-js/commit/65cbc41ac209cadd716ed0f35ec225745f9ffa96))
+- add type evaluator ([637603b](https://github.com/sanity-io/groq-js/commit/637603bf21472910a59097b189a2844fc865d9fd))
+- **evaluateQueryType:** add more tests ([#180](https://github.com/sanity-io/groq-js/issues/180)) ([5d2528e](https://github.com/sanity-io/groq-js/commit/5d2528ec241117bab89fe0cbc23e5dc857363fd1))
+- export type evaluation with version 1 ([62c6b7f](https://github.com/sanity-io/groq-js/commit/62c6b7f78e0b3458fe96e64e1ac69917c48127d9))
+- only export typeEvaluate function ([e3e3875](https://github.com/sanity-io/groq-js/commit/e3e3875add41c410264db01fedf0a83fe9236d35))
+- replace esbuild with tsx. fixes linenumber ([8a60c87](https://github.com/sanity-io/groq-js/commit/8a60c87b16f1ef0d90d57922b51770c270ff8da1))
+- **typeEvaluator:** rename main function to `typeEvaluate` ([9c2f345](https://github.com/sanity-io/groq-js/commit/9c2f3453c363a475aa0de7b9705d9ba8bd74729d))
+
+### Bug Fixes
+
+- dont access attributes inside arrays ([0e267bc](https://github.com/sanity-io/groq-js/commit/0e267bc51f38c232050d54285c70241176faa3cf))
+- dont stringify objects, let debug/util handle it ([bb7d646](https://github.com/sanity-io/groq-js/commit/bb7d646db2ad05f44612d355286eb77eccc9485c))
+- forward type on map unexpected ([8131a71](https://github.com/sanity-io/groq-js/commit/8131a711eb1844009eefef76a3257d68b1b36c76))
+- handle flatmap over unions correctly ([70dc0c3](https://github.com/sanity-io/groq-js/commit/70dc0c3497961a7576f3c3017759171a78043395))
+- order unions ([5a940e0](https://github.com/sanity-io/groq-js/commit/5a940e043492373234eac74c50230827549ca3b1))
+- query node type eval tests ([522bd9b](https://github.com/sanity-io/groq-js/commit/522bd9b80b947f559fd952e0a1d4519b0d733ab0))
+- recursively lookup attributes in object rest ([fecc1a1](https://github.com/sanity-io/groq-js/commit/fecc1a1fdcf27e4cf290b63992ebbeff08573afe))
+- refactor and reuse scope handling from evaluator ([7bed827](https://github.com/sanity-io/groq-js/commit/7bed827a584e33efa64c4c430969b0b044cf3e8e))
+- remove un-evaluated Slice-case ([349645b](https://github.com/sanity-io/groq-js/commit/349645b6c66471c5878e5cd4d524aaea28b990b0))
+- **typeEvaluate:** resolve inline when mapping type ([7a3742c](https://github.com/sanity-io/groq-js/commit/7a3742c69a3ed278a0e7e083ea9a2ce9a1216123))
+- update snapshots ([0860eaf](https://github.com/sanity-io/groq-js/commit/0860eaf76e432c76192bd109fcc2c483e191c238))
+- various type evaluation bugs ([3da42d7](https://github.com/sanity-io/groq-js/commit/3da42d774d3265a167b167bd1418db2180100cc0))
+
 ## [1.4.3](https://github.com/sanity-io/groq-js/compare/v1.4.2...v1.4.3) (2024-02-21)
 
 ### Bug Fixes
