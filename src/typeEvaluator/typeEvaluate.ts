@@ -455,18 +455,27 @@ export function handleAccessAttributeNode(node: AccessAttributeNode, scope: Scop
   }
 
   $trace('accessAttribute.base %s %O', node.name, attributeBase)
+  return handleAccessAttributeBase(attributeBase, node.name, scope)
+}
 
-  return mapObject(attributeBase, scope, (base) => {
-    const attribute = base.attributes[node.name]
+function handleAccessAttributeBase(base: TypeNode, name: string, scope: Scope): TypeNode {
+  return mapObject(base, scope, (base) => {
+    $trace(`Looking for attribute "%s" in object %O`, name, base)
+
+    const attribute = base.attributes[name]
     if (attribute !== undefined) {
-      $debug(`accessAttribute.attribute found ${node.name} %O`, attribute)
+      $debug(`accessAttribute.attribute found ${name} %O`, attribute)
       if (attribute.optional) {
         return nullUnion(attribute.value)
       }
 
       return attribute.value
     }
-    $warn(`attribute "${node.name}" not found in object`)
+
+    if (base.rest) {
+      return handleAccessAttributeBase(base.rest, name, scope)
+    }
+    $warn(`attribute "${name}" not found in object`)
     return {type: 'null'}
   })
 }

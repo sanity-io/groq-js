@@ -223,6 +223,40 @@ Object {
 }
 `
 
+exports[`test/typeEvaluate.test.ts TAP can resolve attributes on inline rest > must match snapshot 1`] = `
+Object {
+  "of": Object {
+    "attributes": Object {
+      "concepts": Object {
+        "type": "objectAttribute",
+        "value": Object {
+          "of": Object {
+            "attributes": Object {
+              "_key": Object {
+                "type": "objectAttribute",
+                "value": Object {
+                  "type": "string",
+                },
+              },
+              "name": Object {
+                "type": "objectAttribute",
+                "value": Object {
+                  "type": "string",
+                },
+              },
+            },
+            "type": "object",
+          },
+          "type": "array",
+        },
+      },
+    },
+    "type": "object",
+  },
+  "type": "array",
+}
+`
+
 exports[`test/typeEvaluate.test.ts TAP coalesce only > must match snapshot 1`] = `
 Object {
   "of": Object {
@@ -1147,8 +1181,19 @@ Object {
         "type": "objectAttribute",
         "value": Object {
           "of": Object {
-            "name": "concept",
-            "type": "inline",
+            "attributes": Object {
+              "_key": Object {
+                "type": "objectAttribute",
+                "value": Object {
+                  "type": "string",
+                },
+              },
+            },
+            "rest": Object {
+              "name": "concept",
+              "type": "inline",
+            },
+            "type": "object",
           },
           "type": "array",
         },
@@ -1157,8 +1202,19 @@ Object {
         "type": "objectAttribute",
         "value": Object {
           "of": Object {
-            "name": "concept",
-            "type": "inline",
+            "attributes": Object {
+              "_key": Object {
+                "type": "objectAttribute",
+                "value": Object {
+                  "type": "string",
+                },
+              },
+            },
+            "rest": Object {
+              "name": "concept",
+              "type": "inline",
+            },
+            "type": "object",
           },
           "type": "array",
         },

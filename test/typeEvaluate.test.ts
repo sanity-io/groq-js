@@ -191,8 +191,19 @@ const ghostDocument = {
       value: {
         type: 'array',
         of: {
-          type: 'inline',
-          name: 'concept',
+          type: 'object',
+          attributes: {
+            _key: {
+              type: 'objectAttribute',
+              value: {
+                type: 'string',
+              },
+            },
+          },
+          rest: {
+            type: 'inline',
+            name: 'concept',
+          },
         },
       },
     },
@@ -1573,6 +1584,30 @@ t.test('flatmap', (t) => {
   const query = `*[_type == "post"].allAuthorOrGhost[]`
   const ast = parse(query)
   const res = typeEvaluate(ast, schemas)
+  t.matchSnapshot(res)
+
+  t.end()
+})
+
+t.test('can resolve attributes on inline rest', (t) => {
+  const query = `*[_type == "ghost"] {
+      concepts[] {
+        _key,
+        name
+      }
+  }`
+  const ast = parse(query)
+  const res = typeEvaluate(ast, schemas)
+
+  // Check that the result is an array of objects with array of objects with _key and name
+  t.ok(
+    res.type === 'array' &&
+      res.of.type === 'object' &&
+      res.of.attributes.concepts.value.type === 'array' &&
+      res.of.attributes.concepts.value.of.type === 'object' &&
+      '_key' in res.of.attributes.concepts.value.of.attributes &&
+      'name' in res.of.attributes.concepts.value.of.attributes,
+  )
   t.matchSnapshot(res)
 
   t.end()
