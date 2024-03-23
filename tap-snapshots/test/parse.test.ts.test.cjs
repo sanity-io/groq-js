@@ -211,3 +211,34 @@ Object {
   "type": "Select",
 }
 `
+
+exports[`test/parse.test.ts TAP Expression parsing when extracting property keys can extract from group > must match snapshot 1`] = `
+Object {
+  "base": Object {
+    "type": "Everything",
+  },
+  "expr": Object {
+    "base": Object {
+      "type": "This",
+    },
+    "expr": Object {
+      "attributes": Array [
+        Object {
+          "name": "id",
+          "type": "ObjectAttributeValue",
+          "value": Object {
+            "base": Object {
+              "name": "id",
+              "type": "AccessAttribute",
+            },
+            "type": "Group",
+          },
+        },
+      ],
+      "type": "Object",
+    },
+    "type": "Projection",
+  },
+  "type": "Map",
+}
+`
