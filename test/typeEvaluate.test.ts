@@ -1719,6 +1719,88 @@ t.test('InRange', (t) => {
   t.end()
 })
 
+t.test('union conditions over references', (t) => {
+  const query = `*[_type == 'post'] {
+    name,
+    allAuthorOrGhost[]-> {
+      _type == 'author' => {
+        'type': _type,
+        'age': age
+      },
+
+      _type == 'ghost' => {
+        'type': _type,
+        title,
+      }
+    }
+  }`
+  const ast = parse(query)
+  const res = typeEvaluate(ast, schemas)
+  t.strictSame(res, {
+    type: 'array',
+    of: {
+      type: 'object',
+      attributes: {
+        name: {
+          type: 'objectAttribute',
+          value: {
+            type: 'string',
+          },
+        },
+        allAuthorOrGhost: {
+          type: 'objectAttribute',
+          value: nullUnion({
+            type: 'array',
+            of: {
+              type: 'union',
+              of: [
+                {
+                  type: 'object',
+                  attributes: {
+                    type: {
+                      type: 'objectAttribute',
+                      value: {
+                        type: 'string',
+                        value: 'author',
+                      },
+                    },
+                    age: {
+                      type: 'objectAttribute',
+                      value: {
+                        type: 'number',
+                      },
+                    },
+                  },
+                },
+                {
+                  type: 'object',
+                  attributes: {
+                    type: {
+                      type: 'objectAttribute',
+                      value: {
+                        type: 'string',
+                        value: 'ghost',
+                      },
+                    },
+                    title: {
+                      type: 'objectAttribute',
+                      value: {
+                        type: 'null',
+                      },
+                    },
+                  },
+                },
+              ],
+            },
+          }),
+        },
+      },
+    },
+  })
+
+  t.end()
+})
+
 function findSchemaType(name: string): TypeNode {
   const type = schemas.find((s) => s.name === name)
   if (!type) {
