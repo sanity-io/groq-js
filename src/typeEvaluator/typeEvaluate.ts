@@ -160,7 +160,7 @@ function handleObjectNode(node: ObjectNode, scope: Scope) {
     if (attr.type === 'ObjectConditionalSplat') {
       const condition = resolveCondition(attr.condition, scope)
       $trace('object.conditional.splat.condition %O', condition)
-      if (condition) {
+      if (condition || condition === undefined) {
         const value = walk({node: attr.value, scope})
 
         mapObjectSplat(value, scope, (node) => {
@@ -168,8 +168,19 @@ function handleObjectNode(node: ObjectNode, scope: Scope) {
             if (!Object.hasOwn(node.attributes, name)) {
               continue
             }
+            const attribute = node.attributes[name]
 
-            attributes[name] = node.attributes[name]
+            if (condition) {
+              attributes[name] = attribute
+            } else if (condition === undefined) {
+              attributes[name] = {
+                type: 'objectAttribute',
+                value: attribute.value,
+                optional: true,
+              }
+            } else {
+              throw new Error('Unexpected condition')
+            }
           }
         })
       }
