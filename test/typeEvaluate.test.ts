@@ -1801,6 +1801,43 @@ t.test('union conditions over references', (t) => {
   t.end()
 })
 
+t.test('this operator', (t) => {
+  const ast = parse(`*{"biggerThanTen": numbers[@ > 10], "this": @}`)
+  const schema = {
+    type: 'document',
+    name: 'foo',
+    attributes: {
+      numbers: {
+        type: 'objectAttribute',
+        value: {
+          type: 'array',
+          of: {
+            type: 'number',
+          },
+        },
+      },
+    },
+  } satisfies Document
+  const res = typeEvaluate(ast, [schema])
+  t.strictSame(res, {
+    type: 'array',
+    of: {
+      type: 'object',
+      attributes: {
+        biggerThanTen: schema.attributes.numbers,
+        this: {
+          type: 'objectAttribute',
+          value: {
+            type: 'object',
+            attributes: schema.attributes,
+          },
+        },
+      },
+    },
+  })
+  t.end()
+})
+
 function findSchemaType(name: string): TypeNode {
   const type = schemas.find((s) => s.name === name)
   if (!type) {
