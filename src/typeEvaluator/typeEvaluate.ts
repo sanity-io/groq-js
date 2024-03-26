@@ -18,10 +18,12 @@ import type {
   FilterNode,
   FlatMapNode,
   MapNode,
+  NegNode,
   NotNode,
   ObjectNode,
   OpCallNode,
   ParentNode,
+  PosNode,
   ProjectionNode,
   SelectNode,
   SliceNode,
@@ -583,6 +585,24 @@ function handleNotNode(node: NotNode, scope: Scope): TypeNode {
   return {type: 'boolean'}
 }
 
+function handleNegNode(node: NegNode, scope: Scope): NumberTypeNode | NullTypeNode {
+  const base = walk({node: node.base, scope})
+  if (base.type !== 'number') {
+    return {type: 'null'}
+  }
+  if (base.value !== undefined) {
+    return {type: 'number', value: -base.value}
+  }
+  return base
+}
+function handlePosNode(node: PosNode, scope: Scope): NumberTypeNode | NullTypeNode {
+  const base = walk({node: node.base, scope})
+  if (base.type !== 'number') {
+    return {type: 'null'}
+  }
+  return base
+}
+
 function handleEverythingNode(_: EverythingNode, scope: Scope): TypeNode {
   return {
     type: 'array',
@@ -713,11 +733,15 @@ export function walk({node, scope}: {node: ExprNode; scope: Scope}): TypeNode {
     case 'Slice': {
       return handleSlice(node, scope)
     }
+    case 'Neg': {
+      return handleNegNode(node, scope)
+    }
+    case 'Pos': {
+      return handlePosNode(node, scope)
+    }
     // everything else
     case 'Asc':
     case 'Desc':
-    case 'Neg':
-    case 'Pos':
     case 'Context':
     case 'Tuple':
     case 'Selector':
