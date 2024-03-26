@@ -1248,34 +1248,3 @@ Object {
   "type": "array",
 }
 `
-
-exports[`test/typeEvaluate.test.ts TAP with conditional splat > must match snapshot 1`] = `
-Object {
-  "attributes": Object {
-    "not match": Object {
-      "type": "objectAttribute",
-      "value": Object {
-        "attributes": Object {
-          "match": Object {
-            "type": "objectAttribute",
-            "value": Object {
-              "attributes": Object {
-                "foo": Object {
-                  "type": "objectAttribute",
-                  "value": Object {
-                    "type": "number",
-                    "value": 1,
-                  },
-                },
-              },
-              "type": "object",
-            },
-          },
-        },
-        "type": "object",
-      },
-    },
-  },
-  "type": "object",
-}
-`
