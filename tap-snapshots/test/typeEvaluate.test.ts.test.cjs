@@ -1153,6 +1153,12 @@ Object {
           "type": "null",
         },
       },
+      "unknownParent2": Object {
+        "type": "objectAttribute",
+        "value": Object {
+          "type": "null",
+        },
+      },
     },
     "type": "object",
   },
