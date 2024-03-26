@@ -1607,6 +1607,7 @@ t.test('misc', (t) => {
       "notBool": !false,
       "notField": !someAttriute,
       "unknownParent": ^._id,
+      "unknownParent2": ^.^.^.^.^.^.^.^._id,
       "andWithAttriute": !false && !someAttriute,
       "pt": pt::text(block)
     }`
