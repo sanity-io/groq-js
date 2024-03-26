@@ -1838,6 +1838,82 @@ t.test('this operator', (t) => {
   t.end()
 })
 
+t.test('neg node', (t) => {
+  const query = `*[_type == "author"] {
+    "minusAge": -age,
+    "notNumber": -name,
+    "constant": -(3 + 4),
+  }`
+  const ast = parse(query)
+  const res = typeEvaluate(ast, schemas)
+  t.strictSame(res, {
+    type: 'array',
+    of: {
+      type: 'object',
+      attributes: {
+        minusAge: {
+          type: 'objectAttribute',
+          value: {
+            type: 'number',
+          },
+        },
+        notNumber: {
+          type: 'objectAttribute',
+          value: {
+            type: 'null',
+          },
+        },
+        constant: {
+          type: 'objectAttribute',
+          value: {
+            type: 'number',
+            value: -7,
+          },
+        },
+      },
+    },
+  })
+  t.end()
+})
+
+t.test('pos node', (t) => {
+  const query = `*[_type == "author"] {
+    "age": +age,
+    "notNumber": +name,
+    "constant": +(3 + 4),
+  }`
+  const ast = parse(query)
+  const res = typeEvaluate(ast, schemas)
+  t.strictSame(res, {
+    type: 'array',
+    of: {
+      type: 'object',
+      attributes: {
+        age: {
+          type: 'objectAttribute',
+          value: {
+            type: 'number',
+          },
+        },
+        notNumber: {
+          type: 'objectAttribute',
+          value: {
+            type: 'null',
+          },
+        },
+        constant: {
+          type: 'objectAttribute',
+          value: {
+            type: 'number',
+            value: 7,
+          },
+        },
+      },
+    },
+  })
+  t.end()
+})
+
 function findSchemaType(name: string): TypeNode {
   const type = schemas.find((s) => s.name === name)
   if (!type) {
