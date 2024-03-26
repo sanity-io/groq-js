@@ -1450,13 +1450,49 @@ t.test('with splat', (t) => {
 
 t.test('with conditional splat', (t) => {
   const query = `{"foo": 1}{
-    "not match": {"mail" == 1 => {},
-    "match": {1 == 1 => {...}}}
-  
+    "not" == 1 => {
+      "nomatch": 0,
+    },
+    "match" == "match" => {
+      "match": 1,
+    },
+    "maybe" == $foo => {
+      "maybe": 2,
+      foo
+    }
   }`
+
   const ast = parse(query)
   const res = typeEvaluate(ast, schemas)
-  t.matchSnapshot(res)
+  t.strictSame(res, {
+    type: 'object',
+    attributes: {
+      foo: {
+        type: 'objectAttribute',
+        value: {
+          type: 'number',
+          value: 1,
+        },
+        optional: true,
+      },
+      match: {
+        type: 'objectAttribute',
+        value: {
+          type: 'number',
+          value: 1,
+        },
+      },
+      maybe: {
+        type: 'objectAttribute',
+        value: {
+          type: 'number',
+          value: 2,
+        },
+        optional: true,
+      },
+    },
+  } satisfies TypeNode)
+
   t.end()
 })
 
