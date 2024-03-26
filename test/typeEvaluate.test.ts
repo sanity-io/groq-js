@@ -1979,6 +1979,43 @@ t.test('opcall: not equal', (t) => {
   t.end()
 })
 
+t.test('function: count', (t) => {
+  const query = `*[_type == "post"] {
+    "name": count(name),
+    "allAuthorOrGhostCount": count(allAuthorOrGhost),
+    "allAuthorOrGhostCountWithCoalesce": count(coalesce(allAuthorOrGhost, []))
+  }`
+  const ast = parse(query)
+  const res = typeEvaluate(ast, schemas)
+  t.strictSame(res, {
+    type: 'array',
+    of: {
+      type: 'object',
+      attributes: {
+        name: {
+          type: 'objectAttribute',
+          value: {
+            type: 'null',
+          },
+        },
+        allAuthorOrGhostCount: {
+          type: 'objectAttribute',
+          value: nullUnion({
+            type: 'number',
+          }),
+        },
+        allAuthorOrGhostCountWithCoalesce: {
+          type: 'objectAttribute',
+          value: {
+            type: 'number',
+          },
+        },
+      },
+    },
+  })
+  t.end()
+})
+
 function findSchemaType(name: string): TypeNode {
   const type = schemas.find((s) => s.name === name)
   if (!type) {

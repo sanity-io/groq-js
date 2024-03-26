@@ -61,3 +61,28 @@ export function nullUnion(node: TypeNode): UnionTypeNode {
     of: [node, {type: 'null'}],
   } satisfies UnionTypeNode
 }
+
+/**
+ * resolveUnionType resolves a union type by applying a resolver function to each type in the union, recursively.
+ * If it's not a union type, the resolver function is applied directly.
+ * @param typeNode - The union type to resolve
+ * @param resolver - The resolver function to apply to each type in the union
+ * @returns The resolved union type
+ * @internal
+ **/
+export function resolveUnionType(
+  typeNode: TypeNode,
+  resolver: (t: TypeNode) => TypeNode,
+): TypeNode {
+  switch (typeNode.type) {
+    case 'union': {
+      return {
+        type: 'union',
+        of: typeNode.of.map((t) => resolveUnionType(t, resolver)),
+      }
+    }
+    default: {
+      return resolver(typeNode)
+    }
+  }
+}

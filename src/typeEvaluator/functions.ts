@@ -1,6 +1,7 @@
 import type {FuncCallNode} from '../nodeTypes'
 import {Scope} from './scope'
 import {walk} from './typeEvaluate'
+import {resolveUnionType} from './typeHelpers'
 import type {NullTypeNode, TypeNode} from './types'
 
 function unionWithoutNull(unionTypeNode: TypeNode): TypeNode {
@@ -39,6 +40,22 @@ export function handleFuncCallNode(node: FuncCallNode, scope: Scope): TypeNode {
         type: 'union',
         of: typeNodes,
       }
+    }
+
+    case 'global.count': {
+      if (node.args.length === 0) {
+        return {type: 'null'} satisfies NullTypeNode
+      }
+
+      const arg = walk({node: node.args[0], scope})
+
+      return resolveUnionType(arg, (arg) => {
+        if (arg.type === 'array') {
+          return {type: 'number'}
+        }
+
+        return {type: 'null'} satisfies NullTypeNode
+      })
     }
     case 'pt.text': {
       if (node.args.length === 0) {

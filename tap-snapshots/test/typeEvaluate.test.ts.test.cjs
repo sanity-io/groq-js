@@ -474,7 +474,7 @@ Object {
                   "relatedPostsCount": Object {
                     "type": "objectAttribute",
                     "value": Object {
-                      "type": "unknown",
+                      "type": "number",
                     },
                   },
                 },
