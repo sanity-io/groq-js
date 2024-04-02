@@ -59,6 +59,7 @@ function countUTF8(str: string): number {
   return count
 }
 
+/** @public */
 export type GroqFunctionArg = ExprNode
 type WithOptions<T> = T & {
   arity?: GroqFunctionArity
@@ -67,6 +68,7 @@ type WithOptions<T> = T & {
 
 export type GroqFunctionArity = number | ((count: number) => boolean)
 
+/** @public */
 export type GroqFunction = (
   args: GroqFunctionArg[],
   scope: Scope,

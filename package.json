@@ -17,25 +17,15 @@
   "type": "commonjs",
   "exports": {
     ".": {
-      "types": "./dist/index.d.ts",
       "source": "./src/1.ts",
-      "require": "./dist/index.js",
-      "node": {
-        "module": "./dist/index.mjs",
-        "import": "./dist/index.cjs.mjs"
-      },
       "import": "./dist/index.mjs",
+      "require": "./dist/index.js",
       "default": "./dist/index.js"
     },
     "./1": {
-      "types": "./dist/1.d.ts",
       "source": "./src/1.ts",
-      "require": "./dist/1.js",
-      "node": {
-        "module": "./dist/1.mjs",
-        "import": "./dist/1.cjs.mjs"
-      },
       "import": "./dist/1.mjs",
+      "require": "./dist/1.js",
       "default": "./dist/1.js"
     },
     "./package.json": "./package.json"
@@ -79,7 +69,7 @@
     ]
   },
   "devDependencies": {
-    "@sanity/pkg-utils": "^5.0.4",
+    "@sanity/pkg-utils": "^5.1.5",
     "@sanity/semantic-release-preset": "^4.1.7",
     "@types/debug": "^4.1.12",
     "@types/tap": "^15.0.11",

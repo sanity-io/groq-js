@@ -457,6 +457,7 @@ const EXECUTORS: ExecutorMap = {
 
 /**
  * Evaluates a query.
+ * @internal
  */
 export function evaluateQuery(
   tree: ExprNode,

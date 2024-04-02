@@ -1,4 +1,4 @@
-import {GroqFunction, GroqPipeFunction} from './evaluator/functions'
+import type {GroqFunction, GroqPipeFunction} from './evaluator/functions'
 
 /** Any sort of node which appears as syntax */
 export type SyntaxNode = ExprNode | ArrayElementNode | ObjectAttributeNode | SelectAlternativeNode
@@ -8,7 +8,10 @@ export type ObjectAttributeNode =
   | ObjectConditionalSplatNode
   | ObjectSplatNode
 
-/** A node which can be evaluated into a value. */
+/**
+ * A node which can be evaluated into a value.
+ * @public
+ */
 export type ExprNode =
   | AccessAttributeNode
   | AccessElementNode
