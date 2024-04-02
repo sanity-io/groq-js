@@ -5,6 +5,12 @@
 All notable changes to this project will be documented in this file. See
 [Conventional Commits](https://conventionalcommits.org) for commit guidelines.
 
+## [1.7.0](https://github.com/sanity-io/groq-js/compare/v1.6.1...v1.7.0) (2024-04-02)
+
+### Features
+
+- **typeEvaluation:** let optional resolved condition be evaulated ([91ef6b5](https://github.com/sanity-io/groq-js/commit/91ef6b521adf511129409f97a196bf168c5d2542))
+
 ## [1.6.1](https://github.com/sanity-io/groq-js/compare/v1.6.0...v1.6.1) (2024-04-02)
 
 ### Bug Fixes
