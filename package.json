@@ -15,7 +15,7 @@
   "author": "Sanity.io <hello@sanity.io>",
   "sideEffects": false,
   "type": "commonjs",
-  "Exports": {
+  "exports": {
     ".": {
       "types": "./dist/index.d.ts",
       "source": "./src/1.ts",
