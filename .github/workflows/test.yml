@@ -59,21 +59,23 @@ jobs:
     if: github.event.inputs.release == 'true'
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
-        with:
-          # Need to fetch entire commit history to
-          # analyze every commit since last release
-          fetch-depth: 0
-      - uses: actions/setup-node@v4
-        with:
-          node-version: lts/*
-          cache: npm
-      - run: npm ci
       - uses: tibdex/github-app-token@3beb63f4bd073e61482598c45c71c1019b59b73a # v2
         id: generate-token
         with:
           app_id: ${{ secrets.ECOSPARK_APP_ID }}
           private_key: ${{ secrets.ECOSPARK_APP_PRIVATE_KEY }}
+      - uses: actions/checkout@v4
+        with:
+          # Need to fetch entire commit history to
+          # analyze every commit since last release
+          fetch-depth: 0
+          # Uses generated token to allow pushing commits back
+          token: ${{ steps.generate_token.outputs.token }}
+      - uses: actions/setup-node@v4
+        with:
+          node-version: lts/*
+          cache: npm
+      - run: npm ci
       - run: npx semantic-release --dry-run
         # Don't allow interrupting the release step if the job is cancelled, as it can lead to an inconsistent state
         # e.g. git tags were pushed but it exited before `npm publish`
