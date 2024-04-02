@@ -5,6 +5,19 @@
 All notable changes to this project will be documented in this file. See
 [Conventional Commits](https://conventionalcommits.org) for commit guidelines.
 
+## [1.6.0](https://github.com/sanity-io/groq-js/compare/v1.5.0...v1.6.0) (2024-04-02)
+
+### Features
+
+- **type-evaluation:** add support for Pos and Neg nodes ([bef4ad5](https://github.com/sanity-io/groq-js/commit/bef4ad543077394053f07cd7d9dda311d3eed96b))
+
+### Bug Fixes
+
+- `Exports` should be `exports` ([5cea533](https://github.com/sanity-io/groq-js/commit/5cea533edb6523f73e17c3ca3882cfdd04a1e9c4))
+- **deps:** bump `@sanity/pkg-utils` to `v5.1.5` ([d2e8f6c](https://github.com/sanity-io/groq-js/commit/d2e8f6c0769f5ef72e51962e82e62b51803df091))
+- remove legacy `typings` field, as `types` is already used ([7c05d5e](https://github.com/sanity-io/groq-js/commit/7c05d5e4e8828c3cdbe0927dfc0ff7bcd5e726f6))
+- test ecospark push override ([1e4b895](https://github.com/sanity-io/groq-js/commit/1e4b8953080611636258b11a8ee27dbf088544a2))
+
 ## [1.5.0](https://github.com/sanity-io/groq-js/compare/v1.4.3...v1.5.0) (2024-03-19)
 
 ### Features

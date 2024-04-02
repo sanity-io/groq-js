@@ -1,6 +1,6 @@
 {
   "name": "groq-js",
-  "version": "1.5.0",
+  "version": "1.6.0",
   "keywords": [
     "sanity",
     "json",
@@ -70,8 +70,8 @@
     "@sanity/semantic-release-preset": "^4.1.7",
     "@types/debug": "^4.1.12",
     "@types/tap": "^15.0.11",
-    "@typescript-eslint/eslint-plugin": "^7.3.0",
-    "@typescript-eslint/parser": "^7.3.0",
+    "@typescript-eslint/eslint-plugin": "^7.5.0",
+    "@typescript-eslint/parser": "^7.5.0",
     "eslint": "^8.57.0",
     "eslint-config-prettier": "^9.1.0",
     "eslint-config-sanity": "^7.1.2",
@@ -79,7 +79,7 @@
     "eslint-plugin-simple-import-sort": "^12.0.0",
     "ndjson": "^2.0.0",
     "prettier": "^3.2.5",
-    "prettier-plugin-packagejson": "^2.4.12",
+    "prettier-plugin-packagejson": "^2.4.14",
     "rimraf": "^5.0.0",
     "semver": "^7.5.4",
     "tap": "^16.3.10",
