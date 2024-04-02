@@ -5,6 +5,12 @@
 All notable changes to this project will be documented in this file. See
 [Conventional Commits](https://conventionalcommits.org) for commit guidelines.
 
+## [1.6.1](https://github.com/sanity-io/groq-js/compare/v1.6.0...v1.6.1) (2024-04-02)
+
+### Bug Fixes
+
+- remove typeEvaluator typesVersions export ([#207](https://github.com/sanity-io/groq-js/issues/207)) ([80bb8cb](https://github.com/sanity-io/groq-js/commit/80bb8cb202848e7e1a5282939d6d7f8ac04c89cd))
+
 ## [1.6.0](https://github.com/sanity-io/groq-js/compare/v1.5.0...v1.6.0) (2024-04-02)
 
 ### Features
