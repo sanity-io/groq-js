@@ -451,14 +451,20 @@ function handleFilterNode(node: FilterNode, scope: Scope): TypeNode {
   const base = walk({node: node.base, scope})
   $trace('filter.base %O', base)
 
-  $trace('filter.resolving %O', base)
-  const resolved = resolveFilter(node.expr, createFilterScope(base, scope))
-  $trace('filter.resolved %O', resolved)
+  return mapConcrete(base, scope, (base) => {
+    $trace('filter.resolving %O', base)
+    if (base.type === 'null') {
+      return base
+    }
 
-  return {
-    type: 'array',
-    of: resolved,
-  }
+    const resolved = resolveFilter(node.expr, createFilterScope(base, scope))
+    $trace('filter.resolved %O', resolved)
+
+    return {
+      type: 'array',
+      of: resolved,
+    }
+  })
 }
 
 export function handleAccessAttributeNode(node: AccessAttributeNode, scope: Scope): TypeNode {
@@ -1055,7 +1061,7 @@ function resolveCondition(expr: ExprNode, scope: Scope): boolean | undefined {
 }
 
 // eslint-disable-next-line complexity, max-statements
-function resolveFilter(expr: ExprNode, scope: Scope): TypeNode {
+function resolveFilter(expr: ExprNode, scope: Scope): UnionTypeNode {
   $trace('resolveFilter.expr %O', expr)
   const filtered = scope.value.of.filter(
     (node) =>

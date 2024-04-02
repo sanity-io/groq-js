@@ -550,6 +550,23 @@ t.test('subfilter with projection', (t) => {
   t.end()
 })
 
+t.test('filter on null union', (t) => {
+  const query = `*[_type == "ghost"][0].concepts[_key == "hello"].name`
+  const ast = parse(query)
+  const res = typeEvaluate(ast, schemas)
+  t.strictSame(
+    res,
+    nullUnion({
+      type: 'array',
+      of: {
+        type: 'string',
+      },
+    }) satisfies TypeNode,
+  )
+
+  t.end()
+})
+
 t.test('attribute access', (t) => {
   const query = `*[_type == "author"][].object.subfield`
   const ast = parse(query)
