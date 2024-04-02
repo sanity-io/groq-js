@@ -2,13 +2,11 @@
   "compilerOptions": {
     "strict": true,
     "target": "esnext",
-    "module": "esnext",
+    "module": "preserve",
     "noUnusedLocals": true,
-    "esModuleInterop": true,
     "allowJs": true,
     "isolatedModules": true,
     "skipLibCheck": true,
-    "moduleResolution": "node",
     "forceConsistentCasingInFileNames": true,
     "outDir": "dist"
   }

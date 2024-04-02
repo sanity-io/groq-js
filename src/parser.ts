@@ -12,7 +12,7 @@ import {
   ParentNode,
   SelectNode,
 } from './nodeTypes'
-import {parse as rawParse} from './rawParser'
+import {parse as rawParse} from './rawParser.mjs'
 import {
   TraversalResult,
   traverseArray,
