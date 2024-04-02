@@ -38,9 +38,6 @@
     "*": {
       "1": [
         "./dist/1.d.ts"
-      ],
-      "typeEvaluator": [
-        "./dist/typeEvaluator/index.d.ts"
       ]
     }
   },
