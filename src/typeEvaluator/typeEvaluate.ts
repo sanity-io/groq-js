@@ -196,13 +196,10 @@ function handleObjectNode(node: ObjectNode, scope: Scope) {
 function handleOpCallNode(node: OpCallNode, scope: Scope): TypeNode {
   const lhs = walk({node: node.left, scope})
   const rhs = walk({node: node.right, scope})
-  return mapUnion(lhs, (left) =>
+  return mapConcrete(lhs, scope, (left) =>
     // eslint-disable-next-line complexity
-    mapUnion(rhs, (right) => {
+    mapConcrete(rhs, scope, (right) => {
       $trace('opCallNode "%s" %O', node.op, {left, right})
-      if (left.type === 'unknown' || right.type === 'unknown') {
-        return {type: 'unknown'} satisfies UnknownTypeNode
-      }
 
       switch (node.op) {
         case '==':
@@ -1074,16 +1071,6 @@ function resolveFilter(expr: ExprNode, scope: Scope): UnionTypeNode {
     filtered,
   )
   return {type: 'union', of: filtered}
-}
-
-function mapUnion(node: TypeNode, mapper: (node: TypeNode) => TypeNode): TypeNode {
-  if (node.type === 'union') {
-    return optimizeUnions({
-      type: 'union',
-      of: node.of.map((subNode) => mapUnion(subNode, mapper)),
-    })
-  }
-  return mapper(node)
 }
 
 function mapArray(
