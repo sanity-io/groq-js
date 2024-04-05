@@ -232,6 +232,7 @@ const namespaceOneDocument = {
       value: {
         type: 'boolean',
       },
+      optional: true,
     } satisfies ObjectAttribute,
   },
 } satisfies Document
@@ -1946,6 +1947,16 @@ t.test('pos node', (t) => {
         },
       },
     },
+  })
+  t.end()
+})
+t.test('opcall: not equal', (t) => {
+  const query = `*[_type == "namespace.one" && boolField != true]`
+  const ast = parse(query)
+  const res = typeEvaluate(ast, schemas)
+  t.strictSame(res, {
+    type: 'array',
+    of: findSchemaType('namespace.one'),
   })
   t.end()
 })
