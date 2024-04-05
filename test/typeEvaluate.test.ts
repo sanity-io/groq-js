@@ -2016,6 +2016,59 @@ t.test('function: count', (t) => {
   t.end()
 })
 
+t.test('function: global::string', (t) => {
+  const query = `*[_type == "author"] {
+    "number": string(age),
+    "string": string(name),
+    "constant": string(3 + 4),
+    "boolean": string(true),
+    "object": string(object)
+  }`
+  const ast = parse(query)
+  const res = typeEvaluate(ast, schemas)
+  t.strictSame(res, {
+    type: 'array',
+    of: {
+      type: 'object',
+      attributes: {
+        number: {
+          type: 'objectAttribute',
+          value: {
+            type: 'string',
+          },
+        },
+        string: {
+          type: 'objectAttribute',
+          value: {
+            type: 'string',
+          },
+        },
+        constant: {
+          type: 'objectAttribute',
+          value: {
+            type: 'string',
+            value: '7',
+          },
+        },
+        boolean: {
+          type: 'objectAttribute',
+          value: {
+            type: 'string',
+            value: 'true',
+          },
+        },
+        object: {
+          type: 'objectAttribute',
+          value: {
+            type: 'null',
+          },
+        },
+      },
+    },
+  })
+  t.end()
+})
+
 function findSchemaType(name: string): TypeNode {
   const type = schemas.find((s) => s.name === name)
   if (!type) {

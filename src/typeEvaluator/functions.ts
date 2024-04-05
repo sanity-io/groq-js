@@ -53,6 +53,26 @@ export function handleFuncCallNode(node: FuncCallNode, scope: Scope): TypeNode {
         return {type: 'null'} satisfies NullTypeNode
       })
     }
+    case 'global.string': {
+      const arg = walk({node: node.args[0], scope})
+      return mapConcrete(arg, scope, (node) => {
+        if (node.type === 'string' || node.type === 'number' || node.type === 'boolean') {
+          if (node.value) {
+            return {
+              type: 'string',
+              value: node.value.toString(),
+            }
+          }
+
+          return {
+            type: 'string',
+          }
+        }
+
+        return {type: 'null'}
+      })
+    }
+
     case 'pt.text': {
       if (node.args.length === 0) {
         return {type: 'null'} satisfies NullTypeNode
