@@ -786,12 +786,17 @@ function evaluateEquality(left: TypeNode, right: TypeNode): boolean | undefined 
     return left.value === right.value
   }
   if (left.type === 'union' && isPrimitiveTypeNode(right)) {
-    return left.of.some((node) => {
-      if (isPrimitiveTypeNode(node)) {
-        return node.value === undefined || right.value === undefined || node.value === right.value
+    for (const node of left.of) {
+      // both are primitive types, and their values are equal, we can return true
+      if (isPrimitiveTypeNode(node) && node.value === right.value) {
+        return true
       }
-      return false
-    })
+
+      // both are the same type, but the value is undefined, we can't determine the result
+      if (isPrimitiveTypeNode(node) && node.value === undefined) {
+        return undefined
+      }
+    }
   }
   if (left.type !== right.type) {
     return false
