@@ -117,7 +117,7 @@ export function mapConcrete(
       return mapConcrete(resolvedInline, scope, mapper, mergeUnions)
     }
     default:
-      // @ts-expect-error - we should handle each type
+      // @ts-expect-error - all types should be handled
       throw new Error(`Unknown type: ${node.type}`)
   }
 }
