@@ -54,16 +54,13 @@
     "prepublishOnly": "npm run build",
     "prettify": "prettier --write .",
     "prettify-check": "prettier --check .",
-    "test": "tap --no-timeout --coverage-report=html --no-browser test/*.test.*",
+    "test": "tap --timeout=0 test/*.test.*",
     "test:generate": "./test/generate.sh"
   },
   "browserslist": "extends @sanity/browserslist-config",
   "tap": {
-    "check-coverage": false,
-    "node-arg": [
-      "-r",
-      "tsx/cjs"
-    ]
+    "allow-incomplete-coverage": true,
+    "allow-empty-coverage": true
   },
   "devDependencies": {
     "@sanity/pkg-utils": "^5.1.11",
@@ -82,8 +79,7 @@
     "prettier-plugin-packagejson": "^2.4.14",
     "rimraf": "^5.0.0",
     "semver": "^7.5.4",
-    "tap": "^16.3.10",
-    "tsx": "^4.7.2",
+    "tap": "^18.7.2",
     "typescript": "^5.4.2"
   },
   "engines": {

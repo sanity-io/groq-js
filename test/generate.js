@@ -1,7 +1,7 @@
 // Consumes a compiled test suite (https://github.com/sanity-io/groq-test-suite)
-// from stdin and generates a Jest test file on stdout.
+// from stdin and generates a Tap test file on stdout.
 //
-// This is needed because Jest doesn't support asynchronously defined tests.
+// This is needed because Tap doesn't support asynchronously defined tests.
 
 const ndjson = require('ndjson')
 const fs = require('fs')
