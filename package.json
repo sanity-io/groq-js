@@ -60,7 +60,8 @@
   "browserslist": "extends @sanity/browserslist-config",
   "tap": {
     "allow-incomplete-coverage": true,
-    "allow-empty-coverage": true
+    "allow-empty-coverage": true,
+    "typecheck": false
   },
   "devDependencies": {
     "@sanity/pkg-utils": "^5.1.11",
