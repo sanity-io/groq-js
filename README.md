@@ -96,7 +96,7 @@ MIT © [Sanity.io](https://www.sanity.io/)
 
 ## Tests
 
-Tests are written in [Jest](https://jestjs.io/):
+Tests are written in [Tap](https://node-tap.org/):
 
 ```bash
 # Install dependencies
@@ -105,6 +105,19 @@ npm i
 # Run tests
 npm test
 ```
+
+## Coverage
+
+```bash
+
+# Run tests
+npm test
+
+# Generate coverage report, in html format
+npx tap report html
+```
+
+## GROQ Test Suite
 
 You can also generate tests from [the official GROQ test suite](https://github.com/sanity-io/groq-test-suite):
 

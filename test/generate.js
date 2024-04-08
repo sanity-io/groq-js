@@ -1,10 +1,11 @@
 // Consumes a compiled test suite (https://github.com/sanity-io/groq-test-suite)
-// from stdin and generates a Jest test file on stdout.
+// from stdin and generates a Tap test file on stdout.
 //
-// This is needed because Jest doesn't support asynchronously defined tests.
+// This is needed because Tap doesn't support asynchronously defined tests.
 
 const ndjson = require('ndjson')
 const fs = require('fs')
+const path = require('path')
 const https = require('https')
 const semver = require('semver')
 
@@ -18,43 +19,56 @@ const DISABLED_TESTS = [
   /score\(\) function \/ Illegal use/, // we're missing validation here
 ]
 
-const OUTPUT = process.stdout
-const STACK = []
-let IDENT = ''
+// Create 40 test files, TAP holds each test in-memory and node18 runs out of memory if we have too many tests in one file.
+const testFiles = new Array(40).fill(0).map((_, i) =>
+  fs.openSync(
+    path.join(__dirname, `suite-${i}.test.js`),
+    // eslint-disable-next-line no-bitwise
+    fs.constants.O_TRUNC | fs.constants.O_CREAT | fs.constants.O_WRONLY,
+  ),
+)
 
-function write(data) {
-  OUTPUT.write(`${IDENT + data}\n`)
+const STACK = testFiles.map(() => [])
+let IDENT = testFiles.map(() => '')
+
+function write(i, data) {
+  fs.writeSync(testFiles[i], `${IDENT[i] + data}\n`)
 }
 
-function openStack(expr) {
+function openStack(i, expr) {
   const [open, close] = expr.split(/BODY/)
-  write(open)
-  STACK.push(close)
-  IDENT += '  '
+  write(i, open)
+  STACK[i].push(close)
+  IDENT[i] += '  '
 }
 
-function closeStack() {
-  const close = STACK.pop()
-  IDENT = IDENT.substring(0, IDENT.length - 2)
-  write(close)
+function closeStack(i) {
+  const close = STACK[i].pop()
+  if (close) {
+    IDENT[i] = IDENT[i].substring(0, IDENT[i].length - 2)
+    write(i, close)
+  }
 }
 
-function space() {
-  OUTPUT.write('\n')
+function space(i) {
+  fs.writeSync(testFiles[i], '\n')
 }
 
-write(`const fs = require('fs')`)
-write(`const ndjson = require('ndjson')`)
-write(`const tap = require('tap')`)
-write(`const {evaluate, parse} = require('../src/1')`)
-space()
+for (let i = 0; i < testFiles.length; i++) {
+  write(i, `const fs = require('fs')`)
+  write(i, `const ndjson = require('ndjson')`)
+  write(i, `const tap = require('tap')`)
+  write(i, `const {evaluate, parse} = require('../src/1')`)
+  space(i)
 
-write(`tap.setTimeout(0)`)
-space()
+  write(i, `tap.setTimeout(0)`)
+  space(i)
 
-write(`const DATASETS = new Map()`)
+  write(i, `const DATASETS = new Map()`)
 
-write(`
+  write(
+    i,
+    `
 const LOADERS = new Map()
 
 async function loadDocuments(id) {
@@ -117,8 +131,9 @@ function replaceScoreWithPos(val) {
     delete entry._score
   }
 }
-`)
-
+`,
+  )
+}
 function isDisabled(testName) {
   return DISABLED_TESTS.find((t) => (typeof t === 'string' ? t === testName : t.test(testName)))
 }
@@ -151,9 +166,11 @@ function cmpString(a, b) {
   return 0
 }
 
+let i = 0
 process.stdin
   .pipe(ndjson.parse())
   .on('data', (entry) => {
+    i++
     if (entry._type === 'dataset') {
       if (entry.documents) {
         entry.documents.sort((a, b) => cmpString(a._id, b._id))
@@ -161,11 +178,14 @@ process.stdin
         download(entry._id, entry.url)
       }
 
-      write(`DATASETS.set(${JSON.stringify(entry._id)}, ${JSON.stringify(entry)})`)
-      space()
+      for (let i = 0; i < testFiles.length; i++) {
+        write(i, `DATASETS.set(${JSON.stringify(entry._id)}, ${JSON.stringify(entry)})`)
+        space(i)
+      }
     }
 
     if (entry._type === 'test') {
+      const testIndex = i % testFiles.length
       const supported = entry.features.every((f) => SUPPORTED_FEATURES.has(f))
       if (!supported) return
 
@@ -182,27 +202,35 @@ process.stdin
         return
       }
 
-      openStack(`tap.test(${JSON.stringify(entry.name)}, async (t) => {BODY})`)
-      write(`let query = ${JSON.stringify(entry.query)}`)
-      write(`t.comment(query)`)
+      openStack(
+        testIndex,
+        `tap.test(${JSON.stringify(`${entry._id}: ${entry.name}`)}, async (t) => {BODY})`,
+      )
+      write(testIndex, `let query = ${JSON.stringify(entry.query)}`)
+      write(testIndex, `t.comment(query)`)
       if (entry.valid) {
-        write(`let result = ${JSON.stringify(entry.result)}`)
-        write(`let dataset = await loadDocuments(${JSON.stringify(entry.dataset._ref)})`)
-        write(`if (!dataset) return`)
-        write(`let params = ${JSON.stringify(entry.params || {})}`)
-        write(`let tree = parse(query, {params})`)
-        write(`let value = await evaluate(tree, {dataset, params})`)
-        write(`let data = await value.get()`)
-        write(`data = JSON.parse(JSON.stringify(data))`)
-        write(`replaceScoreWithPos(data)`)
-        write(`t.match(data, result)`)
+        write(testIndex, `let result = ${JSON.stringify(entry.result)}`)
+        write(testIndex, `let dataset = await loadDocuments(${JSON.stringify(entry.dataset._ref)})`)
+        write(testIndex, `if (!dataset) return`)
+        write(testIndex, `let params = ${JSON.stringify(entry.params || {})}`)
+        write(testIndex, `let tree = parse(query, {params})`)
+        write(testIndex, `let value = await evaluate(tree, {dataset, params})`)
+        write(testIndex, `let data = await value.get()`)
+        write(testIndex, `data = JSON.parse(JSON.stringify(data))`)
+        write(testIndex, `replaceScoreWithPos(data)`)
+        write(testIndex, `t.match(data, result)`)
+        write(testIndex, `t.end()`)
       } else {
-        write(`t.throws(() => parse(query))`)
+        write(testIndex, `t.throws(() => parse(query))`)
+        write(testIndex, `t.end()`)
       }
-      closeStack()
-      space()
+      closeStack(testIndex)
+      space(testIndex)
     }
   })
   .on('end', () => {
-    closeStack()
+    for (let i = 0; i < testFiles.length; i++) {
+      closeStack(i)
+      fs.closeSync(testFiles[i])
+    }
   })

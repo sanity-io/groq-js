@@ -1,6 +1,6 @@
 node_modules
 /yarn.lock
-/test/suite.test.js
+/test/suite-*.test.js
 /test/datasets
 /groq-test-suite
 /docs
@@ -9,3 +9,6 @@ node_modules
 /dist
 .DS_Store
 .history
+
+# https://node-tap.org/dot-tap-folder/
+.tap
