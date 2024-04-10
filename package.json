@@ -32,7 +32,6 @@
   },
   "main": "./dist/index.js",
   "module": "./dist/index.mjs",
-  "source": "./src/1.ts",
   "types": "./dist/index.d.ts",
   "typesVersions": {
     "*": {
@@ -49,8 +48,7 @@
     "README.md"
   ],
   "scripts": {
-    "prebuild": "npx rimraf dist",
-    "build": "pkg build --strict && pkg --strict",
+    "build": "pkg build --strict --check --clean",
     "prepublishOnly": "npm run build",
     "prettify": "prettier --write .",
     "prettify-check": "prettier --check .",
