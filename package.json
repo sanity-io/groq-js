@@ -87,9 +87,6 @@
   "engines": {
     "node": ">= 14"
   },
-  "publishConfig": {
-    "provenance": true
-  },
   "dependencies": {
     "debug": "^4.3.4"
   }
