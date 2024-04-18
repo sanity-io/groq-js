@@ -13,5 +13,6 @@ module.exports = {
     'no-return-await': 'off',
     'simple-import-sort/imports': 'warn',
     'simple-import-sort/exports': 'warn',
+    'dot-notation': 'off',
   },
 }

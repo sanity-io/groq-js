@@ -1,5 +1,5 @@
-import {ExprNode} from '../nodeTypes'
-import {Value} from '../values'
+import type {ExprNode} from '../nodeTypes'
+import type {Value} from '../values'
 import {Scope} from './scope'
 
 export type Executor<N = ExprNode> = (node: N, scope: Scope) => Value | PromiseLike<Value>

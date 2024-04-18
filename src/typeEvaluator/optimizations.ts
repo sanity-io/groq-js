@@ -1,4 +1,4 @@
-import {TypeNode} from './types'
+import type {TypeNode} from './types'
 
 export function hashField(field: TypeNode): string {
   switch (field.type) {

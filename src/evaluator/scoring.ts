@@ -1,7 +1,7 @@
-import {ExprNode} from '../nodeTypes'
-import {gatherText, matchPatternRegex, matchTokenize, Token} from './matching'
+import type {ExprNode} from '../nodeTypes'
+import {gatherText, matchPatternRegex, matchTokenize, type Token} from './matching'
 import {Scope} from './scope'
-import {Executor} from './types'
+import type {Executor} from './types'
 
 // BM25 similarity constants
 const BM25k = 1.2

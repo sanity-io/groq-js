@@ -1,4 +1,4 @@
-import {TypeNode} from './types'
+import type {TypeNode} from './types'
 
 /**
  * `satifies` takes in a type and a JavaScript value and checks if the value is satisfied by the type.

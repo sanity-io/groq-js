@@ -1,8 +1,8 @@
 /* eslint-disable camelcase */
 import {tryConstantEvaluate} from './evaluator'
-import {GroqFunctionArity, namespaces, pipeFunctions} from './evaluator/functions'
-import {Mark, MarkProcessor, MarkVisitor} from './markProcessor'
-import {
+import {type GroqFunctionArity, namespaces, pipeFunctions} from './evaluator/functions'
+import {type Mark, MarkProcessor, type MarkVisitor} from './markProcessor'
+import type {
   ArrayElementNode,
   ExprNode,
   FuncCallNode,
@@ -14,13 +14,13 @@ import {
 } from './nodeTypes'
 import {parse as rawParse} from './rawParser'
 import {
-  TraversalResult,
+  type TraversalResult,
   traverseArray,
   traverseElement,
   traversePlain,
   traverseProjection,
 } from './traversal'
-import {ParseOptions} from './types'
+import type {ParseOptions} from './types'
 
 type EscapeSequences = "'" | '"' | '\\' | '/' | 'b' | 'f' | 'n' | 'r' | 't'
 
@@ -42,7 +42,7 @@ function expandHex(str: string): string {
 }
 
 class GroqQueryError extends Error {
-  public name = 'GroqQueryError'
+  public override name = 'GroqQueryError'
 }
 
 const EXPR_BUILDER: MarkVisitor<ExprNode> = {
@@ -480,7 +480,7 @@ const EXPR_BUILDER: MarkVisitor<ExprNode> = {
     }
   },
 
-  pair(p) {
+  pair() {
     throw new GroqQueryError(`unexpected =>`)
   },
 
@@ -512,11 +512,11 @@ const EXPR_BUILDER: MarkVisitor<ExprNode> = {
     }
   },
 
-  asc(p) {
+  asc() {
     throw new GroqQueryError('unexpected asc')
   },
 
-  desc(p) {
+  desc() {
     throw new GroqQueryError('unexpected desc')
   },
 
@@ -676,7 +676,7 @@ const TRAVERSE_BUILDER: MarkVisitor<(rhs: TraversalResult | null) => TraversalRe
       )
   },
 
-  array_postfix(p) {
+  array_postfix() {
     return (right) => traverseArray((base) => ({type: 'ArrayCoerce', base}), right)
   },
 }
@@ -699,7 +699,7 @@ const SELECTOR_BUILDER: MarkVisitor<null> = {
     throw new Error('Invalid selector syntax')
   },
 
-  dblparent(p) {
+  dblparent() {
     throw new Error('Invalid selector syntax')
   },
 
@@ -718,111 +718,111 @@ const SELECTOR_BUILDER: MarkVisitor<null> = {
     return null
   },
 
-  neg(p) {
+  neg() {
     throw new Error('Invalid selector syntax')
   },
 
-  pos(p) {
+  pos() {
     throw new Error('Invalid selector syntax')
   },
 
-  add(p) {
+  add() {
     throw new Error('Invalid selector syntax')
   },
 
-  sub(p) {
+  sub() {
     throw new Error('Invalid selector syntax')
   },
 
-  mul(p) {
+  mul() {
     throw new Error('Invalid selector syntax')
   },
 
-  div(p) {
+  div() {
     throw new Error('Invalid selector syntax')
   },
 
-  mod(p) {
+  mod() {
     throw new Error('Invalid selector syntax')
   },
 
-  pow(p) {
+  pow() {
     throw new Error('Invalid selector syntax')
   },
 
-  comp(p) {
+  comp() {
     throw new Error('Invalid selector syntax')
   },
 
-  in_range(p) {
+  in_range() {
     throw new Error('Invalid selector syntax')
   },
 
-  str(p) {
+  str() {
     throw new Error('Invalid selector syntax')
   },
 
-  integer(p) {
+  integer() {
     throw new Error('Invalid selector syntax')
   },
 
-  float(p) {
+  float() {
     throw new Error('Invalid selector syntax')
   },
 
-  sci(p) {
+  sci() {
     throw new Error('Invalid selector syntax')
   },
 
-  object(p) {
+  object() {
     throw new Error('Invalid selector syntax')
   },
 
-  array(p) {
+  array() {
     throw new Error('Invalid selector syntax')
   },
 
-  tuple(p) {
+  tuple() {
     // This should only throw an error until we add support for tuples in selectors.
     throw new Error('Invalid selector syntax')
   },
 
   func_call(p, mark) {
-    const func = EXPR_BUILDER.func_call(p, mark) as FuncCallNode
+    const func = EXPR_BUILDER['func_call'](p, mark) as FuncCallNode
     if (func.name === 'anywhere' && func.args.length === 1) return null
 
     throw new Error('Invalid selector syntax')
   },
 
-  pipecall(p) {
+  pipecall() {
     throw new Error('Invalid selector syntax')
   },
 
-  pair(p) {
+  pair() {
     throw new Error('Invalid selector syntax')
   },
 
-  and(p) {
+  and() {
     throw new Error('Invalid selector syntax')
   },
 
-  or(p) {
+  or() {
     throw new Error('Invalid selector syntax')
   },
 
-  not(p) {
+  not() {
     throw new Error('Invalid selector syntax')
   },
 
-  asc(p) {
+  asc() {
     throw new Error('Invalid selector syntax')
   },
 
-  desc(p) {
+  desc() {
     throw new Error('Invalid selector syntax')
   },
 
-  param(p) {
+  param() {
     throw new Error('Invalid selector syntax')
   },
 }
@@ -869,7 +869,7 @@ function argumentShouldBeSelector(namespace: string, functionName: string, argCo
 
 class GroqSyntaxError extends Error {
   public position: number
-  public name = 'GroqSyntaxError'
+  public override name = 'GroqSyntaxError'
 
   constructor(position: number) {
     super(`Syntax error in GROQ query at position ${position}`)
