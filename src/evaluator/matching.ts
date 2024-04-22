@@ -1,4 +1,4 @@
-import {Value} from '../values'
+import type {Value} from '../values'
 
 const CHARS = /([^!@#$%^&*(),\\/?";:{}|[\]+<>\s-])+/g
 const CHARS_WITH_WILDCARD = /([^!@#$%^&(),\\/?";:{}|[\]+<>\s-])+/g

@@ -12,13 +12,13 @@ import {
   Path,
   StreamValue,
   TRUE_VALUE,
-  Value,
+  type Value,
 } from '../values'
 import {totalCompare} from './ordering'
 import {portableTextContent} from './pt'
 import {Scope} from './scope'
 import {evaluateScore} from './scoring'
-import {Executor} from './types'
+import type {Executor} from './types'
 
 function hasReference(value: any, pathSet: Set<string>): boolean {
   switch (getType(value)) {
@@ -83,13 +83,14 @@ export type NamespaceSet = Record<string, FunctionSet | undefined>
 const _global: FunctionSet = {}
 
 // eslint-disable-next-line require-await
-_global.anywhere = async function anywhere() {
+// eslint-disable-next-line require-await
+_global['anywhere'] = async function anywhere() {
   throw new Error('not implemented')
 }
 
-_global.anywhere.arity = 1
+_global['anywhere'].arity = 1
 
-_global.coalesce = async function coalesce(args, scope, execute) {
+_global['coalesce'] = async function coalesce(args, scope, execute) {
   for (const arg of args) {
     const value = await execute(arg, scope)
     if (value.type !== 'null') {
@@ -99,7 +100,7 @@ _global.coalesce = async function coalesce(args, scope, execute) {
   return NULL_VALUE
 }
 
-_global.count = async function count(args, scope, execute) {
+_global['count'] = async function count(args, scope, execute) {
   const inner = await execute(args[0], scope)
   if (!inner.isArray()) {
     return NULL_VALUE
@@ -112,9 +113,9 @@ _global.count = async function count(args, scope, execute) {
   }
   return fromNumber(num)
 }
-_global.count.arity = 1
+_global['count'].arity = 1
 
-_global.dateTime = async function dateTime(args, scope, execute) {
+_global['dateTime'] = async function dateTime(args, scope, execute) {
   const val = await execute(args[0], scope)
   if (val.type === 'datetime') {
     return val
@@ -124,21 +125,22 @@ _global.dateTime = async function dateTime(args, scope, execute) {
   }
   return DateTime.parseToValue(val.data)
 }
-_global.dateTime.arity = 1
+_global['dateTime'].arity = 1
 
-_global.defined = async function defined(args, scope, execute) {
+_global['defined'] = async function defined(args, scope, execute) {
   const inner = await execute(args[0], scope)
   return inner.type === 'null' ? FALSE_VALUE : TRUE_VALUE
 }
-_global.defined.arity = 1
+_global['defined'].arity = 1
 
 // eslint-disable-next-line require-await
-_global.identity = async function identity(args, scope) {
+// eslint-disable-next-line require-await
+_global['identity'] = async function identity(_args, scope) {
   return fromString(scope.context.identity)
 }
-_global.identity.arity = 0
+_global['identity'].arity = 0
 
-_global.length = async function length(args, scope, execute) {
+_global['length'] = async function length(args, scope, execute) {
   const inner = await execute(args[0], scope)
 
   if (inner.type === 'string') {
@@ -156,9 +158,9 @@ _global.length = async function length(args, scope, execute) {
 
   return NULL_VALUE
 }
-_global.length.arity = 1
+_global['length'].arity = 1
 
-_global.path = async function path(args, scope, execute) {
+_global['path'] = async function path(args, scope, execute) {
   const inner = await execute(args[0], scope)
   if (inner.type !== 'string') {
     return NULL_VALUE
@@ -166,9 +168,9 @@ _global.path = async function path(args, scope, execute) {
 
   return fromPath(new Path(inner.data))
 }
-_global.path.arity = 1
+_global['path'].arity = 1
 
-_global.string = async function string(args, scope, execute) {
+_global['string'] = async function string(args, scope, execute) {
   const value = await execute(args[0], scope)
   switch (value.type) {
     case 'number':
@@ -180,9 +182,9 @@ _global.string = async function string(args, scope, execute) {
       return NULL_VALUE
   }
 }
-_global.string.arity = 1
+_global['string'].arity = 1
 
-_global.references = async function references(args, scope, execute) {
+_global['references'] = async function references(args, scope, execute) {
   const pathSet = new Set<string>()
   for (const arg of args) {
     const path = await execute(arg, scope)
@@ -204,9 +206,9 @@ _global.references = async function references(args, scope, execute) {
   const scopeValue = await scope.value.get()
   return hasReference(scopeValue, pathSet) ? TRUE_VALUE : FALSE_VALUE
 }
-_global.references.arity = (c) => c >= 1
+_global['references'].arity = (c) => c >= 1
 
-_global.round = async function round(args, scope, execute) {
+_global['round'] = async function round(args, scope, execute) {
   const value = await execute(args[0], scope)
   if (value.type !== 'number') {
     return NULL_VALUE
@@ -233,25 +235,27 @@ _global.round = async function round(args, scope, execute) {
   }
   return fromNumber(Number(num.toFixed(prec)))
 }
-_global.round.arity = (count) => count >= 1 && count <= 2
+_global['round'].arity = (count) => count >= 1 && count <= 2
 
 // eslint-disable-next-line require-await
-_global.now = async function now(args, scope) {
+// eslint-disable-next-line require-await
+_global['now'] = async function now(_args, scope) {
   return fromString(scope.context.timestamp.toISOString())
 }
-_global.now.arity = 0
+_global['now'].arity = 0
 
 // eslint-disable-next-line require-await
-_global.boost = async function boost() {
+// eslint-disable-next-line require-await
+_global['boost'] = async function boost() {
   // This should be handled by the scoring function.
   throw new Error('unexpected boost call')
 }
 
-_global.boost.arity = 2
+_global['boost'].arity = 2
 
 const string: FunctionSet = {}
 
-string.lower = async function (args, scope, execute) {
+string['lower'] = async function (args, scope, execute) {
   const value = await execute(args[0], scope)
 
   if (value.type !== 'string') {
@@ -260,9 +264,9 @@ string.lower = async function (args, scope, execute) {
 
   return fromString(value.data.toLowerCase())
 }
-string.lower.arity = 1
+string['lower'].arity = 1
 
-string.upper = async function (args, scope, execute) {
+string['upper'] = async function (args, scope, execute) {
   const value = await execute(args[0], scope)
 
   if (value.type !== 'string') {
@@ -271,9 +275,9 @@ string.upper = async function (args, scope, execute) {
 
   return fromString(value.data.toUpperCase())
 }
-string.upper.arity = 1
+string['upper'].arity = 1
 
-string.split = async function (args, scope, execute) {
+string['split'] = async function (args, scope, execute) {
   const str = await execute(args[0], scope)
   if (str.type !== 'string') {
     return NULL_VALUE
@@ -292,12 +296,12 @@ string.split = async function (args, scope, execute) {
   }
   return fromJS(str.data.split(sep.data))
 }
-string.split.arity = 2
+string['split'].arity = 2
 
-_global.lower = string.lower
-_global.upper = string.upper
+_global['lower'] = string['lower']
+_global['upper'] = string['upper']
 
-string.startsWith = async function (args, scope, execute) {
+string['startsWith'] = async function (args, scope, execute) {
   const str = await execute(args[0], scope)
   if (str.type !== 'string') {
     return NULL_VALUE
@@ -310,11 +314,11 @@ string.startsWith = async function (args, scope, execute) {
 
   return str.data.startsWith(prefix.data) ? TRUE_VALUE : FALSE_VALUE
 }
-string.startsWith.arity = 2
+string['startsWith'].arity = 2
 
 const array: FunctionSet = {}
 
-array.join = async function (args, scope, execute) {
+array['join'] = async function (args, scope, execute) {
   const arr = await execute(args[0], scope)
   if (!arr.isArray()) {
     return NULL_VALUE
@@ -343,9 +347,9 @@ array.join = async function (args, scope, execute) {
   }
   return fromJS(buf)
 }
-array.join.arity = 2
+array['join'].arity = 2
 
-array.compact = async function (args, scope, execute) {
+array['compact'] = async function (args, scope, execute) {
   const arr = await execute(args[0], scope)
   if (!arr.isArray()) {
     return NULL_VALUE
@@ -359,9 +363,9 @@ array.compact = async function (args, scope, execute) {
     }
   })
 }
-array.compact.arity = 1
+array['compact'].arity = 1
 
-array.unique = async function (args, scope, execute) {
+array['unique'] = async function (args, scope, execute) {
   const value = await execute(args[0], scope)
   if (!value.isArray()) {
     return NULL_VALUE
@@ -386,10 +390,10 @@ array.unique = async function (args, scope, execute) {
     }
   })
 }
-array.unique.arity = 1
+array['unique'].arity = 1
 
 const pt: FunctionSet = {}
-pt.text = async function (args, scope, execute) {
+pt['text'] = async function (args, scope, execute) {
   const value = await execute(args[0], scope)
   const text = await portableTextContent(value)
 
@@ -400,11 +404,12 @@ pt.text = async function (args, scope, execute) {
   return fromString(text)
 }
 
-pt.text.arity = 1
+pt['text'].arity = 1
 
 const sanity: FunctionSet = {}
 // eslint-disable-next-line require-await
-sanity.projectId = async function (args, scope) {
+// eslint-disable-next-line require-await
+sanity['projectId'] = async function (_args, scope) {
   if (scope.context.sanity) {
     return fromString(scope.context.sanity.projectId)
   }
@@ -412,7 +417,8 @@ sanity.projectId = async function (args, scope) {
   return NULL_VALUE
 }
 // eslint-disable-next-line require-await
-sanity.dataset = async function (args, scope) {
+// eslint-disable-next-line require-await
+sanity['dataset'] = async function (_args, scope) {
   if (scope.context.sanity) {
     return fromString(scope.context.sanity.dataset)
   }
@@ -429,7 +435,7 @@ export type GroqPipeFunction = (
 
 export const pipeFunctions: {[key: string]: WithOptions<GroqPipeFunction>} = {}
 
-pipeFunctions.order = async function order(base, args, scope, execute) {
+pipeFunctions['order'] = async function order(base, args, scope, execute) {
   // eslint-disable-next-line max-len
   // This is a workaround for https://github.com/rpetrich/babel-plugin-transform-async-to-promises/issues/59
   await true
@@ -487,10 +493,11 @@ pipeFunctions.order = async function order(base, args, scope, execute) {
 
   return fromJS(aux.map((v) => v[0]))
 }
-pipeFunctions.order.arity = (count) => count >= 1
+pipeFunctions['order'].arity = (count) => count >= 1
 
 // eslint-disable-next-line require-await
-pipeFunctions.score = async function score(base, args, scope, execute) {
+// eslint-disable-next-line require-await
+pipeFunctions['score'] = async function score(base, args, scope, execute) {
   if (!base.isArray()) return NULL_VALUE
 
   // Anything that isn't an object should be sorted first.
@@ -504,7 +511,7 @@ pipeFunctions.score = async function score(base, args, scope, execute) {
     }
 
     const newScope = scope.createNested(value)
-    let valueScore = typeof value.data._score === 'number' ? value.data._score : 0
+    let valueScore = typeof value.data['_score'] === 'number' ? value.data['_score'] : 0
 
     for (const arg of args) {
       valueScore += await evaluateScore(arg, newScope, execute)
@@ -518,13 +525,14 @@ pipeFunctions.score = async function score(base, args, scope, execute) {
   return fromJS(scored)
 }
 
-pipeFunctions.score.arity = (count) => count >= 1
+pipeFunctions['score'].arity = (count) => count >= 1
 
 type ObjectWithScore = Record<string, unknown> & {_score: number}
 
 const delta: FunctionSet = {}
 // eslint-disable-next-line require-await
-delta.operation = async function (args, scope) {
+// eslint-disable-next-line require-await
+delta['operation'] = async function (_args, scope) {
   const hasBefore = scope.context.before !== null
   const hasAfter = scope.context.after !== null
 
@@ -543,31 +551,31 @@ delta.operation = async function (args, scope) {
   return NULL_VALUE
 }
 
-delta.changedAny = () => {
+delta['changedAny'] = () => {
   throw new Error('not implemented')
 }
-delta.changedAny.arity = 1
-delta.changedAny.mode = 'delta'
+delta['changedAny'].arity = 1
+delta['changedAny'].mode = 'delta'
 
-delta.changedOnly = () => {
+delta['changedOnly'] = () => {
   throw new Error('not implemented')
 }
-delta.changedOnly.arity = 1
-delta.changedOnly.mode = 'delta'
+delta['changedOnly'].arity = 1
+delta['changedOnly'].mode = 'delta'
 
 const diff: FunctionSet = {}
-diff.changedAny = () => {
+diff['changedAny'] = () => {
   throw new Error('not implemented')
 }
-diff.changedAny.arity = 3
+diff['changedAny'].arity = 3
 
-diff.changedOnly = () => {
+diff['changedOnly'] = () => {
   throw new Error('not implemented')
 }
-diff.changedOnly.arity = 3
+diff['changedOnly'].arity = 3
 
 const math: FunctionSet = {}
-math.min = async function (args, scope, execute) {
+math['min'] = async function (args, scope, execute) {
   const arr = await execute(args[0], scope)
   if (!arr.isArray()) {
     return NULL_VALUE
@@ -585,9 +593,9 @@ math.min = async function (args, scope, execute) {
   }
   return fromJS(n)
 }
-math.min.arity = 1
+math['min'].arity = 1
 
-math.max = async function (args, scope, execute) {
+math['max'] = async function (args, scope, execute) {
   const arr = await execute(args[0], scope)
   if (!arr.isArray()) {
     return NULL_VALUE
@@ -605,9 +613,9 @@ math.max = async function (args, scope, execute) {
   }
   return fromJS(n)
 }
-math.max.arity = 1
+math['max'].arity = 1
 
-math.sum = async function (args, scope, execute) {
+math['sum'] = async function (args, scope, execute) {
   const arr = await execute(args[0], scope)
   if (!arr.isArray()) {
     return NULL_VALUE
@@ -623,9 +631,9 @@ math.sum = async function (args, scope, execute) {
   }
   return fromJS(n)
 }
-math.sum.arity = 1
+math['sum'].arity = 1
 
-math.avg = async function (args, scope, execute) {
+math['avg'] = async function (args, scope, execute) {
   const arr = await execute(args[0], scope)
   if (!arr.isArray()) {
     return NULL_VALUE
@@ -646,13 +654,13 @@ math.avg = async function (args, scope, execute) {
   }
   return fromJS(n / c)
 }
-math.avg.arity = 1
+math['avg'].arity = 1
 
 const dateTime: FunctionSet = {}
-dateTime.now = async function now(args, scope, execute) {
+dateTime['now'] = async function now(_args, scope) {
   return fromDateTime(new DateTime(scope.context.timestamp))
 }
-dateTime.now.arity = 0
+dateTime['now'].arity = 0
 
 export const namespaces: NamespaceSet = {
   global: _global,

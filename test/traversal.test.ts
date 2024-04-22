@@ -1,8 +1,8 @@
 import t from 'tap'
 
-import {ExprNode} from '../src/nodeTypes'
+import type {ExprNode} from '../src/nodeTypes'
 import {
-  TraversalResult,
+  type TraversalResult,
   traverseArray,
   traverseElement,
   traversePlain,
@@ -12,7 +12,7 @@ import {throwsWithMessage} from './testUtils'
 
 t.test('traverseProjection', async (t) => {
   t.test('throws when the right hand side type is unknown', async (t) => {
-    const traversal = (base: ExprNode) => {
+    const traversal = () => {
       return {type: 'Tuple', members: []} as ExprNode
     }
 
@@ -23,7 +23,7 @@ t.test('traverseProjection', async (t) => {
   })
 
   t.test('handles `b-a` type traversals correctly', async (t) => {
-    const traversal = (base: ExprNode) => {
+    const traversal = () => {
       return {type: 'Tuple', members: []} as ExprNode
     }
 
@@ -39,7 +39,7 @@ t.test('traverseProjection', async (t) => {
 
 t.test('traverseElement', async (t) => {
   t.test('throws when the right hand side type is unknown', async (t) => {
-    const traversal = (base: ExprNode) => {
+    const traversal = () => {
       return {type: 'Tuple', members: []} as ExprNode
     }
 
@@ -52,7 +52,7 @@ t.test('traverseElement', async (t) => {
 
 t.test('traversePlain', async (t) => {
   t.test('throws when the right hand side type is unknown', async (t) => {
-    const traversal = (base: ExprNode) => {
+    const traversal = () => {
       return {type: 'Tuple', members: []} as ExprNode
     }
 
@@ -65,7 +65,7 @@ t.test('traversePlain', async (t) => {
 
 t.test('traverseArray', async (t) => {
   t.test('throws when the right hand side type is unknown', async (t) => {
-    const traversal = (base: ExprNode) => {
+    const traversal = () => {
       return {type: 'Tuple', members: []} as ExprNode
     }
 

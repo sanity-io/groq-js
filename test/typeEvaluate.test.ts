@@ -3,7 +3,7 @@ import t from 'tap'
 import {parse} from '../src/parser'
 import {typeEvaluate} from '../src/typeEvaluator/typeEvaluate'
 import {createReferenceTypeNode, nullUnion} from '../src/typeEvaluator/typeHelpers'
-import {
+import type {
   ArrayTypeNode,
   Document,
   ObjectAttribute,
@@ -1640,10 +1640,10 @@ t.test('can resolve attributes on inline rest', (t) => {
   t.ok(
     res.type === 'array' &&
       res.of.type === 'object' &&
-      res.of.attributes.concepts.value.type === 'array' &&
-      res.of.attributes.concepts.value.of.type === 'object' &&
-      '_key' in res.of.attributes.concepts.value.of.attributes &&
-      'name' in res.of.attributes.concepts.value.of.attributes,
+      res.of.attributes['concepts'].value.type === 'array' &&
+      res.of.attributes['concepts'].value.of.type === 'object' &&
+      '_key' in res.of.attributes['concepts'].value.of.attributes &&
+      'name' in res.of.attributes['concepts'].value.of.attributes,
   )
   t.matchSnapshot(res)
 

@@ -33,7 +33,7 @@ export function createReferenceTypeNode(name: string, inArray: boolean = false):
   }
 
   if (inArray) {
-    attributes._key = {
+    attributes['_key'] = {
       type: 'objectAttribute',
       value: {
         type: 'string',

@@ -1,7 +1,7 @@
 import {formatRFC3339, parseRFC3339} from './dateHelpers'
 import {Path} from './Path'
 import {StreamValue} from './StreamValue'
-import {BooleanValue, GroqType, NullValue, Value} from './types'
+import type {BooleanValue, GroqType, NullValue, Value} from './types'
 
 export class StaticValue<P, T extends GroqType> {
   data: P

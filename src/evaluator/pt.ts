@@ -1,4 +1,4 @@
-import {Value} from '../values'
+import type {Value} from '../values'
 
 export async function portableTextContent(value: Value): Promise<string | null> {
   if (value.type === 'object') {
@@ -27,8 +27,8 @@ async function arrayText(value: Value, result: string[] = []): Promise<string[]>
 }
 
 function blockText(obj: Record<string, unknown>): string | null {
-  if (typeof obj._type !== 'string') return null
-  const children = obj.children
+  if (typeof obj['_type'] !== 'string') return null
+  const children = obj['children']
   if (!Array.isArray(children)) return null
 
   let result = ''

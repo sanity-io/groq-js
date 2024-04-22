@@ -1,4 +1,4 @@
-import {ExprNode, FuncCallNode, PipeFuncCallNode} from '../nodeTypes'
+import type {ExprNode, FuncCallNode, PipeFuncCallNode} from '../nodeTypes'
 import {
   FALSE_VALUE,
   fromJS,
@@ -6,12 +6,12 @@ import {
   NULL_VALUE,
   StreamValue,
   TRUE_VALUE,
-  Value,
+  type Value,
 } from '../values'
 import {operators} from './operators'
 import {partialCompare} from './ordering'
 import {Scope} from './scope'
-import {EvaluateOptions, Executor} from './types'
+import type {EvaluateOptions, Executor} from './types'
 
 export function evaluate(
   node: ExprNode,
@@ -248,7 +248,7 @@ const EXECUTORS: ExecutorMap = {
       return NULL_VALUE
     }
 
-    const id = value.data._ref
+    const id = value.data['_ref']
     if (typeof id !== 'string') {
       return NULL_VALUE
     }
@@ -258,7 +258,7 @@ const EXECUTORS: ExecutorMap = {
     }
 
     for await (const doc of scope.source) {
-      if (doc.type === 'object' && id === doc.data._id) {
+      if (doc.type === 'object' && id === doc.data['_id']) {
         return doc
       }
     }

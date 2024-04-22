@@ -3,10 +3,10 @@ import t from 'tap'
 
 import {evaluate} from '../src/evaluator'
 import {operators} from '../src/evaluator/operators'
-import {ExprNode, OpCall} from '../src/nodeTypes'
-import {TypeNode} from '../src/typeEvaluator'
-import {typeEvaluate, overrideTypeForNode} from '../src/typeEvaluator/typeEvaluate'
+import type {ExprNode, OpCall} from '../src/nodeTypes'
+import type {TypeNode} from '../src/typeEvaluator'
 import {satisfies} from '../src/typeEvaluator/satisfies'
+import {overrideTypeForNode, typeEvaluate} from '../src/typeEvaluator/typeEvaluate'
 
 /**
  * The following tests uses the following strategy:
