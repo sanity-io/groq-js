@@ -978,6 +978,16 @@ Object {
           "type": "number",
         },
       },
+      "ages": Object {
+        "optional": true,
+        "type": "objectAttribute",
+        "value": Object {
+          "of": Object {
+            "type": "number",
+          },
+          "type": "array",
+        },
+      },
       "firstname": Object {
         "type": "objectAttribute",
         "value": Object {
@@ -1008,6 +1018,13 @@ Object {
             },
           },
           "type": "object",
+        },
+      },
+      "optionalAge": Object {
+        "optional": true,
+        "type": "objectAttribute",
+        "value": Object {
+          "type": "number",
         },
       },
       "optionalObject": Object {

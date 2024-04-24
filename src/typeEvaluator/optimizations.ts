@@ -6,7 +6,7 @@ export function hashField(field: TypeNode): string {
     case 'number':
     case 'boolean': {
       if (field.value !== undefined) {
-        return `${field.type}:${field.value}`
+        return `${field.type}(${field.value})`
       }
       return `${field.type}`
     }
@@ -17,21 +17,21 @@ export function hashField(field: TypeNode): string {
     }
 
     case 'array': {
-      return `${field.type}:${hashField(field.of)}`
+      return `${field.type}(${hashField(field.of)})`
     }
 
     case 'object': {
-      return `${field.type}:ref-${field.dereferencesTo}:${Object.entries(field.attributes)
+      return `${field.type}:(${Object.entries(field.attributes)
         .map(([key, value]) => `${key}:${hashField(value.value)}`)
-        .join(',')}:${field.rest ? hashField(field.rest) : 'no-rest'}`
+        .join(',')}):ref-${field.dereferencesTo}:${field.rest ? hashField(field.rest) : 'no-rest'}`
     }
 
     case 'union': {
-      return `${field.type}:${field.of.map(hashField).join(',')}`
+      return `${field.type}(${field.of.map(hashField).join(',')})`
     }
 
     case 'inline': {
-      return `${field.type}:${field.name}`
+      return `${field.type}(${field.name})`
     }
 
     default: {

@@ -2,7 +2,7 @@ import t from 'tap'
 
 import {parse} from '../src/parser'
 import {typeEvaluate} from '../src/typeEvaluator/typeEvaluate'
-import {createReferenceTypeNode, nullUnion} from '../src/typeEvaluator/typeHelpers'
+import {createReferenceTypeNode, nullUnion, unionOf} from '../src/typeEvaluator/typeHelpers'
 import type {
   ArrayTypeNode,
   Document,
@@ -131,6 +131,23 @@ const authorDocument = {
       value: {
         type: 'number',
       },
+    },
+    ages: {
+      type: 'objectAttribute',
+      value: {
+        type: 'array',
+        of: {
+          type: 'number',
+        },
+      },
+      optional: true,
+    },
+    optionalAge: {
+      type: 'objectAttribute',
+      value: {
+        type: 'number',
+      },
+      optional: true,
     },
     object: {
       type: 'objectAttribute',
@@ -1424,6 +1441,23 @@ t.test('with splat', (t) => {
             type: 'number',
           },
         },
+        ages: {
+          type: 'objectAttribute',
+          value: {
+            type: 'array',
+            of: {
+              type: 'number',
+            },
+          },
+          optional: true,
+        },
+        optionalAge: {
+          type: 'objectAttribute',
+          value: {
+            type: 'number',
+          },
+          optional: true,
+        },
         object: {
           type: 'objectAttribute',
           value: {
@@ -2162,6 +2196,69 @@ t.test('function: string::split', (t) => {
           value: {
             type: 'null',
           },
+        },
+      },
+    },
+  })
+  t.end()
+})
+
+t.test('function: math::*', (t) => {
+  const query = `*[_type == "author"] {
+    "ages": math::min(ages),
+    "min": math::min([40, age]),
+    "max": math::max([40, age]),
+    "sum": math::sum([40, age]),
+    "avg": math::avg([40, optionalAge]),
+  }`
+  const ast = parse(query)
+  const res = typeEvaluate(ast, schemas)
+  t.strictSame(res, {
+    type: 'array',
+    of: {
+      type: 'object',
+      attributes: {
+        ages: {
+          type: 'objectAttribute',
+          value: nullUnion({
+            type: 'number',
+          }),
+        },
+        min: {
+          type: 'objectAttribute',
+          value: unionOf(
+            {
+              type: 'number',
+            },
+            {
+              type: 'number',
+              value: 40,
+            },
+          ),
+        },
+        max: {
+          type: 'objectAttribute',
+          value: unionOf(
+            {
+              type: 'number',
+            },
+            {
+              type: 'number',
+              value: 40,
+            },
+          ),
+        },
+        sum: {
+          type: 'objectAttribute',
+          value: {
+            type: 'number',
+          },
+        },
+        avg: {
+          type: 'objectAttribute',
+          value: nullUnion({
+            type: 'number',
+          }),
         },
       },
     },

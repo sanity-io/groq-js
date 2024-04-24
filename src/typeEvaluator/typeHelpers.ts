@@ -62,15 +62,16 @@ export function createReferenceTypeNode(name: string, inArray: boolean = false):
 
 export function nullUnion(node: TypeNode): UnionTypeNode {
   if (node.type === 'union') {
-    return {
-      type: 'union',
-      of: [...node.of, {type: 'null'}],
-    } satisfies UnionTypeNode
+    return unionOf(...node.of, {type: 'null'})
   }
 
+  return unionOf(node, {type: 'null'})
+}
+
+export function unionOf(...nodes: TypeNode[]): UnionTypeNode {
   return {
     type: 'union',
-    of: [node, {type: 'null'}],
+    of: nodes,
   } satisfies UnionTypeNode
 }
 
