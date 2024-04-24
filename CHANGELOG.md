@@ -5,6 +5,19 @@
 All notable changes to this project will be documented in this file. See
 [Conventional Commits](https://conventionalcommits.org) for commit guidelines.
 
+## [1.8.0](https://github.com/sanity-io/groq-js/compare/v1.7.0...v1.8.0) (2024-04-24)
+
+### Features
+
+- **typeEvaluation:** add support for global::string ([133d8af](https://github.com/sanity-io/groq-js/commit/133d8afbae75022f88abb1b253803ee8f95af55a))
+- **typeEvaluator:** add support for count ([49e05c7](https://github.com/sanity-io/groq-js/commit/49e05c7aebfdeb5f585c78a68e92690f7355c845))
+
+### Bug Fixes
+
+- loosen strictness for equality with unions ([04b4b36](https://github.com/sanity-io/groq-js/commit/04b4b36b489b6abedd0d55649513b8fdf2134ad6))
+- **typeEvaluation:** map over unions to support filtering null-unions ([6ad2398](https://github.com/sanity-io/groq-js/commit/6ad23980ce7f243cb799c2ae6b8e36f11165ee2a))
+- **types:** use the strictest tsconfig preset ([#222](https://github.com/sanity-io/groq-js/issues/222)) ([8a83812](https://github.com/sanity-io/groq-js/commit/8a83812ced1d731035ced25eb15c8bbf609b73ae))
+
 ## [1.7.0](https://github.com/sanity-io/groq-js/compare/v1.6.1...v1.7.0) (2024-04-02)
 
 ### Features
