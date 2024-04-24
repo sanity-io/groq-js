@@ -78,6 +78,67 @@ export function handleFuncCallNode(node: FuncCallNode, scope: Scope): TypeNode {
       })
     }
 
+    case 'math.sum': {
+      const values = walk({node: node.args[0], scope})
+      // use mapConcrete to get concrete resolved value, it will also handle cases where the value is a union
+      return mapConcrete(values, scope, (node) => {
+        // Aggregate functions can only be applied to arrays
+        if (node.type === 'array') {
+          // Resolve the concrete type of the array elements
+          return mapConcrete(node.of, scope, (node) => {
+            // Math functions can only be applied to numbers, but we should also ignore nulls
+            if (node.type === 'number' || node.type === 'null') {
+              return {type: 'number'}
+            }
+            return {type: 'null'}
+          })
+        }
+
+        return {type: 'null'}
+      })
+    }
+
+    case 'math.avg': {
+      const values = walk({node: node.args[0], scope})
+      // use mapConcrete to get concrete resolved value, it will also handle cases where the value is a union
+      return mapConcrete(values, scope, (node) => {
+        // Aggregate functions can only be applied to arrays
+        if (node.type === 'array') {
+          // Resolve the concrete type of the array elements
+          return mapConcrete(node.of, scope, (node) => {
+            // Math functions can only be applied to numbers
+            if (node.type === 'number') {
+              return {type: 'number'}
+            }
+            return {type: 'null'}
+          })
+        }
+
+        return {type: 'null'}
+      })
+    }
+
+    case 'math.max':
+    case 'math.min': {
+      const values = walk({node: node.args[0], scope})
+      // use mapConcrete to get concrete resolved value, it will also handle cases where the value is a union
+      return mapConcrete(values, scope, (node) => {
+        // Aggregate functions can only be applied to arrays
+        if (node.type === 'array') {
+          // Resolve the concrete type of the array elements
+          return mapConcrete(node.of, scope, (node) => {
+            // Math functions can only be applied to numbers
+            if (node.type === 'number') {
+              return node
+            }
+            return {type: 'null'}
+          })
+        }
+
+        return {type: 'null'}
+      })
+    }
+
     case 'pt.text': {
       if (node.args.length === 0) {
         return {type: 'null'} satisfies NullTypeNode

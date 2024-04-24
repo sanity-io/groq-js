@@ -2,6 +2,7 @@
 import t from 'tap'
 
 import {evaluate} from '../src/evaluator'
+import {type GroqFunction, namespaces} from '../src/evaluator/functions'
 import {operators} from '../src/evaluator/operators'
 import type {ExprNode, OpCall} from '../src/nodeTypes'
 import type {TypeNode} from '../src/typeEvaluator'
@@ -412,6 +413,28 @@ for (const op of ops) {
       variants1: opVariants[op],
       variants2: opVariants[op],
       build: (left, right) => ({type: 'OpCall', op, left, right}),
+    })
+  })
+}
+
+const functionTests: {namespace: string; funcName: string}[] = [
+  {namespace: 'math', funcName: 'sum'},
+  {namespace: 'math', funcName: 'min'},
+  {namespace: 'math', funcName: 'max'},
+  {namespace: 'math', funcName: 'avg'},
+]
+
+for (const {namespace, funcName} of functionTests) {
+  t.test(`${namespace}::${funcName}`, async (t) => {
+    subtestUnary({
+      t,
+      build: (param) => ({
+        type: 'FuncCall',
+        name: funcName,
+        namespace,
+        args: [param],
+        func: namespaces[namespace]![funcName] as GroqFunction,
+      }),
     })
   })
 }
