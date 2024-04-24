@@ -1968,6 +1968,7 @@ t.test('pos node', (t) => {
   })
   t.end()
 })
+
 t.test('opcall: not equal', (t) => {
   const query = `*[_type == "namespace.one" && boolField != true]`
   const ast = parse(query)
@@ -1975,6 +1976,52 @@ t.test('opcall: not equal', (t) => {
   t.strictSame(res, {
     type: 'array',
     of: findSchemaType('namespace.one'),
+  })
+  t.end()
+})
+
+t.test('opcall: handle concrete type', (t) => {
+  const query = `*[_type == "someType" && boolField == true] {
+    "boolField": boolField == true
+  }`
+  const ast = parse(query)
+  const res = typeEvaluate(ast, [
+    {type: 'type', name: 'myBoolean', value: {type: 'boolean'}},
+    {
+      type: 'document',
+      name: 'someType',
+      attributes: {
+        _type: {
+          type: 'objectAttribute',
+          value: {
+            type: 'string',
+            value: 'someType',
+          },
+        },
+        boolField: {
+          type: 'objectAttribute',
+          value: {
+            type: 'inline',
+            name: 'myBoolean',
+          },
+        },
+      },
+    },
+  ])
+  t.strictSame(res, {
+    type: 'array',
+    of: {
+      type: 'object',
+      attributes: {
+        boolField: {
+          type: 'objectAttribute',
+          value: {
+            type: 'boolean',
+            value: undefined,
+          },
+        },
+      },
+    },
   })
   t.end()
 })

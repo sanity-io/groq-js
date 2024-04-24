@@ -206,7 +206,7 @@ function handleOpCallNode(node: OpCallNode, scope: Scope): TypeNode {
         case '!=': {
           return {
             type: 'boolean',
-            value: resolveCondition(node, scope),
+            value: resolveOpCallNodeCondition(node, left, right),
           } satisfies BooleanTypeNode
         }
         case '>':
@@ -217,10 +217,9 @@ function handleOpCallNode(node: OpCallNode, scope: Scope): TypeNode {
             return {type: 'null'}
           }
           if (isPrimitiveTypeNode(left)) {
-            const resolved = resolveCondition(node, scope)
             return {
               type: 'boolean',
-              value: resolved,
+              value: resolveOpCallNodeCondition(node, left, right),
             } satisfies BooleanTypeNode
           }
 
@@ -228,20 +227,17 @@ function handleOpCallNode(node: OpCallNode, scope: Scope): TypeNode {
         }
         case 'in': {
           if (right.type === 'array') {
-            const resolved = resolveCondition(node, scope)
             return {
               type: 'boolean',
-              value: resolved,
+              value: resolveOpCallNodeCondition(node, left, right),
             } satisfies BooleanTypeNode
           }
           return {type: 'null'}
         }
         case 'match': {
-          const resolved = resolveCondition(node, scope)
-
           return {
             type: 'boolean',
-            value: resolved,
+            value: resolveOpCallNodeCondition(node, left, right),
           } satisfies BooleanTypeNode
         }
         case '+': {
@@ -808,6 +804,204 @@ function evaluateEquality(left: TypeNode, right: TypeNode): boolean | undefined 
 }
 
 /**
+ * Resolves an opcall condition expression and returns a boolean value or undefined.
+ * Undefined is returned when the condition can't be resolved.
+ *
+ * @param expr - The expression node to resolve.
+ * @param left - The left side of the expression.
+ * @param right - The right side of the expression.
+ * @returns The resolved boolean value or undefined.
+ */
+// use mapConcrete to resolve the concrete types of the left and right side of the expression
+
+// eslint-disable-next-line complexity, max-statements
+function resolveOpCallNodeCondition(
+  node: OpCallNode,
+  left: TypeNode,
+  right: TypeNode,
+): boolean | undefined {
+  if (left.type === 'unknown' || right.type === 'unknown') {
+    return undefined
+  }
+
+  switch (node.op) {
+    case '==': {
+      return evaluateEquality(left, right)
+    }
+    case '!=': {
+      const result = evaluateEquality(left, right)
+      if (result === undefined) {
+        return undefined
+      }
+      return !result
+    }
+    case 'in': {
+      if (right.type === 'array') {
+        if (left.type === 'null' && right.of.type === 'unknown') {
+          return undefined
+        }
+        if (left.type === 'null' && right.of.type === 'null') {
+          return true
+        }
+        if (isPrimitiveTypeNode(left)) {
+          // eslint-disable-next-line max-depth
+          if (right.of.type === 'unknown') {
+            return undefined
+          }
+          // eslint-disable-next-line max-depth
+          if (left.value === undefined) {
+            return undefined
+          }
+
+          // eslint-disable-next-line max-depth
+          if (isPrimitiveTypeNode(right.of)) {
+            // eslint-disable-next-line max-depth
+            if (right.of.value === undefined) {
+              return undefined
+            }
+            return left.value === right.of.value
+          }
+          // eslint-disable-next-line max-depth
+          if (right.of.type === 'union') {
+            // eslint-disable-next-line max-depth
+            for (const node of right.of.of) {
+              // eslint-disable-next-line max-depth
+              if (node.type === 'unknown') {
+                return undefined
+              }
+              // eslint-disable-next-line max-depth
+              if (isPrimitiveTypeNode(node) && left.value === node.value) {
+                return true
+              }
+              // eslint-disable-next-line max-depth
+              if (left.type === node.type && node.value === undefined) {
+                return undefined
+              }
+            }
+          }
+        }
+      }
+
+      return false
+    }
+    case 'match': {
+      let tokens: Token[] = []
+      let patterns: Pattern[] = []
+      if (left.type === 'string') {
+        if (left.value === undefined) {
+          return undefined
+        }
+        tokens = tokens.concat(matchTokenize(left.value))
+      }
+      if (left.type === 'array') {
+        if (left.of.type === 'unknown') {
+          return undefined
+        }
+        if (left.of.type === 'string') {
+          // eslint-disable-next-line max-depth
+          if (left.of.value === undefined) {
+            return undefined
+          }
+
+          tokens = tokens.concat(matchTokenize(left.of.value))
+        }
+        if (left.of.type === 'union') {
+          // eslint-disable-next-line max-depth
+          for (const node of left.of.of) {
+            // eslint-disable-next-line max-depth
+            if (node.type === 'string' && node.value !== undefined) {
+              tokens = tokens.concat(matchTokenize(node.value))
+            }
+          }
+        }
+      }
+
+      if (right.type === 'string') {
+        if (right.value === undefined) {
+          return undefined
+        }
+        patterns = patterns.concat(matchAnalyzePattern(right.value))
+      }
+      if (right.type === 'array') {
+        if (right.of.type === 'unknown') {
+          return undefined
+        }
+        if (right.of.type === 'string') {
+          // eslint-disable-next-line max-depth
+          if (right.of.value === undefined) {
+            return undefined
+          }
+          patterns = patterns.concat(matchAnalyzePattern(right.of.value))
+        }
+        if (right.of.type === 'union') {
+          // eslint-disable-next-line max-depth
+          for (const node of right.of.of) {
+            // eslint-disable-next-line max-depth
+            if (node.type === 'string') {
+              // eslint-disable-next-line max-depth
+              if (node.value === undefined) {
+                return undefined
+              }
+              patterns = patterns.concat(matchAnalyzePattern(node.value))
+            }
+
+            // eslint-disable-next-line max-depth
+            if (node.type !== 'string') {
+              return false
+            }
+          }
+        }
+      }
+      return matchText(tokens, patterns)
+    }
+    case '<': {
+      if (isPrimitiveTypeNode(left) && isPrimitiveTypeNode(right)) {
+        if (left.value === undefined || right.value === undefined) {
+          return undefined
+        }
+        return left.value < right.value
+      }
+
+      return undefined
+    }
+    case '<=': {
+      if (isPrimitiveTypeNode(left) && isPrimitiveTypeNode(right)) {
+        if (left.value === undefined || right.value === undefined) {
+          return undefined
+        }
+        return left.value <= right.value
+      }
+
+      return undefined
+    }
+    case '>': {
+      if (isPrimitiveTypeNode(left) && isPrimitiveTypeNode(right)) {
+        if (left.value === undefined || right.value === undefined) {
+          return undefined
+        }
+        return left.value > right.value
+      }
+
+      return undefined
+    }
+    case '>=': {
+      if (isPrimitiveTypeNode(left) && isPrimitiveTypeNode(right)) {
+        if (left.value === undefined || right.value === undefined) {
+          return undefined
+        }
+        return left.value >= right.value
+      }
+
+      return undefined
+    }
+
+    default: {
+      return undefined
+    }
+  }
+}
+
+/**
  * Resolves the condition expression and returns a boolean value or undefined.
  * Undefined is returned when the condition can't be resolved.
  *
@@ -864,189 +1058,10 @@ function resolveCondition(expr: ExprNode, scope: Scope): boolean | undefined {
       return false
     }
     case 'OpCall': {
-      const left = walk({node: expr.left, scope})
-      const right = walk({node: expr.right, scope})
-      $trace('opcall "%s" %O', expr.op, {left, right})
-
-      if (left.type === 'unknown' || right.type === 'unknown') {
-        return undefined
-      }
-
-      switch (expr.op) {
-        case '==': {
-          return evaluateEquality(left, right)
-        }
-        case '!=': {
-          const result = evaluateEquality(left, right)
-          if (result === undefined) {
-            return undefined
-          }
-          return !result
-        }
-        case 'in': {
-          if (right.type === 'array') {
-            if (left.type === 'null' && right.of.type === 'unknown') {
-              return undefined
-            }
-            if (left.type === 'null' && right.of.type === 'null') {
-              return true
-            }
-            if (isPrimitiveTypeNode(left)) {
-              // eslint-disable-next-line max-depth
-              if (right.of.type === 'unknown') {
-                return undefined
-              }
-              // eslint-disable-next-line max-depth
-              if (left.value === undefined) {
-                return undefined
-              }
-
-              // eslint-disable-next-line max-depth
-              if (isPrimitiveTypeNode(right.of)) {
-                // eslint-disable-next-line max-depth
-                if (right.of.value === undefined) {
-                  return undefined
-                }
-                return left.value === right.of.value
-              }
-              // eslint-disable-next-line max-depth
-              if (right.of.type === 'union') {
-                // eslint-disable-next-line max-depth
-                for (const node of right.of.of) {
-                  // eslint-disable-next-line max-depth
-                  if (node.type === 'unknown') {
-                    return undefined
-                  }
-                  // eslint-disable-next-line max-depth
-                  if (isPrimitiveTypeNode(node) && left.value === node.value) {
-                    return true
-                  }
-                  // eslint-disable-next-line max-depth
-                  if (left.type === node.type && node.value === undefined) {
-                    return undefined
-                  }
-                }
-              }
-            }
-          }
-
-          return false
-        }
-        case 'match': {
-          let tokens: Token[] = []
-          let patterns: Pattern[] = []
-          if (left.type === 'string') {
-            if (left.value === undefined) {
-              return undefined
-            }
-            tokens = tokens.concat(matchTokenize(left.value))
-          }
-          if (left.type === 'array') {
-            if (left.of.type === 'unknown') {
-              return undefined
-            }
-            if (left.of.type === 'string') {
-              // eslint-disable-next-line max-depth
-              if (left.of.value === undefined) {
-                return undefined
-              }
-
-              tokens = tokens.concat(matchTokenize(left.of.value))
-            }
-            if (left.of.type === 'union') {
-              // eslint-disable-next-line max-depth
-              for (const node of left.of.of) {
-                // eslint-disable-next-line max-depth
-                if (node.type === 'string' && node.value !== undefined) {
-                  tokens = tokens.concat(matchTokenize(node.value))
-                }
-              }
-            }
-          }
-
-          if (right.type === 'string') {
-            if (right.value === undefined) {
-              return undefined
-            }
-            patterns = patterns.concat(matchAnalyzePattern(right.value))
-          }
-          if (right.type === 'array') {
-            if (right.of.type === 'unknown') {
-              return undefined
-            }
-            if (right.of.type === 'string') {
-              // eslint-disable-next-line max-depth
-              if (right.of.value === undefined) {
-                return undefined
-              }
-              patterns = patterns.concat(matchAnalyzePattern(right.of.value))
-            }
-            if (right.of.type === 'union') {
-              // eslint-disable-next-line max-depth
-              for (const node of right.of.of) {
-                // eslint-disable-next-line max-depth
-                if (node.type === 'string') {
-                  // eslint-disable-next-line max-depth
-                  if (node.value === undefined) {
-                    return undefined
-                  }
-                  patterns = patterns.concat(matchAnalyzePattern(node.value))
-                }
-
-                // eslint-disable-next-line max-depth
-                if (node.type !== 'string') {
-                  return false
-                }
-              }
-            }
-          }
-          return matchText(tokens, patterns)
-        }
-        case '<': {
-          if (isPrimitiveTypeNode(left) && isPrimitiveTypeNode(right)) {
-            if (left.value === undefined || right.value === undefined) {
-              return undefined
-            }
-            return left.value < right.value
-          }
-
-          return undefined
-        }
-        case '<=': {
-          if (isPrimitiveTypeNode(left) && isPrimitiveTypeNode(right)) {
-            if (left.value === undefined || right.value === undefined) {
-              return undefined
-            }
-            return left.value <= right.value
-          }
-
-          return undefined
-        }
-        case '>': {
-          if (isPrimitiveTypeNode(left) && isPrimitiveTypeNode(right)) {
-            if (left.value === undefined || right.value === undefined) {
-              return undefined
-            }
-            return left.value > right.value
-          }
-
-          return undefined
-        }
-        case '>=': {
-          if (isPrimitiveTypeNode(left) && isPrimitiveTypeNode(right)) {
-            if (left.value === undefined || right.value === undefined) {
-              return undefined
-            }
-            return left.value >= right.value
-          }
-
-          return undefined
-        }
-
-        default: {
-          return undefined
-        }
-      }
+      // use mapConcrete to resolve the concrete types of the left and right side of the expression
+      const left = mapConcrete(walk({node: expr.left, scope}), scope, (base) => base)
+      const right = mapConcrete(walk({node: expr.right, scope}), scope, (base) => base)
+      return resolveOpCallNodeCondition(expr, left, right)
     }
     case 'Group': {
       return resolveCondition(expr.base, scope)
