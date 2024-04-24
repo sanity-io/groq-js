@@ -2069,6 +2069,29 @@ t.test('function: global::string', (t) => {
   t.end()
 })
 
+t.test('function: references', (t) => {
+  const query = `*[_type == "post"] {
+    "references": references(_id)
+  }`
+  const ast = parse(query)
+  const res = typeEvaluate(ast, schemas)
+  t.strictSame(res, {
+    type: 'array',
+    of: {
+      type: 'object',
+      attributes: {
+        references: {
+          type: 'objectAttribute',
+          value: {
+            type: 'boolean',
+          },
+        },
+      },
+    },
+  })
+  t.end()
+})
+
 function findSchemaType(name: string): TypeNode {
   const type = schemas.find((s) => s.name === name)
   if (!type) {
