@@ -2013,6 +2013,28 @@ t.test('opcall: not equal', (t) => {
   t.end()
 })
 
+t.test('opcall: not group', (t) => {
+  const query = `*[!(_type != "author")] { _type }`
+  const ast = parse(query)
+  const res = typeEvaluate(ast, schemas)
+  t.strictSame(res, {
+    type: 'array',
+    of: {
+      type: 'object',
+      attributes: {
+        _type: {
+          type: 'objectAttribute',
+          value: {
+            type: 'string',
+            value: 'author',
+          },
+        },
+      },
+    },
+  })
+  t.end()
+})
+
 t.test('function: count', (t) => {
   const query = `*[_type == "post"] {
     "name": count(name),

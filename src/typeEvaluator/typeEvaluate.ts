@@ -1048,6 +1048,11 @@ function resolveCondition(expr: ExprNode, scope: Scope): boolean | undefined {
         }
       }
     }
+    case 'Not': {
+      const result = resolveCondition(expr.base, scope)
+      // check if the result is undefined or false. Undefined means that the condition can't be resolved, and we should keep the node
+      return result === undefined ? undefined : result === false
+    }
     case 'Group': {
       return resolveCondition(expr.base, scope)
     }
