@@ -70,16 +70,26 @@ export function optimizeUnions(field: TypeNode): TypeNode {
       return optimizeUnions(field.of[0])
     }
 
-    // flatten union
+    // optimize sub type nodes in union
+    let unionTypeIndex = 0
+    let unionTypes = 0
     for (let idx = 0; field.of.length > idx; idx++) {
       const subField = field.of[idx]
       if (subField.type === 'union') {
-        field.of.splice(idx, 1, ...subField.of)
-        idx--
-        continue
+        unionTypeIndex = idx
+        unionTypes++
       }
 
       field.of[idx] = optimizeUnions(subField)
+    }
+
+    // flatten if there is only one union inside a union
+    if (unionTypes === 1) {
+      const unionType = field.of[unionTypeIndex]
+      // this is only to make the type checker happy
+      if (unionType.type === 'union') {
+        field.of.splice(unionTypeIndex, 1, ...unionType.of)
+      }
     }
 
     const compare = new Intl.Collator('en').compare

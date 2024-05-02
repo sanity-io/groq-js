@@ -265,11 +265,15 @@ function handleOpCallNode(node: OpCallNode, scope: Scope): TypeNode {
             }
           }
           if (left.type === 'array' && right.type === 'array') {
+            // handle the case where it's a array of known literals
+            const lhs = left.of.type === 'union' ? left.of.of : [left.of]
+            const rhs = right.of.type === 'union' ? right.of.of : [right.of]
+
             return {
               type: 'array',
               of: {
                 type: 'union',
-                of: [left.of, right.of],
+                of: [...lhs, ...rhs],
               },
             } satisfies ArrayTypeNode
           }
