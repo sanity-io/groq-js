@@ -821,9 +821,19 @@ function resolveCondition(expr: ExprNode, scope: Scope): boolean | undefined {
   $trace('resolveCondition.expr %O', expr)
 
   switch (expr.type) {
+    case 'AccessAttribute':
+    case 'AccessElement':
     case 'Value': {
-      const value = walk({node: expr, scope})
-      return value.type === 'boolean' && value.value !== false
+      const value = mapConcrete(walk({node: expr, scope}), scope, (node) => node)
+      if (value.type === 'boolean') {
+        return value.value
+      }
+
+      if (value.type === 'null' || value.type === 'object' || value.type === 'array') {
+        return false
+      }
+
+      return undefined
     }
     case 'And': {
       const left = resolveCondition(expr.left, scope)
