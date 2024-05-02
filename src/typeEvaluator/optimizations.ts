@@ -62,9 +62,66 @@ export function removeDuplicateTypeNodes(typeNodes: TypeNode[]): TypeNode[] {
   return newTypeNodes
 }
 
+export function hoistDuplicateTypeNodes(src: TypeNode[]): TypeNode[] {
+  const times = new Map<string, number>()
+  const srcLength = src.length
+  for (let idx = 0; src.length > idx; idx++) {
+    if (!Object.hasOwn(src, idx)) {
+      continue
+    }
+    const typeNode = src[idx]
+    if (typeNode.type === 'union') {
+      for (const subTypeNode of typeNode.of) {
+        const hash = hashField(subTypeNode)
+
+        times.set(hash, (times.get(hash) || 0) + 1)
+      }
+    }
+  }
+  if (times.size === 0) {
+    return src
+  }
+
+  const hoisted = new Set<string>()
+  for (let outer = 0; src.length > outer; outer++) {
+    if (!Object.hasOwn(src, outer)) {
+      continue
+    }
+    const typeNode = src[outer]
+    if (typeNode.type !== 'union') {
+      continue
+    }
+
+    for (let inner = 0; typeNode.of.length > inner; inner++) {
+      if (!Object.hasOwn(typeNode.of, inner)) {
+        continue
+      }
+      const subTypeNode = typeNode.of[inner]
+      const hash = hashField(subTypeNode)
+
+      const hashSeen = times.get(hash) || 0
+      if (hashSeen !== srcLength || hashSeen === 1) {
+        continue
+      }
+      typeNode.of.splice(inner, 1)
+      if (!hoisted.has(hash)) {
+        src.push(subTypeNode)
+        hoisted.add(hash)
+      }
+    }
+
+    if (typeNode.of.length === 0) {
+      src.splice(outer, 1)
+    }
+  }
+
+  return src
+}
+
 export function optimizeUnions(field: TypeNode): TypeNode {
   if (field.type === 'union') {
     field.of = removeDuplicateTypeNodes(field.of)
+    field.of = hoistDuplicateTypeNodes(field.of)
 
     if (field.of.length === 1) {
       return optimizeUnions(field.of[0])

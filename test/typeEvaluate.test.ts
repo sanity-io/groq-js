@@ -1,6 +1,7 @@
 import t from 'tap'
 
 import {parse} from '../src/parser'
+import {optimizeUnions} from '../src/typeEvaluator/optimizations'
 import {typeEvaluate} from '../src/typeEvaluator/typeEvaluate'
 import {createReferenceTypeNode, nullUnion} from '../src/typeEvaluator/typeHelpers'
 import type {
@@ -2088,6 +2089,84 @@ t.test('function: references', (t) => {
         },
       },
     },
+  })
+  t.end()
+})
+
+t.test('optimizations: hoistDuplicateUnionTypeNodes', (t) => {
+  const optimized = optimizeUnions({
+    type: 'union',
+    of: [
+      {
+        type: 'union',
+        of: [
+          {
+            type: 'string',
+            value: 'foo',
+          },
+          {
+            type: 'string',
+            value: 'bar',
+          },
+          {
+            type: 'number',
+            value: 3,
+          },
+        ],
+      },
+      {
+        type: 'union',
+        of: [
+          {
+            type: 'string',
+            value: 'foo',
+          },
+          {
+            type: 'string',
+            value: 'baz',
+          },
+          {
+            type: 'number',
+            value: 2,
+          },
+        ],
+      },
+    ],
+  })
+  t.strictSame(optimized, {
+    type: 'union',
+    of: [
+      {
+        type: 'string',
+        value: 'foo',
+      },
+      {
+        type: 'union',
+        of: [
+          {
+            type: 'number',
+            value: 2,
+          },
+          {
+            type: 'string',
+            value: 'baz',
+          },
+        ],
+      },
+      {
+        type: 'union',
+        of: [
+          {
+            type: 'number',
+            value: 3,
+          },
+          {
+            type: 'string',
+            value: 'bar',
+          },
+        ],
+      },
+    ],
   })
   t.end()
 })
