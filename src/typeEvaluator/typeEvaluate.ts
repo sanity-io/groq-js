@@ -1057,7 +1057,7 @@ function resolveCondition(expr: ExprNode, scope: Scope): boolean | undefined {
       return resolveCondition(expr.base, scope)
     }
     default: {
-      return true
+      return undefined
     }
   }
 }
