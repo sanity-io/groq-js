@@ -4,7 +4,7 @@ export interface Document {
   type: 'document'
   /** the name of the document */
   name: string
-  /** ttributes is defined by a key-value pair where the key is a string and the value is an ObjectAttribute. */
+  /** Attributes is defined by a key-value pair where the key is a string and the value is an ObjectAttribute. */
   attributes: Record<string, ObjectAttribute>
 }
 
