@@ -2092,6 +2092,194 @@ t.test('function: references', (t) => {
   t.end()
 })
 
+t.test('conditional this', (t) => {
+  const query = `*[_type == "author" || _type == "post" || _type == "test"] {
+    _type == "author" => {
+      "bar": _id
+    },
+    _type == "test" => {
+      foo[] {
+        _type,
+        _type != "slug" => @
+      }
+    }
+  }`
+
+  const ast = parse(query)
+  const res = typeEvaluate(ast, [
+    ...schemas,
+    {
+      name: 'inline1',
+      type: 'type',
+      value: {
+        type: 'object',
+        attributes: {
+          _type: {
+            type: 'objectAttribute',
+            value: {
+              type: 'string',
+              value: 'inline1',
+            },
+          },
+          inlineValue1: {
+            type: 'objectAttribute',
+            value: {
+              type: 'string',
+            },
+          },
+        },
+      },
+    },
+    {
+      name: 'inline2',
+      type: 'type',
+      value: {
+        type: 'object',
+        attributes: {
+          _type: {
+            type: 'objectAttribute',
+            value: {
+              type: 'string',
+              value: 'inline2',
+            },
+          },
+          inlineValue2: {
+            type: 'objectAttribute',
+            value: {
+              type: 'string',
+            },
+          },
+        },
+      },
+    },
+    {
+      name: 'test',
+      type: 'document',
+      attributes: {
+        _type: {
+          type: 'objectAttribute',
+          value: {
+            type: 'string',
+            value: 'test',
+          },
+        },
+        foo: {
+          type: 'objectAttribute',
+          value: {
+            type: 'array',
+            of: {
+              type: 'union',
+              of: [
+                {
+                  type: 'inline',
+                  name: 'inline1',
+                },
+                {
+                  type: 'inline',
+                  name: 'inline2',
+                },
+                {
+                  type: 'inline',
+                  name: 'slug',
+                },
+              ],
+            },
+          },
+        },
+      },
+    },
+  ])
+
+  t.strictSame(res, {
+    type: 'array',
+    of: {
+      type: 'union',
+      of: [
+        {
+          type: 'object',
+          attributes: {},
+        },
+        {
+          type: 'object',
+          attributes: {
+            bar: {
+              type: 'objectAttribute',
+              value: {
+                type: 'string',
+              },
+            },
+          },
+        },
+        {
+          type: 'object',
+          attributes: {
+            foo: {
+              type: 'objectAttribute',
+              value: {
+                type: 'array',
+                of: {
+                  type: 'union',
+                  of: [
+                    {
+                      type: 'object',
+                      attributes: {
+                        _type: {
+                          type: 'objectAttribute',
+                          value: {
+                            type: 'string',
+                            value: 'inline1',
+                          },
+                        },
+                        inlineValue1: {
+                          type: 'objectAttribute',
+                          value: {
+                            type: 'string',
+                          },
+                        },
+                      },
+                    },
+                    {
+                      type: 'object',
+                      attributes: {
+                        _type: {
+                          type: 'objectAttribute',
+                          value: {
+                            type: 'string',
+                            value: 'inline2',
+                          },
+                        },
+                        inlineValue2: {
+                          type: 'objectAttribute',
+                          value: {
+                            type: 'string',
+                          },
+                        },
+                      },
+                    },
+                    {
+                      type: 'object',
+                      attributes: {
+                        _type: {
+                          type: 'objectAttribute',
+                          value: {
+                            type: 'string',
+                            value: 'slug',
+                          },
+                        },
+                      },
+                    },
+                  ],
+                },
+              },
+            },
+          },
+        },
+      ],
+    },
+  })
+  t.end()
+})
+
 function findSchemaType(name: string): TypeNode {
   const type = schemas.find((s) => s.name === name)
   if (!type) {
