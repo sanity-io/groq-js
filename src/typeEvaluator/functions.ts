@@ -103,6 +103,23 @@ export function handleFuncCallNode(node: FuncCallNode, scope: Scope): TypeNode {
         })
       })
     }
+    case 'string.split': {
+      const strTypeNode = walk({node: node.args[0], scope})
+      const sepTypeNode = walk({node: node.args[1], scope})
+      return mapConcrete(strTypeNode, scope, (strNode) => {
+        if (strNode.type !== 'string') {
+          return {type: 'null'}
+        }
+
+        return mapConcrete(sepTypeNode, scope, (sepNode) => {
+          if (sepNode.type !== 'string') {
+            return {type: 'null'}
+          }
+
+          return {type: 'array', of: {type: 'string'}}
+        })
+      })
+    }
     default: {
       return {type: 'unknown'}
     }
