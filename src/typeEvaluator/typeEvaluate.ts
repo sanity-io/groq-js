@@ -120,7 +120,7 @@ function handleDerefNode(node: DerefNode, scope: Scope): TypeNode {
 function mapObjectSplat(
   node: TypeNode,
   scope: Scope,
-  mapper: (field: Document | ObjectTypeNode) => void,
+  mapper: (name: string, attribute: ObjectAttribute) => void,
 ) {
   if (node.type === 'union') {
     for (const scoped of node.of) {
@@ -129,7 +129,22 @@ function mapObjectSplat(
   }
 
   if (node.type === 'object') {
-    mapper(node)
+    // if the rest is unknown the entire object is unknown
+    if (node.rest !== undefined && node.rest.type === 'unknown') {
+      return
+    }
+
+    for (const name in node.attributes) {
+      if (!node.attributes.hasOwnProperty(name)) {
+        continue
+      }
+      mapper(name, node.attributes[name])
+    }
+
+    if (node.rest !== undefined) {
+      const rest = mapConcrete(node.rest, scope, (rest) => rest)
+      mapObjectSplat(rest, scope, mapper)
+    }
   }
 }
 function handleObjectNode(node: ObjectNode, scope: Scope) {
@@ -148,14 +163,8 @@ function handleObjectNode(node: ObjectNode, scope: Scope) {
     if (attr.type === 'ObjectSplat') {
       const value = walk({node: attr.value, scope})
       $trace('object.splat.value %O', value)
-      mapObjectSplat(value, scope, (node) => {
-        for (const name in node.attributes) {
-          if (!Object.hasOwn(node.attributes, name)) {
-            continue
-          }
-
-          attributes[name] = node.attributes[name]
-        }
+      mapObjectSplat(value, scope, (name, attribute) => {
+        attributes[name] = attribute
       })
     }
     if (attr.type === 'ObjectConditionalSplat') {
@@ -164,24 +173,17 @@ function handleObjectNode(node: ObjectNode, scope: Scope) {
       if (condition || condition === undefined) {
         const value = walk({node: attr.value, scope})
 
-        mapObjectSplat(value, scope, (node) => {
-          for (const name in node.attributes) {
-            if (!Object.hasOwn(node.attributes, name)) {
-              continue
+        mapObjectSplat(value, scope, (name, attribute) => {
+          if (condition) {
+            attributes[name] = attribute
+          } else if (condition === undefined) {
+            attributes[name] = {
+              type: 'objectAttribute',
+              value: attribute.value,
+              optional: true,
             }
-            const attribute = node.attributes[name]
-
-            if (condition) {
-              attributes[name] = attribute
-            } else if (condition === undefined) {
-              attributes[name] = {
-                type: 'objectAttribute',
-                value: attribute.value,
-                optional: true,
-              }
-            } else {
-              throw new Error('Unexpected condition')
-            }
+          } else {
+            throw new Error('Unexpected condition')
           }
         })
       }
