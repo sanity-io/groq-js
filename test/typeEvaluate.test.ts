@@ -2129,6 +2129,46 @@ t.test('function: string::startsWith', (t) => {
   t.end()
 })
 
+t.test('function: string::split', (t) => {
+  const query = `*[_type == "author"] {
+    "stringSplit": string::split(name, " "),
+    "numberSplit": string::split(age, " "),
+    "stringNumberSplit": string::split(name, 123),
+  }`
+  const ast = parse(query)
+  const res = typeEvaluate(ast, schemas)
+  t.strictSame(res, {
+    type: 'array',
+    of: {
+      type: 'object',
+      attributes: {
+        stringSplit: {
+          type: 'objectAttribute',
+          value: {
+            type: 'array',
+            of: {
+              type: 'string',
+            },
+          },
+        },
+        numberSplit: {
+          type: 'objectAttribute',
+          value: {
+            type: 'null',
+          },
+        },
+        stringNumberSplit: {
+          type: 'objectAttribute',
+          value: {
+            type: 'null',
+          },
+        },
+      },
+    },
+  })
+  t.end()
+})
+
 function findSchemaType(name: string): TypeNode {
   const type = schemas.find((s) => s.name === name)
   if (!type) {
