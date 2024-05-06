@@ -86,6 +86,23 @@ export function handleFuncCallNode(node: FuncCallNode, scope: Scope): TypeNode {
         type: 'string',
       }
     }
+    case 'string.startsWith': {
+      const strTypeNode = walk({node: node.args[0], scope})
+      const prefixTypeNode = walk({node: node.args[1], scope})
+      return mapConcrete(strTypeNode, scope, (strNode) => {
+        if (strNode.type !== 'string') {
+          return {type: 'null'}
+        }
+
+        return mapConcrete(prefixTypeNode, scope, (prefixNode) => {
+          if (prefixNode.type !== 'string') {
+            return {type: 'null'}
+          }
+
+          return {type: 'boolean'}
+        })
+      })
+    }
     default: {
       return {type: 'unknown'}
     }

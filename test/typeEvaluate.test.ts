@@ -2092,6 +2092,43 @@ t.test('function: references', (t) => {
   t.end()
 })
 
+t.test('function: string::startsWith', (t) => {
+  const query = `*[_type == "author" && string::startsWith(name, "george")] {
+    "stringStartsWith": string::startsWith(name, "george"),
+    "numberStartsWith": string::startsWith(age, "foo"),
+    "stringStartsWithNumber": string::startsWith(name, 123),
+  }`
+  const ast = parse(query)
+  const res = typeEvaluate(ast, schemas)
+  t.strictSame(res, {
+    type: 'array',
+    of: {
+      type: 'object',
+      attributes: {
+        stringStartsWith: {
+          type: 'objectAttribute',
+          value: {
+            type: 'boolean',
+          },
+        },
+        numberStartsWith: {
+          type: 'objectAttribute',
+          value: {
+            type: 'null',
+          },
+        },
+        stringStartsWithNumber: {
+          type: 'objectAttribute',
+          value: {
+            type: 'null',
+          },
+        },
+      },
+    },
+  })
+  t.end()
+})
+
 function findSchemaType(name: string): TypeNode {
   const type = schemas.find((s) => s.name === name)
   if (!type) {
