@@ -120,33 +120,41 @@ function handleDerefNode(node: DerefNode, scope: Scope): TypeNode {
 function mapObjectSplat(
   node: TypeNode,
   scope: Scope,
-  mapper: (name: string, attribute: ObjectAttribute) => void,
-) {
-  if (node.type === 'union') {
-    for (const scoped of node.of) {
-      mapObjectSplat(scoped, scope, mapper)
-    }
+  mapper: (attribute: ObjectAttribute) => ObjectAttribute,
+): ObjectTypeNode | UnknownTypeNode | NullTypeNode {
+  const concreteNode = mapConcrete(node, scope, (node) => node)
+  if (concreteNode.type !== 'object') {
+    return {type: 'unknown'}
   }
 
-  if (node.type === 'object') {
-    // if the rest is unknown the entire object is unknown
-    if (node.rest !== undefined && node.rest.type === 'unknown') {
-      return
+  const attributes: Record<string, ObjectAttribute> = {}
+  for (const name in concreteNode.attributes) {
+    if (!concreteNode.attributes.hasOwnProperty(name)) {
+      continue
     }
+    attributes[name] = mapper(concreteNode.attributes[name])
+  }
 
-    for (const name in node.attributes) {
-      if (!node.attributes.hasOwnProperty(name)) {
+  if (concreteNode.rest !== undefined) {
+    const concreteRest = mapConcrete(concreteNode.rest, scope, (rest) => rest)
+    // if the rest is unknown the entire object is unknown
+    if (concreteRest.type === 'unknown') {
+      return {type: 'unknown'}
+    }
+    if (concreteRest.type !== 'object') {
+      return {type: 'null'}
+    }
+    for (const name in concreteRest.attributes) {
+      // eslint-disable-next-line
+      if (!concreteRest.attributes.hasOwnProperty(name)) {
         continue
       }
-      mapper(name, node.attributes[name])
-    }
-
-    if (node.rest !== undefined) {
-      const rest = mapConcrete(node.rest, scope, (rest) => rest)
-      mapObjectSplat(rest, scope, mapper)
+      attributes[name] = mapper(concreteRest.attributes[name])
     }
   }
+  return {type: 'object', attributes}
 }
+
 function handleObjectNode(node: ObjectNode, scope: Scope) {
   $trace('object.node %O', node)
   $trace('object.scope %O', scope)
@@ -163,9 +171,16 @@ function handleObjectNode(node: ObjectNode, scope: Scope) {
     if (attr.type === 'ObjectSplat') {
       const value = walk({node: attr.value, scope})
       $trace('object.splat.value %O', value)
-      mapObjectSplat(value, scope, (name, attribute) => {
-        attributes[name] = attribute
-      })
+      const mapped = mapObjectSplat(value, scope, (attribute) => attribute)
+      if (mapped.type === 'unknown' || mapped.type === 'null') {
+        return mapped
+      }
+      for (const name in mapped.attributes) {
+        if (!mapped.attributes.hasOwnProperty(name)) {
+          continue
+        }
+        attributes[name] = mapped.attributes[name]
+      }
     }
     if (attr.type === 'ObjectConditionalSplat') {
       const condition = resolveCondition(attr.condition, scope)
@@ -173,19 +188,27 @@ function handleObjectNode(node: ObjectNode, scope: Scope) {
       if (condition || condition === undefined) {
         const value = walk({node: attr.value, scope})
 
-        mapObjectSplat(value, scope, (name, attribute) => {
+        const mapped = mapObjectSplat(value, scope, (attribute) => {
           if (condition) {
-            attributes[name] = attribute
-          } else if (condition === undefined) {
-            attributes[name] = {
-              type: 'objectAttribute',
-              value: attribute.value,
-              optional: true,
-            }
-          } else {
-            throw new Error('Unexpected condition')
+            return attribute
+          }
+
+          return {
+            type: 'objectAttribute',
+            value: attribute.value,
+            optional: true,
           }
         })
+        if (mapped.type === 'unknown' || mapped.type === 'null') {
+          return mapped
+        }
+        for (const name in mapped.attributes) {
+          // eslint-disable-next-line max-depth
+          if (!mapped.attributes.hasOwnProperty(name)) {
+            continue
+          }
+          attributes[name] = mapped.attributes[name]
+        }
       }
     }
   }
