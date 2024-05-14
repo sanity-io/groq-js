@@ -5,6 +5,18 @@
 All notable changes to this project will be documented in this file. See
 [Conventional Commits](https://conventionalcommits.org) for commit guidelines.
 
+## [1.9.0](https://github.com/sanity-io/groq-js/compare/v1.8.0...v1.9.0) (2024-05-14)
+
+### Features
+
+- **typeEvaluator:** add support for global::references ([af958db](https://github.com/sanity-io/groq-js/commit/af958db1623e9557624f97dba280bc588aee240b))
+- **typeEvaluator:** add support for string::split ([dd823dd](https://github.com/sanity-io/groq-js/commit/dd823dde0a6c687e0637fffe4f80d1502321907d))
+- **typeEvaluator:** add support for string::startsWith ([6b51180](https://github.com/sanity-io/groq-js/commit/6b511808203084bb54777c6d182339e34aad2019))
+
+### Bug Fixes
+
+- **typeEvaluator:** update hash group to capture start/end ([531fe81](https://github.com/sanity-io/groq-js/commit/531fe815292bd3e031bc6ba26d8d688696af7ba1))
+
 ## [1.8.0](https://github.com/sanity-io/groq-js/compare/v1.7.0...v1.8.0) (2024-04-24)
 
 ### Features
