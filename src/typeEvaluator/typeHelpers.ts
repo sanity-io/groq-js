@@ -68,11 +68,51 @@ export function nullUnion(node: TypeNode): UnionTypeNode {
   return unionOf(node, {type: 'null'})
 }
 
+export function arrayOf(node: TypeNode): ArrayTypeNode {
+  return {
+    type: 'array',
+    of: node,
+  } satisfies ArrayTypeNode
+}
+
 export function unionOf(...nodes: TypeNode[]): UnionTypeNode {
   return {
     type: 'union',
     of: nodes,
   } satisfies UnionTypeNode
+}
+
+export function objectWith(...attributes: [string, ObjectAttribute][]): ObjectTypeNode {
+  return {
+    type: 'object',
+    attributes: Object.fromEntries(attributes),
+  } satisfies ObjectTypeNode
+}
+
+export function objectWithRest(
+  rest: ObjectTypeNode['rest'],
+  ...attributes: [string, ObjectAttribute][]
+): ObjectTypeNode {
+  return {
+    type: 'object',
+    attributes: Object.fromEntries(attributes),
+    rest,
+  } satisfies ObjectTypeNode
+}
+
+export function objectAttribute(
+  key: string,
+  value: TypeNode,
+  optional?: boolean,
+): [string, ObjectAttribute] {
+  return [
+    key,
+    {
+      type: 'objectAttribute',
+      value,
+      optional,
+    } satisfies ObjectAttribute,
+  ]
 }
 
 type ConcreteTypeNode =

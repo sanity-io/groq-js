@@ -1,4 +1,12 @@
-import type {TypeNode} from './types'
+import type {InlineTypeNode, ObjectTypeNode, TypeNode, UnionTypeNode} from './types'
+
+function hashObjectTypeNode(object: ObjectTypeNode, ignoreRest: boolean = false) {
+  return `${object.type}:(${Object.entries(object.attributes)
+    .map(([key, value]) => `${key}:${hashField(value.value)}`)
+    .join(
+      ',',
+    )}):ref-${object.dereferencesTo}:${!ignoreRest && object.rest ? hashField(object.rest) : 'no-rest'}`
+}
 
 export function hashField(field: TypeNode): string {
   switch (field.type) {
@@ -21,9 +29,7 @@ export function hashField(field: TypeNode): string {
     }
 
     case 'object': {
-      return `${field.type}:(${Object.entries(field.attributes)
-        .map(([key, value]) => `${key}:${hashField(value.value)}`)
-        .join(',')}):ref-${field.dereferencesTo}:${field.rest ? hashField(field.rest) : 'no-rest'}`
+      return hashObjectTypeNode(field)
     }
 
     case 'union': {
@@ -66,8 +72,47 @@ export function optimizeUnions(field: TypeNode): TypeNode {
   if (field.type === 'union') {
     field.of = removeDuplicateTypeNodes(field.of)
 
+    // empty union, abort early
+    if (field.of.length === 0) {
+      return field
+    }
+
+    // single element union, optimize
     if (field.of.length === 1) {
       return optimizeUnions(field.of[0])
+    }
+
+    //
+    if (field.of[0].type === 'object' && field.of[0].rest?.type === 'inline') {
+      const objectAttributeHash = hashObjectTypeNode(field.of[0], true)
+      if (
+        field.of.every(
+          (node) =>
+            node.type === 'object' &&
+            node.rest?.type === 'inline' &&
+            hashObjectTypeNode(node, true) === objectAttributeHash,
+        )
+      ) {
+        const inlines: InlineTypeNode[] = []
+        for (const obj of field.of) {
+          // eslint-disable-next-line
+          if (obj.type !== 'object' || obj.rest === undefined || obj.rest.type !== 'inline') {
+            continue
+          }
+          inlines.push(obj.rest)
+        }
+
+        const rest = optimizeUnions({
+          type: 'union',
+          of: inlines,
+        }) as UnionTypeNode<InlineTypeNode> | InlineTypeNode // todo: fix me
+
+        return {
+          type: 'object',
+          attributes: field.of[0].attributes,
+          rest,
+        } satisfies ObjectTypeNode
+      }
     }
 
     // flatten union

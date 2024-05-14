@@ -75,7 +75,7 @@ export interface ObjectTypeNode<T extends TypeNode = TypeNode> {
   /** a collection of attributes */
   attributes: Record<string, ObjectAttribute<T>>
   /** an optional rest value */
-  rest?: ObjectTypeNode | UnknownTypeNode | InlineTypeNode
+  rest?: ObjectTypeNode | UnknownTypeNode | InlineTypeNode | UnionTypeNode<InlineTypeNode>
   /* an optional reference to the document this object dereferences to */
   dereferencesTo?: string
 }
