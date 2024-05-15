@@ -417,14 +417,16 @@ for (const op of ops) {
   })
 }
 
-const functionTests: {namespace: string; funcName: string}[] = [
+const unaryFunctionTests: {namespace: string; funcName: string}[] = [
   {namespace: 'math', funcName: 'sum'},
   {namespace: 'math', funcName: 'min'},
   {namespace: 'math', funcName: 'max'},
   {namespace: 'math', funcName: 'avg'},
+  {namespace: 'array', funcName: 'compact'},
+  {namespace: 'array', funcName: 'unique'},
 ]
 
-for (const {namespace, funcName} of functionTests) {
+for (const {namespace, funcName} of unaryFunctionTests) {
   t.test(`${namespace}::${funcName}`, async (t) => {
     subtestUnary({
       t,
@@ -433,6 +435,25 @@ for (const {namespace, funcName} of functionTests) {
         name: funcName,
         namespace,
         args: [param],
+        func: namespaces[namespace]![funcName] as GroqFunction,
+      }),
+    })
+  })
+}
+
+const binaryFunctionTests: {namespace: string; funcName: string}[] = [
+  {namespace: 'array', funcName: 'join'},
+]
+
+for (const {namespace, funcName} of binaryFunctionTests) {
+  t.test(`${namespace}::${funcName}`, async (t) => {
+    subtestBinary({
+      t,
+      build: (param1, param2) => ({
+        type: 'FuncCall',
+        name: funcName,
+        namespace,
+        args: [param1, param2],
         func: namespaces[namespace]![funcName] as GroqFunction,
       }),
     })

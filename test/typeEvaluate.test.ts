@@ -2203,6 +2203,124 @@ t.test('function: string::split', (t) => {
   t.end()
 })
 
+t.test('function: array::compact', (t) => {
+  const query = `*[_type == "author"] {
+    "ages": array::compact(ages),
+    "tuple": array::compact([1,2, true, null]),
+  }`
+  const ast = parse(query)
+  const res = typeEvaluate(ast, schemas)
+  t.strictSame(res, {
+    type: 'array',
+    of: {
+      type: 'object',
+      attributes: {
+        ages: {
+          type: 'objectAttribute',
+          value: nullUnion({
+            type: 'array',
+            of: {
+              type: 'number',
+            },
+          }),
+        },
+        tuple: {
+          type: 'objectAttribute',
+          value: {
+            type: 'array',
+            of: {
+              type: 'union',
+              of: [
+                {type: 'boolean', value: true},
+                {type: 'number', value: 1},
+                {type: 'number', value: 2},
+              ],
+            },
+          },
+        },
+      },
+    },
+  })
+  t.end()
+})
+
+t.test('function: array::join', (t) => {
+  const query = `*[_type == "author"] {
+    "ages": array::join(ages, " "),
+    "tuple": array::join([1,2, true], " "),
+    "invalidSep": array::join(ages, 123),
+  }`
+  const ast = parse(query)
+  const res = typeEvaluate(ast, schemas)
+  t.strictSame(res, {
+    type: 'array',
+    of: {
+      type: 'object',
+      attributes: {
+        ages: {
+          type: 'objectAttribute',
+          value: nullUnion({
+            type: 'string',
+          }),
+        },
+        tuple: {
+          type: 'objectAttribute',
+          value: {
+            type: 'string',
+          },
+        },
+        invalidSep: {
+          type: 'objectAttribute',
+          value: {
+            type: 'null',
+          },
+        },
+      },
+    },
+  })
+  t.end()
+})
+
+t.test('function: array::unique', (t) => {
+  const query = `*[_type == "author"] {
+    "ages": array::unique(ages),
+    "tuple": array::unique([1,2]),
+  }`
+  const ast = parse(query)
+  const res = typeEvaluate(ast, schemas)
+  t.strictSame(res, {
+    type: 'array',
+    of: {
+      type: 'object',
+      attributes: {
+        ages: {
+          type: 'objectAttribute',
+          value: nullUnion({
+            type: 'array',
+            of: {
+              type: 'number',
+            },
+          }),
+        },
+        tuple: {
+          type: 'objectAttribute',
+          value: {
+            type: 'array',
+            of: {
+              type: 'union',
+              of: [
+                {type: 'number', value: 1},
+                {type: 'number', value: 2},
+              ],
+            },
+          },
+        },
+      },
+    },
+  })
+  t.end()
+})
+
 t.test('function: math::*', (t) => {
   const query = `*[_type == "author"] {
     "ages": math::min(ages),
