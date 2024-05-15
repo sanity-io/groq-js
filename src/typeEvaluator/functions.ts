@@ -16,6 +16,59 @@ function unionWithoutNull(unionTypeNode: TypeNode): TypeNode {
 
 export function handleFuncCallNode(node: FuncCallNode, scope: Scope): TypeNode {
   switch (`${node.namespace}.${node.name}`) {
+    case 'array.compact': {
+      const arg = walk({node: node.args[0], scope})
+
+      return mapConcrete(arg, scope, (arg) => {
+        if (arg.type !== 'array') {
+          return {type: 'null'}
+        }
+
+        const of = mapConcrete(arg.of, scope, (of) => of)
+        return {
+          type: 'array',
+          of: unionWithoutNull(of),
+        }
+      })
+    }
+
+    case 'array.join': {
+      const arrayArg = walk({node: node.args[0], scope})
+      const sepArg = walk({node: node.args[1], scope})
+
+      return mapConcrete(arrayArg, scope, (arrayArg) =>
+        mapConcrete(sepArg, scope, (sepArg) => {
+          if (arrayArg.type !== 'array') {
+            return {type: 'null'}
+          }
+          if (sepArg.type !== 'string') {
+            return {type: 'null'}
+          }
+
+          return mapConcrete(arrayArg.of, scope, (of) => {
+            // we can only join strings, numbers, and booleans
+            if (of.type !== 'string' && of.type !== 'number' && of.type !== 'boolean') {
+              return {type: 'unknown'}
+            }
+
+            return {type: 'string'}
+          })
+        }),
+      )
+    }
+
+    case 'array.unique': {
+      const arg = walk({node: node.args[0], scope})
+
+      return mapConcrete(arg, scope, (arg) => {
+        if (arg.type !== 'array') {
+          return {type: 'null'}
+        }
+
+        return arg
+      })
+    }
+
     case 'global.defined': {
       return {type: 'boolean'}
     }
