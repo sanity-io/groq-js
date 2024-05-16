@@ -75,7 +75,7 @@ export function unionOf(...nodes: TypeNode[]): UnionTypeNode {
   } satisfies UnionTypeNode
 }
 
-type ConcreteTypeNode =
+export type ConcreteTypeNode =
   | BooleanTypeNode
   | NullTypeNode
   | NumberTypeNode
