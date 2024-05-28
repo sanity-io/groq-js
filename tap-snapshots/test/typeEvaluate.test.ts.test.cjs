@@ -298,6 +298,13 @@ Object {
           "type": "union",
         },
       },
+      "nonExisting": Object {
+        "type": "objectAttribute",
+        "value": Object {
+          "type": "string",
+          "value": "fallback",
+        },
+      },
     },
     "type": "object",
   },
