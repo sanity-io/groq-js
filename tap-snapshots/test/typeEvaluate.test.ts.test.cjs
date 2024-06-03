@@ -1289,32 +1289,42 @@ Object {
             "of": Array [
               Object {
                 "of": Object {
-                  "attributes": Object {
-                    "list": Object {
-                      "type": "objectAttribute",
-                      "value": Object {
-                        "of": Object {
-                          "attributes": Object {
-                            "_id": Object {
-                              "type": "objectAttribute",
-                              "value": Object {
-                                "type": "string",
-                              },
-                            },
-                            "refId": Object {
-                              "type": "objectAttribute",
-                              "value": Object {
-                                "type": "string",
-                              },
-                            },
-                          },
-                          "type": "object",
-                        },
-                        "type": "array",
-                      },
+                  "of": Array [
+                    Object {
+                      "attributes": Object {},
+                      "type": "object",
                     },
-                  },
-                  "type": "object",
+                    Object {
+                      "attributes": Object {
+                        "list": Object {
+                          "type": "objectAttribute",
+                          "value": Object {
+                            "of": Object {
+                              "attributes": Object {
+                                "_id": Object {
+                                  "type": "objectAttribute",
+                                  "value": Object {
+                                    "type": "string",
+                                  },
+                                },
+                                "refId": Object {
+                                  "type": "objectAttribute",
+                                  "value": Object {
+                                    "type": "string",
+                                  },
+                                },
+                              },
+                              "type": "object",
+                            },
+                            "type": "array",
+                          },
+                        },
+                      },
+                      "rest": undefined,
+                      "type": "object",
+                    },
+                  ],
+                  "type": "union",
                 },
                 "type": "array",
               },
@@ -1326,6 +1336,85 @@ Object {
           },
         },
       },
+      "type": "object",
+    },
+    Object {
+      "type": "null",
+    },
+  ],
+  "type": "union",
+}
+`
+
+exports[`test/typeEvaluate.test.ts TAP splat object with union object > must match snapshot 1`] = `
+Object {
+  "of": Array [
+    Object {
+      "attributes": Object {
+        "_id": Object {
+          "type": "objectAttribute",
+          "value": Object {
+            "type": "string",
+          },
+        },
+        "_type": Object {
+          "type": "objectAttribute",
+          "value": Object {
+            "type": "string",
+            "value": "author",
+          },
+        },
+      },
+      "type": "object",
+    },
+    Object {
+      "attributes": Object {
+        "_id": Object {
+          "type": "objectAttribute",
+          "value": Object {
+            "type": "string",
+          },
+        },
+        "_type": Object {
+          "type": "objectAttribute",
+          "value": Object {
+            "type": "string",
+            "value": "author",
+          },
+        },
+        "firstname": Object {
+          "type": "objectAttribute",
+          "value": Object {
+            "type": "string",
+          },
+        },
+      },
+      "rest": undefined,
+      "type": "object",
+    },
+    Object {
+      "attributes": Object {
+        "_id": Object {
+          "type": "objectAttribute",
+          "value": Object {
+            "type": "string",
+          },
+        },
+        "_type": Object {
+          "type": "objectAttribute",
+          "value": Object {
+            "type": "string",
+            "value": "author",
+          },
+        },
+        "lastname": Object {
+          "type": "objectAttribute",
+          "value": Object {
+            "type": "string",
+          },
+        },
+      },
+      "rest": undefined,
       "type": "object",
     },
     Object {

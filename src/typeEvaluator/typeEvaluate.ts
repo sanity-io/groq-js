@@ -50,7 +50,7 @@ import type {
   UnionTypeNode,
   UnknownTypeNode,
 } from './types'
-import {mapConcrete, nullUnion, type ConcreteTypeNode} from './typeHelpers'
+import {mapConcrete, nullUnion, resolveInline, type ConcreteTypeNode} from './typeHelpers'
 
 const $trace = debug('typeEvaluator:evaluate:trace')
 $trace.log = console.log.bind(console) // eslint-disable-line no-console
@@ -139,22 +139,22 @@ function mapObjectSplat(
   }
 
   if (node.rest !== undefined) {
-    // Rest is either an object, inline, or unknown - so mapping the concrete value here and returning it is just to resolve the inline
-    const concreteRest = mapConcrete(node.rest, scope, (rest) => rest)
+    // Rest is either an object, inline, or unknown - we need to resolve it if it's an inline
+    const resolvedRest = resolveInline(node.rest, scope)
 
     // if the rest is unknown the entire object is unknown
-    if (concreteRest.type === 'unknown') {
+    if (resolvedRest.type === 'unknown') {
       return {type: 'unknown'}
     }
-    if (concreteRest.type !== 'object') {
+    if (resolvedRest.type !== 'object') {
       return {type: 'null'}
     }
-    for (const name in concreteRest.attributes) {
+    for (const name in resolvedRest.attributes) {
       // eslint-disable-next-line
-      if (!concreteRest.attributes.hasOwnProperty(name)) {
+      if (!resolvedRest.attributes.hasOwnProperty(name)) {
         continue
       }
-      attributes[name] = mapper(concreteRest.attributes[name])
+      attributes[name] = mapper(resolvedRest.attributes[name])
     }
   }
   return {type: 'object', attributes}
@@ -175,7 +175,7 @@ function handleObjectSplatNode(attr: ObjectSplatNode, scope: Scope): TypeNode {
       }
       attributes[name] = mapped.attributes[name]
     }
-    return {type: 'object', attributes}
+    return {type: 'object', attributes, rest: mapped.rest}
   })
 }
 
@@ -214,53 +214,133 @@ function handleObjectConditionalSplatNode(
       }
       attributes[name] = mapped.attributes[name]
     }
-    return {type: 'object', attributes}
+    return {type: 'object', attributes, rest: mapped.rest}
   })
 }
 
 function handleObjectNode(node: ObjectNode, scope: Scope) {
   $trace('object.node %O', node)
   $trace('object.scope %O', scope)
-  const attributes: Record<string, ObjectAttribute> = {}
-  for (const attr of node.attributes) {
+  // let attributes we a entry of [name, value] or null. We need to keep track of nulls to handle conditional splats
+  // since we care about the order of the attributes. Later attribute keys will overwrite earlier ones.
+  const attributes: ([string, ObjectAttribute] | null)[] = []
+
+  // We keep track of conditional splats separately, since we need to merge them into an object or an union of objects at the end.
+  // keep track of the index of the conditional splat to be able to merge the attributes correctly.
+  const conditionalVariants: [number, TypeNode][] = []
+
+  for (const [idx, attr] of node.attributes.entries()) {
     if (attr.type === 'ObjectAttributeValue') {
-      const field = walk({node: attr.value, scope})
-      attributes[attr.name] = {
-        type: 'objectAttribute',
-        value: field,
-      }
+      const attributeNode = walk({node: attr.value, scope})
+      attributes.push([
+        attr.name,
+        {
+          type: 'objectAttribute',
+          value: attributeNode,
+        },
+      ])
+      continue
     }
 
     if (attr.type === 'ObjectSplat') {
-      const result = handleObjectSplatNode(attr, scope)
-      $trace('object.splat.result %O', result)
-      if (result.type !== 'object') {
-        return result
+      const attributeNode = handleObjectSplatNode(attr, scope)
+      $trace('object.splat.result %O', attributeNode)
+      if (attributeNode.type !== 'object') {
+        return attributeNode
       }
-      for (const name in result.attributes) {
-        if (!result.attributes.hasOwnProperty(name)) {
+      for (const name in attributeNode.attributes) {
+        if (!attributeNode.attributes.hasOwnProperty(name)) {
           continue
         }
-        attributes[name] = result.attributes[name]
+        attributes.push([name, attributeNode.attributes[name]])
       }
+      continue
     }
+
     if (attr.type === 'ObjectConditionalSplat') {
-      const result = handleObjectConditionalSplatNode(attr, scope)
-      $trace('object.conditional.splat.result %O', result)
-      if (result.type !== 'object') {
-        return result
-      }
-      for (const name in result.attributes) {
-        if (!result.attributes.hasOwnProperty(name)) {
-          continue
-        }
-        attributes[name] = result.attributes[name]
-      }
+      const attributeNode = handleObjectConditionalSplatNode(attr, scope)
+      $trace('object.conditional.splat.result %O', attributeNode)
+
+      // keep track of the index of the conditional splat to be able to merge the attributes correctly later.
+      attributes.push(null)
+
+      conditionalVariants.push([
+        idx,
+        mapConcrete(attributeNode, scope, (attributeNode) => {
+          $trace('object.conditional.splat.result.concrete %O', attributeNode)
+          if (attributeNode.type !== 'object') {
+            return attributeNode
+          }
+
+          const conditionalAttributes: Record<string, ObjectAttribute> = {}
+          for (const name in attributeNode.attributes) {
+            if (!attributeNode.attributes.hasOwnProperty(name)) {
+              continue
+            }
+            conditionalAttributes[name] = attributeNode.attributes[name]
+          }
+          return {
+            type: 'object',
+            attributes: conditionalAttributes,
+            rest: attributeNode.rest,
+          } satisfies ObjectTypeNode
+        }),
+      ])
+
+      continue
     }
+
+    // @ts-expect-error - we should have handled all cases of ObjectAttributeNode
+    throw new Error(`Unknown object attribute type: ${attr.type}`)
   }
+
+  // If we have a conditional splat, we can end up with a matrix of possible objects.
+  // We merge them into a single object also containing the splat attributes and object attributes.
+  if (conditionalVariants.length !== 0) {
+    return optimizeUnions({
+      type: 'union',
+      of: [
+        {
+          type: 'object',
+          attributes: Object.fromEntries(
+            attributes.filter((value): value is [string, ObjectAttribute] => value !== null),
+          ),
+        },
+        ...conditionalVariants.map(([idx, variant]) =>
+          mapConcrete(variant, scope, (variant) => {
+            if (variant.type !== 'object') {
+              return variant
+            }
+
+            const pre = attributes
+              .slice(0, idx)
+              .filter((value): value is [string, ObjectAttribute] => value !== null)
+
+            const post = attributes
+              .slice(idx + 1)
+              .filter((value): value is [string, ObjectAttribute] => value !== null)
+
+            return {
+              type: 'object',
+              attributes: {
+                ...Object.fromEntries(pre),
+                ...variant.attributes,
+                ...Object.fromEntries(post),
+              },
+              rest: variant.rest,
+            } satisfies ObjectTypeNode
+          }),
+        ),
+      ],
+    })
+  }
+
+  // We don't have any conditional splats, so we can just return the object with the attributes.
   return {
     type: 'object',
-    attributes,
+    attributes: Object.fromEntries(
+      attributes.filter((value): value is [string, ObjectAttribute] => value !== null),
+    ),
   } satisfies ObjectTypeNode
 }
 
@@ -1138,14 +1218,17 @@ function resolveCondition(expr: ExprNode, scope: Scope): boolean | undefined {
         }
       }
     }
+
     case 'Not': {
       const result = resolveCondition(expr.base, scope)
       // check if the result is undefined or false. Undefined means that the condition can't be resolved, and we should keep the node
       return result === undefined ? undefined : result === false
     }
+
     case 'Group': {
       return resolveCondition(expr.base, scope)
     }
+
     default: {
       return undefined
     }
