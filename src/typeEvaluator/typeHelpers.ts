@@ -3,6 +3,7 @@ import type {Scope} from './scope'
 import type {
   ArrayTypeNode,
   BooleanTypeNode,
+  InlineTypeNode,
   NullTypeNode,
   NumberTypeNode,
   ObjectAttribute,
@@ -83,6 +84,15 @@ export type ConcreteTypeNode =
   | ArrayTypeNode
   | ObjectTypeNode
 
+export function resolveInline(node: TypeNode, scope: Scope): Exclude<TypeNode, InlineTypeNode> {
+  if (node.type === 'inline') {
+    const resolvedInline = scope.context.lookupTypeDeclaration(node)
+    return resolveInline(resolvedInline, scope)
+  }
+
+  return node
+}
+
 /**
  * mapConcrete extracts a _concrete type_ from a type node, applies the mapping
  * function to it and returns. Most notably, this will work through unions
@@ -114,7 +124,7 @@ export function mapConcrete(
     case 'union':
       return mergeUnions(node.of.map((inner) => mapConcrete(inner, scope, mapper), mergeUnions))
     case 'inline': {
-      const resolvedInline = scope.context.lookupTypeDeclaration(node)
+      const resolvedInline = resolveInline(node, scope)
       return mapConcrete(resolvedInline, scope, mapper, mergeUnions)
     }
     default:

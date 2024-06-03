@@ -1,7 +1,7 @@
 import t from 'tap'
 
 import {parse} from '../src/parser'
-import {typeEvaluate} from '../src/typeEvaluator/typeEvaluate'
+import {overrideTypeForNode, typeEvaluate} from '../src/typeEvaluator/typeEvaluate'
 import {createReferenceTypeNode, nullUnion, unionOf} from '../src/typeEvaluator/typeHelpers'
 import type {
   ArrayTypeNode,
@@ -13,6 +13,7 @@ import type {
   TypeNode,
   UnionTypeNode,
 } from '../src/typeEvaluator/types'
+import type {ObjectAttributeNode} from '../src/nodeTypes'
 
 const postDocument = {
   type: 'document',
@@ -1516,34 +1517,50 @@ t.test('with conditional splat', (t) => {
 
   const ast = parse(query)
   const res = typeEvaluate(ast, schemas)
-  t.strictSame(res, {
-    type: 'object',
-    attributes: {
-      foo: {
-        type: 'objectAttribute',
-        value: {
-          type: 'number',
-          value: 1,
-        },
-        optional: true,
+  t.strictSame(
+    res,
+    unionOf(
+      {
+        type: 'object',
+        attributes: {},
       },
-      match: {
-        type: 'objectAttribute',
-        value: {
-          type: 'number',
-          value: 1,
+      {
+        type: 'object',
+        attributes: {
+          match: {
+            type: 'objectAttribute',
+            value: {
+              type: 'number',
+              value: 1,
+            },
+          },
         },
+        rest: undefined,
       },
-      maybe: {
-        type: 'objectAttribute',
-        value: {
-          type: 'number',
-          value: 2,
+      {
+        type: 'object',
+        attributes: {
+          maybe: {
+            type: 'objectAttribute',
+            value: {
+              type: 'number',
+              value: 2,
+            },
+            optional: true,
+          },
+          foo: {
+            type: 'objectAttribute',
+            value: {
+              type: 'number',
+              value: 1,
+            },
+            optional: true,
+          },
         },
-        optional: true,
+        rest: undefined,
       },
-    },
-  } satisfies TypeNode)
+    ),
+  )
 
   t.end()
 })
@@ -1845,6 +1862,10 @@ t.test('union conditions over references', (t) => {
               of: [
                 {
                   type: 'object',
+                  attributes: {},
+                },
+                {
+                  type: 'object',
                   attributes: {
                     type: {
                       type: 'objectAttribute',
@@ -1860,6 +1881,7 @@ t.test('union conditions over references', (t) => {
                       },
                     },
                   },
+                  rest: undefined,
                 },
                 {
                   type: 'object',
@@ -1878,6 +1900,7 @@ t.test('union conditions over references', (t) => {
                       },
                     },
                   },
+                  rest: undefined,
                 },
               ],
             },
@@ -2862,6 +2885,7 @@ t.test('splat object with inline', (t) => {
               },
             },
           },
+          rest: undefined,
         },
         {
           type: 'object',
@@ -2896,6 +2920,19 @@ t.test('splat object with inline', (t) => {
                           },
                         },
                       },
+                      rest: undefined,
+                    },
+                    {
+                      type: 'object',
+                      attributes: {
+                        _type: {
+                          type: 'objectAttribute',
+                          value: {
+                            type: 'string',
+                            value: 'inline1',
+                          },
+                        },
+                      },
                     },
                     {
                       type: 'object',
@@ -2920,6 +2957,19 @@ t.test('splat object with inline', (t) => {
                           },
                         },
                       },
+                      rest: undefined,
+                    },
+                    {
+                      type: 'object',
+                      attributes: {
+                        _type: {
+                          type: 'objectAttribute',
+                          value: {
+                            type: 'string',
+                            value: 'inline2',
+                          },
+                        },
+                      },
                     },
                     {
                       type: 'object',
@@ -2938,10 +2988,23 @@ t.test('splat object with inline', (t) => {
               },
             },
           },
+          rest: undefined,
         },
       ],
     },
-  })
+  } satisfies TypeNode)
+  t.end()
+})
+t.test('splat object with union object', (t) => {
+  const query = `*[_type == "author"][0] {
+    _type == "author" => select(age >= 18 => {lastname}, {firstname}),
+    _id,
+    _type
+  }`
+
+  const ast = parse(query)
+  const res = typeEvaluate(ast, schemas)
+  t.matchSnapshot(res)
   t.end()
 })
 
