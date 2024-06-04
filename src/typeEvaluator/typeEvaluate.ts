@@ -124,7 +124,7 @@ function mapObjectSplat(
   node: ConcreteTypeNode,
   scope: Scope,
   mapper: (attribute: ObjectAttribute) => ObjectAttribute,
-): TypeNode {
+): ObjectTypeNode | UnknownTypeNode | NullTypeNode {
   // if the node is not an object it means we are splating over a non-object, so we return unknown
   if (node.type !== 'object') {
     return {type: 'unknown'}
@@ -166,9 +166,12 @@ function handleObjectSplatNode(attr: ObjectSplatNode, scope: Scope): TypeNode {
   return mapConcrete(value, scope, (node) => {
     const attributes: Record<string, ObjectAttribute> = {}
     const mapped = mapObjectSplat(node, scope, (attribute) => attribute)
+
+    // mapObjectSplat can return null, unknown, or an object. If it's not an object we return it as is.
     if (mapped.type != 'object') {
       return mapped
     }
+
     for (const name in mapped.attributes) {
       if (!mapped.attributes.hasOwnProperty(name)) {
         continue
@@ -203,9 +206,11 @@ function handleObjectConditionalSplatNode(
         optional: true,
       }
     })
+    // mapObjectSplat can return null, unknown, or an object. If it's not an object we return it as is.
     if (mapped.type != 'object') {
       return mapped
     }
+
     const attributes: Record<string, ObjectAttribute> = {}
     for (const name in mapped.attributes) {
       // eslint-disable-next-line max-depth

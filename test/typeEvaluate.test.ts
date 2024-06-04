@@ -14,6 +14,7 @@ import type {
   UnionTypeNode,
 } from '../src/typeEvaluator/types'
 import type {ObjectAttributeNode} from '../src/nodeTypes'
+import {optimizeUnions} from '../src/typeEvaluator/optimizations'
 
 const postDocument = {
   type: 'document',
@@ -3007,6 +3008,577 @@ t.test('splat object with union object', (t) => {
   t.matchSnapshot(res)
   t.end()
 })
+
+const nodeWithType = (type: TypeNode) => {
+  const expr = {type: 'Value', value: null} as const
+  overrideTypeForNode(expr, type)
+  return expr
+}
+
+const objectVariants: {name: string; attributes: ObjectAttributeNode[]; expects: TypeNode}[] = [
+  {
+    name: 'Splatting attribute works',
+    attributes: [
+      {type: 'ObjectAttributeValue', name: 'foo', value: nodeWithType({type: 'string'})},
+    ],
+    expects: {
+      type: 'object',
+      attributes: {
+        foo: {
+          type: 'objectAttribute',
+          value: {
+            type: 'string',
+          },
+        },
+      },
+    },
+  },
+
+  {
+    name: 'Splatting over multiple attributes works',
+    attributes: [
+      {type: 'ObjectAttributeValue', name: 'foo', value: nodeWithType({type: 'string'})},
+      {type: 'ObjectAttributeValue', name: 'foo', value: nodeWithType({type: 'number'})},
+    ],
+    expects: {
+      type: 'object',
+      attributes: {
+        foo: {
+          type: 'objectAttribute',
+          value: {
+            type: 'number',
+          },
+        },
+      },
+    },
+  },
+
+  {
+    name: 'Splatting over unknown type should result in unknown type',
+    attributes: [
+      {type: 'ObjectAttributeValue', name: 'foo', value: nodeWithType({type: 'string'})},
+      {type: 'ObjectSplat', value: nodeWithType({type: 'unknown'})},
+    ],
+    expects: {
+      type: 'unknown',
+    },
+  },
+  {
+    name: 'Conditional splat over object',
+    attributes: [
+      {
+        type: 'ObjectSplat',
+        value: nodeWithType({
+          type: 'object',
+          attributes: {
+            noah: {type: 'objectAttribute', value: {type: 'string'}},
+          },
+        }),
+      },
+      {
+        type: 'ObjectConditionalSplat',
+        condition: {type: 'Parameter', name: 'someParam'},
+        value: nodeWithType({
+          type: 'object',
+          attributes: {
+            fox: {type: 'objectAttribute', value: {type: 'boolean'}},
+            bear: {type: 'objectAttribute', value: {type: 'number'}},
+          },
+        }),
+      },
+    ],
+    expects: optimizeUnions(
+      unionOf(
+        {
+          type: 'object',
+          attributes: {
+            noah: {type: 'objectAttribute', value: {type: 'string'}},
+          },
+        },
+        {
+          type: 'object',
+          attributes: {
+            noah: {type: 'objectAttribute', value: {type: 'string'}},
+            bear: {type: 'objectAttribute', value: {type: 'number'}, optional: true},
+            fox: {type: 'objectAttribute', value: {type: 'boolean'}, optional: true},
+          },
+          rest: undefined,
+        },
+      ),
+    ),
+  },
+
+  {
+    name: 'Test splatting over multiple conditionals leads to a matrix of all possible combinations',
+    attributes: [
+      {
+        type: 'ObjectSplat',
+        value: nodeWithType({
+          type: 'object',
+          attributes: {
+            noah: {type: 'objectAttribute', value: {type: 'string'}},
+          },
+        }),
+      },
+      {
+        type: 'ObjectConditionalSplat',
+        condition: {type: 'Parameter', name: 'someParam2'},
+        value: nodeWithType(
+          unionOf(
+            {
+              type: 'object',
+              attributes: {
+                bear: {type: 'objectAttribute', value: {type: 'number'}},
+              },
+            },
+            {
+              type: 'object',
+              attributes: {
+                fox: {type: 'objectAttribute', value: {type: 'number'}},
+              },
+            },
+            {
+              type: 'object',
+              attributes: {
+                deer: {type: 'objectAttribute', value: {type: 'number'}},
+              },
+            },
+          ),
+        ),
+      },
+      {
+        type: 'ObjectConditionalSplat',
+        condition: {type: 'Parameter', name: 'someParam'},
+        value: nodeWithType(
+          unionOf(
+            {
+              type: 'object',
+              attributes: {
+                deer: {type: 'objectAttribute', value: {type: 'number'}},
+              },
+            },
+            {
+              type: 'object',
+              attributes: {
+                elk: {type: 'objectAttribute', value: {type: 'number'}},
+              },
+            },
+            {
+              type: 'object',
+              attributes: {
+                moose: {type: 'objectAttribute', value: {type: 'number'}},
+              },
+            },
+          ),
+        ),
+      },
+      {
+        type: 'ObjectConditionalSplat',
+        condition: {type: 'Parameter', name: 'someParam'},
+        value: nodeWithType(
+          unionOf(
+            {
+              type: 'object',
+              attributes: {
+                ox: {type: 'objectAttribute', value: {type: 'number'}},
+              },
+            },
+            {
+              type: 'object',
+              attributes: {
+                pig: {type: 'objectAttribute', value: {type: 'number'}},
+              },
+            },
+            {
+              type: 'object',
+              attributes: {
+                chicken: {type: 'objectAttribute', value: {type: 'number'}},
+              },
+            },
+          ),
+        ),
+      },
+    ],
+    expects: optimizeUnions(
+      unionOf(
+        {
+          type: 'object',
+          attributes: {
+            noah: {type: 'objectAttribute', value: {type: 'string'}},
+          },
+        },
+        {
+          type: 'object',
+          attributes: {
+            noah: {type: 'objectAttribute', value: {type: 'string'}},
+            bear: {type: 'objectAttribute', value: {type: 'number'}, optional: true},
+          },
+          rest: undefined,
+        },
+        {
+          type: 'object',
+          attributes: {
+            noah: {type: 'objectAttribute', value: {type: 'string'}},
+            fox: {type: 'objectAttribute', value: {type: 'number'}, optional: true},
+          },
+          rest: undefined,
+        },
+        {
+          type: 'object',
+          attributes: {
+            noah: {type: 'objectAttribute', value: {type: 'string'}},
+            deer: {type: 'objectAttribute', value: {type: 'number'}, optional: true},
+          },
+          rest: undefined,
+        },
+        {
+          type: 'object',
+          attributes: {
+            noah: {type: 'objectAttribute', value: {type: 'string'}},
+            deer: {type: 'objectAttribute', value: {type: 'number'}, optional: true},
+          },
+          rest: undefined,
+        },
+        {
+          type: 'object',
+          attributes: {
+            noah: {type: 'objectAttribute', value: {type: 'string'}},
+            elk: {type: 'objectAttribute', value: {type: 'number'}, optional: true},
+          },
+          rest: undefined,
+        },
+        {
+          type: 'object',
+          attributes: {
+            noah: {type: 'objectAttribute', value: {type: 'string'}},
+            moose: {type: 'objectAttribute', value: {type: 'number'}, optional: true},
+          },
+          rest: undefined,
+        },
+        {
+          type: 'object',
+          attributes: {
+            noah: {type: 'objectAttribute', value: {type: 'string'}},
+            ox: {type: 'objectAttribute', value: {type: 'number'}, optional: true},
+          },
+          rest: undefined,
+        },
+        {
+          type: 'object',
+          attributes: {
+            noah: {type: 'objectAttribute', value: {type: 'string'}},
+            pig: {type: 'objectAttribute', value: {type: 'number'}, optional: true},
+          },
+          rest: undefined,
+        },
+        {
+          type: 'object',
+          attributes: {
+            noah: {type: 'objectAttribute', value: {type: 'string'}},
+            chicken: {type: 'objectAttribute', value: {type: 'number'}, optional: true},
+          },
+          rest: undefined,
+        },
+      ),
+    ),
+  },
+
+  {
+    name: 'test splat operations',
+    attributes: [
+      {type: 'ObjectAttributeValue', name: 'foo', value: nodeWithType({type: 'string'})},
+      {
+        type: 'ObjectSplat',
+        value: nodeWithType({
+          type: 'object',
+          attributes: {
+            bar: {type: 'objectAttribute', value: {type: 'string'}},
+          },
+        }),
+      },
+    ],
+    expects: {
+      type: 'object',
+      attributes: {
+        foo: {
+          type: 'objectAttribute',
+          value: {
+            type: 'string',
+          },
+        },
+        bar: {
+          type: 'objectAttribute',
+          value: {
+            type: 'string',
+          },
+        },
+      },
+    },
+  },
+
+  {
+    name: 'order matters, and type is overwritten',
+    attributes: [
+      {type: 'ObjectAttributeValue', name: 'foo', value: nodeWithType({type: 'string'})},
+      {
+        type: 'ObjectSplat',
+        value: nodeWithType({
+          type: 'object',
+          attributes: {
+            foo: {type: 'objectAttribute', value: {type: 'number'}},
+          },
+        }),
+      },
+    ],
+    expects: {
+      type: 'object',
+      attributes: {
+        foo: {
+          type: 'objectAttribute',
+          value: {
+            type: 'number',
+          },
+        },
+      },
+    },
+  },
+
+  {
+    name: 'order matters, and type is overwritten',
+    attributes: [
+      {
+        type: 'ObjectSplat',
+        value: nodeWithType({
+          type: 'object',
+          attributes: {
+            foo: {type: 'objectAttribute', value: {type: 'number'}},
+          },
+        }),
+      },
+      {type: 'ObjectAttributeValue', name: 'foo', value: nodeWithType({type: 'string'})},
+    ],
+    expects: {
+      type: 'object',
+      attributes: {
+        foo: {
+          type: 'objectAttribute',
+          value: {
+            type: 'string',
+          },
+        },
+      },
+    },
+  },
+
+  {
+    name: 'Test conditionals that never resolves since the condition is always false',
+    attributes: [
+      {type: 'ObjectAttributeValue', name: 'foo', value: nodeWithType({type: 'string'})},
+      {
+        type: 'ObjectConditionalSplat',
+        condition: {type: 'Value', value: false},
+        value: nodeWithType({
+          type: 'object',
+          attributes: {
+            bar: {type: 'objectAttribute', value: {type: 'string'}},
+          },
+        }),
+      },
+    ],
+    expects: {
+      type: 'object',
+      attributes: {
+        foo: {
+          type: 'objectAttribute',
+          value: {
+            type: 'string',
+          },
+        },
+      },
+    },
+  },
+
+  {
+    name: 'Test conditionals that always resolves since the condition is always true',
+    attributes: [
+      {type: 'ObjectAttributeValue', name: 'foo', value: nodeWithType({type: 'string'})},
+      {
+        type: 'ObjectConditionalSplat',
+        condition: {type: 'Value', value: true},
+        value: nodeWithType({
+          type: 'object',
+          attributes: {
+            bar: {type: 'objectAttribute', value: {type: 'string'}},
+          },
+        }),
+      },
+    ],
+    expects: unionOf(
+      {
+        type: 'object',
+        attributes: {
+          foo: {
+            type: 'objectAttribute',
+            value: {
+              type: 'string',
+            },
+          },
+          bar: {
+            type: 'objectAttribute',
+            value: {
+              type: 'string',
+            },
+          },
+        },
+        rest: undefined,
+      },
+      {
+        type: 'object',
+        attributes: {
+          foo: {
+            type: 'objectAttribute',
+            value: {
+              type: 'string',
+            },
+          },
+        },
+      },
+    ),
+  },
+
+  {
+    name: 'Test that order matters and attributes overrides conditionals',
+    attributes: [
+      {
+        type: 'ObjectConditionalSplat',
+        condition: {type: 'Parameter', name: 'someParam'},
+        value: nodeWithType({
+          type: 'object',
+          attributes: {
+            foo: {type: 'objectAttribute', value: {type: 'string'}},
+          },
+        }),
+      },
+      {type: 'ObjectAttributeValue', name: 'foo', value: nodeWithType({type: 'string'})},
+    ],
+    expects: {
+      type: 'object',
+      attributes: {
+        foo: {
+          type: 'objectAttribute',
+          value: {
+            type: 'string',
+          },
+        },
+      },
+    },
+  },
+
+  {
+    name: 'Test with attribute and conditional splat with condition being a parameter',
+    attributes: [
+      {type: 'ObjectAttributeValue', name: 'foo', value: nodeWithType({type: 'string'})},
+      {
+        type: 'ObjectConditionalSplat',
+        condition: {type: 'Parameter', name: 'someParam'},
+        value: nodeWithType({
+          type: 'object',
+          attributes: {
+            bar: {type: 'objectAttribute', value: {type: 'string'}},
+          },
+        }),
+      },
+    ],
+    expects: unionOf(
+      {
+        type: 'object',
+        attributes: {
+          foo: {
+            type: 'objectAttribute',
+            value: {
+              type: 'string',
+            },
+          },
+          bar: {
+            type: 'objectAttribute',
+            value: {
+              type: 'string',
+            },
+            optional: true,
+          },
+        },
+        rest: undefined,
+      },
+      {
+        type: 'object',
+        attributes: {
+          foo: {
+            type: 'objectAttribute',
+            value: {
+              type: 'string',
+            },
+          },
+        },
+      },
+    ),
+  },
+
+  {
+    name: "Test with a type we can't splat over(array)",
+    attributes: [
+      {type: 'ObjectAttributeValue', name: 'foo', value: nodeWithType({type: 'boolean'})},
+      {
+        type: 'ObjectConditionalSplat',
+        condition: {type: 'Parameter', name: 'someParam'},
+        value: nodeWithType({
+          type: 'array',
+          of: unionOf(
+            {
+              type: 'object',
+              attributes: {
+                bar: {type: 'objectAttribute', value: {type: 'string'}},
+              },
+            },
+            {
+              type: 'object',
+              attributes: {
+                baz: {type: 'objectAttribute', value: {type: 'string'}},
+              },
+            },
+          ),
+        }),
+      },
+    ],
+    expects: unionOf(
+      {
+        type: 'object',
+        attributes: {
+          foo: {type: 'objectAttribute', value: {type: 'boolean'}},
+        },
+      },
+      {
+        type: 'unknown',
+      },
+    ),
+  },
+]
+
+for (const variant of objectVariants) {
+  t.test(`objects: ${variant.name}`, (t) => {
+    t.strictSame(
+      typeEvaluate(
+        {
+          type: 'Object',
+          attributes: variant.attributes,
+        },
+        [],
+      ),
+      variant.expects,
+    )
+
+    t.end()
+  })
+}
 
 function findSchemaType(name: string): TypeNode {
   const type = schemas.find((s) => s.name === name)
