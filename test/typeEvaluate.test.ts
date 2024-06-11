@@ -3109,7 +3109,7 @@ const objectVariants: {name: string; attributes: ObjectAttributeNode[]; expects:
   },
 
   {
-    name: 'Test splatting over multiple conditionals leads to a matrix of all possible combinations',
+    name: 'Test splatting over multiple conditionals, with unions, leads to a matrix of all possible combinations',
     attributes: [
       {
         type: 'ObjectSplat',
@@ -3278,6 +3278,171 @@ const objectVariants: {name: string; attributes: ObjectAttributeNode[]; expects:
             chicken: {type: 'objectAttribute', value: {type: 'number'}, optional: true},
           },
           rest: undefined,
+        },
+      ),
+    ),
+  },
+
+  {
+    name: 'Test splatting over multiple conditionals leads to a matrix of all possible combinations',
+    attributes: [
+      {
+        type: 'ObjectSplat',
+        value: nodeWithType({
+          type: 'object',
+          attributes: {
+            noah: {type: 'objectAttribute', value: {type: 'string'}},
+          },
+        }),
+      },
+      {
+        type: 'ObjectConditionalSplat',
+        condition: {type: 'Parameter', name: 'someParam2'},
+        value: nodeWithType({
+          type: 'object',
+          attributes: {
+            bear: {type: 'objectAttribute', value: {type: 'number'}},
+            fox: {type: 'objectAttribute', value: {type: 'number'}},
+            deer: {type: 'objectAttribute', value: {type: 'number'}},
+          },
+        }),
+      },
+      {
+        type: 'ObjectConditionalSplat',
+        condition: {type: 'Parameter', name: 'someParam'},
+        value: nodeWithType({
+          type: 'object',
+          attributes: {
+            deer: {type: 'objectAttribute', value: {type: 'number'}},
+            elk: {type: 'objectAttribute', value: {type: 'number'}},
+            moose: {type: 'objectAttribute', value: {type: 'number'}},
+          },
+        }),
+      },
+      {
+        type: 'ObjectConditionalSplat',
+        condition: {type: 'Parameter', name: 'someParam'},
+        value: nodeWithType({
+          type: 'object',
+          attributes: {
+            ox: {type: 'objectAttribute', value: {type: 'number'}},
+            pig: {type: 'objectAttribute', value: {type: 'number'}},
+            chicken: {type: 'objectAttribute', value: {type: 'number'}},
+          },
+        }),
+      },
+    ],
+    expects: optimizeUnions(
+      unionOf(
+        {
+          type: 'object',
+          attributes: {
+            noah: {
+              type: 'objectAttribute',
+              value: {
+                type: 'string',
+              },
+            },
+            bear: {
+              type: 'objectAttribute',
+              value: {
+                type: 'number',
+              },
+              optional: true,
+            },
+            fox: {
+              type: 'objectAttribute',
+              value: {
+                type: 'number',
+              },
+              optional: true,
+            },
+            deer: {
+              type: 'objectAttribute',
+              value: {
+                type: 'number',
+              },
+              optional: true,
+            },
+          },
+          rest: undefined,
+        },
+        {
+          type: 'object',
+          attributes: {
+            noah: {
+              type: 'objectAttribute',
+              value: {
+                type: 'string',
+              },
+            },
+            deer: {
+              type: 'objectAttribute',
+              value: {
+                type: 'number',
+              },
+              optional: true,
+            },
+            elk: {
+              type: 'objectAttribute',
+              value: {
+                type: 'number',
+              },
+              optional: true,
+            },
+            moose: {
+              type: 'objectAttribute',
+              value: {
+                type: 'number',
+              },
+              optional: true,
+            },
+          },
+          rest: undefined,
+        },
+        {
+          type: 'object',
+          attributes: {
+            noah: {
+              type: 'objectAttribute',
+              value: {
+                type: 'string',
+              },
+            },
+            ox: {
+              type: 'objectAttribute',
+              value: {
+                type: 'number',
+              },
+              optional: true,
+            },
+            pig: {
+              type: 'objectAttribute',
+              value: {
+                type: 'number',
+              },
+              optional: true,
+            },
+            chicken: {
+              type: 'objectAttribute',
+              value: {
+                type: 'number',
+              },
+              optional: true,
+            },
+          },
+          rest: undefined,
+        },
+        {
+          type: 'object',
+          attributes: {
+            noah: {
+              type: 'objectAttribute',
+              value: {
+                type: 'string',
+              },
+            },
+          },
         },
       ),
     ),
@@ -3549,17 +3714,45 @@ const objectVariants: {name: string; attributes: ObjectAttributeNode[]; expects:
         }),
       },
     ],
-    expects: unionOf(
+    expects: {
+      type: 'unknown',
+    },
+  },
+
+  {
+    name: "Test with a type we can't splat over(union of array)",
+    attributes: [
+      {type: 'ObjectAttributeValue', name: 'foo', value: nodeWithType({type: 'boolean'})},
       {
-        type: 'object',
-        attributes: {
-          foo: {type: 'objectAttribute', value: {type: 'boolean'}},
-        },
+        type: 'ObjectConditionalSplat',
+        condition: {type: 'Parameter', name: 'someParam'},
+        value: nodeWithType(
+          unionOf(
+            {
+              type: 'array',
+              of: {
+                type: 'object',
+                attributes: {
+                  baz: {type: 'objectAttribute', value: {type: 'string'}},
+                },
+              },
+            },
+            {
+              type: 'array',
+              of: {
+                type: 'object',
+                attributes: {
+                  foo: {type: 'objectAttribute', value: {type: 'string'}},
+                },
+              },
+            },
+          ),
+        ),
       },
-      {
-        type: 'unknown',
-      },
-    ),
+    ],
+    expects: {
+      type: 'unknown',
+    },
   },
 ]
 
