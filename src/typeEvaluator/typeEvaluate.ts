@@ -269,28 +269,32 @@ function handleObjectNode(node: ObjectNode, scope: Scope) {
       // keep track of the index of the conditional splat to be able to merge the attributes correctly later.
       attributes.push(null)
 
-      conditionalVariants.push([
-        idx,
-        mapConcrete(attributeNode, scope, (attributeNode) => {
-          $trace('object.conditional.splat.result.concrete %O', attributeNode)
-          if (attributeNode.type !== 'object') {
-            return attributeNode
-          }
+      const variant = mapConcrete(attributeNode, scope, (attributeNode) => {
+        $trace('object.conditional.splat.result.concrete %O', attributeNode)
+        if (attributeNode.type !== 'object') {
+          return attributeNode
+        }
 
-          const conditionalAttributes: Record<string, ObjectAttribute> = {}
-          for (const name in attributeNode.attributes) {
-            if (!attributeNode.attributes.hasOwnProperty(name)) {
-              continue
-            }
-            conditionalAttributes[name] = attributeNode.attributes[name]
+        const conditionalAttributes: Record<string, ObjectAttribute> = {}
+        for (const name in attributeNode.attributes) {
+          if (!attributeNode.attributes.hasOwnProperty(name)) {
+            continue
           }
-          return {
-            type: 'object',
-            attributes: conditionalAttributes,
-            rest: attributeNode.rest,
-          } satisfies ObjectTypeNode
-        }),
-      ])
+          conditionalAttributes[name] = attributeNode.attributes[name]
+        }
+        return {
+          type: 'object',
+          attributes: conditionalAttributes,
+          rest: attributeNode.rest,
+        } satisfies ObjectTypeNode
+      })
+
+      // If the variant is not an object or a union of objects, we bail out early.
+      if (variant.type !== 'union' && variant.type !== 'object') {
+        return variant
+      }
+
+      conditionalVariants.push([idx, variant])
 
       continue
     }
