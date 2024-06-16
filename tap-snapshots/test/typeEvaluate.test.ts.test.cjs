@@ -1289,42 +1289,32 @@ Object {
             "of": Array [
               Object {
                 "of": Object {
-                  "of": Array [
-                    Object {
-                      "attributes": Object {},
-                      "type": "object",
-                    },
-                    Object {
-                      "attributes": Object {
-                        "list": Object {
-                          "type": "objectAttribute",
-                          "value": Object {
-                            "of": Object {
-                              "attributes": Object {
-                                "_id": Object {
-                                  "type": "objectAttribute",
-                                  "value": Object {
-                                    "type": "string",
-                                  },
-                                },
-                                "refId": Object {
-                                  "type": "objectAttribute",
-                                  "value": Object {
-                                    "type": "string",
-                                  },
-                                },
+                  "attributes": Object {
+                    "list": Object {
+                      "type": "objectAttribute",
+                      "value": Object {
+                        "of": Object {
+                          "attributes": Object {
+                            "_id": Object {
+                              "type": "objectAttribute",
+                              "value": Object {
+                                "type": "string",
                               },
-                              "type": "object",
                             },
-                            "type": "array",
+                            "refId": Object {
+                              "type": "objectAttribute",
+                              "value": Object {
+                                "type": "string",
+                              },
+                            },
                           },
+                          "type": "object",
                         },
+                        "type": "array",
                       },
-                      "rest": undefined,
-                      "type": "object",
                     },
-                  ],
-                  "type": "union",
+                  },
+                  "type": "object",
                 },
                 "type": "array",
               },
@@ -1364,24 +1354,6 @@ Object {
             "value": "author",
           },
         },
-      },
-      "type": "object",
-    },
-    Object {
-      "attributes": Object {
-        "_id": Object {
-          "type": "objectAttribute",
-          "value": Object {
-            "type": "string",
-          },
-        },
-        "_type": Object {
-          "type": "objectAttribute",
-          "value": Object {
-            "type": "string",
-            "value": "author",
-          },
-        },
         "firstname": Object {
           "type": "objectAttribute",
           "value": Object {
@@ -1389,7 +1361,6 @@ Object {
           },
         },
       },
-      "rest": undefined,
       "type": "object",
     },
     Object {
@@ -1414,7 +1385,6 @@ Object {
           },
         },
       },
-      "rest": undefined,
       "type": "object",
     },
     Object {

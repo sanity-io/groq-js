@@ -34,7 +34,6 @@ import type {
 import {handleFuncCallNode} from './functions'
 import {optimizeUnions} from './optimizations'
 import {Context, Scope} from './scope'
-import {mapConcrete, nullUnion} from './typeHelpers'
 import type {
   ArrayTypeNode,
   BooleanTypeNode,
@@ -50,7 +49,7 @@ import type {
   UnionTypeNode,
   UnknownTypeNode,
 } from './types'
-import {mapConcrete, nullUnion, resolveInline, type ConcreteTypeNode} from './typeHelpers'
+import {mapConcrete, nullUnion, resolveInline} from './typeHelpers'
 
 const $trace = debug('typeEvaluator:evaluate:trace')
 $trace.log = console.log.bind(console) // eslint-disable-line no-console
@@ -120,124 +119,75 @@ function handleDerefNode(node: DerefNode, scope: Scope): TypeNode {
   return derefedNode
 }
 
-function mapObjectSplat(
-  node: ConcreteTypeNode,
+function handleObjectSplatNode(
+  attr: ObjectSplatNode | ObjectConditionalSplatNode,
   scope: Scope,
-  mapper: (attribute: ObjectAttribute) => ObjectAttribute,
-): ObjectTypeNode | UnknownTypeNode | NullTypeNode {
-  // if the node is not an object it means we are splating over a non-object, so we return unknown
-  if (node.type !== 'object') {
-    return {type: 'unknown'}
-  }
-
-  const attributes: Record<string, ObjectAttribute> = {}
-  for (const name in node.attributes) {
-    if (!node.attributes.hasOwnProperty(name)) {
-      continue
-    }
-    attributes[name] = mapper(node.attributes[name])
-  }
-
-  if (node.rest !== undefined) {
-    // Rest is either an object, inline, or unknown - we need to resolve it if it's an inline
-    const resolvedRest = resolveInline(node.rest, scope)
-
-    // if the rest is unknown the entire object is unknown
-    if (resolvedRest.type === 'unknown') {
-      return {type: 'unknown'}
-    }
-    if (resolvedRest.type !== 'object') {
-      return {type: 'null'}
-    }
-    for (const name in resolvedRest.attributes) {
-      // eslint-disable-next-line
-      if (!resolvedRest.attributes.hasOwnProperty(name)) {
-        continue
-      }
-      attributes[name] = mapper(resolvedRest.attributes[name])
-    }
-  }
-  return {type: 'object', attributes}
-}
-
-function handleObjectSplatNode(attr: ObjectSplatNode, scope: Scope): TypeNode {
+): TypeNode {
   const value = walk({node: attr.value, scope})
   $trace('object.splat.value %O', value)
   return mapConcrete(value, scope, (node) => {
-    const attributes: Record<string, ObjectAttribute> = {}
-    const mapped = mapObjectSplat(node, scope, (attribute) => attribute)
-
-    // mapObjectSplat can return null, unknown, or an object. If it's not an object we return it as is.
-    if (mapped.type != 'object') {
-      return mapped
+    // if the node is not an object it means we are splating over a non-object, so we return unknown
+    if (node.type !== 'object') {
+      return {type: 'unknown'}
     }
 
-    for (const name in mapped.attributes) {
-      if (!mapped.attributes.hasOwnProperty(name)) {
+    const attributes: Record<string, ObjectAttribute> = {}
+    for (const name in node.attributes) {
+      if (!node.attributes.hasOwnProperty(name)) {
         continue
       }
-      attributes[name] = mapped.attributes[name]
+      attributes[name] = node.attributes[name]
     }
-    return {type: 'object', attributes, rest: mapped.rest}
+
+    if (node.rest !== undefined) {
+      // Rest is either an object, inline, or unknown - we need to resolve it if it's an inline
+      const resolvedRest = resolveInline(node.rest, scope)
+
+      // if the rest is unknown the entire object is unknown
+      if (resolvedRest.type === 'unknown') {
+        return {type: 'unknown'}
+      }
+      if (resolvedRest.type !== 'object') {
+        return {type: 'null'}
+      }
+      for (const name in resolvedRest.attributes) {
+        // eslint-disable-next-line
+        if (!resolvedRest.attributes.hasOwnProperty(name)) {
+          continue
+        }
+        attributes[name] = resolvedRest.attributes[name]
+      }
+    }
+    return {type: 'object', attributes}
   })
 }
 
-function handleObjectConditionalSplatNode(
-  attr: ObjectConditionalSplatNode,
-  scope: Scope,
-): TypeNode {
-  const condition = resolveCondition(attr.condition, scope)
-  $trace('object.conditional.splat.condition %O', condition)
-  if (condition === false) {
-    return {type: 'object', attributes: {}} // condition isnt met, return an empty object which means no attributes will be added
+// eslint-disable-next-line max-statements, complexity
+function handleObjectNode(node: ObjectNode, scope: Scope): TypeNode {
+  $trace('object.node %O', node)
+
+  if (node.attributes.length === 0) {
+    return {
+      type: 'object',
+      attributes: {},
+    } satisfies ObjectTypeNode
   }
 
-  const value = walk({node: attr.value, scope})
-  $trace('object.conditional.splat.value %O', value)
-  return mapConcrete(value, scope, (node) => {
-    const mapped = mapObjectSplat(node, scope, (attribute) => {
-      if (condition) {
-        return attribute
-      }
-
-      return {
-        type: 'objectAttribute',
-        value: attribute.value,
-        optional: true,
-      }
-    })
-    // mapObjectSplat can return null, unknown, or an object. If it's not an object we return it as is.
-    if (mapped.type != 'object') {
-      return mapped
-    }
-
-    const attributes: Record<string, ObjectAttribute> = {}
-    for (const name in mapped.attributes) {
-      // eslint-disable-next-line max-depth
-      if (!mapped.attributes.hasOwnProperty(name)) {
-        continue
-      }
-      attributes[name] = mapped.attributes[name]
-    }
-    return {type: 'object', attributes, rest: mapped.rest}
-  })
-}
-
-function handleObjectNode(node: ObjectNode, scope: Scope) {
-  $trace('object.node %O', node)
-  $trace('object.scope %O', scope)
   // let attributes we a entry of [name, value] or null. We need to keep track of nulls to handle conditional splats
   // since we care about the order of the attributes. Later attribute keys will overwrite earlier ones.
-  const attributes: ([string, ObjectAttribute] | null)[] = []
+  const objectAttributes: [number, string, ObjectAttribute][] = []
+
+  const splatVariants: [number, ObjectTypeNode | UnionTypeNode<ObjectTypeNode>][] = []
 
   // We keep track of conditional splats separately, since we need to merge them into an object or an union of objects at the end.
   // keep track of the index of the conditional splat to be able to merge the attributes correctly.
-  const conditionalVariants: [number, TypeNode][] = []
+  const conditionalVariants: [number, UnionTypeNode<ObjectTypeNode>][] = []
 
   for (const [idx, attr] of node.attributes.entries()) {
     if (attr.type === 'ObjectAttributeValue') {
       const attributeNode = walk({node: attr.value, scope})
-      attributes.push([
+      objectAttributes.push([
+        idx,
         attr.name,
         {
           type: 'objectAttribute',
@@ -250,52 +200,98 @@ function handleObjectNode(node: ObjectNode, scope: Scope) {
     if (attr.type === 'ObjectSplat') {
       const attributeNode = handleObjectSplatNode(attr, scope)
       $trace('object.splat.result %O', attributeNode)
-      if (attributeNode.type !== 'object') {
-        return attributeNode
-      }
-      for (const name in attributeNode.attributes) {
-        if (!attributeNode.attributes.hasOwnProperty(name)) {
+
+      switch (attributeNode.type) {
+        case 'object': {
+          splatVariants.push([idx, attributeNode])
           continue
         }
-        attributes.push([name, attributeNode.attributes[name]])
+        case 'union': {
+          for (const node of attributeNode.of) {
+            // eslint-disable-next-line max-depth
+            if (node.type !== 'object') {
+              return {type: 'unknown'}
+            }
+          }
+          splatVariants.push([idx, attributeNode as UnionTypeNode<ObjectTypeNode>])
+          continue
+        }
+        default: {
+          return {type: 'unknown'}
+        }
       }
-      continue
     }
 
     if (attr.type === 'ObjectConditionalSplat') {
-      const attributeNode = handleObjectConditionalSplatNode(attr, scope)
-      $trace('object.conditional.splat.result %O', attributeNode)
+      const condition = resolveCondition(attr.condition, scope)
+      $trace('object.conditional.splat.condition %O', condition)
+      // condition is never met, skip this attribute
+      if (condition === false) {
+        continue
+      }
 
-      // keep track of the index of the conditional splat to be able to merge the attributes correctly later.
-      attributes.push(null)
+      const attributeNode = handleObjectSplatNode(attr, scope)
+      $trace('object.conditional.splat.result %O', attributeNode)
+      // condition is always met, we can treat this as a normal splat
+      if (condition === true) {
+        switch (attributeNode.type) {
+          case 'object': {
+            splatVariants.push([idx, attributeNode])
+            continue
+          }
+          case 'union': {
+            // eslint-disable-next-line max-depth
+            for (const node of attributeNode.of) {
+              // eslint-disable-next-line max-depth
+              if (node.type !== 'object') {
+                return {type: 'unknown'}
+              }
+            }
+            splatVariants.push([idx, attributeNode as UnionTypeNode<ObjectTypeNode>])
+            continue
+          }
+          default: {
+            return {type: 'unknown'}
+          }
+        }
+      }
 
       const variant = mapConcrete(attributeNode, scope, (attributeNode) => {
         $trace('object.conditional.splat.result.concrete %O', attributeNode)
         if (attributeNode.type !== 'object') {
-          return attributeNode
+          return {type: 'unknown'}
         }
 
-        const conditionalAttributes: Record<string, ObjectAttribute> = {}
-        for (const name in attributeNode.attributes) {
-          if (!attributeNode.attributes.hasOwnProperty(name)) {
-            continue
-          }
-          conditionalAttributes[name] = attributeNode.attributes[name]
-        }
         return {
           type: 'object',
-          attributes: conditionalAttributes,
-          rest: attributeNode.rest,
+          attributes: attributeNode.attributes,
         } satisfies ObjectTypeNode
       })
 
+      if (variant.type === 'union') {
+        for (const node of variant.of) {
+          // We can only splat objects, so we bail out if we encounter a non-object node.
+          // eslint-disable-next-line max-depth
+          if (node.type !== 'object') {
+            return {type: 'unknown'}
+          }
+        }
+        variant.of.push({type: 'object', attributes: {}} as ObjectTypeNode) // add an empty object to the union, since it's conditional
+        conditionalVariants.push([idx, variant as UnionTypeNode<ObjectTypeNode>])
+        continue
+      }
       // If the variant is not an object or a union of objects, we bail out early.
-      if (variant.type !== 'union' && variant.type !== 'object') {
-        return variant
+      if (variant.type !== 'object') {
+        return {type: 'unknown'}
       }
 
-      conditionalVariants.push([idx, variant])
-
+      conditionalVariants.push([
+        idx,
+        {
+          type: 'union',
+          of: [{type: 'object', attributes: {}}, variant],
+        },
+      ])
       continue
     }
 
@@ -303,64 +299,171 @@ function handleObjectNode(node: ObjectNode, scope: Scope) {
     throw new Error(`Unknown object attribute type: ${attr.type}`)
   }
 
-  // If we have a conditional splat, we can end up with a matrix of possible objects.
-  // We merge them into a single object also containing the splat attributes and object attributes.
-  if (conditionalVariants.length !== 0) {
-    return optimizeUnions({
-      type: 'union',
-      of: [
-        {
-          type: 'object',
-          attributes: Object.fromEntries(
-            attributes.filter((value): value is [string, ObjectAttribute] => value !== null),
-          ),
-        },
-        ...conditionalVariants.map(([idx, variant]) =>
-          mapConcrete(variant, scope, (variant) => {
-            if (variant.type !== 'object') {
-              return variant
-            }
+  const guaranteedAttributes: [number, string, ObjectAttribute<TypeNode>][] = []
+  guaranteedAttributes.push(...objectAttributes)
 
-            const pre = attributes
-              .slice(0, idx)
-              .filter((value): value is [string, ObjectAttribute] => value !== null)
+  for (const [idx, splatNode] of splatVariants) {
+    if (splatNode.type === 'object') {
+      for (const name in splatNode.attributes) {
+        if (!splatNode.attributes.hasOwnProperty(name)) {
+          continue
+        }
+        const attribute = splatNode.attributes[name]
+        guaranteedAttributes.push([idx, name, attribute])
+      }
+      continue
+    }
 
-            const post = attributes
-              .slice(idx + 1)
-              .filter((value): value is [string, ObjectAttribute] => value !== null)
-
-            return {
-              type: 'object',
-              attributes: {
-                ...Object.fromEntries(pre),
-                ...variant.attributes,
-                ...Object.fromEntries(post),
-              },
-              rest: variant.rest,
-            } satisfies ObjectTypeNode
-          }),
-        ),
-      ],
-    })
+    // it's a union of objects, so we keep this as a conditional variant
+    conditionalVariants.push([idx, splatNode])
   }
 
-  // We don't have any conditional splats, so we can just return the object with the attributes.
-  return {
-    type: 'object',
-    attributes: Object.fromEntries(
-      attributes.filter((value): value is [string, ObjectAttribute] => value !== null),
-    ),
-  } satisfies ObjectTypeNode
+  // make sure they are sorted from lowest index to highest, this ensures that
+  // attributes with a higher index overwrite attributes with a lower index.
+  guaranteedAttributes.sort(([a], [b]) => a - b)
+
+  // If we have no conditional variants, we can just return the object with the guaranteed attributes.
+  if (conditionalVariants.length === 0) {
+    return {
+      type: 'object',
+      attributes: Object.fromEntries(
+        guaranteedAttributes.map(([, name, attribute]) => [name, attribute]),
+      ),
+    } satisfies ObjectTypeNode
+  }
+
+  // matrix should be a result of if given we have variants [a,b,c] this would lead to a union of [a, a|b, a|c, a|b|c, b|c, c, {EMPTY}]
+  // if it's given we have variants A + [a|b|c] this would lead to a union of [Aa, Aa|Ab, Aa|Ac, Aa|Ab|Ac, Ab|Ac, Ac, A]
+  const matrix: (ObjectTypeNode | UnionTypeNode<ObjectTypeNode>)[] = []
+
+  for (const [unionIdx, union] of conditionalVariants) {
+    const unionGuaranteedBefore: [number, string, ObjectAttribute][] = []
+    const unionGuaranteedAfter: [number, string, ObjectAttribute][] = []
+
+    // Collect all guaranteed attributes before and after the conditional variant.
+    for (const [guaranteedIndex, name, attribute] of guaranteedAttributes) {
+      if (guaranteedIndex < unionIdx) {
+        unionGuaranteedBefore.push([guaranteedIndex, name, attribute])
+      }
+      if (guaranteedIndex > unionIdx) {
+        unionGuaranteedAfter.push([guaranteedIndex, name, attribute])
+      }
+    }
+
+    // build a map of variants from other conditions.
+    const allVariantsAttributes: [number, Record<string, ObjectAttribute>[]][] = []
+    for (const [conditionalVariantIdx, otherUnion] of conditionalVariants) {
+      // We need to build a matrix of all possible combinations of the attributes of the other variants.
+      // start with an empty object, since it's condtional.
+      const variantAttributes: Record<string, ObjectAttribute>[] = []
+      for (const node of otherUnion.of) {
+        variantAttributes.push(node.attributes)
+      }
+      allVariantsAttributes.push([conditionalVariantIdx, variantAttributes])
+    }
+
+    /* eslint-disable max-depth */
+    for (const node of union.of) {
+      matrix.push({
+        type: 'object',
+        attributes: {
+          ...Object.fromEntries(
+            unionGuaranteedBefore.map(([, name, attribute]) => [name, attribute]),
+          ),
+          ...node.attributes,
+          ...Object.fromEntries(
+            unionGuaranteedAfter.map(([, name, attribute]) => [name, attribute]),
+          ),
+        },
+      } satisfies ObjectTypeNode)
+
+      for (const [outerIdx, outerAttributes] of allVariantsAttributes) {
+        for (const outer of outerAttributes) {
+          for (const [innerIdx, innerAttributes] of allVariantsAttributes) {
+            if (outerIdx === innerIdx) {
+              continue
+            }
+
+            for (const inner of innerAttributes) {
+              const _before = [...unionGuaranteedBefore]
+              const _after = [...unionGuaranteedAfter]
+
+              for (const name in outer) {
+                if (!outer.hasOwnProperty(name)) {
+                  continue
+                }
+
+                if (outerIdx === unionIdx) {
+                  continue
+                }
+
+                if (outerIdx < unionIdx) {
+                  _before.push([outerIdx, name, outer[name]])
+                }
+
+                if (outerIdx > unionIdx) {
+                  _after.push([outerIdx, name, outer[name]])
+                }
+              }
+
+              for (const name in inner) {
+                if (!inner.hasOwnProperty(name)) {
+                  continue
+                }
+                if (outerIdx === unionIdx) {
+                  continue
+                }
+
+                if (innerIdx < unionIdx) {
+                  _before.push([innerIdx, name, inner[name]])
+                }
+
+                if (innerIdx > unionIdx) {
+                  _after.push([innerIdx, name, inner[name]])
+                }
+              }
+              _before.sort(([a], [b]) => a - b)
+              _after.sort(([a], [b]) => a - b)
+
+              const before: Record<string, ObjectAttribute> = Object.fromEntries(
+                _before.map(([, name, attribute]) => [name, attribute]),
+              )
+
+              const after: Record<string, ObjectAttribute> = Object.fromEntries(
+                _after.map(([, name, attribute]) => [name, attribute]),
+              )
+
+              matrix.push({
+                type: 'object',
+                attributes: {
+                  ...before,
+                  ...node.attributes,
+                  ...after,
+                },
+              })
+            }
+          }
+        }
+      }
+    }
+    /* eslint-disable max-depth */
+  }
+
+  return optimizeUnions({
+    type: 'union',
+    of: matrix,
+  })
 }
 
 // eslint-disable-next-line max-statements
 function handleOpCallNode(node: OpCallNode, scope: Scope): TypeNode {
+  $trace('opcall.node %O', node)
   const lhs = walk({node: node.left, scope})
   const rhs = walk({node: node.right, scope})
   return mapConcrete(lhs, scope, (left) =>
     // eslint-disable-next-line complexity
     mapConcrete(rhs, scope, (right) => {
-      $trace('opCallNode "%s" %O', node.op, {left, right})
+      $trace('opcall.node.concrete "%s" %O', node.op, {left, right})
 
       switch (node.op) {
         case '==':
@@ -531,6 +634,7 @@ function handleSelectNode(node: SelectNode, scope: Scope): TypeNode {
   if (values.length === 0) {
     return {type: 'null'} satisfies NullTypeNode
   }
+
   return {
     type: 'union',
     of: values,

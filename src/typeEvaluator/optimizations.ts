@@ -1,5 +1,13 @@
 import type {TypeNode} from './types'
 
+const {compare} = new Intl.Collator('en')
+function typeNodesSorter(a: TypeNode, b: TypeNode): number {
+  if (a.type === 'null') {
+    return 1
+  }
+  return compare(hashField(a), hashField(b))
+}
+
 export function hashField(field: TypeNode): string {
   switch (field.type) {
     case 'string':
@@ -21,13 +29,21 @@ export function hashField(field: TypeNode): string {
     }
 
     case 'object': {
-      return `${field.type}:(${Object.entries(field.attributes)
-        .map(([key, value]) => `${key}:${hashField(value.value)}`)
+      const attributes = Object.entries(field.attributes)
+      attributes.sort(([a], [b]) => compare(a, b)) // sort them by name
+
+      return `${field.type}:(${attributes
+        .map(
+          ([key, value]) =>
+            `${key}:${hashField(value.value)}(${value.optional ? 'optional' : 'non-optional'})`,
+        )
         .join(',')}):ref-${field.dereferencesTo}:${field.rest ? hashField(field.rest) : 'no-rest'}`
     }
 
     case 'union': {
-      return `${field.type}(${field.of.map(hashField).join(',')})`
+      const sorted = [...field.of]
+      sorted.sort(typeNodesSorter)
+      return `${field.type}(${sorted.map(hashField).join(',')})`
     }
 
     case 'inline': {
@@ -45,7 +61,10 @@ export function removeDuplicateTypeNodes(typeNodes: TypeNode[]): TypeNode[] {
   const seenTypes = new Set<string>()
   const newTypeNodes = []
 
-  for (const typeNode of typeNodes) {
+  const sortedTypeNodes = [...typeNodes]
+  sortedTypeNodes.sort(typeNodesSorter)
+
+  for (const typeNode of sortedTypeNodes) {
     const hash = hashField(typeNode)
     if (hash === null) {
       newTypeNodes.push(typeNode)
@@ -64,6 +83,10 @@ export function removeDuplicateTypeNodes(typeNodes: TypeNode[]): TypeNode[] {
 
 export function optimizeUnions(field: TypeNode): TypeNode {
   if (field.type === 'union') {
+    if (field.of.length === 0) {
+      return field
+    }
+
     field.of = removeDuplicateTypeNodes(field.of)
 
     if (field.of.length === 1) {
@@ -82,7 +105,6 @@ export function optimizeUnions(field: TypeNode): TypeNode {
       field.of[idx] = optimizeUnions(subField)
     }
 
-    const compare = new Intl.Collator('en').compare
     field.of.sort((a, b) => {
       if (a.type === 'null') {
         return 1
