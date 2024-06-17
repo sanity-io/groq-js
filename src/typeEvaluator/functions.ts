@@ -111,6 +111,28 @@ export function handleFuncCallNode(node: FuncCallNode, scope: Scope): TypeNode {
       return {type: 'boolean'}
     }
 
+    case 'global.round': {
+      const numNode = walk({node: node.args[0], scope})
+
+      return mapConcrete(numNode, scope, (num) => {
+        if (num.type !== 'number') {
+          return {type: 'null'}
+        }
+        if (node.args.length === 2) {
+          const precisionNode = walk({node: node.args[1], scope})
+          return mapConcrete(precisionNode, scope, (precision) => {
+            if (precision.type !== 'number') {
+              return {type: 'null'}
+            }
+
+            return {type: 'number'}
+          })
+        }
+
+        return {type: 'number'}
+      })
+    }
+
     case 'global.string': {
       const arg = walk({node: node.args[0], scope})
       return mapConcrete(arg, scope, (node) => {
