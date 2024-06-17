@@ -2130,6 +2130,29 @@ t.test('function: global::round', (t) => {
   t.end()
 })
 
+t.test('function: global::now', (t) => {
+  const query = `*[_type == "post"] {
+    "now": now()
+  }`
+  const ast = parse(query)
+  const res = typeEvaluate(ast, schemas)
+  t.strictSame(res, {
+    type: 'array',
+    of: {
+      type: 'object',
+      attributes: {
+        now: {
+          type: 'objectAttribute',
+          value: {
+            type: 'string',
+          },
+        },
+      },
+    },
+  })
+  t.end()
+})
+
 t.test('function: global::string', (t) => {
   const query = `*[_type == "author"] {
     "number": string(age),
