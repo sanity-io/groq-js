@@ -103,6 +103,9 @@ export function handleFuncCallNode(node: FuncCallNode, scope: Scope): TypeNode {
         return {type: 'null'}
       })
     }
+    case 'dateTime.now': {
+      return {type: 'string'}
+    }
     case 'global.now': {
       return {type: 'string'}
     }
