@@ -2072,6 +2072,64 @@ t.test('function: count', (t) => {
   t.end()
 })
 
+t.test('function: global::round', (t) => {
+  const query = `*[_type == "author"] {
+    "age": round(age),
+    "number": round(3.14),
+    "precision": round(3.14, 2),
+    "constant": round(3 + 4),
+    "boolean": round(true),
+    "object": round(object)
+  }`
+  const ast = parse(query)
+  const res = typeEvaluate(ast, schemas)
+  t.strictSame(res, {
+    type: 'array',
+    of: {
+      type: 'object',
+      attributes: {
+        age: {
+          type: 'objectAttribute',
+          value: {
+            type: 'number',
+          },
+        },
+        number: {
+          type: 'objectAttribute',
+          value: {
+            type: 'number',
+          },
+        },
+        precision: {
+          type: 'objectAttribute',
+          value: {
+            type: 'number',
+          },
+        },
+        constant: {
+          type: 'objectAttribute',
+          value: {
+            type: 'number',
+          },
+        },
+        boolean: {
+          type: 'objectAttribute',
+          value: {
+            type: 'null',
+          },
+        },
+        object: {
+          type: 'objectAttribute',
+          value: {
+            type: 'null',
+          },
+        },
+      },
+    },
+  })
+  t.end()
+})
+
 t.test('function: global::string', (t) => {
   const query = `*[_type == "author"] {
     "number": string(age),
