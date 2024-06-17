@@ -2132,7 +2132,8 @@ t.test('function: global::round', (t) => {
 
 t.test('function: global::now', (t) => {
   const query = `*[_type == "post"] {
-    "now": now()
+    "now": now(),
+    "dateTimeNow": dateTime::now()
   }`
   const ast = parse(query)
   const res = typeEvaluate(ast, schemas)
@@ -2142,6 +2143,12 @@ t.test('function: global::now', (t) => {
       type: 'object',
       attributes: {
         now: {
+          type: 'objectAttribute',
+          value: {
+            type: 'string',
+          },
+        },
+        dateTimeNow: {
           type: 'objectAttribute',
           value: {
             type: 'string',
