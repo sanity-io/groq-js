@@ -2183,6 +2183,108 @@ t.test('function: global::string', (t) => {
   t.end()
 })
 
+t.test('function: global::upper', (t) => {
+  const query = `*[_type == "author"] {
+    "number": upper(age),
+    "string": upper(name),
+    "constant": upper(3 + 4),
+    "boolean": upper(true),
+    "object": upper(object)
+  }`
+  const ast = parse(query)
+  const res = typeEvaluate(ast, schemas)
+  t.strictSame(res, {
+    type: 'array',
+    of: {
+      type: 'object',
+      attributes: {
+        number: {
+          type: 'objectAttribute',
+          value: {
+            type: 'null',
+          },
+        },
+        string: {
+          type: 'objectAttribute',
+          value: {
+            type: 'string',
+          },
+        },
+        constant: {
+          type: 'objectAttribute',
+          value: {
+            type: 'null',
+          },
+        },
+        boolean: {
+          type: 'objectAttribute',
+          value: {
+            type: 'null',
+          },
+        },
+        object: {
+          type: 'objectAttribute',
+          value: {
+            type: 'null',
+          },
+        },
+      },
+    },
+  })
+  t.end()
+})
+
+t.test('function: global::lower', (t) => {
+  const query = `*[_type == "author"] {
+    "number": lower(age),
+    "string": lower(name),
+    "constant": lower(3 + 4),
+    "boolean": lower(true),
+    "object": lower(object)
+  }`
+  const ast = parse(query)
+  const res = typeEvaluate(ast, schemas)
+  t.strictSame(res, {
+    type: 'array',
+    of: {
+      type: 'object',
+      attributes: {
+        number: {
+          type: 'objectAttribute',
+          value: {
+            type: 'null',
+          },
+        },
+        string: {
+          type: 'objectAttribute',
+          value: {
+            type: 'string',
+          },
+        },
+        constant: {
+          type: 'objectAttribute',
+          value: {
+            type: 'null',
+          },
+        },
+        boolean: {
+          type: 'objectAttribute',
+          value: {
+            type: 'null',
+          },
+        },
+        object: {
+          type: 'objectAttribute',
+          value: {
+            type: 'null',
+          },
+        },
+      },
+    },
+  })
+  t.end()
+})
+
 t.test('function: references', (t) => {
   const query = `*[_type == "post"] {
     "references": references(_id)
