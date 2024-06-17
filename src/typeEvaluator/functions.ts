@@ -69,6 +69,18 @@ export function handleFuncCallNode(node: FuncCallNode, scope: Scope): TypeNode {
       })
     }
 
+    case 'global.lower':
+    case 'global.upper': {
+      const arg = walk({node: node.args[0], scope})
+
+      return mapConcrete(arg, scope, (arg) => {
+        if (arg.type === 'string') {
+          return {type: 'string'}
+        }
+
+        return {type: 'null'}
+      })
+    }
     case 'global.defined': {
       return {type: 'boolean'}
     }

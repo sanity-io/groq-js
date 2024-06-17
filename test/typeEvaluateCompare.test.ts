@@ -444,6 +444,8 @@ for (const {namespace, funcName} of unaryFunctionTests) {
 const binaryFunctionTests: {namespace: string; funcName: string}[] = [
   {namespace: 'array', funcName: 'join'},
   {namespace: 'global', funcName: 'round'},
+  {namespace: 'global', funcName: 'upper'},
+  {namespace: 'global', funcName: 'lower'},
 ]
 
 for (const {namespace, funcName} of binaryFunctionTests) {
