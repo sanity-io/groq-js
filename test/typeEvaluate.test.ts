@@ -2185,6 +2185,8 @@ t.test('function: global::string', (t) => {
 
 t.test('function: global::upper', (t) => {
   const query = `*[_type == "author"] {
+    "_type": upper(_type),
+    "hello": upper("hello"),
     "number": upper(age),
     "string": upper(name),
     "constant": upper(3 + 4),
@@ -2198,6 +2200,20 @@ t.test('function: global::upper', (t) => {
     of: {
       type: 'object',
       attributes: {
+        _type: {
+          type: 'objectAttribute',
+          value: {
+            type: 'string',
+            value: 'AUTHOR',
+          },
+        },
+        hello: {
+          type: 'objectAttribute',
+          value: {
+            type: 'string',
+            value: 'HELLO',
+          },
+        },
         number: {
           type: 'objectAttribute',
           value: {
@@ -2236,6 +2252,8 @@ t.test('function: global::upper', (t) => {
 
 t.test('function: global::lower', (t) => {
   const query = `*[_type == "author"] {
+    "_type": lower(_type),
+    "hello": lower("HELLO"),
     "number": lower(age),
     "string": lower(name),
     "constant": lower(3 + 4),
@@ -2249,6 +2267,20 @@ t.test('function: global::lower', (t) => {
     of: {
       type: 'object',
       attributes: {
+        _type: {
+          type: 'objectAttribute',
+          value: {
+            type: 'string',
+            value: 'author',
+          },
+        },
+        hello: {
+          type: 'objectAttribute',
+          value: {
+            type: 'string',
+            value: 'hello',
+          },
+        },
         number: {
           type: 'objectAttribute',
           value: {

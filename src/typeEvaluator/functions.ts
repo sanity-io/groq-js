@@ -69,12 +69,34 @@ export function handleFuncCallNode(node: FuncCallNode, scope: Scope): TypeNode {
       })
     }
 
-    case 'global.lower':
+    case 'global.lower': {
+      const arg = walk({node: node.args[0], scope})
+
+      return mapConcrete(arg, scope, (arg) => {
+        if (arg.type === 'string') {
+          if (arg.value !== undefined) {
+            return {
+              type: 'string',
+              value: arg.value.toLowerCase(),
+            }
+          }
+          return {type: 'string'}
+        }
+
+        return {type: 'null'}
+      })
+    }
     case 'global.upper': {
       const arg = walk({node: node.args[0], scope})
 
       return mapConcrete(arg, scope, (arg) => {
         if (arg.type === 'string') {
+          if (arg.value !== undefined) {
+            return {
+              type: 'string',
+              value: arg.value.toUpperCase(),
+            }
+          }
           return {type: 'string'}
         }
 
