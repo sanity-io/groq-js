@@ -2628,6 +2628,97 @@ t.test('function: math::*', (t) => {
   t.end()
 })
 
+t.test('scoping', (t) => {
+  const ast = parse(`*[_type == "mainDocument" && _id == $id]{
+    _id,
+    description[]{
+      _type == "listRelevantThings" => {
+        "list": *[
+          _type == "referencingDocument" && relevantFor._ref == ^.^._id
+        ]{
+          _id,
+          "refId": ^.^._id
+        }
+      }
+    }
+  }[0]`)
+  const res = typeEvaluate(ast, [
+    {
+      name: 'referencingDocument',
+      type: 'document',
+      attributes: {
+        _id: {type: 'objectAttribute', value: {type: 'string'}},
+        _type: {
+          type: 'objectAttribute',
+          value: {type: 'string', value: 'referencingDocument'},
+        },
+        relevantFor: {
+          type: 'objectAttribute',
+          value: {
+            type: 'object',
+            attributes: {
+              _ref: {type: 'objectAttribute', value: {type: 'string'}},
+              _type: {type: 'objectAttribute', value: {type: 'string', value: 'reference'}},
+            },
+            dereferencesTo: 'mainDocument',
+          },
+          optional: true,
+        },
+      },
+    },
+    {
+      name: 'listRelevantThings',
+      type: 'type',
+      value: {
+        type: 'object',
+        attributes: {
+          _type: {
+            type: 'objectAttribute',
+            value: {type: 'string', value: 'listRelevantThings'},
+          },
+          foo: {
+            type: 'objectAttribute',
+            value: {type: 'string'},
+            optional: true,
+          },
+        },
+      },
+    },
+    {
+      name: 'mainDocument',
+      type: 'document',
+      attributes: {
+        _id: {type: 'objectAttribute', value: {type: 'string'}},
+        _type: {
+          type: 'objectAttribute',
+          value: {type: 'string', value: 'mainDocument'},
+        },
+        description: {
+          type: 'objectAttribute',
+          value: {
+            type: 'array',
+            of: {
+              type: 'union',
+              of: [
+                {
+                  type: 'object',
+                  attributes: {
+                    _key: {type: 'objectAttribute', value: {type: 'string'}},
+                  },
+                  rest: {type: 'inline', name: 'listRelevantThings'},
+                },
+              ],
+            },
+          },
+          optional: true,
+        },
+      },
+    },
+  ])
+  t.matchSnapshot(res)
+  t.end()
+})
+
 function findSchemaType(name: string): TypeNode {
   const type = schemas.find((s) => s.name === name)
   if (!type) {

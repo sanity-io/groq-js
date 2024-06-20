@@ -1271,3 +1271,67 @@ Object {
   "type": "array",
 }
 `
+
+exports[`test/typeEvaluate.test.ts TAP scoping > must match snapshot 1`] = `
+Object {
+  "of": Array [
+    Object {
+      "attributes": Object {
+        "_id": Object {
+          "type": "objectAttribute",
+          "value": Object {
+            "type": "string",
+          },
+        },
+        "description": Object {
+          "type": "objectAttribute",
+          "value": Object {
+            "of": Array [
+              Object {
+                "of": Object {
+                  "attributes": Object {
+                    "list": Object {
+                      "type": "objectAttribute",
+                      "value": Object {
+                        "of": Object {
+                          "attributes": Object {
+                            "_id": Object {
+                              "type": "objectAttribute",
+                              "value": Object {
+                                "type": "string",
+                              },
+                            },
+                            "refId": Object {
+                              "type": "objectAttribute",
+                              "value": Object {
+                                "type": "string",
+                              },
+                            },
+                          },
+                          "type": "object",
+                        },
+                        "type": "array",
+                      },
+                    },
+                  },
+                  "type": "object",
+                },
+                "type": "array",
+              },
+              Object {
+                "type": "null",
+              },
+            ],
+            "type": "union",
+          },
+        },
+      },
+      "type": "object",
+    },
+    Object {
+      "type": "null",
+    },
+  ],
+  "type": "union",
+}
+`
