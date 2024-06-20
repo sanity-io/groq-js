@@ -32,6 +32,7 @@ import type {
 import {handleFuncCallNode} from './functions'
 import {optimizeUnions} from './optimizations'
 import {Context, Scope} from './scope'
+import {mapConcrete, nullUnion} from './typeHelpers'
 import type {
   ArrayTypeNode,
   BooleanTypeNode,
@@ -47,7 +48,6 @@ import type {
   UnionTypeNode,
   UnknownTypeNode,
 } from './types'
-import {mapConcrete, nullUnion} from './typeHelpers'
 
 const $trace = debug('typeEvaluator:evaluate:trace')
 $trace.log = console.log.bind(console) // eslint-disable-line no-console
@@ -55,7 +55,7 @@ $trace.log = console.log.bind(console) // eslint-disable-line no-console
 const $debug = debug('typeEvaluator:evaluate:debug')
 // log to stdout
 $debug.log = console.log.bind(console) // eslint-disable-line no-console
-const $warn = debug('typeEvaluator:evaluate::warn')
+const $warn = debug('typeEvaluator:evaluate:warn')
 
 /**
  * Evaluates the type of a query and schema.
@@ -67,6 +67,7 @@ const $warn = debug('typeEvaluator:evaluate::warn')
  */
 export function typeEvaluate(ast: ExprNode, schema: Schema): TypeNode {
   $debug('evaluateQueryType.ast %O', ast)
+  $debug('evaluateQueryType.schema %O', schema)
   const parsed = walk({
     node: ast,
     scope: new Scope([], undefined, new Context(schema)),
@@ -576,14 +577,22 @@ function handleSlice(node: SliceNode, scope: Scope): TypeNode {
 }
 
 function handleParentNode({n}: ParentNode, scope: Scope): TypeNode {
-  let current: Scope = scope
+  $trace('handle.parent.currentScope %d %O', n, scope)
+
+  let current: Scope | undefined = scope
   for (let i = 0; i < n; i++) {
-    if (!current.parent) {
-      return {type: 'null'} satisfies NullTypeNode
+    // make sure we are not in a hidden scope
+    while (current?.isHidden) {
+      current = current.parent
     }
-    current = current.parent
+    current = current?.parent
   }
-  $trace('parent.scope %d %O', n, current.value)
+  $trace('handle.parent.newScope %d %O', n, current)
+
+  if (!current) {
+    return {type: 'null'} satisfies NullTypeNode
+  }
+
   if (current.value.of.length === 0) {
     return {type: 'null'} satisfies NullTypeNode
   }
