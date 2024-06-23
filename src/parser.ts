@@ -839,7 +839,8 @@ function extractPropertyKey(node: ExprNode): string {
     node.type === 'Slice' ||
     node.type === 'Filter' ||
     node.type === 'AccessElement' ||
-    node.type === 'ArrayCoerce'
+    node.type === 'ArrayCoerce' ||
+    node.type === 'Group'
   ) {
     return extractPropertyKey(node.base)
   }
