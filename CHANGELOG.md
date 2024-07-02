@@ -5,6 +5,30 @@
 All notable changes to this project will be documented in this file. See
 [Conventional Commits](https://conventionalcommits.org) for commit guidelines.
 
+## [1.10.0](https://github.com/sanity-io/groq-js/compare/v1.9.0...v1.10.0) (2024-07-02)
+
+### Features
+
+- **typeEvaluate:** preserve value when casting string upper/lower case ([fc189a0](https://github.com/sanity-io/groq-js/commit/fc189a07badc8c41e569b13c45c6eb39f7f53d85))
+- **typeEvaluator:** add support for array functions ([86b1053](https://github.com/sanity-io/groq-js/commit/86b1053ea02d7c74facb3f182a8df1ae6ee78cb4))
+- **typeEvaluator:** add support for dateTime::now() ([9ad8200](https://github.com/sanity-io/groq-js/commit/9ad82008793f658c101a394ac5d8ba3cb3387879))
+- **typeEvaluator:** add support for global::now() ([d8cf2d9](https://github.com/sanity-io/groq-js/commit/d8cf2d957799958f34a84aad29f652d369059607))
+- **typeEvaluator:** add support for round() ([641ecc6](https://github.com/sanity-io/groq-js/commit/641ecc67cbfb35eb1f2e10900022d333c0d7722d))
+- **typeEvaluator:** add support for upper() and lower() ([0934a3c](https://github.com/sanity-io/groq-js/commit/0934a3c0d3a6753f95f484eb8e78b57a14d63b16))
+- **typeEvaluator:** expand all unions inside a object ([1a5106d](https://github.com/sanity-io/groq-js/commit/1a5106dad97b0fdef159132d4e578ad3faf6867d))
+
+### Bug Fixes
+
+- **typeEvaluator:** bail early if splatting over a non-union/object ([117ec01](https://github.com/sanity-io/groq-js/commit/117ec011dff00e7b6908c530d444a46d04790be3))
+- **typeEvaluator:** handle access{attribute,element) when resolving conditions ([313369c](https://github.com/sanity-io/groq-js/commit/313369c35446dea007a5c7f9b88a419b6632e1c5))
+- **typeEvaluator:** handle not nodes when resolving conditions ([c940472](https://github.com/sanity-io/groq-js/commit/c9404728e293e56d230bfedf62a67f27d1a15bc2))
+- **typeEvaluator:** handle rest on object splat operations ([2ce28eb](https://github.com/sanity-io/groq-js/commit/2ce28eb042a259d226e125da816eb88f9a475a81))
+- **typeEvaluator:** make sure we are not inside a hidden scope when resolving parent nodes ([f109098](https://github.com/sanity-io/groq-js/commit/f109098ff6f344ae855b5de4fbcd2112778175cd))
+- **typeEvaluator:** map over concrete values and return them as alternatives ([f3adc53](https://github.com/sanity-io/groq-js/commit/f3adc53e47ffad1e419246902c5b19524634fb0f))
+- **typeEvaluator:** move object splat into separate methods to ensure conrete mapping ([8f1a8d9](https://github.com/sanity-io/groq-js/commit/8f1a8d99361300a6f7cce159aeade4854d3399cc))
+- **typeEvaluator:** properly handle object splats with non-concrete types ([97aee3e](https://github.com/sanity-io/groq-js/commit/97aee3ee40297c099e8546d69b5f18e04a7946ab))
+- **typeEvaluator:** return undefined by default when resolving condition ([bfb3d5e](https://github.com/sanity-io/groq-js/commit/bfb3d5eeed526b51c14da0c921e51877662ec63f))
+
 ## [1.9.0](https://github.com/sanity-io/groq-js/compare/v1.8.0...v1.9.0) (2024-05-14)
 
 ### Features
