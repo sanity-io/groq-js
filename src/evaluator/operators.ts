@@ -73,7 +73,7 @@ export const operators: {[key in OpCall]: GroqOperatorFn} = {
   },
 
   // eslint-disable-next-line func-name-matching
-  in: async function inop(left, right) {
+  'in': async function inop(left, right) {
     if (right.type === 'path') {
       if (left.type !== 'string') {
         return NULL_VALUE
@@ -95,7 +95,7 @@ export const operators: {[key in OpCall]: GroqOperatorFn} = {
     return NULL_VALUE
   },
 
-  match: async function match(left, right) {
+  'match': async function match(left, right) {
     let tokens: Token[] = []
     let patterns: Pattern[] = []
 

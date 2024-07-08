@@ -15,7 +15,7 @@ on:
   workflow_dispatch:
     inputs:
       release:
-        description: 'Publish new release'
+        description: "Publish new release"
         required: true
         default: false
         type: boolean
@@ -34,15 +34,16 @@ jobs:
     # We test on all of the maintained versions: https://nodejs.org/en/about/releases/
     strategy:
       matrix:
-        node-version: ['16.x', '18.x', '20.x', '21.x']
+        node-version: ["lts/-1", "lts/*", "current"]
 
     steps:
       - uses: actions/checkout@v4
-      - name: Use Node.js ${{ matrix.node-version }}
-        uses: actions/setup-node@v4
+      - uses: actions/setup-node@v4
+        id: node
         with:
           node-version: ${{ matrix.node-version }}
-      - run: npm install
+      - name: Use Node.js ${{ steps.node.outputs.node-version }}
+        run: npm install
       - run: npm run-script prettify-check
       - run: npm run test:generate
       - run: npm test

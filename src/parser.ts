@@ -29,11 +29,11 @@ const ESCAPE_SEQUENCE: {[key in EscapeSequences]: string} = {
   '"': '"',
   '\\': '\\',
   '/': '/',
-  b: '\b',
-  f: '\f',
-  n: '\n',
-  r: '\r',
-  t: '\t',
+  'b': '\b',
+  'f': '\f',
+  'n': '\n',
+  'r': '\r',
+  't': '\t',
 }
 
 function expandHex(str: string): string {
