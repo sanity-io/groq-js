@@ -56,6 +56,7 @@
     "test:generate": "./test/generate.sh"
   },
   "browserslist": "extends @sanity/browserslist-config",
+  "prettier": "@sanity/prettier-config",
   "tap": {
     "check-coverage": false,
     "node-arg": [
@@ -63,31 +64,32 @@
       "tsx/cjs"
     ]
   },
+  "dependencies": {
+    "debug": "^4.3.4"
+  },
   "devDependencies": {
-    "@sanity/pkg-utils": "6.8.14",
+    "@sanity/pkg-utils": "6.10.2",
+    "@sanity/prettier-config": "^1.0.2",
     "@sanity/semantic-release-preset": "^5.0.0",
     "@types/debug": "^4.1.12",
     "@types/tap": "^15.0.11",
-    "@typescript-eslint/eslint-plugin": "^7.9.0",
-    "@typescript-eslint/parser": "^7.9.0",
+    "@typescript-eslint/eslint-plugin": "^7.15.0",
+    "@typescript-eslint/parser": "^7.15.0",
     "eslint": "^8.57.0",
     "eslint-config-prettier": "^9.1.0",
     "eslint-config-sanity": "^7.1.2",
     "eslint-plugin-prettier": "^5.1.3",
     "eslint-plugin-simple-import-sort": "^12.1.0",
     "ndjson": "^2.0.0",
-    "prettier": "^3.2.5",
-    "prettier-plugin-packagejson": "^2.5.0",
+    "prettier": "^3.3.2",
     "rimraf": "^5.0.0",
+    "semantic-release": "^24.0.0",
     "semver": "^7.5.4",
     "tap": "^16.3.10",
-    "tsx": "^4.10.2",
-    "typescript": "5.4.5"
+    "tsx": "^4.16.2",
+    "typescript": "5.5.3"
   },
   "engines": {
     "node": ">= 14"
-  },
-  "dependencies": {
-    "debug": "^4.3.4"
   }
 }

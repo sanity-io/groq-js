@@ -400,8 +400,8 @@ const opVariants: Record<OpCall, Category[]> = {
   '-': trivialVariant,
   '/': trivialVariant,
   '**': trivialVariant,
-  in: [Category.PRIMITIVES, Category.ARRAYS],
-  match: [Category.PRIMITIVES, Category.ARRAYS],
+  'in': [Category.PRIMITIVES, Category.ARRAYS],
+  'match': [Category.PRIMITIVES, Category.ARRAYS],
 }
 
 const ops = Object.keys(operators) as OpCall[]
