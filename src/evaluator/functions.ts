@@ -426,6 +426,38 @@ sanity['dataset'] = async function (_args, scope) {
   return NULL_VALUE
 }
 
+// eslint-disable-next-line require-await
+sanity['versionOf'] = async function (args, scope, execute) {
+  if (!scope.source.isArray()) return NULL_VALUE
+
+  const value = await execute(args[0], scope)
+  if (value.type !== 'string') return NULL_VALUE
+  const baseId = value.data
+
+  // All the document are a version of the given ID if:
+  //  1. Document ID is of the ford bundleId.documentGroupId
+  //  2. And, they have a field called _version which is an object.
+  const versionIds: string[] = []
+  for await (const value of scope.source) {
+    if (getType(value) === 'object') {
+      const val = await value.get()
+      if (
+        val &&
+        '_id' in val &&
+        val._id.split('.').length === 2 &&
+        val._id.endsWith(`.${baseId}`) &&
+        '_version' in val &&
+        typeof val._version === 'object'
+      ) {
+        versionIds.push(val._id)
+      }
+    }
+  }
+
+  return fromJS(versionIds)
+}
+sanity['versionOf'].arity = 1
+
 export type GroqPipeFunction = (
   base: Value,
   args: ExprNode[],
