@@ -276,11 +276,28 @@ t.test('Basic parsing', async (t) => {
   })
 
   t.test('sanity-functions', async (t) => {
-    const query = `sanity::dataset() + sanity::projectId()`
-    const tree = parse(query)
-    const value = await evaluate(tree, {sanity: {dataset: 'abc', projectId: 'def'}})
-    const data = await value.get()
-    t.same(data, 'abcdef')
+    t.test('sanity::dataset() and sanity::projectId()', async (t) => {
+      const query = `sanity::dataset() + sanity::projectId()`
+      const tree = parse(query)
+      const value = await evaluate(tree, {sanity: {dataset: 'abc', projectId: 'def'}})
+      const data = await value.get()
+      t.same(data, 'abcdef')
+    })
+
+    t.test('sanity::versionOf()', async (t) => {
+      const dataset = [
+        {_id: 'doc1', _version: {}},
+        {_id: 'drafts.doc1', _version: {}},
+        {_id: 'sale.doc1', _version: {}},
+        {_id: 'weekend.sale.doc1', _version: {}},
+        {_id: 'doc2', _version: {}},
+      ]
+
+      const tree = parse('{"versions": sanity::versionOf("doc1")}')
+      const value = await evaluate(tree, {dataset})
+      const data = await value.get()
+      t.same(data, {versions: ['drafts.doc1', 'sale.doc1']})
+    })
   })
 
   t.test('Custom dereference function', async (t) => {
