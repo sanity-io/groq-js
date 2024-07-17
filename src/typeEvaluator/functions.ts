@@ -296,6 +296,9 @@ export function handleFuncCallNode(node: FuncCallNode, scope: Scope): TypeNode {
         })
       })
     }
+    case 'sanity.versionOf': {
+      return {type: 'array', of: {type: 'string'}}
+    }
     default: {
       return {type: 'unknown'}
     }
