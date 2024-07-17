@@ -2975,6 +2975,33 @@ t.test('splat object with union object', (t) => {
   t.end()
 })
 
+t.test('function: sanity::versionOf', (t) => {
+  const query = `*[_type == "author"] {
+    "versions": sanity::versionOf("foo")
+  }`
+  const ast = parse(query)
+  const res = typeEvaluate(ast, schemas)
+
+  t.strictSame(res, {
+    type: 'array',
+    of: {
+      type: 'object',
+      attributes: {
+        versions: {
+          type: 'objectAttribute',
+          value: {
+            type: 'array',
+            of: {
+              type: 'string',
+            },
+          },
+        },
+      },
+    },
+  })
+  t.end()
+})
+
 function findSchemaType(name: string): TypeNode {
   const type = schemas.find((s) => s.name === name)
   if (!type) {
