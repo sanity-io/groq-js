@@ -5,6 +5,14 @@
 All notable changes to this project will be documented in this file. See
 [Conventional Commits](https://conventionalcommits.org) for commit guidelines.
 
+## [1.11.0](https://github.com/sanity-io/groq-js/compare/v1.10.0...v1.11.0) (2024-07-23)
+
+### Features
+
+- add support for sanity::versionOf() ([fb2f5d0](https://github.com/sanity-io/groq-js/commit/fb2f5d0a02b09e50a91f9e1d1b5b9245f20f7443))
+- add type evaluator for sanity::versionOf() ([db54be4](https://github.com/sanity-io/groq-js/commit/db54be465e0822985d9848adf405c4a145b2e8d1))
+- **typeEvaluator:** validate if arg to sanity::versionOf is string ([0f4d047](https://github.com/sanity-io/groq-js/commit/0f4d047f163834e76e3eb727b4adc898986d2a08))
+
 ## [1.10.0](https://github.com/sanity-io/groq-js/compare/v1.9.0...v1.10.0) (2024-07-02)
 
 ### Features
