@@ -126,9 +126,9 @@ function handleObjectSplatNode(
   const value = walk({node: attr.value, scope})
   $trace('object.splat.value %O', value)
   return mapConcrete(value, scope, (node) => {
-    // if the node is not an object it means we are splating over a non-object, so we return unknown
+    // splatting over a non-object is a no-op
     if (node.type !== 'object') {
-      return {type: 'unknown'}
+      return {type: 'object', attributes: {}}
     }
 
     const attributes: Record<string, ObjectAttribute> = {}
@@ -200,7 +200,6 @@ function handleObjectNode(node: ObjectNode, scope: Scope): TypeNode {
     if (attr.type === 'ObjectSplat') {
       const attributeNode = handleObjectSplatNode(attr, scope)
       $trace('object.splat.result %O', attributeNode)
-
       switch (attributeNode.type) {
         case 'object': {
           splatVariants.push([idx, attributeNode])
@@ -208,9 +207,10 @@ function handleObjectNode(node: ObjectNode, scope: Scope): TypeNode {
         }
         case 'union': {
           for (const node of attributeNode.of) {
+            // if one of the nodes is unknown we mark the entire object as unknown as we can't infer the type of the object
             // eslint-disable-next-line max-depth
-            if (node.type !== 'object') {
-              return {type: 'unknown'}
+            if (node.type === 'unknown') {
+              return node
             }
           }
           splatVariants.push([idx, attributeNode as UnionTypeNode<ObjectTypeNode>])

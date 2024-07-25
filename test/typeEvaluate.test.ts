@@ -2974,6 +2974,53 @@ t.test('splat object with union object', (t) => {
   t.matchSnapshot(res)
   t.end()
 })
+t.test('splat on optional object', (t) => {
+  const query = `*[_type == "author"][0] {
+    _type,
+    ...optionalObject
+  }`
+
+  const ast = parse(query)
+  const res = typeEvaluate(ast, schemas)
+  t.strictSame(
+    res,
+    unionOf(
+      {
+        type: 'object',
+        attributes: {
+          _type: {
+            type: 'objectAttribute',
+            value: {
+              type: 'string',
+              value: 'author',
+            },
+          },
+          subfield: {
+            type: 'objectAttribute',
+            value: {
+              type: 'string',
+            },
+          },
+        },
+      },
+      {
+        type: 'object',
+        attributes: {
+          _type: {
+            type: 'objectAttribute',
+            value: {
+              type: 'string',
+              value: 'author',
+            },
+          },
+        },
+      },
+      {type: 'null'},
+    ),
+  )
+
+  t.end()
+})
 
 t.test('function: sanity::versionOf', (t) => {
   const query = `*[_type == "author"] {
