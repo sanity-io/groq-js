@@ -78,32 +78,32 @@ const primitives: AnnotatedValue[] = [
     key: '1',
     value: 1,
     types: [
-      {desc: '1', type: {type: 'number', value: 1}},
-      {desc: 'number', type: {type: 'number'}},
+      {desc: 'number(1)', type: {type: 'number', value: 1}},
+      {desc: 'number(undefined)', type: {type: 'number'}},
     ],
   },
   {
     key: 'hello',
     value: 'hello',
     types: [
-      {desc: 'hello', type: {type: 'string', value: 'hello'}},
-      {desc: 'string', type: {type: 'string'}},
+      {desc: 'string(hello)', type: {type: 'string', value: 'hello'}},
+      {desc: 'string(undefined)', type: {type: 'string'}},
     ],
   },
   {
     key: 'true',
     value: true,
     types: [
-      {desc: 'true', type: {type: 'boolean', value: true}},
-      {desc: 'boolean', type: {type: 'boolean'}},
+      {desc: 'boolean(true)', type: {type: 'boolean', value: true}},
+      {desc: 'boolean(undefined)', type: {type: 'boolean'}},
     ],
   },
   {
     key: 'false',
     value: false,
     types: [
-      {desc: 'false', type: {type: 'boolean', value: false}},
-      {desc: 'boolean', type: {type: 'boolean'}},
+      {desc: 'boolean(false)', type: {type: 'boolean', value: false}},
+      {desc: 'boolean(undefined)', type: {type: 'boolean'}},
     ],
   },
 ]
@@ -206,6 +206,8 @@ const ALL_CATEGORIES = [
   Category.OBJECTS_IN_ARRAYS,
   Category.ARRAYS_IN_ARRAYS,
 ]
+
+const trivialVariant = [Category.PRIMITIVES, Category.OBJECT, Category.ARRAY]
 
 type CachedResult = {
   params: ExprNode[]
@@ -379,12 +381,28 @@ t.test('Slice', async (t) => {
   })
 })
 
+t.test(`And`, async (t) => {
+  subtestBinary({
+    t,
+    variants1: trivialVariant,
+    variants2: trivialVariant,
+    build: (left, right) => ({type: 'And', left, right}),
+  })
+})
+
+t.test(`Or`, async (t) => {
+  subtestBinary({
+    t,
+    variants1: trivialVariant,
+    variants2: trivialVariant,
+    build: (left, right) => ({type: 'Or', left, right}),
+  })
+})
+
 // It's too much to test _every_ possible combination of binary operations. For
 // each operator we therefore keep track of which variants are interesting to
 // test for. We already know that many operations don't care about deeply nested
 // objects/arrays so we avoid testing for those.
-
-const trivialVariant = [Category.PRIMITIVES, Category.OBJECT, Category.ARRAY]
 
 const opVariants: Record<OpCall, Category[]> = {
   // + is very polymorphic so we want to test it for everything.

@@ -454,7 +454,7 @@ t.test('filtering on sub-child', (t) => {
   t.end()
 })
 
-t.test('in operator', (t) => {
+t.test('in operator, constants', (t) => {
   const query = `*[_type in ["author", "post"]]`
   const ast = parse(query)
   const res = typeEvaluate(ast, schemas)
@@ -465,6 +465,57 @@ t.test('in operator', (t) => {
       of: [findSchemaType('author'), findSchemaType('post')],
     },
   } satisfies ArrayTypeNode<UnionTypeNode>)
+
+  t.end()
+})
+
+t.test('in operator with optional field', (t) => {
+  const query = `*[_type == "post"] {
+    "authors": *[_type == "author" && _id in ^.allAuthorOrGhost[]._ref]
+  }`
+  const ast = parse(query)
+  const res = typeEvaluate(ast, schemas)
+  t.strictSame(res, {
+    type: 'array',
+    of: {
+      type: 'object',
+      attributes: {
+        authors: {
+          type: 'objectAttribute',
+          value: {
+            type: 'array',
+            of: findSchemaType('author'),
+          },
+        },
+      },
+    },
+  })
+
+  t.end()
+})
+
+t.test('sanity-io/sanity:6628: in operator with optional field', (t) => {
+  const query = `*[_type == "test" && foo in ["bar", "baz"]]{foo}`
+  const ast = parse(query)
+  const res = typeEvaluate(ast, [
+    {
+      type: 'document',
+      name: 'test',
+      attributes: {
+        _type: {type: 'objectAttribute', value: {type: 'string', value: 'test'}},
+        foo: {type: 'objectAttribute', value: {type: 'string'}, optional: true},
+      },
+    },
+  ])
+  t.strictSame(res, {
+    type: 'array',
+    of: {
+      type: 'object',
+      attributes: {
+        foo: {type: 'objectAttribute', value: nullUnion({type: 'string'})},
+      },
+    },
+  })
 
   t.end()
 })
@@ -684,8 +735,9 @@ t.test('values in projection', (t) => {
             "exp": 3 ** 3,
             "mod": 3 % 2,
             "arr": [1, 2, 3] + [4, 5, 6],
-            "and": 3 > foo && 3 > bar,
-            "or": 3 > foo || 3 > bar,
+            "andNotExists": 3 > foo && 3 > bar,
+            "and": 3 > age && age < 5,
+            "or": 3 > age || 3 > bar,
           }`
   const ast = parse(query)
   const res = typeEvaluate(ast, schemas)
@@ -834,19 +886,23 @@ t.test('values in projection', (t) => {
             },
           },
         },
+        andNotExists: {
+          type: 'objectAttribute',
+          value: {
+            type: 'null',
+          },
+        },
         and: {
           type: 'objectAttribute',
           value: {
             type: 'boolean',
-            value: undefined,
           },
         },
         or: {
           type: 'objectAttribute',
-          value: {
+          value: nullUnion({
             type: 'boolean',
-            value: undefined,
-          },
+          }),
         },
       },
     },
@@ -1313,7 +1369,7 @@ t.test('with select, not guaranteed & with fallback', (t) => {
   const query = `*[_type == "author" || _type == "post"] {
         _type,
         "something": select(
-          _id > 5 => _id,
+          _id == "5" => _id,
           "old id"
         )
       }`
@@ -1672,14 +1728,24 @@ t.test('misc', (t) => {
   const query = `*[]{
       "group": ((3 + 4) * 5),
       "notBool": !false,
-      "notField": !someAttriute,
+      "notField": !someAttribute,
+      "notNumber": !34,
+      "notMissingAttribute": !missingAttribute,
       "unknownParent": ^._id,
       "unknownParent2": ^.^.^.^.^.^.^.^._id,
-      "andWithAttriute": !false && !someAttriute,
+      "andWithAttribute": !false && !someAttribute,
       "pt": pt::text(block)
     }`
   const ast = parse(query)
-  const res = typeEvaluate(ast, [{type: 'document', name: 'foo', attributes: {}}])
+  const res = typeEvaluate(ast, [
+    {
+      type: 'document',
+      name: 'foo',
+      attributes: {
+        someAttribute: {type: 'objectAttribute', value: {type: 'boolean'}},
+      },
+    },
+  ])
   t.matchSnapshot(res)
 
   t.end()
