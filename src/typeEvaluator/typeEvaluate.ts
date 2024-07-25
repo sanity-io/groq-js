@@ -49,7 +49,7 @@ import type {
   UnionTypeNode,
   UnknownTypeNode,
 } from './types'
-import {mapConcrete, nullUnion, resolveInline} from './typeHelpers'
+import {mapConcrete, nullUnion, reduceUnion, resolveInline} from './typeHelpers'
 
 const $trace = debug('typeEvaluator:evaluate:trace')
 $trace.log = console.log.bind(console) // eslint-disable-line no-console
@@ -1049,31 +1049,19 @@ function isPrimitiveTypeNode(node: TypeNode): node is PrimitiveTypeNode {
 
 function evaluateEquality(left: TypeNode, right: TypeNode): boolean | undefined {
   $trace('evaluateEquality %O', {left, right})
+
   if (left.type === 'null' && right.type === 'null') {
     return true
   }
 
-  if (
-    isPrimitiveTypeNode(left) &&
-    isPrimitiveTypeNode(right) &&
-    left.value !== undefined &&
-    right.value !== undefined
-  ) {
+  if (isPrimitiveTypeNode(left) && isPrimitiveTypeNode(right) && left.type === right.type) {
+    if (left.value === undefined || right.value === undefined) {
+      return undefined
+    }
+
     return left.value === right.value
   }
-  if (left.type === 'union' && isPrimitiveTypeNode(right)) {
-    for (const node of left.of) {
-      // both are primitive types, and their values are equal, we can return true
-      if (isPrimitiveTypeNode(node) && node.value === right.value) {
-        return true
-      }
 
-      // both are the same type, but the value is undefined, we can't determine the result
-      if (isPrimitiveTypeNode(node) && node.value === undefined) {
-        return undefined
-      }
-    }
-  }
   if (left.type !== right.type) {
     return false
   }
@@ -1151,185 +1139,215 @@ function resolveCondition(expr: ExprNode, scope: Scope): boolean | undefined {
       const right = walk({node: expr.right, scope})
       $trace('opcall "%s" %O', expr.op, {left, right})
 
-      if (left.type === 'unknown' || right.type === 'unknown') {
-        return undefined
-      }
-
-      switch (expr.op) {
-        case '==': {
-          return evaluateEquality(left, right)
-        }
-        case '!=': {
-          const result = evaluateEquality(left, right)
-          if (result === undefined) {
+      return reduceUnion<boolean | undefined>(
+        left,
+        (lhsCurrent, left) => {
+          if (lhsCurrent) {
+            return lhsCurrent
+          }
+          if (left.type === 'unknown') {
             return undefined
           }
-          return !result
-        }
-        case 'in': {
-          if (right.type === 'array') {
-            if (left.type === 'null' && right.of.type === 'unknown') {
-              return undefined
-            }
-            if (left.type === 'null' && right.of.type === 'null') {
-              return true
-            }
-            if (isPrimitiveTypeNode(left)) {
-              // eslint-disable-next-line max-depth
-              if (right.of.type === 'unknown') {
-                return undefined
+          return reduceUnion<boolean | undefined>(
+            right,
+            // eslint-disable-next-line max-statements, complexity
+            (rhsCurrent, right) => {
+              if (rhsCurrent) {
+                return rhsCurrent
               }
-              // eslint-disable-next-line max-depth
-              if (left.value === undefined) {
+              if (right.type === 'unknown') {
                 return undefined
               }
 
-              // eslint-disable-next-line max-depth
-              if (isPrimitiveTypeNode(right.of)) {
-                // eslint-disable-next-line max-depth
-                if (right.of.value === undefined) {
-                  return undefined
+              switch (expr.op) {
+                case '==': {
+                  const isEq = evaluateEquality(left, right)
+                  if (isEq !== false) {
+                    return isEq
+                  }
+                  return rhsCurrent
                 }
-                return left.value === right.of.value
-              }
-              // eslint-disable-next-line max-depth
-              if (right.of.type === 'union') {
-                // eslint-disable-next-line max-depth
-                for (const node of right.of.of) {
-                  // eslint-disable-next-line max-depth
-                  if (node.type === 'unknown') {
+                case '!=': {
+                  const result = evaluateEquality(left, right)
+                  if (result === undefined) {
                     return undefined
                   }
-                  // eslint-disable-next-line max-depth
-                  if (isPrimitiveTypeNode(node) && left.value === node.value) {
+                  if (!result) {
                     return true
                   }
-                  // eslint-disable-next-line max-depth
-                  if (left.type === node.type && node.value === undefined) {
-                    return undefined
+                  return rhsCurrent
+                }
+                case 'in': {
+                  if (right.type !== 'array') {
+                    return rhsCurrent
                   }
-                }
-              }
-            }
-          }
+                  const lhs = left satisfies TypeNode
+                  const rhs = right satisfies ArrayTypeNode
 
-          return false
-        }
-        case 'match': {
-          let tokens: Token[] = []
-          let patterns: Pattern[] = []
-          if (left.type === 'string') {
-            if (left.value === undefined) {
-              return undefined
-            }
-            tokens = tokens.concat(matchTokenize(left.value))
-          }
-          if (left.type === 'array') {
-            if (left.of.type === 'unknown') {
-              return undefined
-            }
-            if (left.of.type === 'string') {
-              // eslint-disable-next-line max-depth
-              if (left.of.value === undefined) {
-                return undefined
-              }
-
-              tokens = tokens.concat(matchTokenize(left.of.value))
-            }
-            if (left.of.type === 'union') {
-              // eslint-disable-next-line max-depth
-              for (const node of left.of.of) {
-                // eslint-disable-next-line max-depth
-                if (node.type === 'string' && node.value !== undefined) {
-                  tokens = tokens.concat(matchTokenize(node.value))
-                }
-              }
-            }
-          }
-
-          if (right.type === 'string') {
-            if (right.value === undefined) {
-              return undefined
-            }
-            patterns = patterns.concat(matchAnalyzePattern(right.value))
-          }
-          if (right.type === 'array') {
-            if (right.of.type === 'unknown') {
-              return undefined
-            }
-            if (right.of.type === 'string') {
-              // eslint-disable-next-line max-depth
-              if (right.of.value === undefined) {
-                return undefined
-              }
-              patterns = patterns.concat(matchAnalyzePattern(right.of.value))
-            }
-            if (right.of.type === 'union') {
-              // eslint-disable-next-line max-depth
-              for (const node of right.of.of) {
-                // eslint-disable-next-line max-depth
-                if (node.type === 'string') {
-                  // eslint-disable-next-line max-depth
-                  if (node.value === undefined) {
-                    return undefined
+                  // we need null or a primitive type on the left side
+                  if (!isPrimitiveTypeNode(lhs) && lhs.type !== 'null') {
+                    return rhsCurrent
                   }
-                  patterns = patterns.concat(matchAnalyzePattern(node.value))
+
+                  // reduce over the array node, it can be an union, so we need to check each type
+                  return reduceUnion<boolean | undefined>(
+                    rhs.of,
+                    (curr, arrayTypeNode) => {
+                      if (curr === true) {
+                        return curr
+                      }
+                      if (arrayTypeNode.type === 'unknown') {
+                        return undefined
+                      }
+
+                      if (lhs.type === 'null') {
+                        if (arrayTypeNode.type === 'null') {
+                          return true
+                        }
+
+                        return curr
+                      }
+
+                      if (lhs.value === undefined) {
+                        return undefined
+                      }
+
+                      if (isPrimitiveTypeNode(arrayTypeNode)) {
+                        if (arrayTypeNode.value === undefined) {
+                          return undefined
+                        }
+                        if (lhs.value === arrayTypeNode.value) {
+                          return true
+                        }
+                      }
+
+                      // no match
+                      return curr
+                    },
+                    rhsCurrent,
+                  )
+                }
+                case 'match': {
+                  let tokens: Token[] = []
+                  let patterns: Pattern[] = []
+                  if (left.type === 'string') {
+                    if (left.value === undefined) {
+                      return undefined
+                    }
+                    tokens = tokens.concat(matchTokenize(left.value))
+                  }
+                  if (left.type === 'array') {
+                    if (left.of.type === 'unknown') {
+                      return undefined
+                    }
+                    if (left.of.type === 'string') {
+                      // eslint-disable-next-line max-depth
+                      if (left.of.value === undefined) {
+                        return undefined
+                      }
+
+                      tokens = tokens.concat(matchTokenize(left.of.value))
+                    }
+                    if (left.of.type === 'union') {
+                      // eslint-disable-next-line max-depth
+                      for (const node of left.of.of) {
+                        // eslint-disable-next-line max-depth
+                        if (node.type === 'string' && node.value !== undefined) {
+                          tokens = tokens.concat(matchTokenize(node.value))
+                        }
+                      }
+                    }
+                  }
+
+                  if (right.type === 'string') {
+                    if (right.value === undefined) {
+                      return undefined
+                    }
+                    patterns = patterns.concat(matchAnalyzePattern(right.value))
+                  }
+                  if (right.type === 'array') {
+                    if (right.of.type === 'unknown') {
+                      return undefined
+                    }
+                    if (right.of.type === 'string') {
+                      // eslint-disable-next-line max-depth
+                      if (right.of.value === undefined) {
+                        return undefined
+                      }
+                      patterns = patterns.concat(matchAnalyzePattern(right.of.value))
+                    }
+                    if (right.of.type === 'union') {
+                      // eslint-disable-next-line max-depth
+                      for (const node of right.of.of) {
+                        // eslint-disable-next-line max-depth
+                        if (node.type === 'string') {
+                          // eslint-disable-next-line max-depth
+                          if (node.value === undefined) {
+                            return undefined
+                          }
+                          patterns = patterns.concat(matchAnalyzePattern(node.value))
+                        }
+
+                        // eslint-disable-next-line max-depth
+                        if (node.type !== 'string') {
+                          return false
+                        }
+                      }
+                    }
+                  }
+                  return matchText(tokens, patterns)
+                }
+                case '<': {
+                  if (isPrimitiveTypeNode(left) && isPrimitiveTypeNode(right)) {
+                    if (left.value === undefined || right.value === undefined) {
+                      return undefined
+                    }
+                    return left.value < right.value
+                  }
+
+                  return undefined
+                }
+                case '<=': {
+                  if (isPrimitiveTypeNode(left) && isPrimitiveTypeNode(right)) {
+                    if (left.value === undefined || right.value === undefined) {
+                      return undefined
+                    }
+                    return left.value <= right.value
+                  }
+
+                  return undefined
+                }
+                case '>': {
+                  if (isPrimitiveTypeNode(left) && isPrimitiveTypeNode(right)) {
+                    if (left.value === undefined || right.value === undefined) {
+                      return undefined
+                    }
+                    return left.value > right.value
+                  }
+
+                  return undefined
+                }
+                case '>=': {
+                  if (isPrimitiveTypeNode(left) && isPrimitiveTypeNode(right)) {
+                    if (left.value === undefined || right.value === undefined) {
+                      return undefined
+                    }
+                    return left.value >= right.value
+                  }
+
+                  return undefined
                 }
 
-                // eslint-disable-next-line max-depth
-                if (node.type !== 'string') {
-                  return false
+                default: {
+                  return undefined
                 }
               }
-            }
-          }
-          return matchText(tokens, patterns)
-        }
-        case '<': {
-          if (isPrimitiveTypeNode(left) && isPrimitiveTypeNode(right)) {
-            if (left.value === undefined || right.value === undefined) {
-              return undefined
-            }
-            return left.value < right.value
-          }
-
-          return undefined
-        }
-        case '<=': {
-          if (isPrimitiveTypeNode(left) && isPrimitiveTypeNode(right)) {
-            if (left.value === undefined || right.value === undefined) {
-              return undefined
-            }
-            return left.value <= right.value
-          }
-
-          return undefined
-        }
-        case '>': {
-          if (isPrimitiveTypeNode(left) && isPrimitiveTypeNode(right)) {
-            if (left.value === undefined || right.value === undefined) {
-              return undefined
-            }
-            return left.value > right.value
-          }
-
-          return undefined
-        }
-        case '>=': {
-          if (isPrimitiveTypeNode(left) && isPrimitiveTypeNode(right)) {
-            if (left.value === undefined || right.value === undefined) {
-              return undefined
-            }
-            return left.value >= right.value
-          }
-
-          return undefined
-        }
-
-        default: {
-          return undefined
-        }
-      }
+            },
+            lhsCurrent,
+          )
+        },
+        false,
+      )
     }
 
     case 'Not': {
