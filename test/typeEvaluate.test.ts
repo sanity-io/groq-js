@@ -2177,6 +2177,43 @@ t.test('function: global::now', (t) => {
   t.end()
 })
 
+t.test('function: global::length', (t) => {
+  const query = `*[_type == "author"] {
+    "name": global::length(name),
+    "ages": global::length(ages),
+    "age": global::length(age),
+  }`
+  const ast = parse(query)
+  const res = typeEvaluate(ast, schemas)
+  t.strictSame(res, {
+    type: 'array',
+    of: {
+      type: 'object',
+      attributes: {
+        name: {
+          type: 'objectAttribute',
+          value: {
+            type: 'number',
+          },
+        },
+        ages: {
+          type: 'objectAttribute',
+          value: nullUnion({
+            type: 'number',
+          }),
+        },
+        age: {
+          type: 'objectAttribute',
+          value: {
+            type: 'null',
+          },
+        },
+      },
+    },
+  })
+  t.end()
+})
+
 t.test('function: global::string', (t) => {
   const query = `*[_type == "author"] {
     "number": string(age),
