@@ -66,8 +66,6 @@ const objectVariants: {
     },
   },
   // normal projection attributes end
-
-  // MARK: START: Unknown type splatting
   {
     name: "Test with a type we can't splat over(array)",
     attributes: [
@@ -95,7 +93,15 @@ const objectVariants: {
       },
     ],
     expects: {
-      type: 'unknown',
+      type: 'object',
+      attributes: {
+        A: {
+          type: 'objectAttribute',
+          value: {
+            type: 'boolean',
+          },
+        },
+      },
     },
   },
 
@@ -131,7 +137,15 @@ const objectVariants: {
       },
     ],
     expects: {
-      type: 'unknown',
+      type: 'object',
+      attributes: {
+        A: {
+          type: 'objectAttribute',
+          value: {
+            type: 'boolean',
+          },
+        },
+      },
     },
   },
 
@@ -146,8 +160,57 @@ const objectVariants: {
       },
     ],
     expects: {
-      type: 'unknown',
+      type: 'object',
+      attributes: {
+        A: {
+          type: 'objectAttribute',
+          value: {
+            type: 'boolean',
+          },
+        },
+      },
     },
+  },
+
+  {
+    name: 'Splatting over a non-object only type should result in an empty object',
+    attributes: [{type: 'ObjectSplat', value: nodeWithType({type: 'string'})}],
+    expects: {
+      type: 'object',
+      attributes: {},
+    },
+  },
+
+  {
+    name: 'Splatting over a null union with a object only type should result in an union with the object only type',
+    attributes: [
+      {
+        type: 'ObjectSplat',
+        value: nodeWithType(
+          unionOf(
+            {type: 'null'},
+            {
+              type: 'object',
+              attributes: {
+                A: {type: 'objectAttribute', value: {type: 'string'}},
+              },
+            },
+          ),
+        ),
+      },
+    ],
+    expects: unionOf(
+      {
+        type: 'object',
+        attributes: {},
+      },
+      {
+        type: 'object',
+        attributes: {
+          A: {type: 'objectAttribute', value: {type: 'string'}},
+        },
+      },
+    ),
   },
 
   {
@@ -160,15 +223,6 @@ const objectVariants: {
       type: 'unknown',
     },
   },
-  {
-    name: 'Splatting over a non-object type should result in unknown type',
-    attributes: [{type: 'ObjectSplat', value: nodeWithType({type: 'string'})}],
-    expects: {
-      type: 'unknown',
-    },
-  },
-
-  // MARK: END: Unknown type splatting
 
   {
     name: 'Conditional splat over object with splat',
