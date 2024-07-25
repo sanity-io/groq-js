@@ -424,6 +424,7 @@ const unaryFunctionTests: {namespace: string; funcName: string}[] = [
   {namespace: 'math', funcName: 'avg'},
   {namespace: 'array', funcName: 'compact'},
   {namespace: 'array', funcName: 'unique'},
+  {namespace: 'global', funcName: 'dateTime'},
 ]
 
 for (const {namespace, funcName} of unaryFunctionTests) {

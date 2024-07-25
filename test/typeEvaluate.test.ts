@@ -2230,6 +2230,57 @@ t.test('function: global::string', (t) => {
   t.end()
 })
 
+t.test('function: global::dateTime', (t) => {
+  const query = `*[_type == "author"] {
+    "string": dateTime(name),
+    "constant": dateTime("const"),
+    "number": dateTime(age),
+    "boolean": dateTime(true),
+    "object": dateTime(object)
+  }`
+  const ast = parse(query)
+  const res = typeEvaluate(ast, schemas)
+  t.strictSame(res, {
+    type: 'array',
+    of: {
+      type: 'object',
+      attributes: {
+        string: {
+          type: 'objectAttribute',
+          value: nullUnion({
+            type: 'string',
+          }),
+        },
+        constant: {
+          type: 'objectAttribute',
+          value: nullUnion({
+            type: 'string',
+          }),
+        },
+        number: {
+          type: 'objectAttribute',
+          value: {
+            type: 'null',
+          },
+        },
+        boolean: {
+          type: 'objectAttribute',
+          value: {
+            type: 'null',
+          },
+        },
+        object: {
+          type: 'objectAttribute',
+          value: {
+            type: 'null',
+          },
+        },
+      },
+    },
+  })
+  t.end()
+})
+
 t.test('function: global::upper', (t) => {
   const query = `*[_type == "author"] {
     "_type": upper(_type),
