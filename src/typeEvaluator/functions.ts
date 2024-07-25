@@ -2,7 +2,7 @@
 import type {FuncCallNode} from '../nodeTypes'
 import {Scope} from './scope'
 import {walk} from './typeEvaluate'
-import {mapConcrete} from './typeHelpers'
+import {mapConcrete, nullUnion} from './typeHelpers'
 import type {NullTypeNode, TypeNode} from './types'
 
 function unionWithoutNull(unionTypeNode: TypeNode): TypeNode {
@@ -142,6 +142,18 @@ export function handleFuncCallNode(node: FuncCallNode, scope: Scope): TypeNode {
       return mapConcrete(arg, scope, (arg) => {
         if (arg.type === 'array') {
           return {type: 'number'}
+        }
+
+        return {type: 'null'} satisfies NullTypeNode
+      })
+    }
+
+    case 'global.dateTime': {
+      const arg = walk({node: node.args[0], scope})
+
+      return mapConcrete(arg, scope, (arg) => {
+        if (arg.type === 'string') {
+          return nullUnion({type: 'string'}) // we don't know wether the string is a valid date or not, so we return a [null, string]-union
         }
 
         return {type: 'null'} satisfies NullTypeNode
