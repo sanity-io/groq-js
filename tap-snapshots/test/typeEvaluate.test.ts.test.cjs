@@ -1131,11 +1131,10 @@ exports[`test/typeEvaluate.test.ts TAP misc > must match snapshot 1`] = `
 Object {
   "of": Object {
     "attributes": Object {
-      "andWithAttriute": Object {
+      "andWithAttribute": Object {
         "type": "objectAttribute",
         "value": Object {
           "type": "boolean",
-          "value": true,
         },
       },
       "group": Object {
@@ -1156,6 +1155,18 @@ Object {
         "type": "objectAttribute",
         "value": Object {
           "type": "boolean",
+        },
+      },
+      "notMissingAttribute": Object {
+        "type": "objectAttribute",
+        "value": Object {
+          "type": "null",
+        },
+      },
+      "notNumber": Object {
+        "type": "objectAttribute",
+        "value": Object {
+          "type": "null",
         },
       },
       "pt": Object {

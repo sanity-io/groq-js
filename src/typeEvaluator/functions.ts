@@ -113,6 +113,16 @@ export function handleFuncCallNode(node: FuncCallNode, scope: Scope): TypeNode {
     case 'global.defined': {
       return {type: 'boolean'}
     }
+    case 'global.path': {
+      const arg = walk({node: node.args[0], scope})
+      return mapConcrete(arg, scope, (arg) => {
+        if (arg.type === 'string') {
+          return {type: 'string'}
+        }
+
+        return {type: 'null'}
+      })
+    }
     case 'global.coalesce': {
       if (node.args.length === 0) {
         return {type: 'null'} satisfies NullTypeNode
