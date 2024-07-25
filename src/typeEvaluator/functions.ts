@@ -160,6 +160,22 @@ export function handleFuncCallNode(node: FuncCallNode, scope: Scope): TypeNode {
       })
     }
 
+    case 'global.length': {
+      const arg = walk({node: node.args[0], scope})
+
+      return mapConcrete(arg, scope, (arg) => {
+        if (arg.type === 'array') {
+          return {type: 'number'}
+        }
+
+        if (arg.type === 'string') {
+          return {type: 'number'}
+        }
+
+        return {type: 'null'}
+      })
+    }
+
     case 'global.references': {
       return {type: 'boolean'}
     }
