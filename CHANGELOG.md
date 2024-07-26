@@ -5,6 +5,13 @@
 All notable changes to this project will be documented in this file. See
 [Conventional Commits](https://conventionalcommits.org) for commit guidelines.
 
+## [1.12.0](https://github.com/sanity-io/groq-js/compare/v1.11.1...v1.12.0) (2024-07-26)
+
+### Features
+
+- **typeEvaluator:** add support for global::dateTime ([8ed40ea](https://github.com/sanity-io/groq-js/commit/8ed40ea619823c8000677f482f17bea17608b194))
+- **typeEvaluator:** add support for global::length ([a244bdc](https://github.com/sanity-io/groq-js/commit/a244bdcef9ca3ca50b1dca126631a0bd81ec9b8e))
+
 ## [1.11.1](https://github.com/sanity-io/groq-js/compare/v1.11.0...v1.11.1) (2024-07-25)
 
 ### Bug Fixes
