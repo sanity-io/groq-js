@@ -3137,6 +3137,33 @@ t.test('function: sanity::versionOf', (t) => {
   t.end()
 })
 
+t.test('function: sanity::documentsOf', (t) => {
+  const query = `*[_type == "author"] {
+    "saleBundleDocuments": sanity::documentsOf("sale")
+  }`
+  const ast = parse(query)
+  const res = typeEvaluate(ast, schemas)
+
+  t.strictSame(res, {
+    type: 'array',
+    of: {
+      type: 'object',
+      attributes: {
+        saleBundleDocuments: {
+          type: 'objectAttribute',
+          value: {
+            type: 'array',
+            of: {
+              type: 'string',
+            },
+          },
+        },
+      },
+    },
+  })
+  t.end()
+})
+
 function findSchemaType(name: string): TypeNode {
   const type = schemas.find((s) => s.name === name)
   if (!type) {

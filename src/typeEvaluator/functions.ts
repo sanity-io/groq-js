@@ -334,6 +334,15 @@ export function handleFuncCallNode(node: FuncCallNode, scope: Scope): TypeNode {
         return {type: 'array', of: {type: 'string'}}
       })
     }
+    case 'sanity.documentsOf': {
+      const typeNode = walk({node: node.args[0], scope})
+      return mapConcrete(typeNode, scope, (typeNode) => {
+        if (typeNode.type !== 'string') {
+          return {type: 'null'}
+        }
+        return {type: 'array', of: {type: 'string'}}
+      })
+    }
     default: {
       return {type: 'unknown'}
     }
