@@ -435,7 +435,7 @@ sanity['versionOf'] = async function (args, scope, execute) {
   const baseId = value.data
 
   // All the document are a version of the given ID if:
-  //  1. Document ID is of the ford bundleId.documentGroupId
+  //  1. Document ID is of the form bundleId.documentGroupId
   //  2. And, they have a field called _version which is an object.
   const versionIds: string[] = []
   for await (const value of scope.source) {
@@ -457,6 +457,38 @@ sanity['versionOf'] = async function (args, scope, execute) {
   return fromJS(versionIds)
 }
 sanity['versionOf'].arity = 1
+
+// eslint-disable-next-line require-await
+sanity['documentsOf'] = async function (args, scope, execute) {
+  if (!scope.source.isArray()) return NULL_VALUE
+
+  const value = await execute(args[0], scope)
+  if (value.type !== 'string') return NULL_VALUE
+  const baseId = value.data
+
+  // All the document belong to a bundle ID if:
+  //  1. Document ID is of the form bundleId.documentGroupId
+  //  2. And, they have a field called _version which is an object.
+  const documentIdsInBundle: string[] = []
+  for await (const value of scope.source) {
+    if (getType(value) === 'object') {
+      const val = await value.get()
+      if (
+        val &&
+        '_id' in val &&
+        val._id.split('.').length === 2 &&
+        val._id.startsWith(`${baseId}.`) &&
+        '_version' in val &&
+        typeof val._version === 'object'
+      ) {
+        documentIdsInBundle.push(val._id)
+      }
+    }
+  }
+
+  return fromJS(documentIdsInBundle)
+}
+sanity['documentsOf'].arity = 1
 
 export type GroqPipeFunction = (
   base: Value,
