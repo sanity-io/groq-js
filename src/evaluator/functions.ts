@@ -466,7 +466,7 @@ sanity['documentsOf'] = async function (args, scope, execute) {
   if (value.type !== 'string') return NULL_VALUE
   const baseId = value.data
 
-  // All the document belong to a bundle ID if:
+  // A document belongs to a bundle ID if:
   //  1. Document ID is of the form bundleId.documentGroupId
   //  2. And, they have a field called _version which is an object.
   const documentIdsInBundle: string[] = []
