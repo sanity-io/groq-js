@@ -454,7 +454,7 @@ t.test('filtering on sub-child', (t) => {
   t.end()
 })
 
-t.test('in operator', (t) => {
+t.test('in operator, constants', (t) => {
   const query = `*[_type in ["author", "post"]]`
   const ast = parse(query)
   const res = typeEvaluate(ast, schemas)
@@ -465,6 +465,57 @@ t.test('in operator', (t) => {
       of: [findSchemaType('author'), findSchemaType('post')],
     },
   } satisfies ArrayTypeNode<UnionTypeNode>)
+
+  t.end()
+})
+
+t.test('in operator with optional field', (t) => {
+  const query = `*[_type == "post"] {
+    "authors": *[_type == "author" && _id in ^.allAuthorOrGhost[]._ref]
+  }`
+  const ast = parse(query)
+  const res = typeEvaluate(ast, schemas)
+  t.strictSame(res, {
+    type: 'array',
+    of: {
+      type: 'object',
+      attributes: {
+        authors: {
+          type: 'objectAttribute',
+          value: {
+            type: 'array',
+            of: findSchemaType('author'),
+          },
+        },
+      },
+    },
+  })
+
+  t.end()
+})
+
+t.test('sanity-io/sanity:6628: in operator with optional field', (t) => {
+  const query = `*[_type == "test" && foo in ["bar", "baz"]]{foo}`
+  const ast = parse(query)
+  const res = typeEvaluate(ast, [
+    {
+      type: 'document',
+      name: 'test',
+      attributes: {
+        _type: {type: 'objectAttribute', value: {type: 'string', value: 'test'}},
+        foo: {type: 'objectAttribute', value: {type: 'string'}, optional: true},
+      },
+    },
+  ])
+  t.strictSame(res, {
+    type: 'array',
+    of: {
+      type: 'object',
+      attributes: {
+        foo: {type: 'objectAttribute', value: nullUnion({type: 'string'})},
+      },
+    },
+  })
 
   t.end()
 })

@@ -132,3 +132,16 @@ export function mapConcrete(
       throw new Error(`Unknown type: ${node.type}`)
   }
 }
+
+export function reduceUnion<T>(
+  node: TypeNode,
+  callbackfn: (acc: T, node: TypeNode, currentIndex: number, array: TypeNode[]) => T,
+  initialValue: T,
+): T {
+  const _node = optimizeUnions(node)
+
+  if (_node.type !== 'union') {
+    return callbackfn(initialValue, _node, 0, [_node])
+  }
+  return _node.of.reduce<T>(callbackfn, initialValue)
+}
