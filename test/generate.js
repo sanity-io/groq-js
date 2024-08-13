@@ -166,8 +166,11 @@ process.stdin
     }
 
     if (entry._type === 'test') {
-      const supported = entry.features.every((f) => SUPPORTED_FEATURES.has(f))
-      if (!supported) return
+      const unsupported = entry.features.filter((f) => !SUPPORTED_FEATURES.has(f))
+      if (unsupported.length > 0) {
+        process.stderr.write(`[warning] Skipping unsupported features: ${unsupported.join(', ')}\n`)
+        return
+      }
 
       if (entry.version && !semver.satisfies(GROQ_VERSION, entry.version)) return
 
