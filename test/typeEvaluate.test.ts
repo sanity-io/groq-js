@@ -735,8 +735,9 @@ t.test('values in projection', (t) => {
             "exp": 3 ** 3,
             "mod": 3 % 2,
             "arr": [1, 2, 3] + [4, 5, 6],
-            "and": 3 > foo && 3 > bar,
-            "or": 3 > foo || 3 > bar,
+            "andNotExists": 3 > foo && 3 > bar,
+            "and": 3 > age && age < 5,
+            "or": 3 > age || 3 > bar,
           }`
   const ast = parse(query)
   const res = typeEvaluate(ast, schemas)
@@ -885,19 +886,23 @@ t.test('values in projection', (t) => {
             },
           },
         },
+        andNotExists: {
+          type: 'objectAttribute',
+          value: {
+            type: 'null',
+          },
+        },
         and: {
           type: 'objectAttribute',
           value: {
             type: 'boolean',
-            value: undefined,
           },
         },
         or: {
           type: 'objectAttribute',
-          value: {
+          value: nullUnion({
             type: 'boolean',
-            value: undefined,
-          },
+          }),
         },
       },
     },
@@ -1364,7 +1369,7 @@ t.test('with select, not guaranteed & with fallback', (t) => {
   const query = `*[_type == "author" || _type == "post"] {
         _type,
         "something": select(
-          _id > 5 => _id,
+          _id == "5" => _id,
           "old id"
         )
       }`
@@ -1723,14 +1728,24 @@ t.test('misc', (t) => {
   const query = `*[]{
       "group": ((3 + 4) * 5),
       "notBool": !false,
-      "notField": !someAttriute,
+      "notField": !someAttribute,
+      "notNumber": !34,
+      "notMissingAttribute": !missingAttribute,
       "unknownParent": ^._id,
       "unknownParent2": ^.^.^.^.^.^.^.^._id,
-      "andWithAttriute": !false && !someAttriute,
+      "andWithAttribute": !false && !someAttribute,
       "pt": pt::text(block)
     }`
   const ast = parse(query)
-  const res = typeEvaluate(ast, [{type: 'document', name: 'foo', attributes: {}}])
+  const res = typeEvaluate(ast, [
+    {
+      type: 'document',
+      name: 'foo',
+      attributes: {
+        someAttribute: {type: 'objectAttribute', value: {type: 'boolean'}},
+      },
+    },
+  ])
   t.matchSnapshot(res)
 
   t.end()
