@@ -223,14 +223,14 @@ function handleObjectNode(node: ObjectNode, scope: Scope): TypeNode {
       const condition = booleanValue(walk({node: attr.condition, scope}))
       $trace('object.conditional.splat.condition %O', condition)
       // condition is never met, skip this attribute
-      if (condition === false) {
+      if (condition.canBeTrue === false) {
         continue
       }
 
       const attributeNode = handleObjectSplatNode(attr, scope)
       $trace('object.conditional.splat.result %O', attributeNode)
       // condition is always met, we can treat this as a normal splat
-      if (condition === true) {
+      if (condition.canBeFalse === false && condition.canBeNull === false) {
         switch (attributeNode.type) {
           case 'object': {
             splatVariants.push([idx, attributeNode])
@@ -1031,28 +1031,29 @@ function handleAndNode(node: AndNode, scope: Scope): TypeNode {
   const right = walk({node: node.right, scope})
   return mapConcrete(left, scope, (lhs) =>
     mapConcrete(right, scope, (rhs) => {
-      if (
-        (lhs.type === 'boolean' && lhs.value === false) ||
-        (rhs.type === 'boolean' && rhs.value === false)
-      ) {
-        return {type: 'boolean', value: false}
-      }
+      const leftValue = booleanValue(lhs)
+      const rightValue = booleanValue(rhs)
+      if (leftValue.canBeTrue && rightValue.canBeTrue) {
+        if (leftValue.canBeFalse || rightValue.canBeFalse) {
+          if (leftValue.canBeNull || rightValue.canBeNull) {
+            return nullUnion({type: 'boolean'})
+          }
 
-      if (lhs.type !== 'boolean' || rhs.type !== 'boolean') {
-        if (
-          (lhs.type === 'boolean' && lhs.value === undefined) ||
-          (rhs.type === 'boolean' && rhs.value === undefined)
-        ) {
-          return nullUnion({type: 'boolean'})
+          return {type: 'boolean'}
         }
-        return {type: 'null'}
-      }
 
-      if (lhs.value === true && rhs.value === true) {
         return {type: 'boolean', value: true}
       }
 
-      return {type: 'boolean'}
+      // this will never resolve, but we check if the expressions returns false, null or an union.
+      if (leftValue.canBeFalse || rightValue.canBeFalse) {
+        if (leftValue.canBeNull || rightValue.canBeNull) {
+          return nullUnion({type: 'boolean', value: false})
+        }
+        return {type: 'boolean', value: false}
+      }
+
+      return {type: 'null'}
     }),
   )
 }
@@ -1062,33 +1063,29 @@ function handleOrNode(node: OrNode, scope: Scope): TypeNode {
   const right = walk({node: node.right, scope})
   return mapConcrete(left, scope, (lhs) =>
     mapConcrete(right, scope, (rhs) => {
-      // one of the sides is true the condition is true
-      if (
-        (lhs.type === 'boolean' && lhs.value === true) ||
-        (rhs.type === 'boolean' && rhs.value === true)
-      ) {
+      const leftValue = booleanValue(lhs)
+      const rightValue = booleanValue(rhs)
+      if (leftValue.canBeTrue || rightValue.canBeTrue) {
+        if (leftValue.canBeFalse || rightValue.canBeFalse) {
+          if (leftValue.canBeNull || rightValue.canBeNull) {
+            return nullUnion({type: 'boolean'})
+          }
+
+          return {type: 'boolean'}
+        }
+
         return {type: 'boolean', value: true}
       }
 
-      // if one of the sides is not a boolean, it's either a null or
-      // a null|boolean if the other side is an undefined boolean
-      if (lhs.type !== 'boolean' || rhs.type !== 'boolean') {
-        if (
-          (lhs.type === 'boolean' && lhs.value === undefined) ||
-          (rhs.type === 'boolean' && rhs.value === undefined)
-        ) {
-          return nullUnion({type: 'boolean'})
+      // this will never resolve, but we check if the expressions returns false, null or an union.
+      if (leftValue.canBeFalse || rightValue.canBeFalse) {
+        if (leftValue.canBeNull || rightValue.canBeNull) {
+          return nullUnion({type: 'boolean', value: false})
         }
-
-        return {type: 'null'}
-      }
-
-      // both sides are false, the condition is false
-      if (lhs.value === false && rhs.value === false) {
         return {type: 'boolean', value: false}
       }
 
-      return {type: 'boolean'}
+      return {type: 'null'}
     }),
   )
 }
@@ -1265,27 +1262,62 @@ function evaluateComparison(
   }
 }
 
-function booleanValue(node: TypeNode): boolean | undefined {
+type BooleanInterpretation = {
+  canBeTrue: boolean
+  canBeFalse: boolean
+  canBeNull: boolean
+}
+
+/**
+ * booleanValue takes a TypeNode and returns a BooleanInterpretation.
+ * BooleanInterpretation is a matrix of three booleans:
+ * - canBeTrue: whether the TypeNode can resolve to true
+ * - canBeFalse: whether the TypeNode can resolve to false
+ * - canBeNull: whether the TypeNode can resolve to null
+ * This is a helper method intended to determine the possible values of a boolean expression.
+ * When resolving a boolean expression, we might not be able to determine the exact value of the expression,
+ * but we can determine the possible values of the expression, Multiple values can be true at the same time.
+ *
+ * @param node - The TypeNode to evaluate
+ * @returns BooleanInterpretation
+ * @internal
+ */
+function booleanValue(node: TypeNode): BooleanInterpretation {
   // if the node is unknown, we can't match it so we return undefined
   if (node.type === 'unknown') {
-    return undefined
+    return {canBeTrue: true, canBeFalse: true, canBeNull: true}
   }
 
   // if the node is a boolean, we can match it, reuse the value
   if (node.type === 'boolean') {
-    return node.value
+    if (node.value === true) {
+      return {canBeTrue: true, canBeFalse: false, canBeNull: false}
+    }
+    if (node.value === false) {
+      return {canBeTrue: false, canBeFalse: true, canBeNull: false}
+    }
+
+    return {canBeTrue: true, canBeFalse: true, canBeNull: false}
   }
 
   if (node.type === 'union') {
+    const value = {canBeTrue: false, canBeFalse: false, canBeNull: false}
     for (const sub of node.of) {
       const match = booleanValue(sub)
-      if (match !== false) {
-        return match
+      if (match.canBeNull) {
+        value.canBeNull = true
+      }
+      if (match.canBeTrue) {
+        value.canBeTrue = true
+      }
+      if (match.canBeFalse) {
+        value.canBeFalse = true
       }
     }
+    return value
   }
 
-  return false
+  return {canBeTrue: false, canBeFalse: false, canBeNull: true}
 }
 
 // eslint-disable-next-line complexity, max-statements
@@ -1293,10 +1325,9 @@ function resolveFilter(expr: ExprNode, scope: Scope): UnionTypeNode {
   $trace('resolveFilter.expr %O', expr)
   const filtered = scope.value.of.filter((node) => {
     // create a new scope with the current scopes parent as the parent. It's only a temporary scope since we only want to resolve the condition
-    // and check if the result is "matchable"
+    // and check if the result can be true.
     const cond = walk({node: expr, scope: scope.createHidden([node])})
-    const isMatch = booleanValue(cond)
-    return isMatch === undefined || isMatch === true
+    return booleanValue(cond).canBeTrue
   })
   $trace(
     `resolveFilter ${expr.type === 'OpCall' ? `${expr.type}/${expr.op}` : expr.type} %O`,
