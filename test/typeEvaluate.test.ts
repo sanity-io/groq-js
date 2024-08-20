@@ -902,6 +902,7 @@ t.test('values in projection', (t) => {
           type: 'objectAttribute',
           value: nullUnion({
             type: 'boolean',
+            value: true,
           }),
         },
       },
