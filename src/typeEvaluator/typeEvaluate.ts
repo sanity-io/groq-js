@@ -27,6 +27,7 @@ import type {
   SliceNode,
   ValueNode,
 } from '../nodeTypes'
+import {booleanAnd, booleanInterpretationToTypeNode, booleanOr, booleanValue} from './booleans'
 import {handleFuncCallNode} from './functions'
 import {match} from './matching'
 import {optimizeUnions} from './optimizations'
@@ -220,17 +221,17 @@ function handleObjectNode(node: ObjectNode, scope: Scope): TypeNode {
     }
 
     if (attr.type === 'ObjectConditionalSplat') {
-      const condition = booleanValue(walk({node: attr.condition, scope}))
+      const condition = booleanValue(walk({node: attr.condition, scope}), scope)
       $trace('object.conditional.splat.condition %O', condition)
       // condition is never met, skip this attribute
-      if (condition === false) {
+      if (condition.canBeTrue === false) {
         continue
       }
 
       const attributeNode = handleObjectSplatNode(attr, scope)
       $trace('object.conditional.splat.result %O', attributeNode)
       // condition is always met, we can treat this as a normal splat
-      if (condition === true) {
+      if (condition.canBeFalse === false && condition.canBeNull === false) {
         switch (attributeNode.type) {
           case 'object': {
             splatVariants.push([idx, attributeNode])
@@ -1031,28 +1032,9 @@ function handleAndNode(node: AndNode, scope: Scope): TypeNode {
   const right = walk({node: node.right, scope})
   return mapConcrete(left, scope, (lhs) =>
     mapConcrete(right, scope, (rhs) => {
-      if (
-        (lhs.type === 'boolean' && lhs.value === false) ||
-        (rhs.type === 'boolean' && rhs.value === false)
-      ) {
-        return {type: 'boolean', value: false}
-      }
+      const value = booleanAnd(booleanValue(lhs, scope), booleanValue(rhs, scope))
 
-      if (lhs.type !== 'boolean' || rhs.type !== 'boolean') {
-        if (
-          (lhs.type === 'boolean' && lhs.value === undefined) ||
-          (rhs.type === 'boolean' && rhs.value === undefined)
-        ) {
-          return nullUnion({type: 'boolean'})
-        }
-        return {type: 'null'}
-      }
-
-      if (lhs.value === true && rhs.value === true) {
-        return {type: 'boolean', value: true}
-      }
-
-      return {type: 'boolean'}
+      return booleanInterpretationToTypeNode(value)
     }),
   )
 }
@@ -1062,33 +1044,9 @@ function handleOrNode(node: OrNode, scope: Scope): TypeNode {
   const right = walk({node: node.right, scope})
   return mapConcrete(left, scope, (lhs) =>
     mapConcrete(right, scope, (rhs) => {
-      // one of the sides is true the condition is true
-      if (
-        (lhs.type === 'boolean' && lhs.value === true) ||
-        (rhs.type === 'boolean' && rhs.value === true)
-      ) {
-        return {type: 'boolean', value: true}
-      }
+      const value = booleanOr(booleanValue(lhs, scope), booleanValue(rhs, scope))
 
-      // if one of the sides is not a boolean, it's either a null or
-      // a null|boolean if the other side is an undefined boolean
-      if (lhs.type !== 'boolean' || rhs.type !== 'boolean') {
-        if (
-          (lhs.type === 'boolean' && lhs.value === undefined) ||
-          (rhs.type === 'boolean' && rhs.value === undefined)
-        ) {
-          return nullUnion({type: 'boolean'})
-        }
-
-        return {type: 'null'}
-      }
-
-      // both sides are false, the condition is false
-      if (lhs.value === false && rhs.value === false) {
-        return {type: 'boolean', value: false}
-      }
-
-      return {type: 'boolean'}
+      return booleanInterpretationToTypeNode(value)
     }),
   )
 }
@@ -1265,38 +1223,15 @@ function evaluateComparison(
   }
 }
 
-function booleanValue(node: TypeNode): boolean | undefined {
-  // if the node is unknown, we can't match it so we return undefined
-  if (node.type === 'unknown') {
-    return undefined
-  }
-
-  // if the node is a boolean, we can match it, reuse the value
-  if (node.type === 'boolean') {
-    return node.value
-  }
-
-  if (node.type === 'union') {
-    for (const sub of node.of) {
-      const match = booleanValue(sub)
-      if (match !== false) {
-        return match
-      }
-    }
-  }
-
-  return false
-}
-
 // eslint-disable-next-line complexity, max-statements
 function resolveFilter(expr: ExprNode, scope: Scope): UnionTypeNode {
   $trace('resolveFilter.expr %O', expr)
   const filtered = scope.value.of.filter((node) => {
     // create a new scope with the current scopes parent as the parent. It's only a temporary scope since we only want to resolve the condition
-    // and check if the result is "matchable"
-    const cond = walk({node: expr, scope: scope.createHidden([node])})
-    const isMatch = booleanValue(cond)
-    return isMatch === undefined || isMatch === true
+    // and check if the result can be true.
+    const subScope = scope.createHidden([node])
+    const cond = walk({node: expr, scope: subScope})
+    return booleanValue(cond, subScope).canBeTrue
   })
   $trace(
     `resolveFilter ${expr.type === 'OpCall' ? `${expr.type}/${expr.op}` : expr.type} %O`,
