@@ -19,6 +19,7 @@ import {portableTextContent} from './pt'
 import {Scope} from './scope'
 import {evaluateScore} from './scoring'
 import type {Executor} from './types'
+import {isEqual} from './equality.ts'
 
 function hasReference(value: any, pathSet: Set<string>): boolean {
   switch (getType(value)) {
@@ -391,6 +392,31 @@ array['unique'] = async function (args, scope, execute) {
   })
 }
 array['unique'].arity = 1
+
+array['intersects'] = async function (args, scope, execute) {
+  // Intersects returns true if the two arrays have at least one element in common. Only
+  // primitives are supported; non-primitives are ignored.
+  const arr1 = await execute(args[0], scope)
+  if (!arr1.isArray()) {
+    return NULL_VALUE
+  }
+
+  const arr2 = await execute(args[1], scope)
+  if (!arr2.isArray()) {
+    return NULL_VALUE
+  }
+
+  for (const v1 of await arr1.get()) {
+    for (const v2 of await arr2.get()) {
+      if (isEqual(v1, v2)) {
+        return TRUE_VALUE
+      }
+    }
+  }
+
+  return FALSE_VALUE
+}
+array['intersects'].arity = 2
 
 const pt: FunctionSet = {}
 pt['text'] = async function (args, scope, execute) {
