@@ -19,7 +19,7 @@ import {portableTextContent} from './pt'
 import {Scope} from './scope'
 import {evaluateScore} from './scoring'
 import type {Executor} from './types'
-import {isEqual} from './equality.ts'
+import {isEqual} from './equality'
 
 function hasReference(value: any, pathSet: Set<string>): boolean {
   switch (getType(value)) {
@@ -406,8 +406,8 @@ array['intersects'] = async function (args, scope, execute) {
     return NULL_VALUE
   }
 
-  for (const v1 of await arr1.get()) {
-    for (const v2 of await arr2.get()) {
+  for await (const v1 of arr1) {
+    for await (const v2 of arr2) {
       if (isEqual(v1, v2)) {
         return TRUE_VALUE
       }
