@@ -96,14 +96,12 @@ export function resolveInline(node: TypeNode, scope: Scope): Exclude<TypeNode, I
 }
 
 /**
- * mapConcrete extracts a _concrete type_ OR an _unknown type node_ from a type node, applies the mapping
+ * mapNode extracts either a _concrete type_ OR an _unknown type_ from a type node, applies the mapping
  * function to it and returns. Most notably, this will work through unions
  * (applying the mapping function for each variant) and inline (resolving the
  * reference).
- * This method should _only_ be used if you need to handle unknown types, ie when resolving two sides of an and node, and we don't want to abort if one side is unknown.
- * In most cases, you should use `mapConcrete` instead.
  **/
-export function mapConcrete<T extends TypeNode = TypeNode>(
+export function mapNode<T extends TypeNode = TypeNode>(
   node: TypeNode,
   scope: Scope,
   mapper: (node: ConcreteTypeNode | UnknownTypeNode) => T,
@@ -120,10 +118,10 @@ export function mapConcrete<T extends TypeNode = TypeNode>(
     case 'unknown':
       return mapper(node)
     case 'union':
-      return mergeUnions(node.of.map((inner) => mapConcrete(inner, scope, mapper), mergeUnions))
+      return mergeUnions(node.of.map((inner) => mapNode(inner, scope, mapper), mergeUnions))
     case 'inline': {
       const resolvedInline = resolveInline(node, scope)
-      return mapConcrete(resolvedInline, scope, mapper, mergeUnions)
+      return mapNode(resolvedInline, scope, mapper, mergeUnions)
     }
     default:
       // @ts-expect-error - all types should be handled
