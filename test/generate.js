@@ -10,7 +10,8 @@ const semver = require('semver')
 
 const SUPPORTED_FEATURES = new Set(['portableText'])
 // We implement GROQ-1.revision1. The final patch has to be there for it to be a valid SemVer.
-const GROQ_VERSION = '1.1.0'
+// E.g. GROQ-1.revision2 maps to 1.2.0
+const GROQ_VERSION = '1.2.0'
 const DISABLED_TESTS = [
   'Filters / documents, nested 3', // very slow
   'Parameters / Undefined',
