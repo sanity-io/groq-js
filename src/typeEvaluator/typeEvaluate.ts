@@ -31,7 +31,7 @@ import {handleFuncCallNode} from './functions'
 import {match} from './matching'
 import {optimizeUnions} from './optimizations'
 import {Context, Scope} from './scope'
-import {isFuncCall, mapConcrete, mapUnion, nullUnion, resolveInline} from './typeHelpers'
+import {isFuncCall, mapConcrete, nullUnion, resolveInline} from './typeHelpers'
 import type {
   ArrayTypeNode,
   BooleanTypeNode,
@@ -123,6 +123,10 @@ function handleObjectSplatNode(
   const value = walk({node: attr.value, scope})
   $trace('object.splat.value %O', value)
   return mapConcrete(value, scope, (node) => {
+    // splatting over unknown is unknown, we can't know what the attributes are
+    if (node.type === 'unknown') {
+      return {type: 'unknown'}
+    }
     // splatting over a non-object is a no-op
     if (node.type !== 'object') {
       return {type: 'object', attributes: {}}
@@ -457,9 +461,9 @@ function handleOpCallNode(node: OpCallNode, scope: Scope): TypeNode {
   $trace('opcall.node %O', node)
   const lhs = walk({node: node.left, scope})
   const rhs = walk({node: node.right, scope})
-  return mapUnion(lhs, scope, (left) =>
+  return mapConcrete(lhs, scope, (left) =>
     // eslint-disable-next-line complexity, max-statements
-    mapUnion(rhs, scope, (right) => {
+    mapConcrete(rhs, scope, (right) => {
       $trace('opcall.node.concrete "%s" %O', node.op, {left, right})
 
       switch (node.op) {
@@ -527,7 +531,7 @@ function handleOpCallNode(node: OpCallNode, scope: Scope): TypeNode {
         case '<':
         case '<=': {
           if (left.type === 'unknown' || right.type === 'unknown') {
-            return {type: 'unknown'}
+            return nullUnion({type: 'boolean'})
           }
           if (left.type !== right.type) {
             return {type: 'null'} satisfies NullTypeNode
@@ -542,7 +546,7 @@ function handleOpCallNode(node: OpCallNode, scope: Scope): TypeNode {
         }
         case 'in': {
           if (left.type === 'unknown' || right.type === 'unknown') {
-            return {type: 'unknown'}
+            return nullUnion({type: 'boolean'})
           }
           if (right.type !== 'array') {
             // Special case for global::path, since it can be used with in operator, but the type returned otherwise is a string
@@ -558,6 +562,10 @@ function handleOpCallNode(node: OpCallNode, scope: Scope): TypeNode {
             } satisfies BooleanTypeNode
           }
           return mapConcrete(right.of, scope, (arrayTypeNode) => {
+            if (arrayTypeNode.type === 'unknown') {
+              return nullUnion({type: 'boolean'})
+            }
+
             if (left.type === 'null') {
               return {
                 type: 'boolean',
@@ -591,7 +599,8 @@ function handleOpCallNode(node: OpCallNode, scope: Scope): TypeNode {
         }
         case 'match': {
           if (left.type === 'unknown' || right.type === 'unknown') {
-            return {type: 'unknown'}
+            // match always returns a boolean, no matter the compared types.
+            return {type: 'boolean'}
           }
           return {
             type: 'boolean',
@@ -600,6 +609,7 @@ function handleOpCallNode(node: OpCallNode, scope: Scope): TypeNode {
         }
         case '+': {
           if (left.type === 'unknown' || right.type === 'unknown') {
+            // + is ambiguous without the concrete types of the operands, so we return unknown and leave the excersise to the caller
             return {type: 'unknown'}
           }
           if (left.type === 'string' && right.type === 'string') {
@@ -640,7 +650,7 @@ function handleOpCallNode(node: OpCallNode, scope: Scope): TypeNode {
         }
         case '-': {
           if (left.type === 'unknown' || right.type === 'unknown') {
-            return {type: 'unknown'}
+            return nullUnion({type: 'number'})
           }
           if (left.type === 'number' && right.type === 'number') {
             return {
@@ -655,7 +665,7 @@ function handleOpCallNode(node: OpCallNode, scope: Scope): TypeNode {
         }
         case '*': {
           if (left.type === 'unknown' || right.type === 'unknown') {
-            return {type: 'unknown'}
+            return nullUnion({type: 'number'})
           }
           if (left.type === 'number' && right.type === 'number') {
             return {
@@ -670,7 +680,7 @@ function handleOpCallNode(node: OpCallNode, scope: Scope): TypeNode {
         }
         case '/': {
           if (left.type === 'unknown' || right.type === 'unknown') {
-            return {type: 'unknown'}
+            return nullUnion({type: 'number'})
           }
           if (left.type === 'number' && right.type === 'number') {
             return {
@@ -685,7 +695,7 @@ function handleOpCallNode(node: OpCallNode, scope: Scope): TypeNode {
         }
         case '**': {
           if (left.type === 'unknown' || right.type === 'unknown') {
-            return {type: 'unknown'}
+            return nullUnion({type: 'number'})
           }
           if (left.type === 'number' && right.type === 'number') {
             return {
@@ -700,7 +710,7 @@ function handleOpCallNode(node: OpCallNode, scope: Scope): TypeNode {
         }
         case '%': {
           if (left.type === 'unknown' || right.type === 'unknown') {
-            return {type: 'unknown'}
+            return nullUnion({type: 'number'})
           }
           if (left.type === 'number' && right.type === 'number') {
             return {
@@ -978,6 +988,10 @@ function handleParentNode({n}: ParentNode, scope: Scope): TypeNode {
 function handleNotNode(node: NotNode, scope: Scope): TypeNode {
   const base = walk({node: node.base, scope})
   return mapConcrete(base, scope, (base) => {
+    if (base.type === 'unknown') {
+      return nullUnion({type: 'boolean'})
+    }
+
     if (base.type === 'boolean') {
       if (base.value !== undefined) {
         return {type: 'boolean', value: base.value === false}
@@ -992,6 +1006,10 @@ function handleNotNode(node: NotNode, scope: Scope): TypeNode {
 function handleNegNode(node: NegNode, scope: Scope): TypeNode {
   const base = walk({node: node.base, scope})
   return mapConcrete(base, scope, (base) => {
+    if (base.type === 'unknown') {
+      return nullUnion({type: 'number'})
+    }
+
     if (base.type !== 'number') {
       return {type: 'null'}
     }
@@ -1004,6 +1022,9 @@ function handleNegNode(node: NegNode, scope: Scope): TypeNode {
 function handlePosNode(node: PosNode, scope: Scope): TypeNode {
   const base = walk({node: node.base, scope})
   return mapConcrete(base, scope, (base) => {
+    if (base.type === 'unknown') {
+      return nullUnion({type: 'number'})
+    }
     if (base.type !== 'number') {
       return {type: 'null'}
     }
@@ -1072,6 +1093,10 @@ function handleOrNode(node: OrNode, scope: Scope): TypeNode {
           }
 
           return {type: 'boolean'}
+        }
+
+        if (leftValue.canBeNull || rightValue.canBeNull) {
+          return nullUnion({type: 'boolean', value: true})
         }
 
         return {type: 'boolean', value: true}
@@ -1341,7 +1366,15 @@ function mapArray(
   scope: Scope,
   mapper: (node: ArrayTypeNode) => TypeNode,
 ): TypeNode {
-  return mapConcrete(node, scope, (base) => (base.type === 'array' ? mapper(base) : {type: 'null'}))
+  return mapConcrete(node, scope, (base) => {
+    if (base.type === 'unknown') {
+      return base
+    }
+    if (base.type === 'array') {
+      return mapper(base)
+    }
+    return {type: 'null'}
+  })
 }
 
 function mapObject(
@@ -1349,7 +1382,13 @@ function mapObject(
   scope: Scope,
   mapper: (node: ObjectTypeNode) => TypeNode,
 ): TypeNode {
-  return mapConcrete(node, scope, (base) =>
-    base.type === 'object' ? mapper(base) : {type: 'null'},
-  )
+  return mapConcrete(node, scope, (base) => {
+    if (base.type === 'unknown') {
+      return base
+    }
+    if (base.type === 'object') {
+      return mapper(base)
+    }
+    return {type: 'null'}
+  })
 }
