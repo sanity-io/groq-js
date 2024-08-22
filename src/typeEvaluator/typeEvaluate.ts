@@ -32,7 +32,7 @@ import {handleFuncCallNode} from './functions'
 import {match} from './matching'
 import {optimizeUnions} from './optimizations'
 import {Context, Scope} from './scope'
-import {isFuncCall, mapConcrete, nullUnion, resolveInline} from './typeHelpers'
+import {isFuncCall, mapNode, nullUnion, resolveInline} from './typeHelpers'
 import type {
   ArrayTypeNode,
   BooleanTypeNode,
@@ -123,7 +123,7 @@ function handleObjectSplatNode(
 ): TypeNode {
   const value = walk({node: attr.value, scope})
   $trace('object.splat.value %O', value)
-  return mapConcrete(value, scope, (node) => {
+  return mapNode(value, scope, (node) => {
     // splatting over unknown is unknown, we can't know what the attributes are
     if (node.type === 'unknown') {
       return {type: 'unknown'}
@@ -258,7 +258,7 @@ function handleObjectNode(node: ObjectNode, scope: Scope): TypeNode {
         }
       }
 
-      const variant = mapConcrete(attributeNode, scope, (attributeNode) => {
+      const variant = mapNode(attributeNode, scope, (attributeNode) => {
         $trace('object.conditional.splat.result.concrete %O', attributeNode)
         if (attributeNode.type !== 'object') {
           return {type: 'unknown'}
@@ -462,9 +462,9 @@ function handleOpCallNode(node: OpCallNode, scope: Scope): TypeNode {
   $trace('opcall.node %O', node)
   const lhs = walk({node: node.left, scope})
   const rhs = walk({node: node.right, scope})
-  return mapConcrete(lhs, scope, (left) =>
+  return mapNode(lhs, scope, (left) =>
     // eslint-disable-next-line complexity, max-statements
-    mapConcrete(rhs, scope, (right) => {
+    mapNode(rhs, scope, (right) => {
       $trace('opcall.node.concrete "%s" %O', node.op, {left, right})
 
       switch (node.op) {
@@ -562,7 +562,7 @@ function handleOpCallNode(node: OpCallNode, scope: Scope): TypeNode {
               value: false,
             } satisfies BooleanTypeNode
           }
-          return mapConcrete(right.of, scope, (arrayTypeNode) => {
+          return mapNode(right.of, scope, (arrayTypeNode) => {
             if (arrayTypeNode.type === 'unknown') {
               return nullUnion({type: 'boolean'})
             }
@@ -773,7 +773,7 @@ function handleFlatMap(node: FlatMapNode, scope: Scope): TypeNode {
   return mapArray(base, scope, (base) => {
     const inner = walk({node: node.expr, scope: scope.createHidden([base.of])})
 
-    return mapConcrete(
+    return mapNode(
       inner,
       scope,
       (inner) => {
@@ -835,7 +835,7 @@ function handleFilterNode(node: FilterNode, scope: Scope): TypeNode {
   const base = walk({node: node.base, scope})
   $trace('filter.base %O', base)
 
-  return mapConcrete(base, scope, (base) => {
+  return mapNode(base, scope, (base) => {
     $trace('filter.resolving %O', base)
     if (base.type === 'null') {
       return base
@@ -988,7 +988,7 @@ function handleParentNode({n}: ParentNode, scope: Scope): TypeNode {
 
 function handleNotNode(node: NotNode, scope: Scope): TypeNode {
   const base = walk({node: node.base, scope})
-  return mapConcrete(base, scope, (base) => {
+  return mapNode(base, scope, (base) => {
     if (base.type === 'unknown') {
       return nullUnion({type: 'boolean'})
     }
@@ -1006,7 +1006,7 @@ function handleNotNode(node: NotNode, scope: Scope): TypeNode {
 
 function handleNegNode(node: NegNode, scope: Scope): TypeNode {
   const base = walk({node: node.base, scope})
-  return mapConcrete(base, scope, (base) => {
+  return mapNode(base, scope, (base) => {
     if (base.type === 'unknown') {
       return nullUnion({type: 'number'})
     }
@@ -1022,7 +1022,7 @@ function handleNegNode(node: NegNode, scope: Scope): TypeNode {
 }
 function handlePosNode(node: PosNode, scope: Scope): TypeNode {
   const base = walk({node: node.base, scope})
-  return mapConcrete(base, scope, (base) => {
+  return mapNode(base, scope, (base) => {
     if (base.type === 'unknown') {
       return nullUnion({type: 'number'})
     }
@@ -1051,8 +1051,8 @@ function handleEverythingNode(_: EverythingNode, scope: Scope): TypeNode {
 function handleAndNode(node: AndNode, scope: Scope): TypeNode {
   const left = walk({node: node.left, scope})
   const right = walk({node: node.right, scope})
-  return mapConcrete(left, scope, (lhs) =>
-    mapConcrete(right, scope, (rhs) => {
+  return mapNode(left, scope, (lhs) =>
+    mapNode(right, scope, (rhs) => {
       const value = booleanAnd(booleanValue(lhs, scope), booleanValue(rhs, scope))
 
       return booleanInterpretationToTypeNode(value)
@@ -1063,8 +1063,8 @@ function handleAndNode(node: AndNode, scope: Scope): TypeNode {
 function handleOrNode(node: OrNode, scope: Scope): TypeNode {
   const left = walk({node: node.left, scope})
   const right = walk({node: node.right, scope})
-  return mapConcrete(left, scope, (lhs) =>
-    mapConcrete(right, scope, (rhs) => {
+  return mapNode(left, scope, (lhs) =>
+    mapNode(right, scope, (rhs) => {
       const value = booleanOr(booleanValue(lhs, scope), booleanValue(rhs, scope))
 
       return booleanInterpretationToTypeNode(value)
@@ -1266,7 +1266,7 @@ function mapArray(
   scope: Scope,
   mapper: (node: ArrayTypeNode) => TypeNode,
 ): TypeNode {
-  return mapConcrete(node, scope, (base) => {
+  return mapNode(node, scope, (base) => {
     if (base.type === 'unknown') {
       return base
     }
@@ -1282,7 +1282,7 @@ function mapObject(
   scope: Scope,
   mapper: (node: ObjectTypeNode) => TypeNode,
 ): TypeNode {
-  return mapConcrete(node, scope, (base) => {
+  return mapNode(node, scope, (base) => {
     if (base.type === 'unknown') {
       return base
     }
