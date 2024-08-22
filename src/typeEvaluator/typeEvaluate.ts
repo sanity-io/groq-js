@@ -27,6 +27,7 @@ import type {
   SliceNode,
   ValueNode,
 } from '../nodeTypes'
+import {booleanAnd, booleanInterpretationToTypeNode, booleanOr, booleanValue} from './booleans'
 import {handleFuncCallNode} from './functions'
 import {match} from './matching'
 import {optimizeUnions} from './optimizations'
@@ -224,7 +225,7 @@ function handleObjectNode(node: ObjectNode, scope: Scope): TypeNode {
     }
 
     if (attr.type === 'ObjectConditionalSplat') {
-      const condition = booleanValue(walk({node: attr.condition, scope}))
+      const condition = booleanValue(walk({node: attr.condition, scope}), scope)
       $trace('object.conditional.splat.condition %O', condition)
       // condition is never met, skip this attribute
       if (condition.canBeTrue === false) {
@@ -1052,29 +1053,9 @@ function handleAndNode(node: AndNode, scope: Scope): TypeNode {
   const right = walk({node: node.right, scope})
   return mapConcrete(left, scope, (lhs) =>
     mapConcrete(right, scope, (rhs) => {
-      const leftValue = booleanValue(lhs)
-      const rightValue = booleanValue(rhs)
-      if (leftValue.canBeTrue && rightValue.canBeTrue) {
-        if (leftValue.canBeFalse || rightValue.canBeFalse) {
-          if (leftValue.canBeNull || rightValue.canBeNull) {
-            return nullUnion({type: 'boolean'})
-          }
+      const value = booleanAnd(booleanValue(lhs, scope), booleanValue(rhs, scope))
 
-          return {type: 'boolean'}
-        }
-
-        return {type: 'boolean', value: true}
-      }
-
-      // this will never resolve, but we check if the expressions returns false, null or an union.
-      if (leftValue.canBeFalse || rightValue.canBeFalse) {
-        if (leftValue.canBeNull || rightValue.canBeNull) {
-          return nullUnion({type: 'boolean', value: false})
-        }
-        return {type: 'boolean', value: false}
-      }
-
-      return {type: 'null'}
+      return booleanInterpretationToTypeNode(value)
     }),
   )
 }
@@ -1084,33 +1065,9 @@ function handleOrNode(node: OrNode, scope: Scope): TypeNode {
   const right = walk({node: node.right, scope})
   return mapConcrete(left, scope, (lhs) =>
     mapConcrete(right, scope, (rhs) => {
-      const leftValue = booleanValue(lhs)
-      const rightValue = booleanValue(rhs)
-      if (leftValue.canBeTrue || rightValue.canBeTrue) {
-        if (leftValue.canBeFalse || rightValue.canBeFalse) {
-          if (leftValue.canBeNull || rightValue.canBeNull) {
-            return nullUnion({type: 'boolean'})
-          }
+      const value = booleanOr(booleanValue(lhs, scope), booleanValue(rhs, scope))
 
-          return {type: 'boolean'}
-        }
-
-        if (leftValue.canBeNull || rightValue.canBeNull) {
-          return nullUnion({type: 'boolean', value: true})
-        }
-
-        return {type: 'boolean', value: true}
-      }
-
-      // this will never resolve, but we check if the expressions returns false, null or an union.
-      if (leftValue.canBeFalse || rightValue.canBeFalse) {
-        if (leftValue.canBeNull || rightValue.canBeNull) {
-          return nullUnion({type: 'boolean', value: false})
-        }
-        return {type: 'boolean', value: false}
-      }
-
-      return {type: 'null'}
+      return booleanInterpretationToTypeNode(value)
     }),
   )
 }
@@ -1287,72 +1244,15 @@ function evaluateComparison(
   }
 }
 
-type BooleanInterpretation = {
-  canBeTrue: boolean
-  canBeFalse: boolean
-  canBeNull: boolean
-}
-
-/**
- * booleanValue takes a TypeNode and returns a BooleanInterpretation.
- * BooleanInterpretation is a matrix of three booleans:
- * - canBeTrue: whether the TypeNode can resolve to true
- * - canBeFalse: whether the TypeNode can resolve to false
- * - canBeNull: whether the TypeNode can resolve to null
- * This is a helper method intended to determine the possible values of a boolean expression.
- * When resolving a boolean expression, we might not be able to determine the exact value of the expression,
- * but we can determine the possible values of the expression, Multiple values can be true at the same time.
- *
- * @param node - The TypeNode to evaluate
- * @returns BooleanInterpretation
- * @internal
- */
-function booleanValue(node: TypeNode): BooleanInterpretation {
-  // if the node is unknown, we can't match it so we return undefined
-  if (node.type === 'unknown') {
-    return {canBeTrue: true, canBeFalse: true, canBeNull: true}
-  }
-
-  // if the node is a boolean, we can match it, reuse the value
-  if (node.type === 'boolean') {
-    if (node.value === true) {
-      return {canBeTrue: true, canBeFalse: false, canBeNull: false}
-    }
-    if (node.value === false) {
-      return {canBeTrue: false, canBeFalse: true, canBeNull: false}
-    }
-
-    return {canBeTrue: true, canBeFalse: true, canBeNull: false}
-  }
-
-  if (node.type === 'union') {
-    const value = {canBeTrue: false, canBeFalse: false, canBeNull: false}
-    for (const sub of node.of) {
-      const match = booleanValue(sub)
-      if (match.canBeNull) {
-        value.canBeNull = true
-      }
-      if (match.canBeTrue) {
-        value.canBeTrue = true
-      }
-      if (match.canBeFalse) {
-        value.canBeFalse = true
-      }
-    }
-    return value
-  }
-
-  return {canBeTrue: false, canBeFalse: false, canBeNull: true}
-}
-
 // eslint-disable-next-line complexity, max-statements
 function resolveFilter(expr: ExprNode, scope: Scope): UnionTypeNode {
   $trace('resolveFilter.expr %O', expr)
   const filtered = scope.value.of.filter((node) => {
     // create a new scope with the current scopes parent as the parent. It's only a temporary scope since we only want to resolve the condition
     // and check if the result can be true.
-    const cond = walk({node: expr, scope: scope.createHidden([node])})
-    return booleanValue(cond).canBeTrue
+    const subScope = scope.createHidden([node])
+    const cond = walk({node: expr, scope: subScope})
+    return booleanValue(cond, subScope).canBeTrue
   })
   $trace(
     `resolveFilter ${expr.type === 'OpCall' ? `${expr.type}/${expr.op}` : expr.type} %O`,

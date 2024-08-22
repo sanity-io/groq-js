@@ -45,10 +45,7 @@ export function handleFuncCallNode(node: FuncCallNode, scope: Scope): TypeNode {
           if (arrayArg.type === 'unknown' || sepArg.type === 'unknown') {
             return nullUnion({type: 'string'})
           }
-          if (arrayArg.type !== 'array') {
-            return {type: 'null'}
-          }
-          if (sepArg.type !== 'string') {
+          if (arrayArg.type !== 'array' || sepArg.type !== 'string') {
             return {type: 'null'}
           }
 
@@ -282,21 +279,22 @@ export function handleFuncCallNode(node: FuncCallNode, scope: Scope): TypeNode {
         }
 
         // Aggregate functions can only be applied to arrays
-        if (node.type === 'array') {
-          // Resolve the concrete type of the array elements
-          return mapConcrete(node.of, scope, (node) => {
-            if (node.type === 'unknown') {
-              return nullUnion({type: 'number'})
-            }
-            // Math functions can only be applied to numbers, but we should also ignore nulls
-            if (node.type === 'number' || node.type === 'null') {
-              return {type: 'number'}
-            }
-            return {type: 'null'}
-          })
+        if (node.type !== 'array') {
+          return {type: 'null'}
         }
 
-        return {type: 'null'}
+        // Resolve the concrete type of the array elements
+        return mapConcrete(node.of, scope, (node) => {
+          if (node.type === 'unknown') {
+            return nullUnion({type: 'number'})
+          }
+
+          // Math functions can only be applied to numbers, but we should also ignore nulls
+          if (node.type === 'number' || node.type === 'null') {
+            return {type: 'number'}
+          }
+          return {type: 'null'}
+        })
       })
     }
 
@@ -309,22 +307,21 @@ export function handleFuncCallNode(node: FuncCallNode, scope: Scope): TypeNode {
         }
 
         // Aggregate functions can only be applied to arrays
-        if (node.type === 'array') {
-          // Resolve the concrete type of the array elements
-          return mapConcrete(node.of, scope, (node) => {
-            if (node.type === 'unknown') {
-              return nullUnion({type: 'number'})
-            }
-
-            // Math functions can only be applied to numbers
-            if (node.type === 'number') {
-              return {type: 'number'}
-            }
-            return {type: 'null'}
-          })
+        if (node.type !== 'array') {
+          return {type: 'null'}
         }
+        // Resolve the concrete type of the array elements
+        return mapConcrete(node.of, scope, (node) => {
+          if (node.type === 'unknown') {
+            return nullUnion({type: 'number'})
+          }
 
-        return {type: 'null'}
+          // Math functions can only be applied to numbers
+          if (node.type === 'number') {
+            return {type: 'number'}
+          }
+          return {type: 'null'}
+        })
       })
     }
 
@@ -338,22 +335,22 @@ export function handleFuncCallNode(node: FuncCallNode, scope: Scope): TypeNode {
         }
 
         // Aggregate functions can only be applied to arrays
-        if (node.type === 'array') {
-          // Resolve the concrete type of the array elements
-          return mapConcrete(node.of, scope, (node) => {
-            if (node.type === 'unknown') {
-              return nullUnion({type: 'number'})
-            }
-
-            // Math functions can only be applied to numbers
-            if (node.type === 'number') {
-              return node
-            }
-            return {type: 'null'}
-          })
+        if (node.type !== 'array') {
+          return {type: 'null'}
         }
 
-        return {type: 'null'}
+        // Resolve the concrete type of the array elements
+        return mapConcrete(node.of, scope, (node) => {
+          if (node.type === 'unknown') {
+            return nullUnion({type: 'number'})
+          }
+
+          // Math functions can only be applied to numbers
+          if (node.type === 'number') {
+            return node
+          }
+          return {type: 'null'}
+        })
       })
     }
 
@@ -365,24 +362,17 @@ export function handleFuncCallNode(node: FuncCallNode, scope: Scope): TypeNode {
         type: 'string',
       }
     }
+
     case 'string.startsWith': {
       const strTypeNode = walk({node: node.args[0], scope})
       const prefixTypeNode = walk({node: node.args[1], scope})
       return mapConcrete(strTypeNode, scope, (strNode) => {
-        if (strNode.type === 'unknown') {
-          return nullUnion({type: 'boolean'})
-        }
-
-        if (strNode.type !== 'string') {
-          return {type: 'null'}
-        }
-
         return mapConcrete(prefixTypeNode, scope, (prefixNode) => {
-          if (prefixNode.type === 'unknown') {
+          if (strNode.type === 'unknown' || prefixNode.type === 'unknown') {
             return nullUnion({type: 'boolean'})
           }
 
-          if (prefixNode.type !== 'string') {
+          if (strNode.type !== 'string' || prefixNode.type !== 'string') {
             return {type: 'null'}
           }
 
@@ -394,20 +384,12 @@ export function handleFuncCallNode(node: FuncCallNode, scope: Scope): TypeNode {
       const strTypeNode = walk({node: node.args[0], scope})
       const sepTypeNode = walk({node: node.args[1], scope})
       return mapConcrete(strTypeNode, scope, (strNode) => {
-        if (strNode.type === 'unknown') {
-          return nullUnion({type: 'boolean'})
-        }
-
-        if (strNode.type !== 'string') {
-          return {type: 'null'}
-        }
-
         return mapConcrete(sepTypeNode, scope, (sepNode) => {
-          if (sepNode.type === 'unknown') {
-            return nullUnion({type: 'boolean'})
+          if (strNode.type === 'unknown' || sepNode.type === 'unknown') {
+            return nullUnion({type: 'array', of: {type: 'string'}})
           }
 
-          if (sepNode.type !== 'string') {
+          if (strNode.type !== 'string' || sepNode.type !== 'string') {
             return {type: 'null'}
           }
 
