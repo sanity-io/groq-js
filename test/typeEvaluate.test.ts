@@ -2748,6 +2748,36 @@ t.test('function: array::unique', (t) => {
   t.end()
 })
 
+t.test('function: array::intersects', (t) => {
+  const query = `* {
+    "f1": array::intersects(true, true),
+    "f2": array::intersects([1, 2, true], [5, 1, false]),
+  }`
+  const ast = parse(query)
+  const res = typeEvaluate(ast, schemas)
+  t.strictSame(res, {
+    type: 'array',
+    of: {
+      type: 'object',
+      attributes: {
+        f1: {
+          type: 'objectAttribute',
+          value: {
+            type: 'null',
+          },
+        },
+        f2: {
+          type: 'objectAttribute',
+          value: {
+            type: 'boolean',
+          },
+        },
+      },
+    },
+  })
+  t.end()
+})
+
 t.test('function: math::*', (t) => {
   const query = `*[_type == "author"] {
     "ages": math::min(ages),
