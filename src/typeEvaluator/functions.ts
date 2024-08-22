@@ -15,12 +15,16 @@ function unionWithoutNull(unionTypeNode: TypeNode): TypeNode {
   return unionTypeNode
 }
 
+// eslint-disable-next-line complexity
 export function handleFuncCallNode(node: FuncCallNode, scope: Scope): TypeNode {
   switch (`${node.namespace}.${node.name}`) {
     case 'array.compact': {
       const arg = walk({node: node.args[0], scope})
 
       return mapConcrete(arg, scope, (arg) => {
+        if (arg.type === 'unknown') {
+          return nullUnion({type: 'array', of: {type: 'unknown'}})
+        }
         if (arg.type !== 'array') {
           return {type: 'null'}
         }
@@ -39,17 +43,20 @@ export function handleFuncCallNode(node: FuncCallNode, scope: Scope): TypeNode {
 
       return mapConcrete(arrayArg, scope, (arrayArg) =>
         mapConcrete(sepArg, scope, (sepArg) => {
-          if (arrayArg.type !== 'array') {
-            return {type: 'null'}
+          if (arrayArg.type === 'unknown' || sepArg.type === 'unknown') {
+            return nullUnion({type: 'string'})
           }
-          if (sepArg.type !== 'string') {
+          if (arrayArg.type !== 'array' || sepArg.type !== 'string') {
             return {type: 'null'}
           }
 
           return mapConcrete(arrayArg.of, scope, (of) => {
+            if (of.type === 'unknown') {
+              return nullUnion({type: 'string'})
+            }
             // we can only join strings, numbers, and booleans
             if (of.type !== 'string' && of.type !== 'number' && of.type !== 'boolean') {
-              return {type: 'unknown'}
+              return {type: 'null'}
             }
 
             return {type: 'string'}
@@ -62,6 +69,9 @@ export function handleFuncCallNode(node: FuncCallNode, scope: Scope): TypeNode {
       const arg = walk({node: node.args[0], scope})
 
       return mapConcrete(arg, scope, (arg) => {
+        if (arg.type === 'unknown') {
+          return nullUnion({type: 'array', of: {type: 'unknown'}})
+        }
         if (arg.type !== 'array') {
           return {type: 'null'}
         }
@@ -74,34 +84,39 @@ export function handleFuncCallNode(node: FuncCallNode, scope: Scope): TypeNode {
       const arg = walk({node: node.args[0], scope})
 
       return mapConcrete(arg, scope, (arg) => {
-        if (arg.type === 'string') {
-          if (arg.value !== undefined) {
-            return {
-              type: 'string',
-              value: arg.value.toLowerCase(),
-            }
-          }
-          return {type: 'string'}
+        if (arg.type === 'unknown') {
+          return nullUnion({type: 'string'})
         }
 
-        return {type: 'null'}
+        if (arg.type !== 'string') {
+          return {type: 'null'}
+        }
+        if (arg.value !== undefined) {
+          return {
+            type: 'string',
+            value: arg.value.toLowerCase(),
+          }
+        }
+        return {type: 'string'}
       })
     }
     case 'global.upper': {
       const arg = walk({node: node.args[0], scope})
 
       return mapConcrete(arg, scope, (arg) => {
-        if (arg.type === 'string') {
-          if (arg.value !== undefined) {
-            return {
-              type: 'string',
-              value: arg.value.toUpperCase(),
-            }
-          }
-          return {type: 'string'}
+        if (arg.type === 'unknown') {
+          return nullUnion({type: 'string'})
         }
-
-        return {type: 'null'}
+        if (arg.type !== 'string') {
+          return {type: 'null'}
+        }
+        if (arg.value !== undefined) {
+          return {
+            type: 'string',
+            value: arg.value.toUpperCase(),
+          }
+        }
+        return {type: 'string'}
       })
     }
     case 'dateTime.now': {
@@ -116,6 +131,10 @@ export function handleFuncCallNode(node: FuncCallNode, scope: Scope): TypeNode {
     case 'global.path': {
       const arg = walk({node: node.args[0], scope})
       return mapConcrete(arg, scope, (arg) => {
+        if (arg.type === 'unknown') {
+          return nullUnion({type: 'string'})
+        }
+
         if (arg.type === 'string') {
           return {type: 'string'}
         }
@@ -150,6 +169,10 @@ export function handleFuncCallNode(node: FuncCallNode, scope: Scope): TypeNode {
       const arg = walk({node: node.args[0], scope})
 
       return mapConcrete(arg, scope, (arg) => {
+        if (arg.type === 'unknown') {
+          return nullUnion({type: 'string'})
+        }
+
         if (arg.type === 'array') {
           return {type: 'number'}
         }
@@ -162,6 +185,10 @@ export function handleFuncCallNode(node: FuncCallNode, scope: Scope): TypeNode {
       const arg = walk({node: node.args[0], scope})
 
       return mapConcrete(arg, scope, (arg) => {
+        if (arg.type === 'unknown') {
+          return nullUnion({type: 'string'})
+        }
+
         if (arg.type === 'string') {
           return nullUnion({type: 'string'}) // we don't know wether the string is a valid date or not, so we return a [null, string]-union
         }
@@ -174,11 +201,10 @@ export function handleFuncCallNode(node: FuncCallNode, scope: Scope): TypeNode {
       const arg = walk({node: node.args[0], scope})
 
       return mapConcrete(arg, scope, (arg) => {
-        if (arg.type === 'array') {
-          return {type: 'number'}
+        if (arg.type === 'unknown') {
+          return nullUnion({type: 'number'})
         }
-
-        if (arg.type === 'string') {
+        if (arg.type === 'array' || arg.type === 'string') {
           return {type: 'number'}
         }
 
@@ -194,12 +220,20 @@ export function handleFuncCallNode(node: FuncCallNode, scope: Scope): TypeNode {
       const numNode = walk({node: node.args[0], scope})
 
       return mapConcrete(numNode, scope, (num) => {
+        if (num.type === 'unknown') {
+          return nullUnion({type: 'number'})
+        }
+
         if (num.type !== 'number') {
           return {type: 'null'}
         }
         if (node.args.length === 2) {
           const precisionNode = walk({node: node.args[1], scope})
           return mapConcrete(precisionNode, scope, (precision) => {
+            if (precision.type === 'unknown') {
+              return nullUnion({type: 'number'})
+            }
+
             if (precision.type !== 'number') {
               return {type: 'null'}
             }
@@ -215,6 +249,10 @@ export function handleFuncCallNode(node: FuncCallNode, scope: Scope): TypeNode {
     case 'global.string': {
       const arg = walk({node: node.args[0], scope})
       return mapConcrete(arg, scope, (node) => {
+        if (node.type === 'unknown') {
+          return nullUnion({type: 'string'})
+        }
+
         if (node.type === 'string' || node.type === 'number' || node.type === 'boolean') {
           if (node.value) {
             return {
@@ -236,19 +274,27 @@ export function handleFuncCallNode(node: FuncCallNode, scope: Scope): TypeNode {
       const values = walk({node: node.args[0], scope})
       // use mapConcrete to get concrete resolved value, it will also handle cases where the value is a union
       return mapConcrete(values, scope, (node) => {
-        // Aggregate functions can only be applied to arrays
-        if (node.type === 'array') {
-          // Resolve the concrete type of the array elements
-          return mapConcrete(node.of, scope, (node) => {
-            // Math functions can only be applied to numbers, but we should also ignore nulls
-            if (node.type === 'number' || node.type === 'null') {
-              return {type: 'number'}
-            }
-            return {type: 'null'}
-          })
+        if (node.type === 'unknown') {
+          return nullUnion({type: 'number'})
         }
 
-        return {type: 'null'}
+        // Aggregate functions can only be applied to arrays
+        if (node.type !== 'array') {
+          return {type: 'null'}
+        }
+
+        // Resolve the concrete type of the array elements
+        return mapConcrete(node.of, scope, (node) => {
+          if (node.type === 'unknown') {
+            return nullUnion({type: 'number'})
+          }
+
+          // Math functions can only be applied to numbers, but we should also ignore nulls
+          if (node.type === 'number' || node.type === 'null') {
+            return {type: 'number'}
+          }
+          return {type: 'null'}
+        })
       })
     }
 
@@ -256,19 +302,26 @@ export function handleFuncCallNode(node: FuncCallNode, scope: Scope): TypeNode {
       const values = walk({node: node.args[0], scope})
       // use mapConcrete to get concrete resolved value, it will also handle cases where the value is a union
       return mapConcrete(values, scope, (node) => {
-        // Aggregate functions can only be applied to arrays
-        if (node.type === 'array') {
-          // Resolve the concrete type of the array elements
-          return mapConcrete(node.of, scope, (node) => {
-            // Math functions can only be applied to numbers
-            if (node.type === 'number') {
-              return {type: 'number'}
-            }
-            return {type: 'null'}
-          })
+        if (node.type === 'unknown') {
+          return nullUnion({type: 'number'})
         }
 
-        return {type: 'null'}
+        // Aggregate functions can only be applied to arrays
+        if (node.type !== 'array') {
+          return {type: 'null'}
+        }
+        // Resolve the concrete type of the array elements
+        return mapConcrete(node.of, scope, (node) => {
+          if (node.type === 'unknown') {
+            return nullUnion({type: 'number'})
+          }
+
+          // Math functions can only be applied to numbers
+          if (node.type === 'number') {
+            return {type: 'number'}
+          }
+          return {type: 'null'}
+        })
       })
     }
 
@@ -277,19 +330,27 @@ export function handleFuncCallNode(node: FuncCallNode, scope: Scope): TypeNode {
       const values = walk({node: node.args[0], scope})
       // use mapConcrete to get concrete resolved value, it will also handle cases where the value is a union
       return mapConcrete(values, scope, (node) => {
-        // Aggregate functions can only be applied to arrays
-        if (node.type === 'array') {
-          // Resolve the concrete type of the array elements
-          return mapConcrete(node.of, scope, (node) => {
-            // Math functions can only be applied to numbers
-            if (node.type === 'number') {
-              return node
-            }
-            return {type: 'null'}
-          })
+        if (node.type === 'unknown') {
+          return nullUnion({type: 'number'})
         }
 
-        return {type: 'null'}
+        // Aggregate functions can only be applied to arrays
+        if (node.type !== 'array') {
+          return {type: 'null'}
+        }
+
+        // Resolve the concrete type of the array elements
+        return mapConcrete(node.of, scope, (node) => {
+          if (node.type === 'unknown') {
+            return nullUnion({type: 'number'})
+          }
+
+          // Math functions can only be applied to numbers
+          if (node.type === 'number') {
+            return node
+          }
+          return {type: 'null'}
+        })
       })
     }
 
@@ -301,16 +362,17 @@ export function handleFuncCallNode(node: FuncCallNode, scope: Scope): TypeNode {
         type: 'string',
       }
     }
+
     case 'string.startsWith': {
       const strTypeNode = walk({node: node.args[0], scope})
       const prefixTypeNode = walk({node: node.args[1], scope})
       return mapConcrete(strTypeNode, scope, (strNode) => {
-        if (strNode.type !== 'string') {
-          return {type: 'null'}
-        }
-
         return mapConcrete(prefixTypeNode, scope, (prefixNode) => {
-          if (prefixNode.type !== 'string') {
+          if (strNode.type === 'unknown' || prefixNode.type === 'unknown') {
+            return nullUnion({type: 'boolean'})
+          }
+
+          if (strNode.type !== 'string' || prefixNode.type !== 'string') {
             return {type: 'null'}
           }
 
@@ -322,12 +384,12 @@ export function handleFuncCallNode(node: FuncCallNode, scope: Scope): TypeNode {
       const strTypeNode = walk({node: node.args[0], scope})
       const sepTypeNode = walk({node: node.args[1], scope})
       return mapConcrete(strTypeNode, scope, (strNode) => {
-        if (strNode.type !== 'string') {
-          return {type: 'null'}
-        }
-
         return mapConcrete(sepTypeNode, scope, (sepNode) => {
-          if (sepNode.type !== 'string') {
+          if (strNode.type === 'unknown' || sepNode.type === 'unknown') {
+            return nullUnion({type: 'array', of: {type: 'string'}})
+          }
+
+          if (strNode.type !== 'string' || sepNode.type !== 'string') {
             return {type: 'null'}
           }
 
@@ -338,6 +400,9 @@ export function handleFuncCallNode(node: FuncCallNode, scope: Scope): TypeNode {
     case 'sanity.versionOf': {
       const typeNode = walk({node: node.args[0], scope})
       return mapConcrete(typeNode, scope, (typeNode) => {
+        if (typeNode.type === 'unknown') {
+          return nullUnion({type: 'array', of: {type: 'string'}})
+        }
         if (typeNode.type !== 'string') {
           return {type: 'null'}
         }
@@ -347,6 +412,10 @@ export function handleFuncCallNode(node: FuncCallNode, scope: Scope): TypeNode {
     case 'sanity.documentsOf': {
       const typeNode = walk({node: node.args[0], scope})
       return mapConcrete(typeNode, scope, (typeNode) => {
+        if (typeNode.type === 'unknown') {
+          return nullUnion({type: 'array', of: {type: 'string'}})
+        }
+
         if (typeNode.type !== 'string') {
           return {type: 'null'}
         }

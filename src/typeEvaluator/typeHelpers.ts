@@ -96,45 +96,14 @@ export function resolveInline(node: TypeNode, scope: Scope): Exclude<TypeNode, I
 }
 
 /**
- * mapConcrete extracts a _concrete type_ from a type node, applies the mapping
- * function to it and returns. Most notably, this will work through unions
- * (applying the mapping function for each variant) and inline (resolving the
- * reference).
- *
- * An `unknown` input type causes it to return `unknown`, without applying the mapping function.
- *
- * After encountering unions the resulting types gets passed into `mergeUnions`.
- * By default this will just union them together again.
- */
-export function mapConcrete(
-  node: TypeNode,
-  scope: Scope,
-  mapper: (node: ConcreteTypeNode) => TypeNode,
-  mergeUnions: (nodes: TypeNode[]) => TypeNode = (nodes) =>
-    optimizeUnions({type: 'union', of: nodes}),
-): TypeNode {
-  return mapUnion(
-    node,
-    scope,
-    (node) => {
-      if (node.type === 'unknown') {
-        return node
-      }
-      return mapper(node)
-    },
-    mergeUnions,
-  )
-}
-
-/**
- * mapUnion extracts a _concrete type_ OR an unknown type from a type node, applies the mapping
+ * mapConcrete extracts a _concrete type_ OR an _unknown type node_ from a type node, applies the mapping
  * function to it and returns. Most notably, this will work through unions
  * (applying the mapping function for each variant) and inline (resolving the
  * reference).
  * This method should _only_ be used if you need to handle unknown types, ie when resolving two sides of an and node, and we don't want to abort if one side is unknown.
  * In most cases, you should use `mapConcrete` instead.
  **/
-export function mapUnion<T extends TypeNode = TypeNode>(
+export function mapConcrete<T extends TypeNode = TypeNode>(
   node: TypeNode,
   scope: Scope,
   mapper: (node: ConcreteTypeNode | UnknownTypeNode) => T,
@@ -151,10 +120,10 @@ export function mapUnion<T extends TypeNode = TypeNode>(
     case 'unknown':
       return mapper(node)
     case 'union':
-      return mergeUnions(node.of.map((inner) => mapUnion(inner, scope, mapper), mergeUnions))
+      return mergeUnions(node.of.map((inner) => mapConcrete(inner, scope, mapper), mergeUnions))
     case 'inline': {
       const resolvedInline = resolveInline(node, scope)
-      return mapUnion(resolvedInline, scope, mapper, mergeUnions)
+      return mapConcrete(resolvedInline, scope, mapper, mergeUnions)
     }
     default:
       // @ts-expect-error - all types should be handled
