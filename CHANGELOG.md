@@ -5,6 +5,14 @@
 All notable changes to this project will be documented in this file. See
 [Conventional Commits](https://conventionalcommits.org) for commit guidelines.
 
+## [1.13.0](https://github.com/sanity-io/groq-js/compare/v1.12.0...v1.13.0) (2024-08-26)
+
+### Features
+
+- add new GROQ function sanity::documentsOf ([c086187](https://github.com/sanity-io/groq-js/commit/c086187210794ff5c75d9decefe6891e31f0d184))
+- **typeEvaluator:** do not let unknown always resolve to unknown ([41679a3](https://github.com/sanity-io/groq-js/commit/41679a3993a9240b4ef5753ad420b959d0168200))
+- **typeEvaluator:** remove resolve condition, use walk to determine conditions ([38ca510](https://github.com/sanity-io/groq-js/commit/38ca5104136b32f72ee3d9cb6d32e0832170f2fc))
+
 ## [1.12.0](https://github.com/sanity-io/groq-js/compare/v1.11.1...v1.12.0) (2024-07-26)
 
 ### Features
