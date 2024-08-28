@@ -126,7 +126,14 @@ export function handleFuncCallNode(node: FuncCallNode, scope: Scope): TypeNode {
       return {type: 'string'}
     }
     case 'global.defined': {
-      return {type: 'boolean'}
+      const arg = walk({node: node.args[0], scope})
+      return mapNode(arg, scope, (node) => {
+        if (node.type === 'unknown') {
+          return {type: 'boolean'}
+        }
+
+        return {type: 'boolean', value: node.type !== 'null'}
+      })
     }
     case 'global.path': {
       const arg = walk({node: node.args[0], scope})

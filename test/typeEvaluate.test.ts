@@ -360,7 +360,7 @@ t.test('no projection', (t) => {
   t.end()
 })
 t.test('pipe func call', (t) => {
-  const query = `*[_type == "author" && defined(slug.current)] | order(_createdAt desc)`
+  const query = `*[_type == "author" && defined(optionalObject.subfield)] | order(_createdAt desc)`
   const ast = parse(query)
   const res = typeEvaluate(ast, schemas)
   t.strictSame(res, {
@@ -650,7 +650,7 @@ t.test('attribute access', (t) => {
 })
 
 t.test('coerce reference', (t) => {
-  const query = `*[_type == "post" && defined(author.name)][].author`
+  const query = `*[_type == "post" && defined(sluger.current)][].author`
   const ast = parse(query)
   const res = typeEvaluate(ast, schemas)
   t.strictSame(res, {
@@ -1696,7 +1696,7 @@ t.test('object', (t) => {
 })
 
 t.test('filter with function', (t) => {
-  const query = `*[_type == "author" && defined(slug.current)]`
+  const query = `*[_type == "author" && defined(optionalObject.subfield)]`
   const ast = parse(query)
   const res = typeEvaluate(ast, schemas)
   t.strictSame(res, {
@@ -2240,6 +2240,17 @@ t.test('function: global::now', (t) => {
         },
       },
     },
+  })
+  t.end()
+})
+
+t.test('function: global::defined', (t) => {
+  const query = `*[defined(sluger.current)]`
+  const ast = parse(query)
+  const res = typeEvaluate(ast, [postDocument, authorDocument, slugType])
+  t.strictSame(res, {
+    type: 'array',
+    of: findSchemaType('post'),
   })
   t.end()
 })
