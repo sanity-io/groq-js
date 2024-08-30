@@ -1624,7 +1624,8 @@ t.test('with conditional splat', (t) => {
 t.test('coalesce only', async (t) => {
   const query = `*[_type == "author"]{
           "name": coalesce(name, "unknown"),
-          "maybe": coalesce(optionalObject, dontExists)
+          "maybe": coalesce(optionalObject, dontExists),
+          "nonExisting": coalesce(nonExisting, "fallback")
         }`
   const ast = parse(query)
   const res = typeEvaluate(ast, schemas)
