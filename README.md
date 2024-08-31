@@ -96,7 +96,7 @@ MIT © [Sanity.io](https://www.sanity.io/)
 
 ## Tests
 
-Tests are written in [Jest](https://jestjs.io/):
+Tests are written in [Tap](https://node-tap.org/):
 
 ```bash
 # Install dependencies

@@ -52,17 +52,14 @@
     "prepublishOnly": "npm run build",
     "prettify": "prettier --write .",
     "prettify-check": "prettier --check .",
-    "test": "tap --no-timeout --coverage-report=html --no-browser test/*.test.*",
+    "test": "tap --timeout=0 test/*.test.*",
     "test:generate": "./test/generate.sh"
   },
   "browserslist": "extends @sanity/browserslist-config",
   "prettier": "@sanity/prettier-config",
   "tap": {
-    "check-coverage": false,
-    "node-arg": [
-      "-r",
-      "tsx/cjs"
-    ]
+    "allow-empty-coverage": true,
+    "allow-incomplete-coverage": true
   },
   "dependencies": {
     "debug": "^4.3.4"
@@ -72,7 +69,6 @@
     "@sanity/prettier-config": "^1.0.2",
     "@sanity/semantic-release-preset": "^5.0.0",
     "@types/debug": "^4.1.12",
-    "@types/tap": "^15.0.11",
     "@typescript-eslint/eslint-plugin": "^7.15.0",
     "@typescript-eslint/parser": "^7.15.0",
     "eslint": "^8.57.0",
@@ -85,8 +81,7 @@
     "rimraf": "^5.0.0",
     "semantic-release": "^24.0.0",
     "semver": "^7.5.4",
-    "tap": "^16.3.10",
-    "tsx": "^4.16.2",
+    "tap": "^20.0.0",
     "typescript": "5.5.3"
   },
   "engines": {

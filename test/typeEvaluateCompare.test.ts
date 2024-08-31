@@ -1,5 +1,5 @@
 /* eslint-disable max-depth */
-import t from 'tap'
+import t, {type Test} from 'tap'
 
 import {evaluate} from '../src/evaluator'
 import {type GroqFunction, namespaces} from '../src/evaluator/functions'
@@ -243,7 +243,7 @@ function subtestUnary({
   build,
   variants = ALL_CATEGORIES,
 }: {
-  t: Tap.Test
+  t: Test
   variants?: Category[]
   build: (param: ExprNode) => ExprNode
 }) {
@@ -273,7 +273,7 @@ function subtestBinary({
   variants1 = ALL_CATEGORIES,
   variants2 = ALL_CATEGORIES,
 }: {
-  t: Tap.Test
+  t: Test
   variants1?: Category[]
   variants2?: Category[]
   build: (param1: ExprNode, param2: ExprNode) => ExprNode
