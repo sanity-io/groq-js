@@ -84,8 +84,8 @@ export function handleFuncCallNode(node: FuncCallNode, scope: Scope): TypeNode {
       const arg1 = walk({node: node.args[0], scope})
       const arg2 = walk({node: node.args[1], scope})
 
-      return mapConcrete(arg1, scope, (arg1) =>
-        mapConcrete(arg2, scope, (arg2) => {
+      return mapNode(arg1, scope, (arg1) =>
+        mapNode(arg2, scope, (arg2) => {
           if (arg1.type !== 'array') {
             return {type: 'null'}
           }
