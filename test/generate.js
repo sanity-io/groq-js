@@ -168,7 +168,10 @@ process.stdin
 
     if (entry._type === 'test') {
       const supported = entry.features.every((f) => SUPPORTED_FEATURES.has(f))
-      if (!supported) return
+      if (!supported) {
+        process.stderr.write(`[warning] Skipping unsupported test: ${entry.name}\n`)
+        return
+      }
 
       if (entry.version && !semver.satisfies(GROQ_VERSION, entry.version)) return
 
