@@ -5,6 +5,19 @@
 All notable changes to this project will be documented in this file. See
 [Conventional Commits](https://conventionalcommits.org) for commit guidelines.
 
+## [1.14.0](https://github.com/sanity-io/groq-js/compare/v1.13.0...v1.14.0) (2024-11-04)
+
+### Features
+
+- add array intersects function ([ced9e90](https://github.com/sanity-io/groq-js/commit/ced9e90febb37348c538c67f8bce6b17928a3877))
+- can extract attribute key from Group ([46ba490](https://github.com/sanity-io/groq-js/commit/46ba490757383d7151ac31b60c543d36448c0540))
+- **typeEvaluator:** implement proper support for defined in filters ([d319f1c](https://github.com/sanity-io/groq-js/commit/d319f1c5c027280e8c65253ae28e08d53644e6c8))
+- upgrade groq-test-suite version to v0.1.46 ([a71e3ec](https://github.com/sanity-io/groq-js/commit/a71e3ec38ee64bb3e505aee446caa64252dccfa2))
+
+### Bug Fixes
+
+- **functions:** fix typo mapConcrete to mapNode ([7f57a91](https://github.com/sanity-io/groq-js/commit/7f57a91888cc274c686f750ab30d8675eeab317a))
+
 ## [1.13.0](https://github.com/sanity-io/groq-js/compare/v1.12.0...v1.13.0) (2024-08-26)
 
 ### Features
