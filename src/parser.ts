@@ -833,6 +833,7 @@ function extractPropertyKey(node: ExprNode): string {
   }
 
   if (
+    node.type === 'PipeFuncCall' ||
     node.type === 'Deref' ||
     node.type === 'Map' ||
     node.type === 'Projection' ||
