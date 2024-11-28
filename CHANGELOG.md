@@ -5,6 +5,12 @@
 All notable changes to this project will be documented in this file. See
 [Conventional Commits](https://conventionalcommits.org) for commit guidelines.
 
+## [1.14.1](https://github.com/sanity-io/groq-js/compare/v1.14.0...v1.14.1) (2024-11-28)
+
+### Bug Fixes
+
+- pipe functions in projections ([40e6c25](https://github.com/sanity-io/groq-js/commit/40e6c2554081de9fea77e0b1eebc4eb0a4582d9a))
+
 ## [1.14.0](https://github.com/sanity-io/groq-js/compare/v1.13.0...v1.14.0) (2024-11-04)
 
 ### Features
