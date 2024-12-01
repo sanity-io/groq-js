@@ -172,16 +172,28 @@ export function handleFuncCallNode(node: FuncCallNode, scope: Scope): TypeNode {
       if (node.args.length === 0) {
         return {type: 'null'} satisfies NullTypeNode
       }
+
       const typeNodes: TypeNode[] = []
-      let canBeNull = true
+
+      // lastCanBeNull tracks if the last argument can be null, if so we need to add null to the union
+      let lastCanBeNull = true
+
       for (const arg of node.args) {
-        const type = walk({node: arg, scope})
-        typeNodes.push(unionWithoutNull(type))
-        canBeNull =
+        // use mapConcrete to get concrete resolved value, it will also optimize the unions
+        const type = mapConcrete(walk({node: arg, scope}), scope, (node) => node)
+
+        lastCanBeNull =
           type.type === 'null' || (type.type === 'union' && type.of.some((t) => t.type === 'null'))
+
+        // if the type is not null, we add it to the union
+        if (type.type !== 'null') {
+          // if the type is a union, we add all the types except null
+          typeNodes.push(unionWithoutNull(type))
+        }
       }
 
-      if (canBeNull) {
+      // if the last argument can be null, we add null to the union
+      if (lastCanBeNull) {
         typeNodes.push({type: 'null'} satisfies NullTypeNode)
       }
 
