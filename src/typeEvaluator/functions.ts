@@ -1,5 +1,6 @@
 /* eslint-disable max-statements */
 import type {FuncCallNode} from '../nodeTypes'
+import {optimizeUnions} from './optimizations'
 import {Scope} from './scope'
 import {walk} from './typeEvaluate'
 import {mapNode, nullUnion} from './typeHelpers'
@@ -175,12 +176,32 @@ export function handleFuncCallNode(node: FuncCallNode, scope: Scope): TypeNode {
       const typeNodes: TypeNode[] = []
       let canBeNull = true
       for (const arg of node.args) {
-        const type = walk({node: arg, scope})
-        typeNodes.push(unionWithoutNull(type))
+        const argNode = optimizeUnions(walk({node: arg, scope}))
+
+        // Check if all types are null
+        const allNull =
+          argNode.type === 'null' ||
+          (argNode.type === 'union' && argNode.of.every((t) => t.type === 'null'))
+
+        // Can the argument be null, if all is null, unknown, or if its a union with at least one null or unknown
         canBeNull =
-          type.type === 'null' || (type.type === 'union' && type.of.some((t) => t.type === 'null'))
+          allNull ||
+          argNode.type === 'unknown' ||
+          (argNode.type === 'union' &&
+            argNode.of.some((t) => t.type === 'null' || t.type === 'unknown'))
+
+        // As long as some type is not null or unknown, we add it to the union, but skip nulls
+        if (!allNull) {
+          typeNodes.push(unionWithoutNull(argNode))
+        }
+
+        // If we have a type that can't be null, we can break.
+        if (!canBeNull) {
+          break
+        }
       }
 
+      // If the last argument can be null, we add null to the union
       if (canBeNull) {
         typeNodes.push({type: 'null'} satisfies NullTypeNode)
       }
