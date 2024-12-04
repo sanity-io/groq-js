@@ -1623,12 +1623,68 @@ t.test('with conditional splat', (t) => {
 
 t.test('coalesce only', async (t) => {
   const query = `*[_type == "author"]{
-          "name": coalesce(name, "unknown"),
-          "maybe": coalesce(optionalObject, dontExists)
+          "name": coalesce(name, "unknown"), // should be string, since name is not optional
+          "maybe": coalesce(optionalObject, dontExists), // should be object or null
+          "multiple": coalesce(optionalAge, missing, "foo"), // should be either number or "foo"
+          "allMissing": coalesce(missing, missing2, missing3), // should be null, since all are missing
+          "fallback": coalesce(missing, missing2, missing3, "fallback"), // should be "fallback"
         }`
   const ast = parse(query)
   const res = typeEvaluate(ast, schemas)
-  t.matchSnapshot(res)
+  t.strictSame(res, {
+    type: 'array',
+    of: {
+      type: 'object',
+      attributes: {
+        name: {
+          type: 'objectAttribute',
+          value: {
+            type: 'string',
+          },
+        },
+        maybe: {
+          type: 'objectAttribute',
+          value: {
+            type: 'union',
+            of: [
+              {
+                type: 'object',
+                attributes: {
+                  subfield: {
+                    type: 'objectAttribute',
+                    value: {
+                      type: 'string',
+                    },
+                  },
+                },
+              },
+              {type: 'null'},
+            ],
+          },
+        },
+        multiple: {
+          type: 'objectAttribute',
+          value: {
+            type: 'union',
+            of: [{type: 'number'}, {type: 'string', value: 'foo'}],
+          },
+        },
+        allMissing: {
+          type: 'objectAttribute',
+          value: {
+            type: 'null',
+          },
+        },
+        fallback: {
+          type: 'objectAttribute',
+          value: {
+            type: 'string',
+            value: 'fallback',
+          },
+        },
+      },
+    },
+  } satisfies TypeNode)
   t.end()
 })
 

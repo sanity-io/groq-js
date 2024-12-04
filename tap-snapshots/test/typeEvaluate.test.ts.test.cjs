@@ -257,54 +257,6 @@ Object {
 }
 `
 
-exports[`test/typeEvaluate.test.ts TAP coalesce only > must match snapshot 1`] = `
-Object {
-  "of": Object {
-    "attributes": Object {
-      "maybe": Object {
-        "type": "objectAttribute",
-        "value": Object {
-          "of": Array [
-            Object {
-              "attributes": Object {
-                "subfield": Object {
-                  "type": "objectAttribute",
-                  "value": Object {
-                    "type": "string",
-                  },
-                },
-              },
-              "type": "object",
-            },
-            Object {
-              "type": "null",
-            },
-          ],
-          "type": "union",
-        },
-      },
-      "name": Object {
-        "type": "objectAttribute",
-        "value": Object {
-          "of": Array [
-            Object {
-              "type": "string",
-            },
-            Object {
-              "type": "string",
-              "value": "unknown",
-            },
-          ],
-          "type": "union",
-        },
-      },
-    },
-    "type": "object",
-  },
-  "type": "array",
-}
-`
-
 exports[`test/typeEvaluate.test.ts TAP coalesce with projection > must match snapshot 1`] = `
 Object {
   "of": Array [
