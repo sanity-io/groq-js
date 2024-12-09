@@ -5,6 +5,12 @@
 All notable changes to this project will be documented in this file. See
 [Conventional Commits](https://conventionalcommits.org) for commit guidelines.
 
+## [1.14.2](https://github.com/sanity-io/groq-js/compare/v1.14.1...v1.14.2) (2024-12-09)
+
+### Bug Fixes
+
+- ensure coalesce handles optional/unknown/null properly ([610e21e](https://github.com/sanity-io/groq-js/commit/610e21ea818c84762e79796c3f45d5e09500f830))
+
 ## [1.14.1](https://github.com/sanity-io/groq-js/compare/v1.14.0...v1.14.1) (2024-11-28)
 
 ### Bug Fixes
