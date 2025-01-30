@@ -284,7 +284,7 @@ t.test('Basic parsing', async (t) => {
       t.same(data, 'abcdef')
     })
 
-    t.test('sanity::versionOf()', async (t) => {
+    t.test('sanity::versionsOf()', async (t) => {
       const dataset = [
         {_id: 'doc1', _version: {}},
         {_id: 'drafts.doc1', _version: {}},
@@ -293,13 +293,13 @@ t.test('Basic parsing', async (t) => {
         {_id: 'doc2', _version: {}},
       ]
 
-      const tree = parse('{"versions": sanity::versionOf("doc1")}')
+      const tree = parse('{"versions": sanity::versionsOf("doc1")}')
       const value = await evaluate(tree, {dataset})
       const data = await value.get()
       t.same(data, {versions: ['drafts.doc1', 'sale.doc1']})
     })
 
-    t.test('sanity::documentsOf()', async (t) => {
+    t.test('sanity::partOfRelease()', async (t) => {
       const dataset = [
         {_id: 'doc1', _version: {}},
         {_id: 'drafts.doc1', _version: {}},
@@ -310,7 +310,7 @@ t.test('Basic parsing', async (t) => {
         {_id: 'doc2', _version: {}},
       ]
 
-      const tree = parse('{"documentsInBundle": sanity::documentsOf("sale")}')
+      const tree = parse('{"documentsInBundle": sanity::partOfRelease("sale")}')
       const value = await evaluate(tree, {dataset})
       const data = await value.get()
       t.same(data, {documentsInBundle: ['sale.doc1', 'sale.doc2']})

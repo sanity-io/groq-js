@@ -444,7 +444,7 @@ export function handleFuncCallNode(node: FuncCallNode, scope: Scope): TypeNode {
         })
       })
     }
-    case 'sanity.versionOf': {
+    case 'sanity.versionsOf': {
       const typeNode = walk({node: node.args[0], scope})
       return mapNode(typeNode, scope, (typeNode) => {
         if (typeNode.type === 'unknown') {
@@ -456,7 +456,7 @@ export function handleFuncCallNode(node: FuncCallNode, scope: Scope): TypeNode {
         return {type: 'array', of: {type: 'string'}}
       })
     }
-    case 'sanity.documentsOf': {
+    case 'sanity.partOfRelease': {
       const typeNode = walk({node: node.args[0], scope})
       return mapNode(typeNode, scope, (typeNode) => {
         if (typeNode.type === 'unknown') {

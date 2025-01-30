@@ -3274,9 +3274,9 @@ t.test('splat on optional object', (t) => {
   t.end()
 })
 
-t.test('function: sanity::versionOf', (t) => {
+t.test('function: sanity::versionsOf', (t) => {
   const query = `*[_type == "author"] {
-    "versions": sanity::versionOf("foo")
+    "versions": sanity::versionsOf("foo")
   }`
   const ast = parse(query)
   const res = typeEvaluate(ast, schemas)
@@ -3301,9 +3301,9 @@ t.test('function: sanity::versionOf', (t) => {
   t.end()
 })
 
-t.test('function: sanity::documentsOf', (t) => {
+t.test('function: sanity::partOfRelease', (t) => {
   const query = `*[_type == "author"] {
-    "saleBundleDocuments": sanity::documentsOf("sale")
+    "saleBundleDocuments": sanity::partOfRelease("sale")
   }`
   const ast = parse(query)
   const res = typeEvaluate(ast, schemas)

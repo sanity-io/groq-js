@@ -453,7 +453,7 @@ sanity['dataset'] = async function (_args, scope) {
 }
 
 // eslint-disable-next-line require-await
-sanity['versionOf'] = async function (args, scope, execute) {
+sanity['versionsOf'] = async function (args, scope, execute) {
   if (!scope.source.isArray()) return NULL_VALUE
 
   const value = await execute(args[0], scope)
@@ -482,10 +482,10 @@ sanity['versionOf'] = async function (args, scope, execute) {
 
   return fromJS(versionIds)
 }
-sanity['versionOf'].arity = 1
+sanity['versionsOf'].arity = 1
 
 // eslint-disable-next-line require-await
-sanity['documentsOf'] = async function (args, scope, execute) {
+sanity['partOfRelease'] = async function (args, scope, execute) {
   if (!scope.source.isArray()) return NULL_VALUE
 
   const value = await execute(args[0], scope)
@@ -514,7 +514,7 @@ sanity['documentsOf'] = async function (args, scope, execute) {
 
   return fromJS(documentIdsInBundle)
 }
-sanity['documentsOf'].arity = 1
+sanity['partOfRelease'].arity = 1
 
 export type GroqPipeFunction = (
   base: Value,
