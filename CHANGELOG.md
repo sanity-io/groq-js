@@ -5,6 +5,12 @@
 All notable changes to this project will be documented in this file. See
 [Conventional Commits](https://conventionalcommits.org) for commit guidelines.
 
+## [1.15.0](https://github.com/sanity-io/groq-js/compare/v1.14.2...v1.15.0) (2025-02-03)
+
+### Features
+
+- renames extension functions for releases ([#271](https://github.com/sanity-io/groq-js/issues/271)) ([03d0035](https://github.com/sanity-io/groq-js/commit/03d0035ef307e2522a5b9540d72fe40f0f6d88a8))
+
 ## [1.14.2](https://github.com/sanity-io/groq-js/compare/v1.14.1...v1.14.2) (2024-12-09)
 
 ### Bug Fixes
