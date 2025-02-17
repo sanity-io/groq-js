@@ -27,6 +27,17 @@ export class StreamValue {
     return result
   }
 
+  async first<R extends Value>(predicate: (value: Value) => value is R): Promise<R | undefined>
+  async first(predicate?: (value: Value) => boolean): Promise<Value | undefined>
+  async first(predicate: (value: Value) => boolean = () => true): Promise<Value | undefined> {
+    for await (const value of this) {
+      if (predicate(value)) {
+        return value
+      }
+    }
+    return undefined
+  }
+
   async *[Symbol.asyncIterator](): AsyncGenerator<Value, void, unknown> {
     let i = 0
     while (true) {

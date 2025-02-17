@@ -16,9 +16,26 @@ export class StaticValue<P, T extends GroqType> {
     return this.type === 'array'
   }
 
-  // eslint-disable-next-line require-await
-  async get(): Promise<any> {
+  get(): any {
     return this.data
+  }
+
+  first<R extends Value>(predicate: (value: Value) => value is R): R | undefined
+  first(predicate?: (value: Value) => boolean): Value | undefined
+  first(predicate: (value: Value) => boolean = () => true): Value | undefined {
+    if (!this.isArray()) {
+      throw new Error('`first` can only be called on array `StaticValue`s')
+    }
+
+    const array = this.get() as unknown[]
+    for (const item of array) {
+      const value = fromJS(item)
+      if (predicate(value)) {
+        return value
+      }
+    }
+
+    return undefined
   }
 
   [Symbol.asyncIterator](): Generator<Value, void, unknown> {
@@ -134,4 +151,68 @@ export function getType(data: any): GroqType {
     return 'datetime'
   }
   return typeof data as GroqType
+}
+
+const isPromiseLike = <T>(value: T | PromiseLike<T>): value is PromiseLike<T> =>
+  typeof value === 'object' && !!value && 'then' in value && typeof value.then === 'function'
+
+/**
+ * Executes a generator function that yields either plain values or
+ * Promise-like values, allowing asynchronous code to be written in a
+ * synchronous style without explicit `await`.
+ *
+ * The generator function is expected to yield values of type `T` or
+ * Promise-like objects resolving to `T`, and to eventually return a value
+ * of type `T`. However, because the type of the value resumed into the
+ * generator (i.e. the result of each `yield`) is determined by the yielded
+ * expression, TypeScript’s type inference can be awkward. In practice, you
+ * might need to use type assertions or manual type checks inside the
+ * generator to correctly handle the unwrapped types.
+ *
+ * For example, consider a generator where the first yield yields a Promise
+ * and its resumed value is asserted:
+ *
+ * ```ts
+ * co<unknown>(function* (): Generator<unknown, Value, unknown> {
+ *   const baseValue = (yield execute(base, scope)) as Value
+ *   // ...
+ *   const array = (yield baseValue.get()) as unknown[]
+ *   // ...
+ *   return fromJS(array.slice(leftIdx, rightIdx))
+ * }) as Value | PromiseLike<Value>
+ * ```
+ *
+ * In the above, the types for `yield` operations require manual assertions
+ * because the actual value received from each `yield` depends on what was
+ * yielded, which TypeScript cannot automatically infer or narrow.
+ */
+export function co<T = unknown>(
+  coroutine: () => Generator<T | PromiseLike<T>, T, T>,
+): T | PromiseLike<T> {
+  const gen = coroutine()
+  // Begin the generator without sending a value.
+  const initial = gen.next()
+  if (initial.done) {
+    return initial.value
+  }
+
+  // `step` resumes the generator with a resolved value from the previous yield.
+  function step(lastValue: T): T | PromiseLike<T> {
+    const result = gen.next(lastValue)
+    if (result.done) {
+      return result.value
+    }
+    const yielded = result.value
+    if (yielded && isPromiseLike(yielded)) {
+      return yielded.then(step)
+    }
+    return step(yielded)
+  }
+
+  // Process the first yielded value.
+  const yielded = initial.value
+  if (yielded && isPromiseLike(yielded)) {
+    return yielded.then(step)
+  }
+  return step(yielded)
 }

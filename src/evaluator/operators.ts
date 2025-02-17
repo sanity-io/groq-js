@@ -1,5 +1,6 @@
 import type {OpCall} from '../nodeTypes'
 import {
+  co,
   FALSE_VALUE,
   fromDateTime,
   fromJS,
@@ -11,14 +12,7 @@ import {
   type Value,
 } from '../values'
 import {isEqual} from './equality'
-import {
-  gatherText,
-  matchAnalyzePattern,
-  matchText,
-  matchTokenize,
-  type Pattern,
-  type Token,
-} from './matching'
+import {matchAnalyzePattern, matchText, matchTokenize} from './matching'
 import {partialCompare} from './ordering'
 
 type GroqOperatorFn = (left: Value, right: Value) => Value | PromiseLike<Value>
@@ -73,46 +67,55 @@ export const operators: {[key in OpCall]: GroqOperatorFn} = {
   },
 
   // eslint-disable-next-line func-name-matching
-  'in': async function inop(left, right) {
-    if (right.type === 'path') {
-      if (left.type !== 'string') {
-        return NULL_VALUE
-      }
-
-      return right.data.matches(left.data) ? TRUE_VALUE : FALSE_VALUE
-    }
-
-    if (right.isArray()) {
-      for await (const b of right) {
-        if (isEqual(left, b)) {
-          return TRUE_VALUE
+  'in': function inop(left, right) {
+    return co<unknown>(function* (): Generator<unknown, Value, unknown> {
+      if (right.type === 'path') {
+        if (left.type !== 'string') {
+          return NULL_VALUE
         }
+
+        return right.data.matches(left.data) ? TRUE_VALUE : FALSE_VALUE
       }
 
-      return FALSE_VALUE
-    }
+      if (right.isArray()) {
+        const result = (yield right.first((b) => isEqual(left, b))) as Value | undefined
+        if (result) return TRUE_VALUE
+        return FALSE_VALUE
+      }
 
-    return NULL_VALUE
+      return NULL_VALUE
+    }) as Value | PromiseLike<Value>
   },
 
-  'match': async function match(left, right) {
-    let tokens: Token[] = []
-    let patterns: Pattern[] = []
+  'match': function match(left, right) {
+    return co<Value>(function* () {
+      const leftData = yield left.get()
+      const rightData = yield right.get()
 
-    await gatherText(left, (part) => {
-      tokens = tokens.concat(matchTokenize(part))
+      let leftStrings: string[] = []
+      if (Array.isArray(leftData)) {
+        leftStrings = leftData.filter((i) => typeof i === 'string')
+      } else if (typeof leftData === 'string') {
+        leftStrings = [leftData]
+      }
+
+      let rightStrings: string[] | undefined
+      if (Array.isArray(rightData)) {
+        rightStrings = rightData.filter((i) => typeof i === 'string')
+      } else if (typeof rightData === 'string') {
+        rightStrings = [rightData]
+      }
+
+      if (!rightStrings?.length) {
+        return FALSE_VALUE
+      }
+
+      const tokens = leftStrings.flatMap(matchTokenize)
+      const patterns = rightStrings.flatMap(matchAnalyzePattern)
+      const matched = matchText(tokens, patterns)
+
+      return matched ? TRUE_VALUE : FALSE_VALUE
     })
-
-    const didSucceed = await gatherText(right, (part) => {
-      patterns = patterns.concat(matchAnalyzePattern(part))
-    })
-    if (!didSucceed) {
-      return FALSE_VALUE
-    }
-
-    const matched = matchText(tokens, patterns)
-
-    return matched ? TRUE_VALUE : FALSE_VALUE
   },
 
   '+': function plus(left, right) {
