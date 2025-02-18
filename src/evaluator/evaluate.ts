@@ -5,7 +5,9 @@ import {
   FALSE_VALUE,
   fromJS,
   fromNumber,
+  isPromiseLike,
   NULL_VALUE,
+  StaticValue,
   StreamValue,
   TRUE_VALUE,
   type Value,
@@ -13,12 +15,12 @@ import {
 import {operators} from './operators'
 import {partialCompare} from './ordering'
 import {Scope} from './scope'
-import type {EvaluateOptions, Executor} from './types'
+import type {Context, EvaluateOptions} from './types'
 
 export function evaluate(
   node: ExprNode,
   scope: Scope,
-  execute: Executor = evaluate,
+  mode: 'sync' | 'async',
 ): Value | PromiseLike<Value> {
   const func = EXECUTORS[node.type]
   return func(
@@ -27,7 +29,7 @@ export function evaluate(
     // We know by design that each executor handles its corresponding node type.
     node,
     scope,
-    execute,
+    mode,
   )
 }
 
@@ -35,7 +37,7 @@ type ExecutorMap = {
   [TKey in ExprNode['type']]: (
     node: Extract<ExprNode, {type: TKey}>,
     scope: Scope,
-    exec: Executor,
+    mode: 'sync' | 'async',
   ) => Value | PromiseLike<Value>
 }
 
@@ -45,8 +47,8 @@ const EXECUTORS: ExecutorMap = {
   },
 
   Selector() {
-    // These should be evaluated separely using a different evaluator.
-    // At the mooment we haven't implemented this.
+    // These should be evaluated separately using a different evaluator.
+    // At the moment we haven't implemented this.
     throw new Error('Selectors can not be evaluated')
   },
 
@@ -54,8 +56,8 @@ const EXECUTORS: ExecutorMap = {
     return scope.source
   },
 
-  Parameter({name}, scope) {
-    return fromJS(scope.params[name])
+  Parameter({name}, scope, mode) {
+    return fromJS(scope.params[name], mode)
   },
 
   Context({key}, scope) {
@@ -78,41 +80,41 @@ const EXECUTORS: ExecutorMap = {
     return current.value
   },
 
-  OpCall({op, left, right}, scope, execute) {
+  OpCall({op, left, right}, scope, mode) {
     return co<Value>(function* () {
       const func = operators[op]
       if (!func) {
         throw new Error(`Unknown operator: ${op}`)
       }
-      const leftValue = yield execute(left, scope)
-      const rightValue = yield execute(right, scope)
+      const leftValue = yield evaluate(left, scope, mode)
+      const rightValue = yield evaluate(right, scope, mode)
 
-      return yield func(leftValue, rightValue)
+      return yield func(leftValue, rightValue, mode)
     })
   },
 
-  Select({alternatives, fallback}, scope, execute) {
+  Select({alternatives, fallback}, scope, mode) {
     return co<Value>(function* () {
       for (const alt of alternatives) {
-        const altCond = yield execute(alt.condition, scope)
+        const altCond = yield evaluate(alt.condition, scope, mode)
         if (altCond.type === 'boolean' && altCond.data === true) {
-          return yield execute(alt.value, scope)
+          return yield evaluate(alt.value, scope, mode)
         }
       }
 
       if (fallback) {
-        return yield execute(fallback, scope)
+        return yield evaluate(fallback, scope, mode)
       }
 
       return NULL_VALUE
     })
   },
 
-  InRange({base, left, right, isInclusive}, scope, execute) {
+  InRange({base, left, right, isInclusive}, scope, mode) {
     return co<unknown>(function* (): Generator<unknown, Value, unknown> {
-      const value = (yield execute(base, scope)) as Value
-      const leftValue = (yield execute(left, scope)) as Value
-      const rightValue = (yield execute(right, scope)) as Value
+      const value = (yield evaluate(base, scope, mode)) as Value
+      const leftValue = (yield evaluate(left, scope, mode)) as Value
+      const rightValue = (yield evaluate(right, scope, mode)) as Value
 
       const leftCmp = partialCompare(yield value.get(), yield leftValue.get())
       if (leftCmp === null) {
@@ -131,57 +133,72 @@ const EXECUTORS: ExecutorMap = {
     }) as Value | PromiseLike<Value>
   },
 
-  Filter({base, expr}, scope, execute) {
-    return co<Value>(function* () {
-      const baseValue = yield execute(base, scope)
+  Filter({base, expr}, scope, mode) {
+    return co<unknown>(function* (): Generator<unknown, Value, unknown> {
+      const baseValue = (yield evaluate(base, scope, mode)) as Value
       if (!baseValue.isArray()) {
         return NULL_VALUE
+      }
+
+      if (mode === 'sync') {
+        const data = (yield baseValue.get()) as unknown[]
+        const next: unknown[] = []
+
+        for (const item of data) {
+          const elem = fromJS(item, mode)
+          const newScope = scope.createNested(elem)
+          const exprValue = (yield evaluate(expr, newScope, mode)) as Value
+          if (exprValue.type === 'boolean' && exprValue.data === true) {
+            next.push(item)
+          }
+        }
+        return new StaticValue(next, 'array')
       }
 
       return new StreamValue(async function* () {
         for await (const elem of baseValue) {
           const newScope = scope.createNested(elem)
-          const exprValue = await execute(expr, newScope)
+          const exprValue = await evaluate(expr, newScope, mode)
           if (exprValue.type === 'boolean' && exprValue.data === true) {
             yield elem
           }
         }
       })
-    })
+    }) as Value | PromiseLike<Value>
   },
 
-  Projection({base, expr}, scope, execute) {
+  Projection({base, expr}, scope, mode) {
     return co<Value>(function* () {
-      const baseValue = yield execute(base, scope)
+      const baseValue = yield evaluate(base, scope, mode)
       if (baseValue.type !== 'object') {
         return NULL_VALUE
       }
 
       const newScope = scope.createNested(baseValue)
-      return yield execute(expr, newScope)
+      return yield evaluate(expr, newScope, mode)
     })
   },
 
-  FuncCall({func, args}: FuncCallNode, scope: Scope, execute) {
-    return func(args, scope, execute)
+  FuncCall({func, args}: FuncCallNode, scope: Scope, mode) {
+    return func(args, scope, mode)
   },
 
-  PipeFuncCall({func, base, args}: PipeFuncCallNode, scope: Scope, execute) {
+  PipeFuncCall({func, base, args}: PipeFuncCallNode, scope, mode) {
     return co<Value>(function* () {
-      const baseValue = yield execute(base, scope)
-      return yield func(baseValue, args, scope, execute)
+      const baseValue = yield evaluate(base, scope, mode)
+      return yield func(baseValue, args, scope, mode)
     })
   },
 
-  AccessAttribute({base, name}, scope, execute) {
+  AccessAttribute({base, name}, scope, mode) {
     return co<Value>(function* () {
       let value = scope.value
       if (base) {
-        value = yield execute(base, scope)
+        value = yield evaluate(base, scope, mode)
       }
       if (value.type === 'object') {
         if (value.data.hasOwnProperty(name)) {
-          return fromJS(value.data[name])
+          return fromJS(value.data[name], mode)
         }
       }
 
@@ -189,9 +206,9 @@ const EXECUTORS: ExecutorMap = {
     })
   },
 
-  AccessElement({base, index}, scope, execute) {
+  AccessElement({base, index}, scope, mode) {
     return co<unknown>(function* (): Generator<unknown, Value, unknown> {
-      const baseValue = (yield execute(base, scope)) as Value
+      const baseValue = (yield evaluate(base, scope, mode)) as Value
 
       if (!baseValue.isArray()) {
         return NULL_VALUE
@@ -199,13 +216,13 @@ const EXECUTORS: ExecutorMap = {
 
       const data = (yield baseValue.get()) as unknown[]
       const finalIndex = index < 0 ? index + data.length : index
-      return fromJS(data[finalIndex])
+      return fromJS(data[finalIndex], mode)
     }) as Value | PromiseLike<Value>
   },
 
-  Slice({base, left, right, isInclusive}, scope, execute) {
+  Slice({base, left, right, isInclusive}, scope, mode) {
     return co<unknown>(function* (): Generator<unknown, Value, unknown> {
-      const baseValue = (yield execute(base, scope)) as Value
+      const baseValue = (yield evaluate(base, scope, mode)) as Value
 
       if (!baseValue.isArray()) {
         return NULL_VALUE
@@ -240,13 +257,13 @@ const EXECUTORS: ExecutorMap = {
       // Note: At this point the indices might point out-of-bound, but
       // .slice handles this correctly.
 
-      return fromJS(array.slice(leftIdx, rightIdx))
+      return fromJS(array.slice(leftIdx, rightIdx), mode)
     }) as Value | PromiseLike<Value>
   },
 
-  Deref({base}, scope, execute) {
+  Deref({base}, scope, mode) {
     return co(function* (): Generator<unknown, Value, unknown> {
-      const value = (yield execute(base, scope)) as Value
+      const value = (yield evaluate(base, scope, mode)) as Value
 
       if (!scope.source.isArray()) {
         return NULL_VALUE
@@ -264,7 +281,7 @@ const EXECUTORS: ExecutorMap = {
       if (scope.context.dereference) {
         type ScopeDereferenced = Awaited<ReturnType<NonNullable<Scope['context']['dereference']>>>
         const dereferenced = (yield scope.context.dereference({_ref: id})) as ScopeDereferenced
-        return fromJS(dereferenced)
+        return fromJS(dereferenced, mode)
       }
 
       type ScopeFirst = Awaited<ReturnType<Scope['source']['first']>>
@@ -279,33 +296,33 @@ const EXECUTORS: ExecutorMap = {
     }) as Value | PromiseLike<Value>
   },
 
-  Value({value}) {
-    return fromJS(value)
+  Value({value}, _scope, mode) {
+    return fromJS(value, mode)
   },
 
-  Group({base}, scope, execute) {
-    return execute(base, scope)
+  Group({base}, scope, mode) {
+    return evaluate(base, scope, mode)
   },
 
-  Object({attributes}, scope, execute) {
+  Object({attributes}, scope, mode) {
     return co(function* (): Generator<unknown, Value, unknown> {
       const result: {[key: string]: unknown} = {}
       for (const attr of attributes) {
         const attrType = attr.type
         switch (attr.type) {
           case 'ObjectAttributeValue': {
-            const value = (yield execute(attr.value, scope)) as Value
+            const value = (yield evaluate(attr.value, scope, mode)) as Value
             result[attr.name] = yield value.get()
             break
           }
 
           case 'ObjectConditionalSplat': {
-            const cond = (yield execute(attr.condition, scope)) as Value
+            const cond = (yield evaluate(attr.condition, scope, mode)) as Value
             if (cond.type !== 'boolean' || cond.data === false) {
               continue
             }
 
-            const value = (yield execute(attr.value, scope)) as Value
+            const value = (yield evaluate(attr.value, scope, mode)) as Value
             if (value.type === 'object') {
               Object.assign(result, value.data)
             }
@@ -313,7 +330,7 @@ const EXECUTORS: ExecutorMap = {
           }
 
           case 'ObjectSplat': {
-            const value = (yield execute(attr.value, scope)) as Value
+            const value = (yield evaluate(attr.value, scope, mode)) as Value
             if (value.type === 'object') {
               Object.assign(result, value.data)
             }
@@ -324,35 +341,55 @@ const EXECUTORS: ExecutorMap = {
             throw new Error(`Unknown node type: ${attrType}`)
         }
       }
-      return fromJS(result)
+      return fromJS(result, mode)
     }) as Value | PromiseLike<Value>
   },
 
-  Array({elements}, scope, execute) {
-    return new StreamValue(async function* () {
-      for (const element of elements) {
-        const value = await execute(element.value, scope)
-        if (element.isSplat) {
-          if (value.isArray()) {
-            for await (const v of value) {
-              yield v
+  Array({elements}, scope, mode) {
+    return co<unknown>(function* (): Generator<unknown, Value, unknown> {
+      if (mode === 'sync') {
+        const next: unknown[] = []
+
+        for (const element of elements) {
+          const value = (yield evaluate(element.value, scope, mode)) as Value
+          if (element.isSplat) {
+            if (value.isArray()) {
+              const nested = (yield value.get()) as unknown[]
+              next.push(...nested)
             }
+          } else {
+            next.push(yield value.get())
           }
-        } else {
-          yield value
         }
+
+        return new StaticValue(next, 'array')
       }
-    })
+
+      return new StreamValue(async function* () {
+        for (const element of elements) {
+          const value = await evaluate(element.value, scope, mode)
+          if (element.isSplat) {
+            if (value.isArray()) {
+              for await (const v of value) {
+                yield v
+              }
+            }
+          } else {
+            yield value
+          }
+        }
+      })
+    }) as Value | PromiseLike<Value>
   },
 
   Tuple() {
     throw new Error('tuples can not be evaluated')
   },
 
-  Or({left, right}, scope, execute) {
+  Or({left, right}, scope, mode) {
     return co<Value>(function* () {
-      const leftValue = yield execute(left, scope)
-      const rightValue = yield execute(right, scope)
+      const leftValue = yield evaluate(left, scope, mode)
+      const rightValue = yield evaluate(right, scope, mode)
 
       if (leftValue.type === 'boolean') {
         if (leftValue.data === true) {
@@ -374,10 +411,10 @@ const EXECUTORS: ExecutorMap = {
     })
   },
 
-  And({left, right}, scope, execute) {
+  And({left, right}, scope, mode) {
     return co<Value>(function* () {
-      const leftValue = yield execute(left, scope)
-      const rightValue = yield execute(right, scope)
+      const leftValue = yield evaluate(left, scope, mode)
+      const rightValue = yield evaluate(right, scope, mode)
 
       if (leftValue.type === 'boolean') {
         if (leftValue.data === false) {
@@ -399,9 +436,9 @@ const EXECUTORS: ExecutorMap = {
     })
   },
 
-  Not({base}, scope, execute) {
+  Not({base}, scope, mode) {
     return co<Value>(function* () {
-      const value = yield execute(base, scope)
+      const value = yield evaluate(base, scope, mode)
       if (value.type !== 'boolean') {
         return NULL_VALUE
       }
@@ -409,9 +446,9 @@ const EXECUTORS: ExecutorMap = {
     })
   },
 
-  Neg({base}, scope, execute) {
+  Neg({base}, scope, mode) {
     return co<Value>(function* () {
-      const value = yield execute(base, scope)
+      const value = yield evaluate(base, scope, mode)
       if (value.type !== 'number') {
         return NULL_VALUE
       }
@@ -419,9 +456,9 @@ const EXECUTORS: ExecutorMap = {
     })
   },
 
-  Pos({base}, scope, execute) {
+  Pos({base}, scope, mode) {
     return co<Value>(function* () {
-      const value = yield execute(base, scope)
+      const value = yield evaluate(base, scope, mode)
       if (value.type !== 'number') {
         return NULL_VALUE
       }
@@ -437,40 +474,75 @@ const EXECUTORS: ExecutorMap = {
     return NULL_VALUE
   },
 
-  ArrayCoerce({base}, scope, execute) {
+  ArrayCoerce({base}, scope, mode) {
     return co<Value>(function* () {
-      const value = yield execute(base, scope)
+      const value = yield evaluate(base, scope, mode)
       return value.isArray() ? value : NULL_VALUE
     })
   },
 
-  Map({base, expr}, scope, execute) {
-    return co<Value>(function* () {
-      const value = yield execute(base, scope)
+  Map({base, expr}, scope, mode) {
+    return co<unknown>(function* (): Generator<unknown, Value, unknown> {
+      const value = (yield evaluate(base, scope, mode)) as Value
       if (!value.isArray()) {
         return NULL_VALUE
+      }
+
+      if (mode === 'sync') {
+        const data = (yield value.get()) as unknown[]
+        const next: unknown[] = []
+
+        for (const item of data) {
+          const elem = fromJS(item, 'sync')
+          const newScope = scope.createHidden(elem)
+          const exprValue = (yield evaluate(expr, newScope, mode)) as Value
+          next.push(yield exprValue.get())
+        }
+
+        return new StaticValue(next, 'array')
       }
 
       return new StreamValue(async function* () {
         for await (const elem of value) {
           const newScope = scope.createHidden(elem)
-          yield await execute(expr, newScope)
+          yield await evaluate(expr, newScope, mode)
         }
       })
-    })
+    }) as Value | PromiseLike<Value>
   },
 
-  FlatMap({base, expr}, scope, execute) {
-    return co<Value>(function* () {
-      const value = yield execute(base, scope)
+  FlatMap({base, expr}, scope, mode) {
+    return co<unknown>(function* (): Generator<unknown, Value, unknown> {
+      const value = (yield evaluate(base, scope, mode)) as Value
       if (!value.isArray()) {
         return NULL_VALUE
+      }
+
+      if (mode === 'sync') {
+        const data = (yield value.get()) as unknown[]
+        const next: unknown[] = []
+
+        for (const item of data) {
+          const elem = fromJS(item, 'sync')
+          const newScope = scope.createHidden(elem)
+          const innerValue = (yield evaluate(expr, newScope, mode)) as Value
+
+          if (innerValue.isArray()) {
+            const nested = (yield innerValue.get()) as unknown[]
+            next.push(...nested)
+          } else {
+            const nested = yield innerValue.get()
+            next.push(nested)
+          }
+        }
+
+        return new StaticValue(next, 'array')
       }
 
       return new StreamValue(async function* () {
         for await (const elem of value) {
           const newScope = scope.createHidden(elem)
-          const innerValue = await execute(expr, newScope)
+          const innerValue = await evaluate(expr, newScope, mode)
           if (innerValue.isArray()) {
             for await (const inner of innerValue) {
               yield inner
@@ -480,8 +552,19 @@ const EXECUTORS: ExecutorMap = {
           }
         }
       })
-    })
+    }) as Value | PromiseLike<Value>
   },
+}
+
+function getContext(options: EvaluateOptions = {}, mode: 'sync' | 'async'): Context {
+  return {
+    timestamp: options.timestamp || new Date(),
+    identity: options.identity === undefined ? 'me' : options.identity,
+    sanity: options.sanity,
+    after: options.after ? fromJS(options.after, mode) : null,
+    before: options.before ? fromJS(options.before, mode) : null,
+    dereference: options.dereference,
+  }
 }
 
 /**
@@ -492,23 +575,31 @@ export function evaluateQuery(
   tree: ExprNode,
   options: EvaluateOptions = {},
 ): Value | PromiseLike<Value> {
-  const root = fromJS(options.root)
-  const dataset = fromJS(options.dataset)
+  const root = fromJS(options.root, 'async')
+  const dataset = fromJS(options.dataset, 'async')
   const params: {[key: string]: unknown} = {...options.params}
 
-  const scope = new Scope(
-    params,
-    dataset,
-    root,
-    {
-      timestamp: options.timestamp || new Date(),
-      identity: options.identity === undefined ? 'me' : options.identity,
-      sanity: options.sanity,
-      after: options.after ? fromJS(options.after) : null,
-      before: options.before ? fromJS(options.before) : null,
-      dereference: options.dereference,
-    },
-    null,
-  )
-  return evaluate(tree, scope)
+  const scope = new Scope(params, dataset, root, getContext(options, 'async'), null)
+  return evaluate(tree, scope, 'async')
+}
+
+/**
+ * Evaluates a query.
+ * @internal
+ */
+export function evaluateQuerySync(tree: ExprNode, options: EvaluateOptions = {}): Value {
+  const root = fromJS(options.root, 'sync')
+  const dataset = fromJS(options.dataset, 'sync')
+  const params: {[key: string]: unknown} = {...options.params}
+
+  const scope = new Scope(params, dataset, root, getContext(options, 'sync'), null)
+
+  const result = evaluate(tree, scope, 'sync')
+  if (isPromiseLike(result)) {
+    throw new Error(
+      `Unexpected promise when evaluating. This expression may not support evaluateSync.`,
+    )
+  }
+
+  return result
 }

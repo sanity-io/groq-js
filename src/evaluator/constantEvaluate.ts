@@ -1,5 +1,5 @@
 import type {ExprNode} from '../nodeTypes'
-import {NULL_VALUE, type Value} from '../values'
+import {isPromiseLike, NULL_VALUE, type Value} from '../values'
 import {evaluate} from './evaluate'
 import {Scope} from './scope'
 
@@ -47,8 +47,8 @@ export function tryConstantEvaluate(node: ExprNode): Value | null {
 }
 
 function constantEvaluate(node: ExprNode): Value {
-  const value = evaluate(node, DUMMY_SCOPE, constantEvaluate)
-  if ('then' in value) {
+  const value = evaluate(node, DUMMY_SCOPE, 'sync')
+  if (isPromiseLike(value)) {
     throw new Error('BUG: constant evaluate should never return a promise')
   }
   return value

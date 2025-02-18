@@ -38,6 +38,14 @@ export class StreamValue {
     return undefined
   }
 
+  async reduce<R>(reducer: (acc: R, value: Value) => R | Promise<R>, initial: R): Promise<R> {
+    let accumulator = initial
+    for await (const value of this) {
+      accumulator = await reducer(accumulator, value)
+    }
+    return accumulator
+  }
+
   async *[Symbol.asyncIterator](): AsyncGenerator<Value, void, unknown> {
     let i = 0
     while (true) {

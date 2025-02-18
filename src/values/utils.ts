@@ -29,7 +29,7 @@ export class StaticValue<P, T extends GroqType> {
 
     const array = this.get() as unknown[]
     for (const item of array) {
-      const value = fromJS(item)
+      const value = fromJS(item, 'sync')
       if (predicate(value)) {
         return value
       }
@@ -38,11 +38,24 @@ export class StaticValue<P, T extends GroqType> {
     return undefined
   }
 
+  reduce<R>(reducer: (acc: R, value: Value) => R, initial: R): R {
+    if (!this.isArray()) {
+      throw new Error('`reduce` can only be called on array `StaticValue`s')
+    }
+    const array = this.get() as unknown[]
+    let accumulator = initial
+    for (const item of array) {
+      const value = fromJS(item, 'sync')
+      accumulator = reducer(accumulator, value)
+    }
+    return accumulator
+  }
+
   [Symbol.asyncIterator](): Generator<Value, void, unknown> {
     if (Array.isArray(this.data)) {
       return (function* (data) {
         for (const element of data) {
-          yield fromJS(element)
+          yield fromJS(element, 'async')
         }
       })(this.data)
     }
@@ -120,11 +133,11 @@ function isIterator(obj?: Iterator<any>) {
 }
 
 // eslint-disable-next-line @typescript-eslint/explicit-module-boundary-types
-export function fromJS(val: any): Value {
-  if (isIterator(val)) {
+export function fromJS(val: any, mode: 'sync' | 'async'): Value {
+  if (isIterator(val) && mode !== 'sync') {
     return new StreamValue(async function* () {
       for await (const value of val) {
-        yield fromJS(value)
+        yield fromJS(value, 'async')
       }
     })
   } else if (val === null || val === undefined) {
@@ -153,7 +166,7 @@ export function getType(data: any): GroqType {
   return typeof data as GroqType
 }
 
-const isPromiseLike = <T>(value: T | PromiseLike<T>): value is PromiseLike<T> =>
+export const isPromiseLike = <T>(value: T | PromiseLike<T>): value is PromiseLike<T> =>
   typeof value === 'object' && !!value && 'then' in value && typeof value.then === 'function'
 
 /**

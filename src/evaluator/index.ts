@@ -1,2 +1,2 @@
 export {tryConstantEvaluate} from './constantEvaluate'
-export {evaluateQuery as evaluate} from './evaluate'
+export {evaluateQuery as evaluate, evaluateQuerySync as evaluateSync} from './evaluate'

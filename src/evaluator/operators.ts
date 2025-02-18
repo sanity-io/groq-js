@@ -7,6 +7,7 @@ import {
   fromNumber,
   fromString,
   NULL_VALUE,
+  StaticValue,
   StreamValue,
   TRUE_VALUE,
   type Value,
@@ -15,7 +16,11 @@ import {isEqual} from './equality'
 import {matchAnalyzePattern, matchText, matchTokenize} from './matching'
 import {partialCompare} from './ordering'
 
-type GroqOperatorFn = (left: Value, right: Value) => Value | PromiseLike<Value>
+type GroqOperatorFn = (
+  left: Value,
+  right: Value,
+  mode: 'sync' | 'async',
+) => Value | PromiseLike<Value>
 
 export const operators: {[key in OpCall]: GroqOperatorFn} = {
   '==': function eq(left, right) {
@@ -118,7 +123,7 @@ export const operators: {[key in OpCall]: GroqOperatorFn} = {
     })
   },
 
-  '+': function plus(left, right) {
+  '+': function plus(left, right, mode) {
     if (left.type === 'datetime' && right.type === 'number') {
       return fromDateTime(left.data.add(right.data))
     }
@@ -132,26 +137,36 @@ export const operators: {[key in OpCall]: GroqOperatorFn} = {
     }
 
     if (left.type === 'object' && right.type === 'object') {
-      return fromJS({...left.data, ...right.data})
+      return fromJS({...left.data, ...right.data}, mode)
     }
 
     if (left.type === 'array' && right.type === 'array') {
-      return fromJS(left.data.concat(right.data))
+      return fromJS(left.data.concat(right.data), mode)
     }
 
-    if (left.isArray() && right.isArray()) {
-      return new StreamValue(async function* () {
-        for await (const val of left) {
-          yield val
-        }
-
-        for await (const val of right) {
-          yield val
-        }
-      })
+    if (!left.isArray() || !right.isArray()) {
+      return NULL_VALUE
     }
 
-    return NULL_VALUE
+    if (mode === 'sync') {
+      return co<unknown>(function* (): Generator<unknown, Value, unknown> {
+        const leftData = (yield left.get()) as unknown[]
+        const rightData = (yield right.get()) as unknown[]
+        const next = [...leftData, ...rightData]
+
+        return new StaticValue(next, 'array')
+      }) as Value | PromiseLike<Value>
+    }
+
+    return new StreamValue(async function* () {
+      for await (const val of left) {
+        yield val
+      }
+
+      for await (const val of right) {
+        yield val
+      }
+    })
   },
 
   '-': function minus(left, right) {
