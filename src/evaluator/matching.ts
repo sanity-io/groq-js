@@ -1,5 +1,3 @@
-import type {Value} from '../values'
-
 const CHARS = /([^!@#$%^&*(),\\/?";:{}|[\]+<>\s-])+/g
 const CHARS_WITH_WILDCARD = /([^!@#$%^&(),\\/?";:{}|[\]+<>\s-])+/g
 const EDGE_CHARS = /(\b\.+|\.+\b)/g
@@ -31,25 +29,4 @@ export function matchPatternRegex(text: string): RegExp[] {
   return terms.map(
     (term) => new RegExp(`^${term.slice(0, MAX_TERM_LENGTH).replace(/\*/g, '.*')}$`, 'i'),
   )
-}
-
-export async function gatherText(value: Value, cb: (str: string) => void): Promise<boolean> {
-  if (value.type === 'string') {
-    cb(value.data)
-    return true
-  }
-
-  if (value.isArray()) {
-    let success = true
-    for await (const part of value) {
-      if (part.type === 'string') {
-        cb(part.data)
-      } else {
-        success = false
-      }
-    }
-    return success
-  }
-
-  return false
 }

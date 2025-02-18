@@ -1,6 +1,6 @@
 import t from 'tap'
 
-import {evaluate, parse} from '../src/1'
+import {evaluate, parse, type Value} from '../src/1'
 import type {ExprNode} from '../src/nodeTypes'
 import {throwsWithMessage} from './testUtils'
 
@@ -17,6 +17,18 @@ t.test('Basic parsing', async (t) => {
     const value = await evaluate(tree, {dataset})
     const data = await value.get()
     t.same(data, [{name: 'T-shirt'}, {name: 'Pants'}])
+  })
+
+  t.test('Queries based on static values should execute synchronously', async (t) => {
+    const document = {_type: 'user', name: 'Bob'}
+    const filter = '_type=="user"'
+    const query = `$__document {"result": ${filter}}.result`
+    const tree = parse(query)
+
+    const value = evaluate(tree, {
+      params: {__document: document},
+    }) as Value
+    t.same(value.get(), true)
   })
 
   t.test('String function', async (t) => {

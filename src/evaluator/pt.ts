@@ -1,29 +1,45 @@
-import type {Value} from '../values'
+import {co, fromJS, type Value} from '../values'
 
-export async function portableTextContent(value: Value): Promise<string | null> {
-  if (value.type === 'object') {
-    return blockText(value.data)
-  } else if (value.isArray()) {
-    const texts = await arrayText(value)
-    if (texts.length > 0) {
-      return texts.join('\n\n')
+export function portableTextContent(
+  value: Value,
+  mode: 'sync' | 'async',
+): string | null | PromiseLike<string | null> {
+  return co<unknown>(function* (): Generator<
+    string[] | PromiseLike<string[]>,
+    string | null,
+    string[]
+  > {
+    if (value.type === 'object') {
+      return blockText(value.data)
+    } else if (value.isArray()) {
+      const texts = yield arrayText(value, mode)
+      if (texts.length > 0) {
+        return texts.join('\n\n')
+      }
     }
-  }
 
-  return null
+    return null
+  }) as string | null | PromiseLike<string | null>
 }
 
-async function arrayText(value: Value, result: string[] = []): Promise<string[]> {
-  for await (const block of value) {
-    if (block.type === 'object') {
-      const text = blockText(block.data)
-      if (text !== null) result.push(text)
-    } else if (block.isArray()) {
-      await arrayText(block, result)
-    }
-  }
+function arrayText(value: Value, mode: 'sync' | 'async'): string[] | PromiseLike<string[]> {
+  return co<unknown>(function* (): Generator<unknown, string[], unknown> {
+    const result: string[] = []
 
-  return result
+    const data = (yield value.get()) as unknown[]
+    for (const item of data) {
+      const block = fromJS(item, mode)
+      if (block.type === 'object') {
+        const text = blockText(block.data)
+        if (text !== null) result.push(text)
+      } else if (block.isArray()) {
+        const children = (yield arrayText(block, mode)) as string[]
+        result.push(...children)
+      }
+    }
+
+    return result
+  }) as string[] | PromiseLike<string[]>
 }
 
 function blockText(obj: Record<string, unknown>): string | null {

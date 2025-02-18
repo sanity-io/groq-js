@@ -4,7 +4,7 @@
  * Re-generate by setting TAP_SNAPSHOT=1 and running tests.
  * Make sure to inspect the output below.  Do not ignore changes!
  */
-'use strict'
+
 exports[`test/parse.test.ts TAP Basic parsing Comment with no text > must match snapshot 1`] = `
 Object {
   "type": "Value",
@@ -62,7 +62,7 @@ Object {
                                   "value": "drafts.**",
                                 },
                               ],
-                              "func": AsyncFunction path(args, scope, execute),
+                              "func": Function path(args, scope, mode),
                               "name": "path",
                               "namespace": "global",
                               "type": "FuncCall",
@@ -102,13 +102,13 @@ Object {
           "type": "Map",
         },
       ],
-      "func": AsyncFunction (args, scope, execute),
+      "func": Function (args, scope, mode),
       "name": "unique",
       "namespace": "array",
       "type": "FuncCall",
     },
   ],
-  "func": AsyncFunction count(args, scope, execute),
+  "func": Function count(args, scope, mode),
   "name": "count",
   "namespace": "global",
   "type": "FuncCall",

@@ -1,27 +1,26 @@
 import type {OpCall} from '../nodeTypes'
 import {
+  co,
   FALSE_VALUE,
   fromDateTime,
   fromJS,
   fromNumber,
   fromString,
   NULL_VALUE,
+  StaticValue,
   StreamValue,
   TRUE_VALUE,
   type Value,
 } from '../values'
 import {isEqual} from './equality'
-import {
-  gatherText,
-  matchAnalyzePattern,
-  matchText,
-  matchTokenize,
-  type Pattern,
-  type Token,
-} from './matching'
+import {matchAnalyzePattern, matchText, matchTokenize} from './matching'
 import {partialCompare} from './ordering'
 
-type GroqOperatorFn = (left: Value, right: Value) => Value | PromiseLike<Value>
+type GroqOperatorFn = (
+  left: Value,
+  right: Value,
+  mode: 'sync' | 'async',
+) => Value | PromiseLike<Value>
 
 export const operators: {[key in OpCall]: GroqOperatorFn} = {
   '==': function eq(left, right) {
@@ -73,49 +72,58 @@ export const operators: {[key in OpCall]: GroqOperatorFn} = {
   },
 
   // eslint-disable-next-line func-name-matching
-  'in': async function inop(left, right) {
-    if (right.type === 'path') {
-      if (left.type !== 'string') {
-        return NULL_VALUE
-      }
-
-      return right.data.matches(left.data) ? TRUE_VALUE : FALSE_VALUE
-    }
-
-    if (right.isArray()) {
-      for await (const b of right) {
-        if (isEqual(left, b)) {
-          return TRUE_VALUE
+  'in': function inop(left, right) {
+    return co<unknown>(function* (): Generator<unknown, Value, unknown> {
+      if (right.type === 'path') {
+        if (left.type !== 'string') {
+          return NULL_VALUE
         }
+
+        return right.data.matches(left.data) ? TRUE_VALUE : FALSE_VALUE
       }
 
-      return FALSE_VALUE
-    }
+      if (right.isArray()) {
+        const result = (yield right.first((b) => isEqual(left, b))) as Value | undefined
+        if (result) return TRUE_VALUE
+        return FALSE_VALUE
+      }
 
-    return NULL_VALUE
+      return NULL_VALUE
+    }) as Value | PromiseLike<Value>
   },
 
-  'match': async function match(left, right) {
-    let tokens: Token[] = []
-    let patterns: Pattern[] = []
+  'match': function match(left, right) {
+    return co<Value>(function* () {
+      const leftData = yield left.get()
+      const rightData = yield right.get()
 
-    await gatherText(left, (part) => {
-      tokens = tokens.concat(matchTokenize(part))
+      let leftStrings: string[] = []
+      if (Array.isArray(leftData)) {
+        leftStrings = leftData.filter((i) => typeof i === 'string')
+      } else if (typeof leftData === 'string') {
+        leftStrings = [leftData]
+      }
+
+      let rightStrings: string[] | undefined
+      if (Array.isArray(rightData)) {
+        rightStrings = rightData.filter((i) => typeof i === 'string')
+      } else if (typeof rightData === 'string') {
+        rightStrings = [rightData]
+      }
+
+      if (!rightStrings?.length) {
+        return FALSE_VALUE
+      }
+
+      const tokens = leftStrings.flatMap(matchTokenize)
+      const patterns = rightStrings.flatMap(matchAnalyzePattern)
+      const matched = matchText(tokens, patterns)
+
+      return matched ? TRUE_VALUE : FALSE_VALUE
     })
-
-    const didSucceed = await gatherText(right, (part) => {
-      patterns = patterns.concat(matchAnalyzePattern(part))
-    })
-    if (!didSucceed) {
-      return FALSE_VALUE
-    }
-
-    const matched = matchText(tokens, patterns)
-
-    return matched ? TRUE_VALUE : FALSE_VALUE
   },
 
-  '+': function plus(left, right) {
+  '+': function plus(left, right, mode) {
     if (left.type === 'datetime' && right.type === 'number') {
       return fromDateTime(left.data.add(right.data))
     }
@@ -129,26 +137,36 @@ export const operators: {[key in OpCall]: GroqOperatorFn} = {
     }
 
     if (left.type === 'object' && right.type === 'object') {
-      return fromJS({...left.data, ...right.data})
+      return fromJS({...left.data, ...right.data}, mode)
     }
 
     if (left.type === 'array' && right.type === 'array') {
-      return fromJS(left.data.concat(right.data))
+      return fromJS(left.data.concat(right.data), mode)
     }
 
-    if (left.isArray() && right.isArray()) {
-      return new StreamValue(async function* () {
-        for await (const val of left) {
-          yield val
-        }
-
-        for await (const val of right) {
-          yield val
-        }
-      })
+    if (!left.isArray() || !right.isArray()) {
+      return NULL_VALUE
     }
 
-    return NULL_VALUE
+    if (mode === 'sync') {
+      return co<unknown>(function* (): Generator<unknown, Value, unknown> {
+        const leftData = (yield left.get()) as unknown[]
+        const rightData = (yield right.get()) as unknown[]
+        const next = [...leftData, ...rightData]
+
+        return new StaticValue(next, 'array')
+      }) as Value | PromiseLike<Value>
+    }
+
+    return new StreamValue(async function* () {
+      for await (const val of left) {
+        yield val
+      }
+
+      for await (const val of right) {
+        yield val
+      }
+    })
   },
 
   '-': function minus(left, right) {
