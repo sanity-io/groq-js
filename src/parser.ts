@@ -1,5 +1,5 @@
 /* eslint-disable camelcase */
-import {tryConstantEvaluate} from './evaluator'
+import {evaluate} from './evaluator'
 import {type GroqFunctionArity, namespaces, pipeFunctions} from './evaluator/functions'
 import {type Mark, MarkProcessor, type MarkVisitor} from './markProcessor'
 import type {
@@ -593,15 +593,21 @@ const TRAVERSE_BUILDER: MarkVisitor<(rhs: TraversalResult | null) => TraversalRe
   square_bracket(p) {
     const expr = p.process(EXPR_BUILDER)
 
-    const value = tryConstantEvaluate(expr)
-    if (value && value.type === 'number') {
+    const value = evaluate({
+      node: expr,
+      identity: 'me',
+      timestamp: new Date().toISOString(),
+      scope: [],
+    })
+
+    if (typeof value === 'number') {
       return (right) =>
-        traverseElement((base) => ({type: 'AccessElement', base, index: value.data}), right)
+        traverseElement((base) => ({type: 'AccessElement', base, index: value}), right)
     }
 
-    if (value && value.type === 'string') {
+    if (typeof value === 'string') {
       return (right) =>
-        traversePlain((base) => ({type: 'AccessAttribute', base, name: value.data}), right)
+        traversePlain((base) => ({type: 'AccessAttribute', base, name: value}), right)
     }
 
     return (right) =>
@@ -619,13 +625,20 @@ const TRAVERSE_BUILDER: MarkVisitor<(rhs: TraversalResult | null) => TraversalRe
     const isInclusive = p.getMark().name === 'inc_range'
     p.shift()
 
-    const left = p.process(EXPR_BUILDER)
-    const right = p.process(EXPR_BUILDER)
+    const left = evaluate({
+      node: p.process(EXPR_BUILDER),
+      identity: 'me',
+      scope: [],
+      timestamp: new Date().toISOString(),
+    })
+    const right = evaluate({
+      node: p.process(EXPR_BUILDER),
+      identity: 'me',
+      scope: [],
+      timestamp: new Date().toISOString(),
+    })
 
-    const leftValue = tryConstantEvaluate(left)
-    const rightValue = tryConstantEvaluate(right)
-
-    if (!leftValue || !rightValue || leftValue.type !== 'number' || rightValue.type !== 'number') {
+    if (typeof left !== 'number' || typeof right !== 'number') {
       throw new GroqQueryError('slicing must use constant numbers')
     }
 
@@ -634,8 +647,8 @@ const TRAVERSE_BUILDER: MarkVisitor<(rhs: TraversalResult | null) => TraversalRe
         (base) => ({
           type: 'Slice',
           base,
-          left: leftValue.data,
-          right: rightValue.data,
+          left,
+          right,
           isInclusive,
         }),
         rhs,
