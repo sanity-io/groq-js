@@ -1,17 +1,17 @@
-import type {Value} from '../values'
+import {isIso8601} from './evaluate'
 
-export function isEqual(a: Value, b: Value): boolean {
-  if (
-    (a.type === 'string' && b.type === 'string') ||
-    (a.type === 'boolean' && b.type === 'boolean') ||
-    (a.type === 'null' && b.type === 'null') ||
-    (a.type === 'number' && b.type === 'number')
-  ) {
-    return a.data === b.data
+export function isEqual(a: unknown = null, b: unknown = null): boolean {
+  if (isIso8601(a) && isIso8601(b)) {
+    return new Date(a).getTime() === new Date(b).getTime()
   }
 
-  if (a.type === 'datetime' && b.type === 'datetime') {
-    return a.data.equals(b.data)
+  if (
+    (a === null && b === null) ||
+    (typeof a === 'string' && typeof b === 'string') ||
+    (typeof a === 'boolean' && typeof b === 'boolean') ||
+    (typeof a === 'number' && typeof b === 'number')
+  ) {
+    return a === b
   }
 
   return false

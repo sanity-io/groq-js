@@ -1,0 +1,20 @@
+{
+  "version": "0.2.0",
+  "configurations": [
+    {
+      "name": "Debug Current Tape Test",
+      "type": "node",
+      "request": "launch",
+      "runtimeExecutable": "node",
+      "args": [
+        "${workspaceFolder}/node_modules/.bin/tap",
+        "--no-timeout",
+        "--coverage-report=html",
+        "--no-browser",
+        "${file}"
+      ],
+      "console": "integratedTerminal",
+      "internalConsoleOptions": "openOnSessionStart"
+    }
+  ]
+}

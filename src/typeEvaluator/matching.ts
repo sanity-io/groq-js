@@ -1,14 +1,8 @@
-import {
-  matchAnalyzePattern,
-  matchText,
-  matchTokenize,
-  type Pattern,
-  type Token,
-} from '../evaluator/matching'
+import {matchAnalyzePattern, matchText, matchTokenize, type Pattern} from '../evaluator/matching'
 import type {ConcreteTypeNode} from './typeHelpers'
 
 export function match(left: ConcreteTypeNode, right: ConcreteTypeNode): boolean | undefined {
-  let tokens: Token[] = []
+  let tokens: string[] = []
   let patterns: Pattern[] = []
   if (left.type === 'string') {
     if (left.value === undefined) {

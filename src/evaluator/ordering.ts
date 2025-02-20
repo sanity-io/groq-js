@@ -1,51 +1,45 @@
-import {getType, type GroqType} from '../values'
+import {isIso8601} from './evaluate'
 
-const TYPE_ORDER: {[key in GroqType]?: number} = {
-  datetime: 1,
-  number: 2,
-  string: 3,
-  boolean: 4,
+export function getTypeRank(value: unknown): number {
+  if (isIso8601(value)) return 1
+  if (typeof value === 'number') return 2
+  if (typeof value === 'string') return 3
+  if (typeof value === 'boolean') return 4
+  return 100
 }
 
-// eslint-disable-next-line @typescript-eslint/explicit-module-boundary-types
-export function partialCompare(a: any, b: any): null | number {
-  const aType = getType(a)
-  const bType = getType(b)
-
-  if (aType !== bType) {
-    return null
+export function compare(a: unknown, b: unknown): number {
+  // Check if both values have the same type.
+  if (typeof a !== typeof b) {
+    throw new Error('Cannot compare values of different types')
   }
 
-  switch (aType) {
-    case 'number':
-    case 'boolean':
-      return a - b
-    case 'string':
-      if (a < b) return -1
-      if (a > b) return 1
+  // For numbers and booleans.
+  if (typeof a === 'number' || typeof a === 'boolean') {
+    if (a < (b as number | boolean)) return -1
+    if (a > (b as number | boolean)) return 1
+    return 0
+  }
+
+  // For strings.
+  if (typeof a === 'string' && typeof b === 'string') {
+    // If both strings are ISO 8601 datetime strings, compare as dates.
+    if (isIso8601(a) && isIso8601(b)) {
+      const dateA = new Date(a)
+      const dateB = new Date(b)
+
+      // Use numeric comparison on the epoch times.
+      if (dateA.getTime() < dateB.getTime()) return -1
+      if (dateA.getTime() > dateB.getTime()) return 1
       return 0
-    case 'datetime':
-      return a.compareTo(b)
-    default:
-      return null
-  }
-}
+    }
 
-// eslint-disable-next-line @typescript-eslint/explicit-module-boundary-types
-export function totalCompare(a: any, b: any): number {
-  const aType = getType(a)
-  const bType = getType(b)
-
-  const aTypeOrder = TYPE_ORDER[aType] || 100
-  const bTypeOrder = TYPE_ORDER[bType] || 100
-
-  if (aTypeOrder !== bTypeOrder) {
-    return aTypeOrder - bTypeOrder
+    // Otherwise, compare as ordinary strings.
+    if (a < b) return -1
+    if (a > b) return 1
+    return 0
   }
 
-  let result = partialCompare(a, b)
-  if (result === null) {
-    result = 0
-  }
-  return result
+  // For unsupported types.
+  throw new Error('Unsupported type: only numbers, booleans, and strings are supported')
 }

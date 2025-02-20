@@ -65,6 +65,7 @@
     ]
   },
   "dependencies": {
+    "@portabletext/toolkit": "^2.0.17",
     "debug": "^4.3.4"
   },
   "devDependencies": {
