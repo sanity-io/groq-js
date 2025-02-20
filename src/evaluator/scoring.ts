@@ -1,5 +1,5 @@
 import type {ExprNode} from '../nodeTypes'
-import {evaluate} from './evaluate'
+import {evaluate, isIterable} from './evaluate'
 import {matchPatternRegex, matchTokenize} from './matching'
 import type {Context} from './types'
 
@@ -14,15 +14,16 @@ export function evaluateScore({node, ...context}: EvaluateScoreOptions): number 
   if (node.type === 'OpCall' && node.op === 'match') {
     const left = evaluate({...context, node: node.left})
     const right = evaluate({...context, node: node.right})
-    const leftStrings = (Array.isArray(left) ? left : [left]).filter((i) => typeof i === 'string')
-    const rightStrings = (Array.isArray(right) ? right : [right]).filter(
-      (i) => typeof i === 'string',
-    )
-    if (rightStrings.length) return 0
+    const tokens = (isIterable(left) ? Iterator.from(left) : [left].values())
+      .filter((i) => typeof i === 'string')
+      .flatMap(matchTokenize)
+    const terms = (isIterable(right) ? Iterator.from(right) : [right].values())
+      .filter((i) => typeof i === 'string')
+      .flatMap(matchPatternRegex)
 
-    const tokens = leftStrings.flatMap(matchTokenize)
-    const terms = rightStrings.flatMap(matchPatternRegex)
-    if (!tokens.length || !terms.length) return 0
+    // if either iterable is empty
+    if (!tokens.some(() => true)) return 0
+    if (!terms.some(() => true)) return 0
 
     return terms.reduce((score, re) => {
       const freq = tokens.reduce((c, token) => c + (re.test(token) ? 1 : 0), 0)

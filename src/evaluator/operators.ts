@@ -3,13 +3,18 @@
 
 import type {OpCallNode} from '../nodeTypes'
 import {isEqual} from './equality'
-import {evaluate, isIso8601} from './evaluate'
+import {evaluate, isIso8601, isIterable} from './evaluate'
 import {matchAnalyzePattern, matchText, matchTokenize} from './matching'
 import {compare} from './ordering'
 import type {Context} from './types'
 
 interface EvaluateOpCallOptions extends Context {
   node: OpCallNode
+}
+
+function* concat<T>(a: Iterable<T>, b: Iterable<T>): Generator<T> {
+  for (const item of a) yield item
+  for (const item of b) yield item
 }
 
 export function evaluateOpCall({node, ...context}: EvaluateOpCallOptions): unknown {
@@ -98,23 +103,26 @@ export function evaluateOpCall({node, ...context}: EvaluateOpCallOptions): unkno
 
       const right = evaluate({...context, node: node.right})
 
-      if (!Array.isArray(right)) return null
-      return right.some((item) => isEqual(left, item))
+      if (!isIterable(right)) return null
+      return Iterator.from(right).some((item) => isEqual(left, item))
     }
 
     case 'match': {
       const left = evaluate({...context, node: node.left})
       const right = evaluate({...context, node: node.right})
 
-      const tokens = (Array.isArray(left) ? left : [left])
+      const tokens = (isIterable(left) ? Iterator.from(left) : [left].values())
         .filter((i) => typeof i === 'string')
         .flatMap(matchTokenize)
-      const patterns = (Array.isArray(right) ? right : [right])
+      const patterns = (isIterable(right) ? Iterator.from(right) : [right].values())
         .filter((i) => typeof i === 'string')
         .flatMap(matchAnalyzePattern)
 
-      if (!patterns.length) return false
-      return matchText(tokens, patterns)
+      // if there are no patterns or tokens return false
+      if (!patterns.some(() => true)) return false
+      if (!tokens.some(() => true)) return false
+
+      return patterns.every((pattern) => pattern(tokens))
     }
 
     case '+': {
@@ -126,7 +134,7 @@ export function evaluateOpCall({node, ...context}: EvaluateOpCallOptions): unkno
       }
       if (typeof left === 'number' && typeof right === 'number') return left + right
       if (typeof left === 'string' && typeof right === 'string') return `${left}${right}`
-      if (Array.isArray(left) && Array.isArray(right)) return [...left, ...right]
+      if (isIterable(left) && isIterable(right)) return concat(left, right)
       if (typeof left === 'object' && left && typeof right === 'object' && right) {
         return {...left, ...right}
       }

@@ -9,6 +9,17 @@ interface EvaluateOptions extends Context {
   node: ExprNode
 }
 
+export function isIterable(value: unknown): value is Iterable<unknown> {
+  if (value === null || value === undefined) {
+    return false
+  }
+  if (typeof value !== 'object' && typeof value !== 'function') {
+    return false
+  }
+  const iteratorMethod = (value as {[Symbol.iterator]?: unknown})[Symbol.iterator]
+  return typeof iteratorMethod === 'function'
+}
+
 const iso8601Regex = /^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}(?:\.\d+)?(?:Z|[+-]\d{2}:\d{2})$/
 export const isIso8601 = (str: unknown): str is string =>
   typeof str === 'string' && iso8601Regex.test(str)
@@ -75,8 +86,8 @@ export function evaluate({node, ...context}: EvaluateOptions): unknown {
 
     case 'Filter': {
       const base = evaluate({...context, node: node.base})
-      if (!Array.isArray(base)) return null
-      return base.filter((item) =>
+      if (!isIterable(base)) return null
+      return Iterator.from(base).filter((item) =>
         evaluate({
           ...context,
           node: node.expr,
@@ -117,24 +128,36 @@ export function evaluate({node, ...context}: EvaluateOptions): unknown {
 
     case 'AccessElement': {
       const base = evaluate({...context, node: node.base})
-      if (!Array.isArray(base)) return null
-      return base.at(node.index)
+      if (!isIterable(base)) return null
+      const index = node.index
+      if (index < 0) return Array.from(base).at(index)
+      return Iterator.from(base).drop(index).next().value
     }
 
     case 'Slice': {
       const base = evaluate({...context, node: node.base})
-      if (!Array.isArray(base)) return null
-      return base.slice(node.left, node.isInclusive ? node.right + 1 : node.right)
+      if (!isIterable(base)) return null
+      const start = node.left
+      const end = node.isInclusive ? node.right + 1 : node.right
+
+      // negative slices require buffering the entire iterable into an array
+      if (start < 0 || end < 0) {
+        return Array.from(base).slice(start, end)
+      }
+
+      return Iterator.from(base)
+        .drop(start)
+        .take(end - start)
     }
 
     case 'Deref': {
       const base = evaluate({...context, node: node.base})
       const root = context.scope.at(0)
-      if (!Array.isArray(root)) return null
+      if (!isIterable(root)) return null
       if (typeof base !== 'object' || !base) return null
       if (!('_ref' in base) || typeof base._ref !== 'string') return null
 
-      return root.find(
+      return Iterator.from(root).find(
         (doc: unknown) =>
           typeof doc === 'object' &&
           !!doc &&
@@ -156,10 +179,10 @@ export function evaluate({node, ...context}: EvaluateOptions): unknown {
       return node.attributes.reduce<Record<string, unknown>>((acc, attribute) => {
         switch (attribute.type) {
           case 'ObjectAttributeValue': {
-            const value = evaluate({...context, node: attribute.value})
-            if (value !== undefined) {
-              acc[attribute.name] = value
-            }
+            Object.defineProperty(acc, attribute.name, {
+              enumerable: true,
+              get: () => evaluate({...context, node: attribute.value}),
+            })
             return acc
           }
 
@@ -194,10 +217,13 @@ export function evaluate({node, ...context}: EvaluateOptions): unknown {
     }
 
     case 'Array': {
-      return node.elements.flatMap((element) => {
+      return Iterator.from(node.elements).flatMap(function* (element) {
         const value = evaluate({...context, node: element.value})
-        if (element.isSplat) return Array.isArray(value) ? value : []
-        return value
+        if (element.isSplat && isIterable(value)) {
+          yield* Iterator.from(value)
+        } else {
+          yield value
+        }
       })
     }
 
@@ -251,14 +277,15 @@ export function evaluate({node, ...context}: EvaluateOptions): unknown {
 
     case 'ArrayCoerce': {
       const base = evaluate({...context, node: node.base})
-      if (Array.isArray(base)) return base
+      if (isIterable(base)) return base
       return null
     }
 
     case 'Map': {
       const base = evaluate({...context, node: node.base})
-      if (!Array.isArray(base)) return null
-      return base.map((item) =>
+      if (!isIterable(base)) return null
+
+      return Iterator.from(base).map((item) =>
         evaluate({
           ...context,
           node: node.expr,
@@ -269,15 +296,18 @@ export function evaluate({node, ...context}: EvaluateOptions): unknown {
 
     case 'FlatMap': {
       const base = evaluate({...context, node: node.base})
-      if (!Array.isArray(base)) return null
-      return base.flatMap((item) => {
+      if (!isIterable(base)) return null
+      return Iterator.from(base).flatMap(function* (item) {
         const child = evaluate({
           ...context,
           node: node.expr,
           scope: [...context.scope.slice(0, -1), item],
         })
-        if (Array.isArray(child)) return child
-        return [child]
+        if (isIterable(child)) {
+          yield* Iterator.from(child)
+        } else {
+          yield child
+        }
       })
     }
 

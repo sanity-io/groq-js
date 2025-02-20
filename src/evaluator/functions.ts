@@ -2,13 +2,13 @@ import {toPlainText} from '@portabletext/toolkit'
 import type {ArbitraryTypedObject, PortableTextBlock} from '@portabletext/types'
 
 import type {ExprNode} from '../nodeTypes'
-import {evaluate, isIso8601} from './evaluate'
+import {evaluate, isIso8601, isIterable} from './evaluate'
 import {compare, getTypeRank} from './ordering'
 import {evaluateScore} from './scoring'
 import type {Context} from './types'
 
 function hasReference(value: unknown, paths: Set<string>): boolean {
-  if (Array.isArray(value)) {
+  if (isIterable(value)) {
     for (const child of value) {
       if (hasReference(child, paths)) return true
     }
@@ -93,8 +93,8 @@ coalesce.arity = 1
 
 function count({args: [arg], ...context}: GroqFunctionOptions): number | null {
   const base = evaluate({...context, node: arg})
-  if (!Array.isArray(base)) return null
-  return base.length
+  if (!isIterable(base)) return null
+  return Iterator.from(base).reduce<number>((count) => count + 1, 0)
 }
 count.arity = 1
 
@@ -120,7 +120,7 @@ identity.arity = 0
 function length({args: [baseArg], ...context}: GroqFunctionOptions): number | null {
   const base = evaluate({...context, node: baseArg})
   if (typeof base === 'string') return countUTF8(base)
-  if (Array.isArray(base)) return base.length
+  if (isIterable(base)) return Iterator.from(base).reduce<number>((length) => length + 1, 0)
   return null
 }
 length.arity = 1
@@ -151,7 +151,7 @@ function references({args, ...context}: GroqFunctionOptions): boolean {
   const paths = new Set(
     args.flatMap((arg) => {
       const base = evaluate({...context, node: arg})
-      return (Array.isArray(base) ? base : [base]).filter((i) => typeof i === 'string')
+      return (isIterable(base) ? Array.from(base) : [base]).filter((i) => typeof i === 'string')
     }),
   )
   return hasReference(context.scope.at(-1), paths)
@@ -222,7 +222,7 @@ startsWith.arity = 2
 
 function join({args: [baseArg, separatorArg], ...context}: GroqFunctionOptions): string | null {
   const base = evaluate({...context, node: baseArg})
-  if (!Array.isArray(base)) return null
+  if (!isIterable(base)) return null
   const separator = evaluate({...context, node: separatorArg})
   if (typeof separator !== 'string') return null
 
@@ -246,21 +246,24 @@ function join({args: [baseArg, separatorArg], ...context}: GroqFunctionOptions):
 }
 join.arity = 2
 
-function compact({args: [baseArg], ...context}: GroqFunctionOptions): unknown[] | null {
+function compact({
+  args: [baseArg],
+  ...context
+}: GroqFunctionOptions): IteratorObject<unknown> | null {
   const base = evaluate({...context, node: baseArg})
-  if (!Array.isArray(base)) return null
-  return base.filter((i = null) => i !== null)
+  if (!isIterable(base)) return null
+  return Iterator.from(base).filter((i = null) => i !== null)
 }
 compact.arity = 1
 
 function unique({args: [baseArg], ...context}: GroqFunctionOptions): unknown[] | null {
   const base = evaluate({...context, node: baseArg})
-  if (!Array.isArray(base)) return null
+  if (!isIterable(base)) return null
 
   // `Set`s preserve the order in which those unique values were first inserted
   return Array.from(
     new Set(
-      base.map((item) => {
+      Iterator.from(base).map((item) => {
         switch (typeof item) {
           case 'boolean':
           case 'number':
@@ -279,13 +282,13 @@ unique.arity = 1
 
 function intersects({args: [leftArg, rightArg], ...context}: GroqFunctionOptions): boolean | null {
   const left = evaluate({...context, node: leftArg})
-  if (!Array.isArray(left)) return null
+  if (!isIterable(left)) return null
   const right = evaluate({...context, node: rightArg})
-  if (!Array.isArray(right)) return null
+  if (!isIterable(right)) return null
 
-  const createSet = (left: unknown[]) =>
+  const createSet = (iterable: Iterable<unknown>) =>
     new Set(
-      left
+      Iterator.from(iterable)
         .filter(
           (i) =>
             i === undefined ||
@@ -294,26 +297,21 @@ function intersects({args: [leftArg, rightArg], ...context}: GroqFunctionOptions
             typeof i === 'number' ||
             typeof i === 'string',
         )
-        .map((i = null) => `${i}`),
+        .map((i) => `${i}`),
     )
 
   const leftSet = createSet(left)
   const rightSet = createSet(right)
 
-  if (typeof Set.prototype.isDisjointFrom === 'function') {
-    return !leftSet.isDisjointFrom(rightSet)
-  }
-
-  for (const item of leftSet) {
-    if (rightSet.has(item)) return true
-  }
-  return false
+  // TODO: ensure polyfills for this are here
+  return !leftSet.isDisjointFrom(rightSet)
 }
 intersects.arity = 2
 
 function text({args: [baseArg], ...context}: GroqFunctionOptions): string | null {
   const base = evaluate({...context, node: baseArg})
   try {
+    // TODO: this may not work anymore ...
     return toPlainText(base as PortableTextBlock | ArbitraryTypedObject[] | PortableTextBlock[])
   } catch {
     return null
@@ -331,16 +329,18 @@ function dataset({sanity}: GroqFunctionOptions): string | null {
 }
 dataset.arity = 0
 
-function versionsOf({args: [baseArg], ...context}: GroqFunctionOptions): string[] | null {
+function versionsOf({
+  args: [baseArg],
+  ...context
+}: GroqFunctionOptions): IteratorObject<unknown> | null {
   const root = context.scope.at(0)
-  if (!Array.isArray(root)) return null
+  if (!isIterable(root)) return null
 
   const baseId = evaluate({...context, node: baseArg})
   if (typeof baseId !== 'string') return null
 
-  return root
+  return Iterator.from(root)
     .filter((value: unknown): value is {_id: string; _version: unknown} => {
-      // All the document are a version of the given ID if:
       if (!value) return false
       if (typeof value !== 'object') return false
       if (!('_id' in value) || typeof value._id !== 'string') return false
@@ -351,19 +351,22 @@ function versionsOf({args: [baseArg], ...context}: GroqFunctionOptions): string[
 
       //  2. And, they have a field called _version which is an object.
       return '_version' in value && typeof value._version === 'object'
-    }, [])
+    })
     .map((i) => i._id)
 }
 versionsOf.arity = 1
 
-function partOfRelease({args: [baseArg], ...context}: GroqFunctionOptions): string[] | null {
+function partOfRelease({
+  args: [baseArg],
+  ...context
+}: GroqFunctionOptions): IteratorObject<string> | null {
   const root = context.scope.at(0)
-  if (!Array.isArray(root)) return null
+  if (!isIterable(root)) return null
 
   const baseId = evaluate({...context, node: baseArg})
   if (typeof baseId !== 'string') return null
 
-  return root
+  return Iterator.from(root)
     .filter((value: unknown): value is {_id: string; _version: unknown} => {
       // A document belongs to a bundle ID if:
       if (!value) return false
@@ -383,9 +386,9 @@ function partOfRelease({args: [baseArg], ...context}: GroqFunctionOptions): stri
 partOfRelease.arity = 1
 
 function order({base, args, ...context}: GroqPipeFunctionOptions): unknown[] | null {
-  if (!Array.isArray(base)) return null
+  if (!isIterable(base)) return null
 
-  return base
+  return Array.from(base)
     .map((value, index) => ({value, index}))
     .sort((a, b) => {
       for (const ordering of args) {
@@ -416,25 +419,26 @@ function order({base, args, ...context}: GroqPipeFunctionOptions): unknown[] | n
 order.arity = (count: number) => count >= 1
 
 function score({base, args, ...context}: GroqPipeFunctionOptions): ObjectWithScore[] | null {
-  if (!Array.isArray(base)) return null
+  if (!isIterable(base)) return null
 
-  return base
-    .filter((item: unknown): item is object => typeof item !== 'object' && !!item)
-    .map((item) => {
-      const prevScore = '_score' in item && typeof item._score === 'number' ? item._score : 0
-      const score = args.reduce((acc, arg) => {
-        return (
-          acc +
-          evaluateScore({
-            ...context,
-            node: arg,
-            scope: [...context.scope, item],
-          })
-        )
-      }, prevScore)
-      return Object.assign({}, item, {_score: score})
-    })
-    .sort((a, b) => a._score - b._score)
+  return Array.from(
+    Iterator.from(base)
+      .filter((item: unknown): item is object => typeof item !== 'object' && !!item)
+      .map((item) => {
+        const prevScore = '_score' in item && typeof item._score === 'number' ? item._score : 0
+        const score = args.reduce((acc, arg) => {
+          return (
+            acc +
+            evaluateScore({
+              ...context,
+              node: arg,
+              scope: [...context.scope, item],
+            })
+          )
+        }, prevScore)
+        return Object.assign({}, item, {_score: score})
+      }),
+  ).sort((a, b) => a._score - b._score)
 }
 score.arity = (count: number) => count >= 1
 
@@ -447,75 +451,76 @@ function operation({after, before}: GroqFunctionOptions): 'update' | 'create' | 
 
 function min({args: [baseArg], ...context}: GroqFunctionOptions): number | null {
   const base = evaluate({...context, node: baseArg})
-  if (!Array.isArray(base)) return null
-
-  const nonNullBase = base.filter((item = null) => item !== null)
-  if (!nonNullBase.length) return null
+  if (!isIterable(base)) return null
 
   let min = Infinity
-  for (const item of nonNullBase) {
+  for (const item of base) {
+    if (item === null || item === undefined) continue
     // early exit if a non-null, non-number is found
     if (typeof item !== 'number') return null
     if (item < min) {
       min = item
     }
   }
+
+  if (min === Infinity) return null
   return min
 }
 min.arity = 1
 
 function max({args: [baseArg], ...context}: GroqFunctionOptions): number | null {
   const base = evaluate({...context, node: baseArg})
-  if (!Array.isArray(base)) return null
-
-  const items = base.filter((item = null) => item !== null)
-  if (!items.length) return null
+  if (!isIterable(base)) return null
 
   let max = -Infinity
-  for (const item of items) {
+  for (const item of base) {
+    if (item === undefined || item === null) continue
     // early exit if a non-null, non-number is found
     if (typeof item !== 'number') return null
     if (item > max) {
       max = item
     }
   }
+  if (max === -Infinity) return null
   return max
 }
 max.arity = 1
 
 function sum({args: [baseArg], ...context}: GroqFunctionOptions): number | null {
   const base = evaluate({...context, node: baseArg})
-  if (!Array.isArray(base)) return null
-
-  const items = base.filter((item = null) => item !== null)
-  if (!items.length) return null
+  if (!isIterable(base)) return null
 
   let sum = 0
-  for (const item of items) {
+  let foundNumber = false
+  for (const item of base) {
+    if (item === undefined || item === null) continue
     // early exit if a non-null, non-number is found
     if (typeof item !== 'number') return null
+    foundNumber = true
     sum += item
   }
+
+  if (!foundNumber) return null
   return sum
 }
 sum.arity = 1
 
 function avg({args: [baseArg], ...context}: GroqFunctionOptions): number | null {
   const base = evaluate({...context, node: baseArg})
-  if (!Array.isArray(base)) return null
-
-  const items = base.filter((item = null) => item !== null)
-  if (!items.length) return null
+  if (!isIterable(base)) return null
 
   let sum = 0
-  for (const item of items) {
+  let count = 0
+  for (const item of base) {
+    if (item === undefined || item === null) continue
     // early exit if a non-null, non-number is found
     if (typeof item !== 'number') return null
+    count += 1
     sum += item
   }
 
-  if (!items.length) return null
-  return sum / items.length
+  if (count === 0) return null
+  return sum / count
 }
 avg.arity = 1
 
