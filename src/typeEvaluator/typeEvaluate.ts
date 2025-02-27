@@ -6,6 +6,7 @@ import type {
   AndNode,
   ArrayCoerceNode,
   ArrayNode,
+  ContextNode,
   DerefNode,
   EverythingNode,
   ExprNode,
@@ -1072,6 +1073,18 @@ function handleOrNode(node: OrNode, scope: Scope): TypeNode {
   )
 }
 
+function handleContextNode(node: ContextNode, scope: Scope): TypeNode {
+  switch (node.key) {
+    case 'before':
+    case 'after': {
+      return scope.value
+    }
+    default: {
+      return {type: 'unknown'}
+    }
+  }
+}
+
 const OVERRIDE_TYPE_SYMBOL = Symbol('groq-js.type')
 
 /**
@@ -1193,10 +1206,12 @@ export function walk({node, scope}: {node: ExprNode; scope: Scope}): TypeNode {
     case 'Pos': {
       return handlePosNode(node, scope)
     }
+    case 'Context': {
+      return handleContextNode(node, scope)
+    }
     // everything else
     case 'Asc':
     case 'Desc':
-    case 'Context':
     case 'Tuple':
     case 'Selector':
     case 'InRange': {

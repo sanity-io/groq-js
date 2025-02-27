@@ -136,3 +136,7 @@ export function isFuncCall(node: ExprNode, name: string): boolean {
 
   return node.type === 'FuncCall' && `${node.namespace}::${node.name}` === name
 }
+
+export function arrayOf<T extends TypeNode = TypeNode>(of: T): ArrayTypeNode<T> {
+  return {type: 'array', of}
+}

@@ -2,7 +2,12 @@ import t from 'tap'
 
 import {parse} from '../src/parser'
 import {typeEvaluate} from '../src/typeEvaluator/typeEvaluate'
-import {createReferenceTypeNode, nullUnion, unionOf} from '../src/typeEvaluator/typeHelpers'
+import {
+  arrayOf,
+  createReferenceTypeNode,
+  nullUnion,
+  unionOf,
+} from '../src/typeEvaluator/typeHelpers'
 import type {
   ArrayTypeNode,
   Document,
@@ -3325,6 +3330,33 @@ t.test('function: sanity::partOfRelease', (t) => {
       },
     },
   })
+  t.end()
+})
+
+t.test('delta mode', (t) => {
+  const variants = [
+    {
+      query: `*[_type == "author" && before()._type == "other"]`,
+      expect: arrayOf(unionOf()),
+    },
+    {
+      query: `*[_type == "author" && after()._type == "other"]`,
+      expect: arrayOf(unionOf()),
+    },
+    {
+      query: `*[_type == "author" && after().name == "other"]`,
+      expect: arrayOf({type: 'object', attributes: authorDocument.attributes}),
+    },
+    {
+      query: `*[_type == "author" && before().name == "other"]`,
+      expect: arrayOf({type: 'object', attributes: authorDocument.attributes}),
+    },
+  ] as const
+  for (const {query, expect} of variants) {
+    const ast = parse(query, {mode: 'delta'})
+    const res = typeEvaluate(ast, schemas)
+    t.strictSame(res, expect)
+  }
   t.end()
 })
 
