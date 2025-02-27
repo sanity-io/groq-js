@@ -469,6 +469,19 @@ export function handleFuncCallNode(node: FuncCallNode, scope: Scope): TypeNode {
         return {type: 'array', of: {type: 'string'}}
       })
     }
+    case 'delta.changedAny':
+    case 'delta.changedOnly': {
+      const selector = walk({node: node.args[0], scope})
+      if (selector.type === 'null') {
+        return {type: 'boolean', value: false}
+      }
+
+      if (selector.type === 'unknown') {
+        return {type: 'unknown'}
+      }
+
+      return {type: 'boolean'}
+    }
     default: {
       return {type: 'unknown'}
     }

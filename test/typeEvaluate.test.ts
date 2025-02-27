@@ -3351,6 +3351,14 @@ t.test('delta mode', (t) => {
       query: `*[_type == "author" && before().name == "other"]`,
       expect: arrayOf({type: 'object', attributes: authorDocument.attributes}),
     },
+    {
+      query: `*[_type == "author" && delta::changedOnly(name)]`,
+      expect: arrayOf({type: 'object', attributes: authorDocument.attributes}),
+    },
+    {
+      query: `*[_type == "author" && delta::changedOnly(missing)]`,
+      expect: arrayOf(unionOf()),
+    },
   ] as const
   for (const {query, expect} of variants) {
     const ast = parse(query, {mode: 'delta'})
