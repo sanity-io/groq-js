@@ -460,22 +460,25 @@ sanity['versionOf'] = async function (args, scope, execute) {
   if (value.type !== 'string') return NULL_VALUE
   const baseId = value.data
 
-  // All the document are a version of the given ID if:
-  //  1. Document ID is of the form bundleId.documentGroupId
-  //  2. And, they have a field called _version which is an object.
+  // All the documents are a version of document 'bar' if its document ID is of
+  // the form versions.releaseId.bar
   const versionIds: string[] = []
   for await (const value of scope.source) {
     if (getType(value) === 'object') {
       const val = await value.get()
-      if (
-        val &&
-        '_id' in val &&
-        val._id.split('.').length === 2 &&
-        val._id.endsWith(`.${baseId}`) &&
-        '_version' in val &&
-        typeof val._version === 'object'
-      ) {
-        versionIds.push(val._id)
+      if (val && typeof val._id === 'string') {
+        const components = val._id.split('.')
+        if (
+          val._id === baseId ||
+          (components.length >= 3 &&
+            components[0] === 'versions' &&
+            components.slice(2).join('.') === baseId) ||
+          (components.length >= 2 &&
+            components[0] === 'drafts' &&
+            components.slice(1).join('.') === baseId)
+        ) {
+          versionIds.push(val._id)
+        }
       }
     }
   }
@@ -492,27 +495,22 @@ sanity['partOfRelease'] = async function (args, scope, execute) {
   if (value.type !== 'string') return NULL_VALUE
   const baseId = value.data
 
-  // A document belongs to a bundle ID if:
-  //  1. Document ID is of the form bundleId.documentGroupId
-  //  2. And, they have a field called _version which is an object.
-  const documentIdsInBundle: string[] = []
+  // A document is part of a release 'foo' if its document ID is of the form
+  // versions.foo.documentGroupId
+  const documentIdsInRelease: string[] = []
   for await (const value of scope.source) {
     if (getType(value) === 'object') {
       const val = await value.get()
-      if (
-        val &&
-        '_id' in val &&
-        val._id.split('.').length === 2 &&
-        val._id.startsWith(`${baseId}.`) &&
-        '_version' in val &&
-        typeof val._version === 'object'
-      ) {
-        documentIdsInBundle.push(val._id)
+      if (val && typeof val._id === 'string') {
+        const components = val._id.split('.')
+        if (components.length >= 3 && components[0] === 'versions' && components[1] === baseId) {
+          documentIdsInRelease.push(val._id)
+        }
       }
     }
   }
 
-  return fromJS(documentIdsInBundle)
+  return fromJS(documentIdsInRelease)
 }
 sanity['partOfRelease'].arity = 1
 
