@@ -3274,9 +3274,9 @@ t.test('splat on optional object', (t) => {
   t.end()
 })
 
-t.test('function: sanity::versionsOf', (t) => {
+t.test('function: sanity::versionOf', (t) => {
   const query = `*[_type == "author"] {
-    "versions": sanity::versionsOf("foo")
+    "versions": sanity::versionOf("foo")
   }`
   const ast = parse(query)
   const res = typeEvaluate(ast, schemas)
