@@ -317,6 +317,21 @@ t.test('Basic parsing', async (t) => {
     })
   })
 
+  t.test('releases-functions', async (t) => {
+    t.test('releases::all()', async (t) => {
+      const dataset = [
+        {_id: '_.releases.summer', _type: 'system.release', title: 'Summer'},
+        {_id: '_.releases.winter', _type: 'system.release', title: 'Winter'},
+        {_id: '_.releases.not', _type: 'other', title: 'Not a release'},
+      ]
+
+      const tree = parse('{"rels": releases::all()[].title}')
+      const value = await evaluate(tree, {dataset})
+      const data = await value.get()
+      t.same(data, {rels: ['Summer', 'Winter']})
+    })
+  })
+
   t.test('Custom dereference function', async (t) => {
     const dataset = [
       {_id: 'a', name: 'Michael'},
