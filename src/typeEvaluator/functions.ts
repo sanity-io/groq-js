@@ -444,7 +444,7 @@ export function handleFuncCallNode(node: FuncCallNode, scope: Scope): TypeNode {
         })
       })
     }
-    case 'sanity.versionsOf': {
+    case 'sanity.versionOf': {
       const typeNode = walk({node: node.args[0], scope})
       return mapNode(typeNode, scope, (typeNode) => {
         if (typeNode.type === 'unknown') {
