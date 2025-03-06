@@ -5,6 +5,17 @@
 All notable changes to this project will be documented in this file. See
 [Conventional Commits](https://conventionalcommits.org) for commit guidelines.
 
+## [1.16.0](https://github.com/sanity-io/groq-js/compare/v1.15.0...v1.16.0) (2025-03-06)
+
+### Features
+
+- **functions:** add releases:all() ([7c67bd1](https://github.com/sanity-io/groq-js/commit/7c67bd124292d1404eaee1202da1ca50c0fd1c51))
+
+### Bug Fixes
+
+- **functions:** correct behaviour of partOfRelease and versionOf ([1a85198](https://github.com/sanity-io/groq-js/commit/1a851986d8372f4d9fcc4a7deef322409251eacd))
+- revert sanity::versionsOf to versionOf ([#274](https://github.com/sanity-io/groq-js/issues/274)) ([6179e61](https://github.com/sanity-io/groq-js/commit/6179e61bd4a640df000b3329c8101e0ed68fcc11))
+
 ## [1.15.0](https://github.com/sanity-io/groq-js/compare/v1.14.2...v1.15.0) (2025-02-03)
 
 ### Features
