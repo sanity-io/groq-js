@@ -8,46 +8,62 @@ function typeNodesSorter(a: TypeNode, b: TypeNode): number {
   return compare(hashField(a), hashField(b))
 }
 
+const hashCache = new WeakMap<TypeNode, string>()
+
 export function hashField(field: TypeNode): string {
+  if (hashCache.has(field)) {
+    return hashCache.get(field)!
+  }
   switch (field.type) {
     case 'string':
     case 'number':
     case 'boolean': {
       if (field.value !== undefined) {
-        return `${field.type}(${field.value})`
+        hashCache.set(field, `${field.type}(${field.value})`)
+        break
       }
-      return `${field.type}`
+      hashCache.set(field, `${field.type}`)
+      break
     }
 
     case 'null':
     case 'unknown': {
-      return field.type
+      hashCache.set(field, field.type)
+      break
     }
 
     case 'array': {
-      return `${field.type}(${hashField(field.of)})`
+      hashCache.set(field, `${field.type}(${hashField(field.of)})`)
+      break
     }
 
     case 'object': {
       const attributes = Object.entries(field.attributes)
       attributes.sort(([a], [b]) => compare(a, b)) // sort them by name
-
-      return `${field.type}:(${attributes
-        .map(
-          ([key, value]) =>
-            `${key}:${hashField(value.value)}(${value.optional ? 'optional' : 'non-optional'})`,
-        )
-        .join(',')}):ref-${field.dereferencesTo}:${field.rest ? hashField(field.rest) : 'no-rest'}`
+      hashCache.set(
+        field,
+        `${field.type}:(${attributes
+          .map(
+            ([key, value]) =>
+              `${key}:${hashField(value.value)}(${value.optional ? 'optional' : 'non-optional'})`,
+          )
+          .join(
+            ',',
+          )}):ref-${field.dereferencesTo}:${field.rest ? hashField(field.rest) : 'no-rest'}`,
+      )
+      break
     }
 
     case 'union': {
       const sorted = [...field.of]
       sorted.sort(typeNodesSorter)
-      return `${field.type}(${sorted.map(hashField).join(',')})`
+      hashCache.set(field, `${field.type}(${sorted.map(hashField).join(',')})`)
+      break
     }
 
     case 'inline': {
-      return `${field.type}(${field.name})`
+      hashCache.set(field, `${field.type}(${field.name})`)
+      break
     }
 
     default: {
@@ -55,6 +71,8 @@ export function hashField(field: TypeNode): string {
       return field.type
     }
   }
+
+  return hashCache.get(field)!
 }
 
 export function removeDuplicateTypeNodes(typeNodes: TypeNode[]): TypeNode[] {
