@@ -8,7 +8,18 @@ function typeNodesSorter(a: TypeNode, b: TypeNode): number {
   return compare(hashField(a), hashField(b))
 }
 
+const hashCache = new WeakMap<TypeNode, string>()
+
 export function hashField(field: TypeNode): string {
+  if (hashCache.has(field)) {
+    return hashCache.get(field)!
+  }
+  const hash = calculateFieldHash(field)
+  hashCache.set(field, hash)
+  return hash
+}
+
+function calculateFieldHash(field: TypeNode): string {
   switch (field.type) {
     case 'string':
     case 'number':
@@ -16,6 +27,7 @@ export function hashField(field: TypeNode): string {
       if (field.value !== undefined) {
         return `${field.type}(${field.value})`
       }
+
       return `${field.type}`
     }
 
@@ -31,7 +43,6 @@ export function hashField(field: TypeNode): string {
     case 'object': {
       const attributes = Object.entries(field.attributes)
       attributes.sort(([a], [b]) => compare(a, b)) // sort them by name
-
       return `${field.type}:(${attributes
         .map(
           ([key, value]) =>
