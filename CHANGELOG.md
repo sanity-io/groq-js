@@ -5,6 +5,12 @@
 All notable changes to this project will be documented in this file. See
 [Conventional Commits](https://conventionalcommits.org) for commit guidelines.
 
+## [1.16.1](https://github.com/sanity-io/groq-js/compare/v1.16.0...v1.16.1) (2025-03-10)
+
+### Bug Fixes
+
+- **typeEvaluator:** avoid recalculating typeNode hash ([557fb89](https://github.com/sanity-io/groq-js/commit/557fb89e9838288988d6ca4bcdca09f78a348a2c))
+
 ## [1.16.0](https://github.com/sanity-io/groq-js/compare/v1.15.0...v1.16.0) (2025-03-06)
 
 ### Features
