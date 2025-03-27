@@ -1,15 +1,9 @@
-import {
-  matchAnalyzePattern,
-  matchText,
-  matchTokenize,
-  type Pattern,
-  type Token,
-} from '../evaluator/matching'
+import {matchPatternRegex, matchTokenize} from '../evaluator/matching'
 import type {ConcreteTypeNode} from './typeHelpers'
 
 export function match(left: ConcreteTypeNode, right: ConcreteTypeNode): boolean | undefined {
-  let tokens: Token[] = []
-  let patterns: Pattern[] = []
+  let tokens: string[] = []
+  let patterns: RegExp[] = []
   if (left.type === 'string') {
     if (left.value === undefined) {
       return undefined
@@ -43,7 +37,7 @@ export function match(left: ConcreteTypeNode, right: ConcreteTypeNode): boolean 
     if (right.value === undefined) {
       return undefined
     }
-    patterns = patterns.concat(matchAnalyzePattern(right.value))
+    patterns = patterns.concat(matchPatternRegex(right.value))
   }
   if (right.type === 'array') {
     if (right.of.type === 'unknown') {
@@ -54,7 +48,7 @@ export function match(left: ConcreteTypeNode, right: ConcreteTypeNode): boolean 
       if (right.of.value === undefined) {
         return undefined
       }
-      patterns = patterns.concat(matchAnalyzePattern(right.of.value))
+      patterns = patterns.concat(matchPatternRegex(right.of.value))
     }
     if (right.of.type === 'union') {
       // eslint-disable-next-line max-depth
@@ -65,7 +59,7 @@ export function match(left: ConcreteTypeNode, right: ConcreteTypeNode): boolean 
           if (node.value === undefined) {
             return undefined
           }
-          patterns = patterns.concat(matchAnalyzePattern(node.value))
+          patterns = patterns.concat(matchPatternRegex(node.value))
         }
 
         // eslint-disable-next-line max-depth

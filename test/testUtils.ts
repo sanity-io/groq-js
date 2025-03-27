@@ -1,15 +1,17 @@
+import type {Test} from 'tap'
+
 export async function throwsWithMessage(
-  t: Tap.Test,
-  funcUnderTest: () => {},
+  t: Test,
+  funcUnderTest: () => unknown,
   expectedMessage: string,
-) {
+): Promise<void> {
   let didThrow = false
 
   try {
     await funcUnderTest()
-  } catch (error: any) {
+  } catch (error) {
     didThrow = true
-    t.same(error.message, expectedMessage)
+    t.same((error as Error).message, expectedMessage)
   }
 
   t.ok(didThrow, `Expected function to throw with message: '${expectedMessage}'`)

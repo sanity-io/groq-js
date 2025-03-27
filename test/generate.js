@@ -47,7 +47,7 @@ function space() {
 write(`const fs = require('fs')`)
 write(`const ndjson = require('ndjson')`)
 write(`const tap = require('tap')`)
-write(`const {evaluate, parse} = require('../src/1')`)
+write(`const {evaluate, parse, toJS} = require('../src/1')`)
 space()
 
 write(`tap.setTimeout(0)`)
@@ -156,6 +156,7 @@ process.stdin
   .pipe(ndjson.parse())
   .on('data', (entry) => {
     if (entry._type === 'dataset') {
+      if (entry._id.startsWith('dataset-generated')) return
       if (entry.documents) {
         entry.documents.sort((a, b) => cmpString(a._id, b._id))
       } else {
@@ -167,6 +168,8 @@ process.stdin
     }
 
     if (entry._type === 'test') {
+      if (entry.dataset._ref.startsWith('dataset-generated')) return
+
       const supported = entry.features.every((f) => SUPPORTED_FEATURES.has(f))
       if (!supported) {
         process.stderr.write(`[warning] Skipping unsupported test: ${entry.name}\n`)
@@ -195,8 +198,8 @@ process.stdin
         write(`if (!dataset) return`)
         write(`let params = ${JSON.stringify(entry.params || {})}`)
         write(`let tree = parse(query, {params})`)
-        write(`let value = await evaluate(tree, {dataset, params})`)
-        write(`let data = await value.get()`)
+        write(`let value = evaluate(tree, {dataset, params})`)
+        write(`let data = toJS(value)`)
         write(`data = JSON.parse(JSON.stringify(data))`)
         write(`replaceScoreWithPos(data)`)
         write(`t.match(data, result)`)

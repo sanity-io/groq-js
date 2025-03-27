@@ -1,4 +1,2 @@
-export * from './Path'
-export * from './StreamValue'
-export * from './types'
-export * from './utils'
+export {DateTime} from './DateTime'
+export {isIterable, isRecord, toJS} from './utils'

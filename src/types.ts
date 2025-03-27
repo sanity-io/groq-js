@@ -1,4 +1,6 @@
+import type {Value} from './nodeTypes'
+
 export interface ParseOptions {
-  params?: Record<string, unknown>
+  params?: Record<string, Value>
   mode?: 'normal' | 'delta'
 }

@@ -1,6 +1,8 @@
 /* eslint-disable camelcase */
-import {tryConstantEvaluate} from './evaluator'
-import {type GroqFunctionArity, namespaces, pipeFunctions} from './evaluator/functions'
+import {evaluate} from './evaluator/evaluate'
+import {namespaces, pipeFunctions} from './evaluator/functions/index'
+import {Scope} from './evaluator/scope.ts'
+import type {GroqFunctionArity} from './evaluator/types'
 import {type Mark, MarkProcessor, type MarkVisitor} from './markProcessor'
 import type {
   ArrayElementNode,
@@ -21,6 +23,7 @@ import {
   traverseProjection,
 } from './traversal'
 import type {ParseOptions} from './types'
+import {DateTime} from './values/DateTime.ts'
 
 type EscapeSequences = "'" | '"' | '\\' | '/' | 'b' | 'f' | 'n' | 'r' | 't'
 
@@ -463,7 +466,7 @@ const EXPR_BUILDER: MarkVisitor<ExprNode> = {
 
     p.allowBoost = oldAllowBoost
 
-    const func = pipeFunctions[name]
+    const func = pipeFunctions[name as keyof typeof pipeFunctions]
     if (!func) {
       throw new GroqQueryError(`Undefined pipe function: ${name}`)
     }
@@ -562,7 +565,9 @@ const OBJECT_BUILDER: MarkVisitor<ObjectAttributeNode> = {
 
   object_pair(p) {
     const name = p.process(EXPR_BUILDER)
-    if (name.type !== 'Value') throw new Error('name must be string')
+    if (name.type !== 'Value' || typeof name.value !== 'string') {
+      throw new Error('name must be string')
+    }
 
     const value = p.process(EXPR_BUILDER)
     return {
@@ -593,15 +598,19 @@ const TRAVERSE_BUILDER: MarkVisitor<(rhs: TraversalResult | null) => TraversalRe
   square_bracket(p) {
     const expr = p.process(EXPR_BUILDER)
 
-    const value = tryConstantEvaluate(expr)
-    if (value && value.type === 'number') {
+    const value = evaluate(expr, Scope.create(null), {
+      timestamp: DateTime.now(),
+      identity: 'me',
+      dataset: null,
+    })
+    if (typeof value === 'number') {
       return (right) =>
-        traverseElement((base) => ({type: 'AccessElement', base, index: value.data}), right)
+        traverseElement((base) => ({type: 'AccessElement', base, index: value}), right)
     }
 
-    if (value && value.type === 'string') {
+    if (typeof value === 'string') {
       return (right) =>
-        traversePlain((base) => ({type: 'AccessAttribute', base, name: value.data}), right)
+        traversePlain((base) => ({type: 'AccessAttribute', base, name: value}), right)
     }
 
     return (right) =>
@@ -622,10 +631,18 @@ const TRAVERSE_BUILDER: MarkVisitor<(rhs: TraversalResult | null) => TraversalRe
     const left = p.process(EXPR_BUILDER)
     const right = p.process(EXPR_BUILDER)
 
-    const leftValue = tryConstantEvaluate(left)
-    const rightValue = tryConstantEvaluate(right)
+    const leftValue = evaluate(left, Scope.create(null), {
+      timestamp: DateTime.now(),
+      identity: 'me',
+      dataset: null,
+    })
+    const rightValue = evaluate(right, Scope.create(null), {
+      timestamp: DateTime.now(),
+      identity: 'me',
+      dataset: null,
+    })
 
-    if (!leftValue || !rightValue || leftValue.type !== 'number' || rightValue.type !== 'number') {
+    if (typeof leftValue !== 'number' || typeof rightValue !== 'number') {
       throw new GroqQueryError('slicing must use constant numbers')
     }
 
@@ -634,8 +651,8 @@ const TRAVERSE_BUILDER: MarkVisitor<(rhs: TraversalResult | null) => TraversalRe
         (base) => ({
           type: 'Slice',
           base,
-          left: leftValue.data,
-          right: rightValue.data,
+          left: leftValue,
+          right: rightValue,
           isInclusive,
         }),
         rhs,

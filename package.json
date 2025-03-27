@@ -58,7 +58,6 @@
   "browserslist": "extends @sanity/browserslist-config",
   "prettier": "@sanity/prettier-config",
   "tap": {
-    "check-coverage": false,
     "node-arg": [
       "-r",
       "tsx/cjs"
@@ -72,7 +71,6 @@
     "@sanity/prettier-config": "^1.0.3",
     "@sanity/semantic-release-preset": "^5.0.0",
     "@types/debug": "^4.1.12",
-    "@types/tap": "^15.0.12",
     "@typescript-eslint/eslint-plugin": "^7.18.0",
     "@typescript-eslint/parser": "^7.18.0",
     "eslint": "^8.57.1",
@@ -85,10 +83,11 @@
     "rimraf": "^5.0.0",
     "semantic-release": "^24.2.0",
     "semver": "^7.5.4",
-    "tap": "^16.3.10",
+    "tap": "^21.1.0",
     "tsx": "^4.19.2",
     "typescript": "5.7.2"
   },
+  "packageManager": "pnpm@9.15.6+sha512.139cab068fdf0b751268179ac5f909b5be72afb4a75c513d1905d151befc8977b593d3cf8671ed83d4d6637c5c94b98ffbce108125de4a5a27a31233601a99de",
   "engines": {
     "node": ">= 14"
   }

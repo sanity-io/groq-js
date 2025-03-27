@@ -1,3 +1,5 @@
+import type {Value} from '../nodeTypes'
+
 const RFC3339_REGEX = /^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}(\.\d+)?(Z|([-+]\d{2}:\d{2}))$/
 
 export function parseRFC3339(str: string): Date | null {
@@ -34,4 +36,37 @@ function addLeadingZero(num: Stringer, targetLength: number) {
     str = `0${str}`
   }
   return str
+}
+
+export class DateTime {
+  date: Date
+
+  constructor(date: Date) {
+    this.date = date
+  }
+
+  static from(input: Value | Date | DateTime): DateTime | null {
+    if (input instanceof DateTime) return input
+    if (input instanceof Date) return new DateTime(input)
+    if (typeof input === 'string' && RFC3339_REGEX.test(input)) {
+      return new DateTime(new Date(input))
+    }
+    return null
+  }
+
+  static now(): DateTime {
+    return new DateTime(new Date())
+  }
+
+  getTime(): number {
+    return this.date.getTime()
+  }
+
+  toString(): string {
+    return formatRFC3339(this.date)
+  }
+
+  toJSON(): string {
+    return this.toString()
+  }
 }

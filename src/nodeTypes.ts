@@ -1,4 +1,14 @@
-import type {GroqFunction, GroqPipeFunction} from './evaluator/functions'
+import type {DateTime} from './DateTime'
+import type {GroqFunction, GroqPipeFunction} from './evaluator/types'
+
+export type Value =
+  | null
+  | string
+  | boolean
+  | number
+  | DateTime
+  | Iterable<Value>
+  | {[key: string]: Value}
 
 /** Any sort of node which appears as syntax */
 export type SyntaxNode = ExprNode | ArrayElementNode | ObjectAttributeNode | SelectAlternativeNode
@@ -227,9 +237,9 @@ export interface TupleNode extends BaseNode {
   members: Array<ExprNode>
 }
 
-export interface ValueNode<P = any> {
+export interface ValueNode {
   type: 'Value'
-  value: P
+  value: Value
 }
 
 export interface FlatMapNode extends BaseNode {

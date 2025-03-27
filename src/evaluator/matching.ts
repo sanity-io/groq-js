@@ -1,29 +1,13 @@
-import type {Value} from '../values'
+import type {Value} from '../nodeTypes'
+import {isIterable} from '../values/utils'
 
 const CHARS = /([^!@#$%^&*(),\\/?";:{}|[\]+<>\s-])+/g
 const CHARS_WITH_WILDCARD = /([^!@#$%^&(),\\/?";:{}|[\]+<>\s-])+/g
 const EDGE_CHARS = /(\b\.+|\.+\b)/g
 const MAX_TERM_LENGTH = 1024
 
-export type Token = string
-
-export type Pattern = (tokens: Token[]) => boolean
-
-export function matchText(tokens: Token[], patterns: Pattern[]): boolean {
-  if (tokens.length === 0 || patterns.length === 0) {
-    return false
-  }
-
-  return patterns.every((pattern) => pattern(tokens))
-}
-
-export function matchTokenize(text: string): Token[] {
+export function matchTokenize(text: string): string[] {
   return text.replace(EDGE_CHARS, '').match(CHARS) || []
-}
-
-export function matchAnalyzePattern(text: string): Pattern[] {
-  const termsRe = matchPatternRegex(text)
-  return termsRe.map((re) => (tokens: Token[]) => tokens.some((token) => re.test(token)))
 }
 
 export function matchPatternRegex(text: string): RegExp[] {
@@ -33,23 +17,22 @@ export function matchPatternRegex(text: string): RegExp[] {
   )
 }
 
-export async function gatherText(value: Value, cb: (str: string) => void): Promise<boolean> {
-  if (value.type === 'string') {
-    cb(value.data)
-    return true
-  }
+export function match(left: Value, right: Value): boolean {
+  // Convert right side to array of patterns, handling both iterable and single values
+  const patterns = isIterable(right) ? Array.from(right) : [right]
+  // If any pattern is null, return null to indicate no match is possible
+  if (patterns.some((i) => i === null)) return false
 
-  if (value.isArray()) {
-    let success = true
-    for await (const part of value) {
-      if (part.type === 'string') {
-        cb(part.data)
-      } else {
-        success = false
-      }
-    }
-    return success
-  }
+  const terms = patterns.filter((i) => typeof i === 'string').flatMap(matchPatternRegex)
+  const source = new Set(
+    (isIterable(left) ? Array.from(left) : [left])
+      .filter((i) => typeof i === 'string')
+      .flatMap(matchTokenize),
+  )
 
-  return false
+  // if there are no patterns or tokens return false
+  if (!terms.length) return false
+  if (!source.size) return false
+
+  return terms.every((term) => source.values().some((input) => term.test(input)))
 }

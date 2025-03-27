@@ -1,39 +1,35 @@
-import type {Value} from '../values'
-import type {Context} from './types'
+import type {Value} from '../nodeTypes'
 
 export class Scope {
-  public params: Record<string, unknown>
-  public source: Value
   public value: Value
   public parent: Scope | null
-  public context: Context
   public isHidden = false
 
-  // eslint-disable-next-line @typescript-eslint/explicit-module-boundary-types
-  constructor(
-    params: Record<string, unknown>,
-    source: Value,
-    value: Value,
-    context: Context,
-    parent: Scope | null,
-  ) {
-    this.params = params
-    this.source = source
+  constructor(value: Value, parent: Scope | null = null) {
     this.value = value
-    this.context = context
     this.parent = parent
+  }
+
+  static create(value: Value, parent: Scope | null = null): Scope {
+    return new Scope(value, parent)
   }
 
   createNested(value: Value): Scope {
     if (this.isHidden) {
-      return new Scope(this.params, this.source, value, this.context, this.parent)
+      return new Scope(value, this.parent)
     }
-    return new Scope(this.params, this.source, value, this.context, this)
+    return new Scope(value, this)
   }
 
   createHidden(value: Value): Scope {
     const result = this.createNested(value)
     result.isHidden = true
     return result
+  }
+
+  getParent(n: number): Scope | null {
+    if (n === 0) return this
+    if (!this.parent) return null
+    return this.parent.getParent(n - 1)
   }
 }
