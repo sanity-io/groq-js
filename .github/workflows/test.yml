@@ -47,7 +47,7 @@ jobs:
           version: 8
       - name: Use Node.js ${{ steps.node.outputs.node-version }}
         run: pnpm install
-      - run: pnpm run prettify-check
+      - run: pnpm run lint
       - run: pnpm run test:generate
       - run: pnpm test
         env:
