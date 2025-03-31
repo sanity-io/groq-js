@@ -34,7 +34,7 @@ jobs:
     # We test on all of the maintained versions: https://nodejs.org/en/about/releases/
     strategy:
       matrix:
-        node-version: ["lts/-1", "lts/*", "current"]
+        node-version: ["lts/*", "current"]
 
     steps:
       - uses: actions/checkout@v4
