@@ -1,4 +1,4 @@
-import type {GroqFunction, GroqPipeFunction} from './evaluator/functions'
+import {type GroqFunction, type GroqPipeFunction} from './types'
 
 /** Any sort of node which appears as syntax */
 export type SyntaxNode = ExprNode | ArrayElementNode | ObjectAttributeNode | SelectAlternativeNode

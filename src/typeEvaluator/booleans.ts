@@ -1,6 +1,6 @@
-import type {Scope} from './scope'
+import {type Scope} from './scope'
 import {nullUnion, resolveInline} from './typeHelpers'
-import type {TypeNode} from './types'
+import {type TypeNode} from './types'
 
 type BooleanInterpretation = {
   canBeTrue: boolean

@@ -1,4 +1,4 @@
-import type {Value} from '../values'
+import {type Value} from '../values/types'
 
 export function isEqual(a: Value, b: Value): boolean {
   if (

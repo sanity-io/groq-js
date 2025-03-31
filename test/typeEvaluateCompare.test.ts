@@ -1,11 +1,12 @@
 import t, {type TAP} from 'tap'
 
 import {evaluateQuery as evaluate} from '../src/evaluator/evaluate'
-import {type GroqFunction, namespaces} from '../src/evaluator/functions'
-import type {ExprNode, OpCall} from '../src/nodeTypes'
-import type {TypeNode} from '../src/typeEvaluator'
+import {namespaces} from '../src/evaluator/functions'
+import {type ExprNode, type OpCall} from '../src/nodeTypes'
 import {satisfies} from '../src/typeEvaluator/satisfies'
 import {overrideTypeForNode, typeEvaluate} from '../src/typeEvaluator/typeEvaluate'
+import {TypeNode} from '../src/typeEvaluator/types'
+import {GroqFunction} from '../src/types'
 
 /**
  * The following tests uses the following strategy:

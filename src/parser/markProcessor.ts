@@ -1,4 +1,4 @@
-import type {ParseOptions} from './types'
+import {type ParseOptions} from '../types'
 
 export type MarkName =
   | 'add'

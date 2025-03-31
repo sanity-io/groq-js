@@ -1,16 +1,17 @@
-import {tryConstantEvaluate} from './evaluator'
-import {type GroqFunctionArity, namespaces, pipeFunctions} from './evaluator/functions'
+import {type GroqFunctionArity, type ParseOptions} from '../types'
+import {tryConstantEvaluate} from '../evaluator/constantEvaluate'
+import {
+  type ArrayElementNode,
+  type ExprNode,
+  type FuncCallNode,
+  type ObjectAttributeNode,
+  type ObjectSplatNode,
+  type OpCall,
+  type ParentNode,
+  type SelectNode,
+} from '../nodeTypes'
+import {namespaces, pipeFunctions} from '../evaluator/functions'
 import {type Mark, MarkProcessor, type MarkVisitor} from './markProcessor'
-import type {
-  ArrayElementNode,
-  ExprNode,
-  FuncCallNode,
-  ObjectAttributeNode,
-  ObjectSplatNode,
-  OpCall,
-  ParentNode,
-  SelectNode,
-} from './nodeTypes'
 import {parse as rawParse} from './rawParser'
 import {
   type TraversalResult,
@@ -19,7 +20,6 @@ import {
   traversePlain,
   traverseProjection,
 } from './traversal'
-import type {ParseOptions} from './types'
 
 type EscapeSequences = "'" | '"' | '\\' | '/' | 'b' | 'f' | 'n' | 'r' | 't'
 

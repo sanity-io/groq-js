@@ -1,4 +1,4 @@
-import type {TypeNode} from './types'
+import {type TypeNode} from './types'
 
 const {compare} = new Intl.Collator('en')
 function typeNodesSorter(a: TypeNode, b: TypeNode): number {

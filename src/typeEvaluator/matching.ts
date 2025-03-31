@@ -5,7 +5,7 @@ import {
   type Pattern,
   type Token,
 } from '../evaluator/matching'
-import type {ConcreteTypeNode} from './typeHelpers'
+import {type ConcreteTypeNode} from './typeHelpers'
 
 export function match(left: ConcreteTypeNode, right: ConcreteTypeNode): boolean | undefined {
   let tokens: Token[] = []

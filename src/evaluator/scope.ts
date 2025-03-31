@@ -1,5 +1,5 @@
-import type {Value} from '../values'
-import type {Context} from './types'
+import {type Value} from '../values/types'
+import {type Context} from './types'
 
 export class Scope {
   public params: Record<string, unknown>

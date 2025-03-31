@@ -1,9 +1,9 @@
-import type {FuncCallNode} from '../nodeTypes'
+import {type FuncCallNode} from '../nodeTypes'
 import {optimizeUnions} from './optimizations'
 import {Scope} from './scope'
 import {walk} from './typeEvaluate'
 import {mapNode, nullUnion} from './typeHelpers'
-import type {NullTypeNode, TypeNode} from './types'
+import {type NullTypeNode, type TypeNode} from './types'
 
 function unionWithoutNull(unionTypeNode: TypeNode): TypeNode {
   if (unionTypeNode.type === 'union') {

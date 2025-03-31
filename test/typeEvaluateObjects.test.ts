@@ -2,11 +2,11 @@ import assert from 'node:assert'
 
 import t, {type TAP} from 'tap'
 
-import type {ObjectAttributeNode} from '../src/nodeTypes'
+import {type ObjectAttributeNode} from '../src/nodeTypes'
 import {optimizeUnions} from '../src/typeEvaluator/optimizations'
 import {overrideTypeForNode, typeEvaluate} from '../src/typeEvaluator/typeEvaluate'
 import {unionOf} from '../src/typeEvaluator/typeHelpers'
-import type {Schema, TypeNode} from '../src/typeEvaluator/types'
+import {type Schema, type TypeNode} from '../src/typeEvaluator/types'
 
 const nodeWithType = (type: TypeNode) => {
   const expr = {type: 'Value', value: null} as const
@@ -817,10 +817,12 @@ const objectVariants: {
   },
 
   /** Projection:
+   * ```groq
    * *[_type == "someType"] {
    *  A: someNumberField,
    *  A: someStringField,
    * }
+   * ```
    */
 
   {
@@ -878,10 +880,12 @@ const objectVariants: {
   },
 
   /** Projection:
+   * ```groq
    * *[_type == "someType"] {
    *  A,
    * _type == "someOtherType" => { B }
    * }
+   * ```
    */
 
   {
@@ -913,10 +917,12 @@ const objectVariants: {
   },
 
   /** Projection:
+   * ```groq
    * *[_type == "someType"] {
    *  A,
    * _type == "someType" => { B }
    * }
+   * ```
    */
 
   {
@@ -983,10 +989,12 @@ const objectVariants: {
 
   // MARK: START unresolvable conditionals
   /** Projection:
+   * ```groq
    * {
    *  A,
    * _type == "someType" => { B }
    * }
+   * ```
    */
   {
     name: 'Test with attribute and conditional splat with "unresolvable" condition',
@@ -1037,11 +1045,13 @@ const objectVariants: {
 
   // MARK: START unresolvable conditionals
   /** Projection:
+   * ```groq
    * {
    *  A,
    * age > 10 => { B },
    * field == "something" => { C }
    * }
+   * ```
    */
 
   {
@@ -1143,12 +1153,15 @@ const objectVariants: {
 
   // MARK: START: Multiple conditionals with unions
   /**
-   * Projection: {
+   * Projection:
+   * ```groq
+   * {
    *  A: someField
    * _type == "B" || _type == "C" => @
    * _type == "D" || _type == "E" => @
    * _type == "F" || _type == "G" || || _type == "H" => @
    * }
+   * ```
    */
   {
     name: 'Test splatting over multiple conditionals, with unions, leads to a matrix of all possible combinations',

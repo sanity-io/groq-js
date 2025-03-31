@@ -1,17 +1,17 @@
 import t from 'tap'
 
-import {parse} from '../src/parser'
+import {parse} from '../src/parser/parser'
 import {typeEvaluate} from '../src/typeEvaluator/typeEvaluate'
 import {createReferenceTypeNode, nullUnion, unionOf} from '../src/typeEvaluator/typeHelpers'
-import type {
-  ArrayTypeNode,
-  Document,
-  ObjectAttribute,
-  ObjectTypeNode,
-  Schema,
-  TypeDeclaration,
-  TypeNode,
-  UnionTypeNode,
+import {
+  type ArrayTypeNode,
+  type Document,
+  type ObjectAttribute,
+  type ObjectTypeNode,
+  type Schema,
+  type TypeDeclaration,
+  type TypeNode,
+  type UnionTypeNode,
 } from '../src/typeEvaluator/types'
 
 const postDocument = {

@@ -17,29 +17,16 @@
   "type": "commonjs",
   "exports": {
     ".": {
-      "source": "./src/1.ts",
+      "source": "./src/_exports/index.ts",
       "import": "./dist/index.mjs",
       "require": "./dist/index.js",
       "default": "./dist/index.js"
-    },
-    "./1": {
-      "source": "./src/1.ts",
-      "import": "./dist/1.mjs",
-      "require": "./dist/1.js",
-      "default": "./dist/1.js"
     },
     "./package.json": "./package.json"
   },
   "main": "./dist/index.js",
   "module": "./dist/index.mjs",
   "types": "./dist/index.d.ts",
-  "typesVersions": {
-    "*": {
-      "1": [
-        "./dist/1.d.ts"
-      ]
-    }
-  },
   "files": [
     "dist",
     "src",
@@ -84,7 +71,9 @@
     "eslint": "^9.23.0",
     "eslint-config-prettier": "^10.1.1",
     "eslint-import-resolver-typescript": "^4.3.1",
+    "eslint-plugin-import-x": "^4.9.4",
     "eslint-plugin-prettier": "^5.2.5",
+    "eslint-plugin-tsdoc": "^0.4.0",
     "ndjson": "^2.0.0",
     "prettier": "^3.5.3",
     "semantic-release": "^24.2.3",

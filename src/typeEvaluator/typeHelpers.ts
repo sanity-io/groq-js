@@ -1,18 +1,18 @@
-import type {ExprNode} from '../nodeTypes'
+import {type ExprNode} from '../nodeTypes'
 import {optimizeUnions} from './optimizations'
-import type {Scope} from './scope'
-import type {
-  ArrayTypeNode,
-  BooleanTypeNode,
-  InlineTypeNode,
-  NullTypeNode,
-  NumberTypeNode,
-  ObjectAttribute,
-  ObjectTypeNode,
-  StringTypeNode,
-  TypeNode,
-  UnionTypeNode,
-  UnknownTypeNode,
+import {type Scope} from './scope'
+import {
+  type ArrayTypeNode,
+  type BooleanTypeNode,
+  type InlineTypeNode,
+  type NullTypeNode,
+  type NumberTypeNode,
+  type ObjectAttribute,
+  type ObjectTypeNode,
+  type StringTypeNode,
+  type TypeNode,
+  type UnionTypeNode,
+  type UnknownTypeNode,
 } from './types'
 
 /**

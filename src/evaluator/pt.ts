@@ -1,4 +1,4 @@
-import type {Value} from '../values'
+import {type Value} from '../values/types'
 
 export async function portableTextContent(value: Value): Promise<string | null> {
   if (value.type === 'object') {
