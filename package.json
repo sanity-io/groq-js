@@ -53,12 +53,17 @@
     "prepublishOnly": "npm run build",
     "prettify": "prettier --write .",
     "prettify-check": "prettier --check .",
-    "test": "tap test/*.test.*",
+    "test": "tap run test/*.test.*",
     "test:generate": "./test/generate.sh"
   },
   "browserslist": "extends @sanity/browserslist-config",
   "prettier": "@sanity/prettier-config",
   "tap": {
+    "allow-incomplete-coverage": true,
+    "browser": false,
+    "coverage-report": [
+      "html"
+    ],
     "node-arg": [
       "-r",
       "tsx/cjs"
