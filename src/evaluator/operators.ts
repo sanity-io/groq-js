@@ -72,7 +72,6 @@ export const operators: {[key in OpCall]: GroqOperatorFn} = {
     return result <= 0 ? TRUE_VALUE : FALSE_VALUE
   },
 
-  // eslint-disable-next-line func-name-matching
   'in': async function inop(left, right) {
     if (right.type === 'path') {
       if (left.type !== 'string') {

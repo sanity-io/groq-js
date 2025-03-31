@@ -9,7 +9,6 @@ export class Scope {
   public context: Context
   public isHidden = false
 
-  // eslint-disable-next-line @typescript-eslint/explicit-module-boundary-types
   constructor(
     params: Record<string, unknown>,
     source: Value,

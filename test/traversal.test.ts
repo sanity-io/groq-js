@@ -16,7 +16,7 @@ t.test('traverseProjection', async (t) => {
       return {type: 'Tuple', members: []} as ExprNode
     }
 
-    // @ts-ignore (we intentionally want to use an invalid `type` property for testing purposes)
+    // @ts-expect-error (we intentionally want to use an invalid `type` property for testing purposes)
     const right = {type: 'c-c', build: traversal} as TraversalResult
 
     throwsWithMessage(t, () => traverseProjection(traversal, right), 'unknown type: c-c')
@@ -43,7 +43,7 @@ t.test('traverseElement', async (t) => {
       return {type: 'Tuple', members: []} as ExprNode
     }
 
-    // @ts-ignore (we intentionally want to use an invalid `type` property for testing purposes)
+    // @ts-expect-error (we intentionally want to use an invalid `type` property for testing purposes)
     const right = {type: 'c-c', build: traversal} as TraversalResult
 
     throwsWithMessage(t, () => traverseElement(traversal, right), 'unknown type: c-c')
@@ -56,7 +56,7 @@ t.test('traversePlain', async (t) => {
       return {type: 'Tuple', members: []} as ExprNode
     }
 
-    // @ts-ignore (we intentionally want to use an invalid `type` property for testing purposes)
+    // @ts-expect-error (we intentionally want to use an invalid `type` property for testing purposes)
     const right = {type: 'c-c', build: traversal} as TraversalResult
 
     throwsWithMessage(t, () => traversePlain(traversal, right), 'unknown type: c-c')
@@ -69,7 +69,7 @@ t.test('traverseArray', async (t) => {
       return {type: 'Tuple', members: []} as ExprNode
     }
 
-    // @ts-ignore (we intentionally want to use an invalid `type` property for testing purposes)
+    // @ts-expect-error (we intentionally want to use an invalid `type` property for testing purposes)
     const right = {type: 'c-c', build: traversal} as TraversalResult
 
     throwsWithMessage(t, () => traverseArray(traversal, right), 'unknown type: c-c')

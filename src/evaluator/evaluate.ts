@@ -179,7 +179,7 @@ const EXECUTORS: ExecutorMap = {
       value = await execute(base, scope)
     }
     if (value.type === 'object') {
-      if (value.data.hasOwnProperty(name)) {
+      if (Object.prototype.hasOwnProperty.call(value.data, name)) {
         return fromJS(value.data[name])
       }
     }
@@ -206,7 +206,7 @@ const EXECUTORS: ExecutorMap = {
     }
 
     // OPT: Here we can optimize when either indices are >= 0
-    const array = (await baseValue.get()) as any[]
+    const array = (await baseValue.get()) as unknown[]
 
     let leftIdx = left
     let rightIdx = right
@@ -275,7 +275,7 @@ const EXECUTORS: ExecutorMap = {
   },
 
   async Object({attributes}, scope, execute) {
-    const result: {[key: string]: any} = {}
+    const result: {[key: string]: unknown} = {}
     for (const attr of attributes) {
       const attrType = attr.type
       switch (attr.type) {
@@ -465,7 +465,7 @@ export function evaluateQuery(
 ): Value | PromiseLike<Value> {
   const root = fromJS(options.root)
   const dataset = fromJS(options.dataset)
-  const params: {[key: string]: any} = {...options.params}
+  const params: {[key: string]: unknown} = {...options.params}
 
   const scope = new Scope(
     params,

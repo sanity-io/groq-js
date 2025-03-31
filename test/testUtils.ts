@@ -1,6 +1,8 @@
+import type {TAP} from 'tap'
+
 export async function throwsWithMessage(
-  t: Tap.Test,
-  funcUnderTest: () => {},
+  t: TAP,
+  funcUnderTest: () => void,
   expectedMessage: string,
 ) {
   let didThrow = false

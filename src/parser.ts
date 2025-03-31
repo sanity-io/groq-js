@@ -1,4 +1,3 @@
-/* eslint-disable camelcase */
 import {tryConstantEvaluate} from './evaluator'
 import {type GroqFunctionArity, namespaces, pipeFunctions} from './evaluator/functions'
 import {type Mark, MarkProcessor, type MarkVisitor} from './markProcessor'
@@ -227,13 +226,13 @@ const EXPR_BUILDER: MarkVisitor<ExprNode> = {
 
   str(p) {
     let value = ''
-    // eslint-disable-next-line no-labels
+
     loop: while (p.hasMark()) {
       const mark = p.getMark()
       switch (mark.name) {
         case 'str_end':
           value += p.processStringEnd()
-          // eslint-disable-next-line no-labels
+
           break loop
         case 'str_pause':
           value += p.processStringEnd()
@@ -523,7 +522,10 @@ const EXPR_BUILDER: MarkVisitor<ExprNode> = {
   param(p) {
     const name = p.processString()
 
-    if (p.parseOptions.params && p.parseOptions.params.hasOwnProperty(name)) {
+    if (
+      p.parseOptions.params &&
+      Object.prototype.hasOwnProperty.call(p.parseOptions.params, name)
+    ) {
       return {
         type: 'Value',
         value: p.parseOptions.params[name],

@@ -1,7 +1,7 @@
 import type {Value} from './types'
 
 export class StreamValue {
-  type: 'stream' = 'stream'
+  type = 'stream' as const
   private generator: () => AsyncGenerator<Value, void, unknown>
   private ticker: Promise<void> | null
   private isDone: boolean
@@ -14,7 +14,6 @@ export class StreamValue {
     this.data = []
   }
 
-  // eslint-disable-next-line class-methods-use-this
   isArray(): boolean {
     return true
   }

@@ -7,7 +7,6 @@ const TYPE_ORDER: {[key in GroqType]?: number} = {
   boolean: 4,
 }
 
-// eslint-disable-next-line @typescript-eslint/explicit-module-boundary-types
 export function partialCompare(a: any, b: any): null | number {
   const aType = getType(a)
   const bType = getType(b)
@@ -31,7 +30,6 @@ export function partialCompare(a: any, b: any): null | number {
   }
 }
 
-// eslint-disable-next-line @typescript-eslint/explicit-module-boundary-types
 export function totalCompare(a: any, b: any): number {
   const aType = getType(a)
   const bType = getType(b)

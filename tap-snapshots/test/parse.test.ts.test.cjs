@@ -5,14 +5,14 @@
  * Make sure to inspect the output below.  Do not ignore changes!
  */
 'use strict'
-exports[`test/parse.test.ts TAP Basic parsing Comment with no text > must match snapshot 1`] = `
+exports[`test/parse.test.ts > TAP > Basic parsing > Comment with no text > must match snapshot 1`] = `
 Object {
   "type": "Value",
   "value": 1,
 }
 `
 
-exports[`test/parse.test.ts TAP Basic parsing Complex query > must match snapshot 1`] = `
+exports[`test/parse.test.ts > TAP > Basic parsing > Complex query > must match snapshot 1`] = `
 Object {
   "args": Array [
     Object {
@@ -115,7 +115,7 @@ Object {
 }
 `
 
-exports[`test/parse.test.ts TAP Basic parsing Example query > must match snapshot 1`] = `
+exports[`test/parse.test.ts > TAP > Basic parsing > Example query > must match snapshot 1`] = `
 Object {
   "base": Object {
     "base": Object {
@@ -158,7 +158,7 @@ Object {
 }
 `
 
-exports[`test/parse.test.ts TAP Basic parsing Object expression starting with string > must match snapshot 1`] = `
+exports[`test/parse.test.ts > TAP > Basic parsing > Object expression starting with string > must match snapshot 1`] = `
 Object {
   "attributes": Array [
     Object {
@@ -185,7 +185,7 @@ Object {
 }
 `
 
-exports[`test/parse.test.ts TAP Basic parsing Space after field in objects > must match snapshot 1`] = `
+exports[`test/parse.test.ts > TAP > Basic parsing > Space after field in objects > must match snapshot 1`] = `
 Object {
   "attributes": Array [
     Object {
@@ -201,7 +201,7 @@ Object {
 }
 `
 
-exports[`test/parse.test.ts TAP Basic parsing Trailing comma in function call > must match snapshot 1`] = `
+exports[`test/parse.test.ts > TAP > Basic parsing > Trailing comma in function call > must match snapshot 1`] = `
 Object {
   "alternatives": Array [],
   "fallback": Object {
@@ -212,7 +212,7 @@ Object {
 }
 `
 
-exports[`test/parse.test.ts TAP Expression parsing when extracting property keys can extract from group > must match snapshot 1`] = `
+exports[`test/parse.test.ts > TAP > Expression parsing > when extracting property keys > can extract from group > must match snapshot 1`] = `
 Object {
   "base": Object {
     "type": "Everything",

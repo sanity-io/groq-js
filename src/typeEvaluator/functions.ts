@@ -1,4 +1,3 @@
-/* eslint-disable max-statements */
 import type {FuncCallNode} from '../nodeTypes'
 import {optimizeUnions} from './optimizations'
 import {Scope} from './scope'
@@ -16,7 +15,6 @@ function unionWithoutNull(unionTypeNode: TypeNode): TypeNode {
   return unionTypeNode
 }
 
-// eslint-disable-next-line complexity
 export function handleFuncCallNode(node: FuncCallNode, scope: Scope): TypeNode {
   switch (`${node.namespace}.${node.name}`) {
     case 'array.compact': {

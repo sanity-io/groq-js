@@ -1,9 +1,7 @@
-/* eslint-disable max-depth */
-import t from 'tap'
+import t, {type TAP} from 'tap'
 
-import {evaluate} from '../src/evaluator'
+import {evaluateQuery as evaluate} from '../src/evaluator/evaluate'
 import {type GroqFunction, namespaces} from '../src/evaluator/functions'
-import {operators} from '../src/evaluator/operators'
 import type {ExprNode, OpCall} from '../src/nodeTypes'
 import type {TypeNode} from '../src/typeEvaluator'
 import {satisfies} from '../src/typeEvaluator/satisfies'
@@ -58,7 +56,7 @@ type DescribedType = {
  */
 type AnnotatedValue = {
   /** The value. */
-  value: any
+  value: unknown
   /** A list of types which satifies this value. */
   types: DescribedType[]
   /** A unique key representing the value. Used for caching purposes. */
@@ -158,22 +156,14 @@ function inArray(input: AnnotatedValue[]): AnnotatedValue[] {
 /**
  * We have five different categories. This is mainly here so that we can exclude.
  */
-enum Category {
-  /** primitives + unknown. */
-  PRIMITIVES,
-  /** A single object + unknown. */
-  OBJECT,
-  /** A single array + unknown. */
-  ARRAY,
-  /** Objects of primitives + unknown. */
-  OBJECTS,
-  /** Arrays of primitives + unknown. */
-  ARRAYS,
-  /** Array of objects of primities. */
-  OBJECTS_IN_ARRAYS,
-  /** Arrays of arrays. */
-  ARRAYS_IN_ARRAYS,
-}
+type Category =
+  | 'PRIMITIVES' /** primitives + unknown. */
+  | 'OBJECT' /** A single object + unknown. */
+  | 'ARRAY' /** A single array + unknown. */
+  | 'OBJECTS' /** Objects of primitives + unknown. */
+  | 'ARRAYS' /** Arrays of primitives + unknown. */
+  | 'OBJECTS_IN_ARRAYS' /** Array of objects of primitives. */
+  | 'ARRAYS_IN_ARRAYS' /** Arrays of arrays. */
 
 const num = primitives[1]
 
@@ -190,29 +180,46 @@ const arraysInArrays = withUnknown(inArray(arrays).concat(inArray(objects0InArra
 // For the tests where we need _two_ annotated values we make sure that the
 // object values actually have different keys. This tests a bit more stuff.
 
-const valuesForCategories: AnnotatedValue[][][] = [
-  [primitivesWithUnknown, object, array, objects0, arrays, objects0InArrays, arraysInArrays],
-  [primitivesWithUnknown, object, array, objects1, arrays, objects1InArrays, arraysInArrays],
-]
+// Create a record structure to access categories by their string keys
+const valuesForCategories: Record<0 | 1, Record<Category, AnnotatedValue[]>> = [
+  {
+    PRIMITIVES: primitivesWithUnknown,
+    OBJECT: object,
+    ARRAY: array,
+    OBJECTS: objects0,
+    ARRAYS: arrays,
+    OBJECTS_IN_ARRAYS: objects0InArrays,
+    ARRAYS_IN_ARRAYS: arraysInArrays,
+  },
+  {
+    PRIMITIVES: primitivesWithUnknown,
+    OBJECT: object,
+    ARRAY: array,
+    OBJECTS: objects1,
+    ARRAYS: arrays,
+    OBJECTS_IN_ARRAYS: objects1InArrays,
+    ARRAYS_IN_ARRAYS: arraysInArrays,
+  },
+] as const
 
 const SCHEMA: [] = []
 
-const ALL_CATEGORIES = [
-  Category.PRIMITIVES,
-  Category.OBJECT,
-  Category.ARRAY,
-  Category.OBJECTS,
-  Category.ARRAYS,
-  Category.OBJECTS_IN_ARRAYS,
-  Category.ARRAYS_IN_ARRAYS,
+const ALL_CATEGORIES: Category[] = [
+  'PRIMITIVES',
+  'OBJECT',
+  'ARRAY',
+  'OBJECTS',
+  'ARRAYS',
+  'OBJECTS_IN_ARRAYS',
+  'ARRAYS_IN_ARRAYS',
 ]
 
-const trivialVariant = [Category.PRIMITIVES, Category.OBJECT, Category.ARRAY]
+const trivialVariant: Category[] = ['PRIMITIVES', 'OBJECT', 'ARRAY']
 
 type CachedResult = {
   params: ExprNode[]
   node: ExprNode
-  result: Promise<any>
+  result: Promise<unknown>
 }
 
 type Cacher = (annotatedValues: AnnotatedValue[]) => CachedResult
@@ -238,26 +245,36 @@ const buildCacher = (build: (params: ExprNode[]) => ExprNode): Cacher => {
 /**
  * Generates subtests for a case where we need a single annotated value.
  */
-function subtestUnary({
+async function subtestUnary({
   t,
   build,
   variants = ALL_CATEGORIES,
 }: {
-  t: Tap.Test
+  t: TAP
   variants?: Category[]
   build: (param: ExprNode) => ExprNode
 }) {
   const getCachedResult = buildCacher((params) => build(params[0]))
+  let totalTests = 0
+
+  for (const variant of variants) {
+    for (const annotatedValue of valuesForCategories[0][variant]) {
+      totalTests += annotatedValue.types.length
+    }
+  }
+
+  t.plan(totalTests)
 
   for (const variant of variants) {
     for (const annotatedValue of valuesForCategories[0][variant]) {
       const cachedResult = getCachedResult([annotatedValue])
       for (const {desc, type} of annotatedValue.types) {
-        t.test(desc, async (t) => {
-          overrideTypeForNode(cachedResult.params[0], type)
-          const resultType = typeEvaluate(cachedResult.node, SCHEMA)
-          const result = await cachedResult.result
-          t.ok(satisfies(resultType, result), 'evaluation matches type', {result, resultType})
+        overrideTypeForNode(cachedResult.params[0], type)
+        const resultType = typeEvaluate(cachedResult.node, SCHEMA)
+        const result = await cachedResult.result
+        t.ok(satisfies(resultType, result), `evaluation matches type: ${desc}`, {
+          result,
+          resultType,
         })
       }
     }
@@ -267,18 +284,31 @@ function subtestUnary({
 /**
  * Generates subtests for a case where we need a two annotated values.
  */
-function subtestBinary({
+async function subtestBinary({
   t,
   build,
   variants1 = ALL_CATEGORIES,
   variants2 = ALL_CATEGORIES,
 }: {
-  t: Tap.Test
+  t: TAP
   variants1?: Category[]
   variants2?: Category[]
   build: (param1: ExprNode, param2: ExprNode) => ExprNode
 }) {
   const getCachedResult = buildCacher((params) => build(params[0], params[1]))
+  let totalTests = 0
+
+  for (const variant1 of variants1) {
+    for (const annotatedValue1 of valuesForCategories[0][variant1]) {
+      for (const variant2 of variants2) {
+        for (const annotatedValue2 of valuesForCategories[1][variant2]) {
+          totalTests += annotatedValue1.types.length * annotatedValue2.types.length
+        }
+      }
+    }
+  }
+
+  t.plan(totalTests)
 
   for (const variant1 of variants1) {
     for (const annotatedValue1 of valuesForCategories[0][variant1]) {
@@ -287,16 +317,18 @@ function subtestBinary({
           const cachedResult = getCachedResult([annotatedValue1, annotatedValue2])
           for (const {desc: desc1, type: type1} of annotatedValue1.types) {
             for (const {desc: desc2, type: type2} of annotatedValue2.types) {
-              t.test(`${desc1},${desc2}`, async (t) => {
-                overrideTypeForNode(cachedResult.params[0], type1)
-                overrideTypeForNode(cachedResult.params[1], type2)
-                const evaluatedNodeType = typeEvaluate(cachedResult.node, SCHEMA)
-                const expectedValue = await cachedResult.result
-                t.ok(satisfies(evaluatedNodeType, expectedValue), 'evaluation should match type', {
+              overrideTypeForNode(cachedResult.params[0], type1)
+              overrideTypeForNode(cachedResult.params[1], type2)
+              const evaluatedNodeType = typeEvaluate(cachedResult.node, SCHEMA)
+              const expectedValue = await cachedResult.result
+              t.ok(
+                satisfies(evaluatedNodeType, expectedValue),
+                `evaluation should match type: ${desc1},${desc2}`,
+                {
                   expectedValue,
                   evaluatedNodeType,
-                })
-              })
+                },
+              )
             }
           }
         }
@@ -305,180 +337,203 @@ function subtestBinary({
   }
 }
 
-t.test('AccessAttribute found', async (t) => {
-  subtestUnary({
-    t,
-    build: (param) => ({type: 'AccessAttribute', base: param, name: 'i0'}),
-  })
-})
-
-t.test('AccessAttribute missing', async (t) => {
-  subtestUnary({
-    t,
-    build: (param) => ({type: 'AccessAttribute', base: param, name: 'notFound'}),
-  })
-})
-
-t.test('FlatMap base', async (t) => {
-  subtestUnary({
-    t,
-    build: (param) => ({type: 'FlatMap', base: param, expr: {type: 'This'}}),
-  })
-})
-
-t.test('FlatMap expr', async (t) => {
-  subtestUnary({
-    t,
-    build: (param) => ({
-      type: 'FlatMap',
-      base: {
-        type: 'Array',
-        elements: [
-          {
-            type: 'ArrayElement',
-            value: {type: 'Value', value: 1},
-            isSplat: false,
-          },
-        ],
-      },
-      expr: param,
-    }),
-  })
-})
-
-t.test('Map', async (t) => {
-  subtestUnary({
-    t,
-    build: (param) => ({type: 'Map', base: param, expr: {type: 'This'}}),
-  })
-})
-
-t.test('Projection base', async (t) => {
-  subtestUnary({
-    t,
-    build: (param) => ({type: 'Projection', base: param, expr: {type: 'This'}}),
-  })
-})
-
-t.test('Projection expr', async (t) => {
-  subtestUnary({
-    t,
-    build: (param) => ({type: 'Projection', base: {type: 'Object', attributes: []}, expr: param}),
-  })
-})
-
-t.test('AccessElement', async (t) => {
-  subtestUnary({
-    t,
-    build: (param) => ({type: 'AccessElement', base: param, index: 0}),
-  })
-})
-
-t.test('Slice', async (t) => {
-  subtestUnary({
-    t,
-    build: (param) => ({type: 'Slice', base: param, left: 0, right: 0, isInclusive: true}),
-  })
-})
-
-t.test(`And`, async (t) => {
-  subtestBinary({
-    t,
-    variants1: trivialVariant,
-    variants2: trivialVariant,
-    build: (left, right) => ({type: 'And', left, right}),
-  })
-})
-
-t.test(`Or`, async (t) => {
-  subtestBinary({
-    t,
-    variants1: trivialVariant,
-    variants2: trivialVariant,
-    build: (left, right) => ({type: 'Or', left, right}),
-  })
-})
-
-// It's too much to test _every_ possible combination of binary operations. For
-// each operator we therefore keep track of which variants are interesting to
-// test for. We already know that many operations don't care about deeply nested
-// objects/arrays so we avoid testing for those.
-
-const opVariants: Record<OpCall, Category[]> = {
-  // + is very polymorphic so we want to test it for everything.
-  '+': ALL_CATEGORIES,
-  '%': trivialVariant,
-  '*': trivialVariant,
-  '==': trivialVariant,
-  '!=': trivialVariant,
-  '>': trivialVariant,
-  '<': trivialVariant,
-  '<=': trivialVariant,
-  '>=': trivialVariant,
-  '-': trivialVariant,
-  '/': trivialVariant,
-  '**': trivialVariant,
-  'in': [Category.PRIMITIVES, Category.ARRAYS],
-  'match': [Category.PRIMITIVES, Category.ARRAYS],
-}
-
-const ops = Object.keys(operators) as OpCall[]
-
-for (const op of ops) {
-  t.test(`OpCall ${op}`, async (t) => {
-    subtestBinary({
-      t,
-      variants1: opVariants[op],
-      variants2: opVariants[op],
-      build: (left, right) => ({type: 'OpCall', op, left, right}),
+async function main() {
+  await t.test('AccessAttribute found', async (t) => {
+    await subtestUnary({
+      t: t as TAP,
+      build: (param) => ({type: 'AccessAttribute', base: param, name: 'i0'}),
     })
   })
-}
 
-const unaryFunctionTests: {namespace: string; funcName: string}[] = [
-  {namespace: 'math', funcName: 'sum'},
-  {namespace: 'math', funcName: 'min'},
-  {namespace: 'math', funcName: 'max'},
-  {namespace: 'math', funcName: 'avg'},
-  {namespace: 'array', funcName: 'compact'},
-  {namespace: 'array', funcName: 'unique'},
-  {namespace: 'global', funcName: 'dateTime'},
-  {namespace: 'global', funcName: 'length'},
-]
+  await t.test('AccessAttribute missing', async (t) => {
+    await subtestUnary({
+      t: t as TAP,
+      build: (param) => ({type: 'AccessAttribute', base: param, name: 'notFound'}),
+    })
+  })
 
-for (const {namespace, funcName} of unaryFunctionTests) {
-  t.test(`${namespace}::${funcName}`, async (t) => {
-    subtestUnary({
-      t,
+  await t.test('FlatMap base', async (t) => {
+    await subtestUnary({
+      t: t as TAP,
+      build: (param) => ({type: 'FlatMap', base: param, expr: {type: 'This'}}),
+    })
+  })
+
+  await t.test('FlatMap expr', async (t) => {
+    await subtestUnary({
+      t: t as TAP,
       build: (param) => ({
-        type: 'FuncCall',
-        name: funcName,
-        namespace,
-        args: [param],
-        func: namespaces[namespace]![funcName] as GroqFunction,
+        type: 'FlatMap',
+        base: {
+          type: 'Array',
+          elements: [
+            {
+              type: 'ArrayElement',
+              value: {type: 'Value', value: 1},
+              isSplat: false,
+            },
+          ],
+        },
+        expr: param,
       }),
     })
   })
-}
 
-const binaryFunctionTests: {namespace: string; funcName: string}[] = [
-  {namespace: 'array', funcName: 'join'},
-  {namespace: 'global', funcName: 'round'},
-  {namespace: 'global', funcName: 'upper'},
-  {namespace: 'global', funcName: 'lower'},
-]
-
-for (const {namespace, funcName} of binaryFunctionTests) {
-  t.test(`${namespace}::${funcName}`, async (t) => {
-    subtestBinary({
-      t,
-      build: (param1, param2) => ({
-        type: 'FuncCall',
-        name: funcName,
-        namespace,
-        args: [param1, param2],
-        func: namespaces[namespace]![funcName] as GroqFunction,
-      }),
+  await t.test('Map', async (t) => {
+    await subtestUnary({
+      t: t as TAP,
+      build: (param) => ({type: 'Map', base: param, expr: {type: 'This'}}),
     })
   })
+
+  await t.test('Projection base', async (t) => {
+    await subtestUnary({
+      t: t as TAP,
+      build: (param) => ({type: 'Projection', base: param, expr: {type: 'This'}}),
+    })
+  })
+
+  await t.test('Projection expr', async (t) => {
+    await subtestUnary({
+      t: t as TAP,
+      build: (param) => ({type: 'Projection', base: {type: 'Object', attributes: []}, expr: param}),
+    })
+  })
+
+  await t.test('AccessElement', async (t) => {
+    await subtestUnary({
+      t: t as TAP,
+      build: (param) => ({type: 'AccessElement', base: param, index: 0}),
+    })
+  })
+
+  await t.test('Slice', async (t) => {
+    await subtestUnary({
+      t: t as TAP,
+      build: (param) => ({type: 'Slice', base: param, left: 0, right: 0, isInclusive: true}),
+    })
+  })
+
+  await t.test(`And`, async (t) => {
+    await subtestBinary({
+      t: t as TAP,
+      variants1: trivialVariant,
+      variants2: trivialVariant,
+      build: (left, right) => ({type: 'And', left, right}),
+    })
+  })
+
+  await t.test(`Or`, async (t) => {
+    await subtestBinary({
+      t: t as TAP,
+      variants1: trivialVariant,
+      variants2: trivialVariant,
+      build: (left, right) => ({type: 'Or', left, right}),
+    })
+  })
+
+  // It's too much to test _every_ possible combination of binary operations. For
+  // each operator we therefore keep track of which variants are interesting to
+  // test for. We already know that many operations don't care about deeply nested
+  // objects/arrays so we avoid testing for those.
+
+  const opVariants: Record<OpCall, Category[]> = {
+    // + is very polymorphic so we want to test it for everything.
+    '+': ALL_CATEGORIES,
+    '%': trivialVariant,
+    '*': trivialVariant,
+    '==': trivialVariant,
+    '!=': trivialVariant,
+    '>': trivialVariant,
+    '<': trivialVariant,
+    '<=': trivialVariant,
+    '>=': trivialVariant,
+    '-': trivialVariant,
+    '/': trivialVariant,
+    '**': trivialVariant,
+    'in': ['PRIMITIVES', 'ARRAYS'],
+    'match': ['PRIMITIVES', 'ARRAYS'],
+  }
+
+  const ops = Object.keys({
+    '!=': null,
+    '==': null,
+    '>': null,
+    '>=': null,
+    '<': null,
+    '<=': null,
+    '-': null,
+    '%': null,
+    '**': null,
+    'in': null,
+    'match': null,
+    '*': null,
+    '+': null,
+    '/': null,
+  } satisfies Record<OpCall, null>) as OpCall[]
+
+  for (const op of ops) {
+    await t.test(`OpCall ${op}`, async (t) => {
+      subtestBinary({
+        t: t as TAP,
+        variants1: opVariants[op],
+        variants2: opVariants[op],
+        build: (left, right) => ({type: 'OpCall', op, left, right}),
+      })
+    })
+  }
+
+  const unaryFunctionTests: {namespace: string; funcName: string}[] = [
+    {namespace: 'math', funcName: 'sum'},
+    {namespace: 'math', funcName: 'min'},
+    {namespace: 'math', funcName: 'max'},
+    {namespace: 'math', funcName: 'avg'},
+    {namespace: 'array', funcName: 'compact'},
+    {namespace: 'array', funcName: 'unique'},
+    {namespace: 'global', funcName: 'dateTime'},
+    {namespace: 'global', funcName: 'length'},
+  ]
+
+  for (const {namespace, funcName} of unaryFunctionTests) {
+    await t.test(`${namespace}::${funcName}`, async (t) => {
+      await subtestUnary({
+        t: t as TAP,
+        build: (param) => ({
+          type: 'FuncCall',
+          name: funcName,
+          namespace,
+          args: [param],
+          func: namespaces[namespace]![funcName] as GroqFunction,
+        }),
+      })
+    })
+  }
+
+  const binaryFunctionTests: {namespace: string; funcName: string}[] = [
+    {namespace: 'array', funcName: 'join'},
+    {namespace: 'global', funcName: 'round'},
+    {namespace: 'global', funcName: 'upper'},
+    {namespace: 'global', funcName: 'lower'},
+  ]
+
+  for (const {namespace, funcName} of binaryFunctionTests) {
+    await t.test(`${namespace}::${funcName}`, async (t) => {
+      await subtestBinary({
+        t: t as TAP,
+        build: (param1, param2) => ({
+          type: 'FuncCall',
+          name: funcName,
+          namespace,
+          args: [param1, param2],
+          func: namespaces[namespace]![funcName] as GroqFunction,
+        }),
+      })
+    })
+  }
 }
+
+main().catch((e) => {
+  // eslint-disable-next-line no-console
+  console.error(e)
+  process.exit(1)
+})

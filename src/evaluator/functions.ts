@@ -83,8 +83,6 @@ export type NamespaceSet = Record<string, FunctionSet | undefined>
 // underscored to not collide with environments like jest that give variables named `global` special treatment
 const _global: FunctionSet = {}
 
-// eslint-disable-next-line require-await
-// eslint-disable-next-line require-await
 _global['anywhere'] = async function anywhere() {
   throw new Error('not implemented')
 }
@@ -134,8 +132,6 @@ _global['defined'] = async function defined(args, scope, execute) {
 }
 _global['defined'].arity = 1
 
-// eslint-disable-next-line require-await
-// eslint-disable-next-line require-await
 _global['identity'] = async function identity(_args, scope) {
   return fromString(scope.context.identity)
 }
@@ -238,15 +234,11 @@ _global['round'] = async function round(args, scope, execute) {
 }
 _global['round'].arity = (count) => count >= 1 && count <= 2
 
-// eslint-disable-next-line require-await
-// eslint-disable-next-line require-await
 _global['now'] = async function now(_args, scope) {
   return fromString(scope.context.timestamp.toISOString())
 }
 _global['now'].arity = 0
 
-// eslint-disable-next-line require-await
-// eslint-disable-next-line require-await
 _global['boost'] = async function boost() {
   // This should be handled by the scoring function.
   throw new Error('unexpected boost call')
@@ -433,8 +425,7 @@ pt['text'] = async function (args, scope, execute) {
 pt['text'].arity = 1
 
 const sanity: FunctionSet = {}
-// eslint-disable-next-line require-await
-// eslint-disable-next-line require-await
+
 sanity['projectId'] = async function (_args, scope) {
   if (scope.context.sanity) {
     return fromString(scope.context.sanity.projectId)
@@ -442,8 +433,7 @@ sanity['projectId'] = async function (_args, scope) {
 
   return NULL_VALUE
 }
-// eslint-disable-next-line require-await
-// eslint-disable-next-line require-await
+
 sanity['dataset'] = async function (_args, scope) {
   if (scope.context.sanity) {
     return fromString(scope.context.sanity.dataset)
@@ -452,7 +442,6 @@ sanity['dataset'] = async function (_args, scope) {
   return NULL_VALUE
 }
 
-// eslint-disable-next-line require-await
 sanity['versionOf'] = async function (args, scope, execute) {
   if (!scope.source.isArray()) return NULL_VALUE
 
@@ -487,7 +476,6 @@ sanity['versionOf'] = async function (args, scope, execute) {
 }
 sanity['versionOf'].arity = 1
 
-// eslint-disable-next-line require-await
 sanity['partOfRelease'] = async function (args, scope, execute) {
   if (!scope.source.isArray()) return NULL_VALUE
 
@@ -516,7 +504,6 @@ sanity['partOfRelease'].arity = 1
 
 const releases: FunctionSet = {}
 
-// eslint-disable-next-line require-await
 releases['all'] = async function (_args, scope) {
   const allReleases: string[] = []
   for await (const value of scope.source) {
@@ -542,7 +529,6 @@ export type GroqPipeFunction = (
 export const pipeFunctions: {[key: string]: WithOptions<GroqPipeFunction>} = {}
 
 pipeFunctions['order'] = async function order(base, args, scope, execute) {
-  // eslint-disable-next-line max-len
   // This is a workaround for https://github.com/rpetrich/babel-plugin-transform-async-to-promises/issues/59
   await true
 
@@ -601,13 +587,11 @@ pipeFunctions['order'] = async function order(base, args, scope, execute) {
 }
 pipeFunctions['order'].arity = (count) => count >= 1
 
-// eslint-disable-next-line require-await
-// eslint-disable-next-line require-await
 pipeFunctions['score'] = async function score(base, args, scope, execute) {
   if (!base.isArray()) return NULL_VALUE
 
   // Anything that isn't an object should be sorted first.
-  const unknown: Array<any> = []
+  const unknown: unknown[] = []
   const scored: Array<ObjectWithScore> = []
 
   for await (const value of base) {
@@ -636,8 +620,7 @@ pipeFunctions['score'].arity = (count) => count >= 1
 type ObjectWithScore = Record<string, unknown> & {_score: number}
 
 const delta: FunctionSet = {}
-// eslint-disable-next-line require-await
-// eslint-disable-next-line require-await
+
 delta['operation'] = async function (_args, scope) {
   const hasBefore = scope.context.before !== null
   const hasAfter = scope.context.after !== null
