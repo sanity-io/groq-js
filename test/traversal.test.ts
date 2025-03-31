@@ -1,13 +1,13 @@
 import t from 'tap'
 
-import type {ExprNode} from '../src/nodeTypes'
+import {type ExprNode} from '../src/nodeTypes'
 import {
   type TraversalResult,
   traverseArray,
   traverseElement,
   traversePlain,
   traverseProjection,
-} from '../src/traversal'
+} from '../src/parser/traversal'
 import {throwsWithMessage} from './testUtils'
 
 t.test('traverseProjection', async (t) => {

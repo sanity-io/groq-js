@@ -1,4 +1,4 @@
-import type {TAP} from 'tap'
+import {type TAP} from 'tap'
 
 type Test = Parameters<Parameters<TAP['test']>[0]>[0]
 

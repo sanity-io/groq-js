@@ -1,4 +1,5 @@
-import {getType, type GroqType} from '../values'
+import {type GroqType} from '../values/types'
+import {getType} from '../values/utils'
 
 const TYPE_ORDER: {[key in GroqType]?: number} = {
   datetime: 1,

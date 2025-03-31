@@ -4,7 +4,6 @@ export default defineConfig({
   extract: {
     rules: {
       'ae-internal-missing-underscore': 'off',
-      'ae-missing-release-tag': 'warn',
     },
   },
 })

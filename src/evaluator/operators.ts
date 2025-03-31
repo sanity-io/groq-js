@@ -1,4 +1,5 @@
-import type {OpCall} from '../nodeTypes'
+import {type OpCall} from '../nodeTypes'
+import {StreamValue} from '../values/StreamValue'
 import {
   FALSE_VALUE,
   fromDateTime,
@@ -6,10 +7,9 @@ import {
   fromNumber,
   fromString,
   NULL_VALUE,
-  StreamValue,
   TRUE_VALUE,
-  type Value,
-} from '../values'
+} from '../values/utils'
+import {type Value} from '../values/types'
 import {isEqual} from './equality'
 import {
   gatherText,

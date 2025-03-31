@@ -1,7 +1,7 @@
 import t from 'tap'
 
-import {MarkProcessor, type MarkVisitor} from '../src/markProcessor'
-import type {ExprNode} from '../src/nodeTypes'
+import {MarkProcessor, type MarkVisitor} from '../src/parser/markProcessor'
+import {type ExprNode} from '../src/nodeTypes'
 import {throwsWithMessage} from './testUtils'
 
 const TestVisitor: MarkVisitor<ExprNode> = {

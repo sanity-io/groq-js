@@ -1,17 +1,11 @@
-import type {ExprNode, FuncCallNode, PipeFuncCallNode} from '../nodeTypes'
-import {
-  FALSE_VALUE,
-  fromJS,
-  fromNumber,
-  NULL_VALUE,
-  StreamValue,
-  TRUE_VALUE,
-  type Value,
-} from '../values'
+import {type ExprNode, type FuncCallNode, type PipeFuncCallNode} from '../nodeTypes'
+import {StreamValue} from '../values/StreamValue'
+import {type Value} from '../values/types'
+import {FALSE_VALUE, fromJS, fromNumber, NULL_VALUE, TRUE_VALUE} from '../values/utils'
 import {operators} from './operators'
 import {partialCompare} from './ordering'
 import {Scope} from './scope'
-import type {EvaluateOptions, Executor} from './types'
+import {type EvaluateOptions, type Executor} from './types'
 
 export function evaluate(
   node: ExprNode,

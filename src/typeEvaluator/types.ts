@@ -1,118 +1,162 @@
-/** Represents a document structure with a fixed type 'document', a name, and a collection of attributes.*/
+/**
+ * Represents a document structure with a fixed type 'document', a name, and a collection of attributes.
+ * @public
+ */
 export interface Document {
-  /** can be used to identify the type of the node, in this case it's always 'document' */
+  /** The type identifier for this node, always 'document' */
   type: 'document'
-  /** the name of the document */
+  /** The name of the document */
   name: string
-  /** Attributes is defined by a key-value pair where the key is a string and the value is an ObjectAttribute. */
+  /** A collection of attributes defined as key-value pairs */
   attributes: Record<string, ObjectAttribute>
 }
 
-/** Defines a type declaration with a specific name and a value that describes the structure of the type using a TypeNode. */
+/**
+ * Defines a type declaration with a specific name and a value that describes the structure of the type.
+ * @public
+ */
 export interface TypeDeclaration {
-  /** can be used to identify the type of the node, in this case it's always 'type' */
+  /** The type identifier for this node, always 'type' */
   type: 'type'
-  /** the name of the type */
+  /** The name of the type */
   name: string
-  /** the value that describes the structure of the type */
+  /** The value that describes the structure of the type */
   value: TypeNode
 }
 
-/** A schema consisting of a list of Document or TypeDeclaration items, allowing for complex type definitions. */
+/**
+ * A schema consisting of a list of Document or TypeDeclaration items, allowing for complex type definitions.
+ * @public
+ */
 export type Schema = (Document | TypeDeclaration)[]
 
-/** Describes a type node for string values, optionally including a value. If a value is provided it will always be the given string value. */
+/**
+ * Describes a type node for string values, optionally including a specific string value.
+ * @public
+ */
 export interface StringTypeNode {
-  /** can be used to identify the type of the node, in this case it's always 'string' */
+  /** The type identifier for this node, always 'string' */
   type: 'string'
-  /** an optional value of the string, if provided it will always be the given string value */
+  /** An optional value that, if provided, indicates this string will always have the given value */
   value?: string
 }
 
-/** Describes a type node for number values, optionally including a value. If a value is provided it will always be the given numeric value.*/
+/**
+ * Describes a type node for number values, optionally including a specific numeric value.
+ * @public
+ */
 export interface NumberTypeNode {
-  /** can be used to identify the type of the node, in this case it's always 'number' */
+  /** The type identifier for this node, always 'number' */
   type: 'number'
-  /** an optional value of the number, if provided it will always be the given numeric value */
+  /** An optional value that, if provided, indicates this number will always have the given value */
   value?: number
 }
 
-/** Describes a type node for boolean values, optionally including a value. If a value is provided it will always be the given boolean value. */
+/**
+ * Describes a type node for boolean values, optionally including a specific boolean value.
+ * @public
+ */
 export interface BooleanTypeNode {
-  /** can be used to identify the type of the node, in this case it's always 'boolean' */
+  /** The type identifier for this node, always 'boolean' */
   type: 'boolean'
-  /** an optional value of the boolean, if provided it will always be the given boolean value */
+  /** An optional value that, if provided, indicates this boolean will always have the given value */
   value?: boolean
 }
 
-/** Union of any primitive type nodes. */
+/**
+ * Union of all primitive type nodes.
+ * @public
+ */
 export type PrimitiveTypeNode = StringTypeNode | NumberTypeNode | BooleanTypeNode
 
-/** Describes a type node for null values, always being the null value. */
+/**
+ * Describes a type node for null values.
+ * @public
+ */
 export interface NullTypeNode {
-  /** can be used to identify the type of the node, in this case it's always 'null' */
+  /** The type identifier for this node, always 'null' */
   type: 'null'
 }
 
-/** Describes a type node for inline values, including a name that references another type. */
+/**
+ * Describes a type node that references another type by name.
+ * @public
+ */
 export interface InlineTypeNode {
-  /** can be used to identify the type of the node, in this case it's always 'inline' */
+  /** The type identifier for this node, always 'inline' */
   type: 'inline'
-  /** the name of the referenced type */
+  /** The name of the referenced type */
   name: string
 }
 
 /**
- * Describes a type node for object values, including a collection of attributes and an optional rest value.
- * The rest value can be another ObjectTypeNode, an UnknownTypeNode, or an InlineTypeNode.
- * If the rest value is an ObjectTypeNode, it means that the object can have additional attributes.
- * If the rest value is an UnknownTypeNode, the entire object is unknown.
- * If the rest value is an InlineTypeNode, it means that the object has additional attributes from the referenced type.
+ * Describes a type node for object values, including attributes and optional extensions.
+ *
+ * The rest value can be:
+ * - An ObjectTypeNode: the object can have additional attributes of that type
+ * - An UnknownTypeNode: the object has unknown additional attributes
+ * - An InlineTypeNode: the object includes attributes from the referenced type
+ * @public
  */
 export interface ObjectTypeNode<T extends TypeNode = TypeNode> {
-  /** can be used to identify the type of the node, in this case it's always 'object' */
+  /** The type identifier for this node, always 'object' */
   type: 'object'
-  /** a collection of attributes */
+  /** A collection of attributes for this object */
   attributes: Record<string, ObjectAttribute<T>>
-  /** an optional rest value */
+  /** An optional rest value for additional attributes */
   rest?: ObjectTypeNode | UnknownTypeNode | InlineTypeNode
-  /* an optional reference to the document this object dereferences to */
+  /** An optional reference to the document this object dereferences to */
   dereferencesTo?: string
 }
 
-/** Describes a type node for object attributes, including a type and an optional flag for being optional. */
+/**
+ * Describes an attribute of an object type, including its type and optional flag.
+ * @public
+ */
 export interface ObjectAttribute<T extends TypeNode = TypeNode> {
-  /** can be used to identify the type of the node, in this case it's always 'objectAttribute' */
+  /** The type identifier for this node, always 'objectAttribute' */
   type: 'objectAttribute'
-  /** the type of the attribute */
+  /** The type of this attribute */
   value: T
-  /** an optional flag if the attribute is optional set on the object */
+  /** Whether this attribute is optional on the object */
   optional?: boolean
 }
 
-/** Describes a type node for union values. */
+/**
+ * Describes a type node for union values, which can be any of the provided types.
+ * @public
+ */
 export interface UnionTypeNode<T extends TypeNode = TypeNode> {
-  /** can be used to identify the type of the node, in this case it's always 'union' */
+  /** The type identifier for this node, always 'union' */
   type: 'union'
-  /** a collection of types */
+  /** The collection of possible types for this union */
   of: T[]
 }
 
-/** Describes a type node for array values. */
+/**
+ * Describes a type node for array values, specifying the type of elements.
+ * @public
+ */
 export interface ArrayTypeNode<T extends TypeNode = TypeNode> {
-  /** can be used to identify the type of the node, in this case it's always 'array' */
+  /** The type identifier for this node, always 'array' */
   type: 'array'
-  /** the type of the array elements */
+  /** The type of the array elements */
   of: T
 }
 
-/** Describes a type node for unknown value. */
+/**
+ * Describes a type node for unknown values, where the type cannot be determined.
+ * @public
+ */
 export type UnknownTypeNode = {
-  /** can be used to identify the type of the node, in this case it's always 'unknown' */
+  /** The type identifier for this node, always 'unknown' */
   type: 'unknown'
 }
 
-/** All possible type nodes. */
+/**
+ * Union of all possible type nodes.
+ * @public
+ */
 export type TypeNode =
   | ObjectTypeNode
   | StringTypeNode

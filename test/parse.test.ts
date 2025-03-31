@@ -1,6 +1,6 @@
 import t from 'tap'
 
-import {parse} from '../src/1'
+import {parse} from '../src/parser/parser'
 import {throwsWithMessage} from './testUtils'
 
 t.test('Basic parsing', async (t) => {

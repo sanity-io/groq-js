@@ -1,5 +1,6 @@
-import type {ExprNode} from '../nodeTypes'
-import {NULL_VALUE, type Value} from '../values'
+import {type ExprNode} from '../nodeTypes'
+import {type Value} from '../values/types'
+import {NULL_VALUE} from '../values/utils'
 import {evaluate} from './evaluate'
 import {Scope} from './scope'
 

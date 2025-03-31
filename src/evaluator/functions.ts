@@ -1,4 +1,9 @@
-import type {ExprNode} from '../nodeTypes'
+import {
+  type FunctionSet,
+  type GroqPipeFunction,
+  type NamespaceSet,
+  type WithOptions,
+} from '../types'
 import {
   DateTime,
   FALSE_VALUE,
@@ -9,16 +14,13 @@ import {
   fromString,
   getType,
   NULL_VALUE,
-  Path,
-  StreamValue,
   TRUE_VALUE,
-  type Value,
-} from '../values'
+} from '../values/utils'
+import {Path} from '../values/Path'
+import {StreamValue} from '../values/StreamValue'
 import {totalCompare} from './ordering'
 import {portableTextContent} from './pt'
-import {Scope} from './scope'
 import {evaluateScore} from './scoring'
-import type {Executor} from './types'
 import {isEqual} from './equality'
 
 function hasReference(value: any, pathSet: Set<string>): boolean {
@@ -59,26 +61,6 @@ function countUTF8(str: string): number {
   }
   return count
 }
-
-/** @public */
-export type GroqFunctionArg = ExprNode
-type WithOptions<T> = T & {
-  arity?: GroqFunctionArity
-  mode?: 'normal' | 'delta'
-}
-
-export type GroqFunctionArity = number | ((count: number) => boolean)
-
-/** @public */
-export type GroqFunction = (
-  args: GroqFunctionArg[],
-  scope: Scope,
-  execute: Executor,
-) => PromiseLike<Value>
-
-export type FunctionSet = Record<string, WithOptions<GroqFunction> | undefined>
-
-export type NamespaceSet = Record<string, FunctionSet | undefined>
 
 // underscored to not collide with environments like jest that give variables named `global` special treatment
 const _global: FunctionSet = {}
@@ -518,13 +500,6 @@ releases['all'] = async function (_args, scope) {
   return fromJS(allReleases)
 }
 releases['all'].arity = 0
-
-export type GroqPipeFunction = (
-  base: Value,
-  args: ExprNode[],
-  scope: Scope,
-  execute: Executor,
-) => PromiseLike<Value>
 
 export const pipeFunctions: {[key: string]: WithOptions<GroqPipeFunction>} = {}
 

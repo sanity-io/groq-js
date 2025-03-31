@@ -1,6 +1,7 @@
 import t from 'tap'
 
-import {evaluate, parse} from '../src/1'
+import {parse} from '../src/parser/parser'
+import {evaluateQuery as evaluate} from '../src/evaluator/evaluate'
 import {throwsWithMessage} from './testUtils'
 
 t.test('Functions', async (t) => {
