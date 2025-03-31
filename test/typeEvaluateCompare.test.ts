@@ -63,6 +63,8 @@ type AnnotatedValue = {
   key: string
 }
 
+type Test = Parameters<Parameters<TAP['test']>[0]>[0]
+
 /**
  * List of primitive annotated values.
  */
@@ -250,7 +252,7 @@ async function subtestUnary({
   build,
   variants = ALL_CATEGORIES,
 }: {
-  t: TAP
+  t: Test
   variants?: Category[]
   build: (param: ExprNode) => ExprNode
 }) {
@@ -290,7 +292,7 @@ async function subtestBinary({
   variants1 = ALL_CATEGORIES,
   variants2 = ALL_CATEGORIES,
 }: {
-  t: TAP
+  t: Test
   variants1?: Category[]
   variants2?: Category[]
   build: (param1: ExprNode, param2: ExprNode) => ExprNode
@@ -340,28 +342,28 @@ async function subtestBinary({
 async function main() {
   await t.test('AccessAttribute found', async (t) => {
     await subtestUnary({
-      t: t as TAP,
+      t,
       build: (param) => ({type: 'AccessAttribute', base: param, name: 'i0'}),
     })
   })
 
   await t.test('AccessAttribute missing', async (t) => {
     await subtestUnary({
-      t: t as TAP,
+      t,
       build: (param) => ({type: 'AccessAttribute', base: param, name: 'notFound'}),
     })
   })
 
   await t.test('FlatMap base', async (t) => {
     await subtestUnary({
-      t: t as TAP,
+      t,
       build: (param) => ({type: 'FlatMap', base: param, expr: {type: 'This'}}),
     })
   })
 
   await t.test('FlatMap expr', async (t) => {
     await subtestUnary({
-      t: t as TAP,
+      t,
       build: (param) => ({
         type: 'FlatMap',
         base: {
@@ -381,42 +383,42 @@ async function main() {
 
   await t.test('Map', async (t) => {
     await subtestUnary({
-      t: t as TAP,
+      t,
       build: (param) => ({type: 'Map', base: param, expr: {type: 'This'}}),
     })
   })
 
   await t.test('Projection base', async (t) => {
     await subtestUnary({
-      t: t as TAP,
+      t,
       build: (param) => ({type: 'Projection', base: param, expr: {type: 'This'}}),
     })
   })
 
   await t.test('Projection expr', async (t) => {
     await subtestUnary({
-      t: t as TAP,
+      t,
       build: (param) => ({type: 'Projection', base: {type: 'Object', attributes: []}, expr: param}),
     })
   })
 
   await t.test('AccessElement', async (t) => {
     await subtestUnary({
-      t: t as TAP,
+      t,
       build: (param) => ({type: 'AccessElement', base: param, index: 0}),
     })
   })
 
   await t.test('Slice', async (t) => {
     await subtestUnary({
-      t: t as TAP,
+      t,
       build: (param) => ({type: 'Slice', base: param, left: 0, right: 0, isInclusive: true}),
     })
   })
 
   await t.test(`And`, async (t) => {
     await subtestBinary({
-      t: t as TAP,
+      t,
       variants1: trivialVariant,
       variants2: trivialVariant,
       build: (left, right) => ({type: 'And', left, right}),
@@ -425,7 +427,7 @@ async function main() {
 
   await t.test(`Or`, async (t) => {
     await subtestBinary({
-      t: t as TAP,
+      t,
       variants1: trivialVariant,
       variants2: trivialVariant,
       build: (left, right) => ({type: 'Or', left, right}),
@@ -475,7 +477,7 @@ async function main() {
   for (const op of ops) {
     await t.test(`OpCall ${op}`, async (t) => {
       subtestBinary({
-        t: t as TAP,
+        t,
         variants1: opVariants[op],
         variants2: opVariants[op],
         build: (left, right) => ({type: 'OpCall', op, left, right}),
@@ -497,7 +499,7 @@ async function main() {
   for (const {namespace, funcName} of unaryFunctionTests) {
     await t.test(`${namespace}::${funcName}`, async (t) => {
       await subtestUnary({
-        t: t as TAP,
+        t,
         build: (param) => ({
           type: 'FuncCall',
           name: funcName,
@@ -519,7 +521,7 @@ async function main() {
   for (const {namespace, funcName} of binaryFunctionTests) {
     await t.test(`${namespace}::${funcName}`, async (t) => {
       await subtestBinary({
-        t: t as TAP,
+        t,
         build: (param1, param2) => ({
           type: 'FuncCall',
           name: funcName,

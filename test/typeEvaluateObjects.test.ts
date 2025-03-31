@@ -1,6 +1,6 @@
 import assert from 'node:assert'
 
-import t from 'tap'
+import t, {type TAP} from 'tap'
 
 import type {ObjectAttributeNode} from '../src/nodeTypes'
 import {optimizeUnions} from '../src/typeEvaluator/optimizations'
@@ -13,13 +13,14 @@ const nodeWithType = (type: TypeNode) => {
   overrideTypeForNode(expr, type)
   return expr
 }
+type Test = Parameters<Parameters<TAP['test']>[0]>[0]
 
 const objectVariants: {
   name: string
   attributes: ObjectAttributeNode[]
   expects?: TypeNode
   schema?: Schema
-  asserter?: (t: Tap.Test, res: TypeNode) => void
+  asserter?: (t: Test, res: TypeNode) => void
 }[] = [
   // normal projection attributes
   {
