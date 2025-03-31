@@ -1,7 +1,9 @@
 import type {TAP} from 'tap'
 
+type Test = Parameters<Parameters<TAP['test']>[0]>[0]
+
 export async function throwsWithMessage(
-  t: TAP,
+  t: Test,
   funcUnderTest: () => void,
   expectedMessage: string,
 ) {

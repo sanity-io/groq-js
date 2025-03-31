@@ -7,25 +7,70 @@ t.test('Basic parsing', async (t) => {
   t.test('Example query', async (t) => {
     const query = `*[_type == "product"]{name}`
     const tree = parse(query)
-    t.matchSnapshot(tree)
+    t.same(tree, {
+      type: 'Map',
+      base: {
+        type: 'Filter',
+        base: {type: 'Everything'},
+        expr: {
+          type: 'OpCall',
+          op: '==',
+          left: {type: 'AccessAttribute', name: '_type'},
+          right: {type: 'Value', value: 'product'},
+        },
+      },
+      expr: {
+        type: 'Projection',
+        base: {type: 'This'},
+        expr: {
+          type: 'Object',
+          attributes: [
+            {
+              type: 'ObjectAttributeValue',
+              name: 'name',
+              value: {type: 'AccessAttribute', name: 'name'},
+            },
+          ],
+        },
+      },
+    })
   })
 
   t.test('Trailing comma in function call', async (t) => {
     const query = `select(123,)`
     const tree = parse(query)
-    t.matchSnapshot(tree)
+    t.same(tree, {type: 'Select', alternatives: [], fallback: {type: 'Value', value: 123}})
   })
 
   t.test('Object expression starting with string', async (t) => {
     const query = `{"mail" == 1 => {}}`
     const tree = parse(query)
-    t.matchSnapshot(tree)
+    t.same(tree, {
+      type: 'Object',
+      attributes: [
+        {
+          type: 'ObjectConditionalSplat',
+          condition: {
+            type: 'OpCall',
+            op: '==',
+            left: {type: 'Value', value: 'mail'},
+            right: {type: 'Value', value: 1},
+          },
+          value: {type: 'Object', attributes: []},
+        },
+      ],
+    })
   })
 
   t.test('Space after field in objects', async (t) => {
     const query = `{"mail" : 123}`
     const tree = parse(query)
-    t.matchSnapshot(tree)
+    t.same(tree, {
+      type: 'Object',
+      attributes: [
+        {type: 'ObjectAttributeValue', name: 'mail', value: {type: 'Value', value: 123}},
+      ],
+    })
   })
 
   t.test('Comment with no text', async (t) => {
@@ -35,7 +80,7 @@ t.test('Basic parsing', async (t) => {
       1
     `
     const tree = parse(query)
-    t.matchSnapshot(tree)
+    t.same(tree, {type: 'Value', value: 1})
   })
 
   t.test('Complex query', async (t) => {
@@ -47,7 +92,76 @@ t.test('Basic parsing', async (t) => {
     ))`
 
     const tree = parse(query)
-    t.matchSnapshot(tree)
+    t.match(tree, {
+      type: 'FuncCall',
+      namespace: 'global',
+      name: 'count',
+      args: [
+        {
+          type: 'FuncCall',
+          namespace: 'array',
+          name: 'unique',
+          args: [
+            {
+              type: 'Map',
+              base: {
+                type: 'Filter',
+                base: {type: 'Everything'},
+                expr: {
+                  type: 'OpCall',
+                  op: '==',
+                  left: {type: 'AccessAttribute', name: '_type'},
+                  right: {type: 'Value', value: 'page'},
+                },
+              },
+              expr: {
+                type: 'AccessAttribute',
+                base: {
+                  type: 'Projection',
+                  base: {type: 'This'},
+                  expr: {
+                    type: 'Object',
+                    attributes: [
+                      {
+                        type: 'ObjectAttributeValue',
+                        name: '_id',
+                        value: {
+                          type: 'Select',
+                          alternatives: [
+                            {
+                              type: 'SelectAlternative',
+                              condition: {
+                                type: 'OpCall',
+                                op: 'in',
+                                left: {type: 'AccessAttribute', name: '_id'},
+                                right: {
+                                  type: 'FuncCall',
+                                  namespace: 'global',
+                                  name: 'path',
+                                  args: [{type: 'Value', value: 'drafts.**'}],
+                                },
+                              },
+                              value: {type: 'AccessAttribute', name: '_id'},
+                            },
+                          ],
+                          fallback: {
+                            type: 'OpCall',
+                            op: '+',
+                            left: {type: 'Value', value: 'drafts.'},
+                            right: {type: 'AccessAttribute', name: '_id'},
+                          },
+                        },
+                      },
+                    ],
+                  },
+                },
+                name: '_id',
+              },
+            },
+          ],
+        },
+      ],
+    })
   })
 })
 
@@ -136,7 +250,24 @@ t.test('Expression parsing', async (t) => {
     })
 
     t.test('can extract from group', async (t) => {
-      t.matchSnapshot(parse('*{(id)}'))
+      t.same(parse('*{(id)}'), {
+        type: 'Map',
+        base: {type: 'Everything'},
+        expr: {
+          type: 'Projection',
+          base: {type: 'This'},
+          expr: {
+            type: 'Object',
+            attributes: [
+              {
+                type: 'ObjectAttributeValue',
+                name: 'id',
+                value: {type: 'Group', base: {type: 'AccessAttribute', name: 'id'}},
+              },
+            ],
+          },
+        },
+      })
     })
   })
 

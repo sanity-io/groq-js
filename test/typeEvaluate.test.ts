@@ -671,7 +671,49 @@ t.test('object references', (t) => {
     }`
   const ast = parse(query)
   const res = typeEvaluate(ast, schemas)
-  t.matchSnapshot(res)
+  t.same(res, {
+    type: 'array',
+    of: {
+      type: 'object',
+      attributes: {
+        _id: {type: 'objectAttribute', value: {type: 'string'}},
+        _type: {type: 'objectAttribute', value: {type: 'string', value: 'ghost'}},
+        name: {type: 'objectAttribute', value: {type: 'string'}},
+        concepts: {
+          type: 'objectAttribute',
+          value: {
+            type: 'array',
+            of: {
+              type: 'object',
+              attributes: {_key: {type: 'objectAttribute', value: {type: 'string'}}},
+              rest: {type: 'inline', name: 'concept'},
+            },
+          },
+        },
+        enabledConcepts: {
+          type: 'objectAttribute',
+          value: {
+            type: 'array',
+            of: {
+              type: 'object',
+              attributes: {name: {type: 'objectAttribute', value: {type: 'string'}}},
+            },
+          },
+        },
+        disabledConcepts: {
+          type: 'objectAttribute',
+          value: {
+            type: 'array',
+            of: {
+              type: 'object',
+              attributes: {_key: {type: 'objectAttribute', value: {type: 'string'}}},
+              rest: {type: 'inline', name: 'concept'},
+            },
+          },
+        },
+      },
+    },
+  })
   t.end()
 })
 
@@ -1698,7 +1740,34 @@ t.test('coalesce with projection', async (t) => {
         }`
   const ast = parse(query)
   const res = typeEvaluate(ast, schemas)
-  t.matchSnapshot(res)
+  t.same(res, {
+    type: 'union',
+    of: [
+      {
+        type: 'object',
+        attributes: {
+          _type: {type: 'objectAttribute', value: {type: 'string', value: 'author'}},
+          foo: {
+            type: 'objectAttribute',
+            value: {
+              type: 'union',
+              of: [
+                {
+                  type: 'object',
+                  attributes: {
+                    subfield: {type: 'objectAttribute', value: {type: 'string'}},
+                    ref: {type: 'objectAttribute', value: {type: 'null'}},
+                  },
+                },
+                {type: 'null'},
+              ],
+            },
+          },
+        },
+      },
+      {type: 'null'},
+    ],
+  })
   t.end()
 })
 
@@ -1776,7 +1845,42 @@ t.test('filter with type reference', (t) => {
 t.test('filter order doesnt matter', (t) => {
   const res = typeEvaluate(parse(`*[_type == "author" && _id == "123"]`), schemas)
   t.strictSame(res, typeEvaluate(parse(`*["author" == _type &&  "123" == _id]`), schemas))
-  t.matchSnapshot(res)
+  t.same(res, {
+    type: 'array',
+    of: {
+      type: 'object',
+      attributes: {
+        _id: {type: 'objectAttribute', value: {type: 'string'}},
+        _type: {type: 'objectAttribute', value: {type: 'string', value: 'author'}},
+        name: {type: 'objectAttribute', value: {type: 'string'}},
+        firstname: {type: 'objectAttribute', value: {type: 'string'}},
+        lastname: {type: 'objectAttribute', value: {type: 'string'}},
+        _createdAt: {type: 'objectAttribute', value: {type: 'string'}},
+        age: {type: 'objectAttribute', value: {type: 'number'}},
+        ages: {
+          type: 'objectAttribute',
+          value: {type: 'array', of: {type: 'number'}},
+          optional: true,
+        },
+        optionalAge: {type: 'objectAttribute', value: {type: 'number'}, optional: true},
+        object: {
+          type: 'objectAttribute',
+          value: {
+            type: 'object',
+            attributes: {subfield: {type: 'objectAttribute', value: {type: 'string'}}},
+          },
+        },
+        optionalObject: {
+          type: 'objectAttribute',
+          optional: true,
+          value: {
+            type: 'object',
+            attributes: {subfield: {type: 'objectAttribute', value: {type: 'string'}}},
+          },
+        },
+      },
+    },
+  })
 
   t.end()
 })
@@ -1803,7 +1907,23 @@ t.test('misc', (t) => {
       },
     },
   ])
-  t.matchSnapshot(res)
+  t.same(res, {
+    type: 'array',
+    of: {
+      type: 'object',
+      attributes: {
+        group: {type: 'objectAttribute', value: {type: 'number', value: 35}},
+        notBool: {type: 'objectAttribute', value: {type: 'boolean', value: true}},
+        notField: {type: 'objectAttribute', value: {type: 'boolean'}},
+        notNumber: {type: 'objectAttribute', value: {type: 'null'}},
+        notMissingAttribute: {type: 'objectAttribute', value: {type: 'null'}},
+        unknownParent: {type: 'objectAttribute', value: {type: 'null'}},
+        unknownParent2: {type: 'objectAttribute', value: {type: 'null'}},
+        andWithAttribute: {type: 'objectAttribute', value: {type: 'boolean'}},
+        pt: {type: 'objectAttribute', value: {type: 'string'}},
+      },
+    },
+  })
 
   t.end()
 })
@@ -1812,7 +1932,35 @@ t.test('flatmap', (t) => {
   const query = `*[_type == "post"].allAuthorOrGhost[]`
   const ast = parse(query)
   const res = typeEvaluate(ast, schemas)
-  t.matchSnapshot(res)
+  t.same(res, {
+    type: 'array',
+    of: {
+      type: 'union',
+      of: [
+        {
+          type: 'object',
+          attributes: {
+            _ref: {type: 'objectAttribute', value: {type: 'string'}},
+            _type: {type: 'objectAttribute', value: {type: 'string', value: 'reference'}},
+            _weak: {type: 'objectAttribute', value: {type: 'boolean'}, optional: true},
+            _key: {type: 'objectAttribute', value: {type: 'string'}},
+          },
+          dereferencesTo: 'author',
+        },
+        {
+          type: 'object',
+          attributes: {
+            _ref: {type: 'objectAttribute', value: {type: 'string'}},
+            _type: {type: 'objectAttribute', value: {type: 'string', value: 'reference'}},
+            _weak: {type: 'objectAttribute', value: {type: 'boolean'}, optional: true},
+            _key: {type: 'objectAttribute', value: {type: 'string'}},
+          },
+          dereferencesTo: 'ghost',
+        },
+        {type: 'null'},
+      ],
+    },
+  })
 
   t.end()
 })
@@ -1836,7 +1984,27 @@ t.test('can resolve attributes on inline rest', (t) => {
       '_key' in res.of.attributes['concepts'].value.of.attributes &&
       'name' in res.of.attributes['concepts'].value.of.attributes,
   )
-  t.matchSnapshot(res)
+  t.same(res, {
+    type: 'array',
+    of: {
+      type: 'object',
+      attributes: {
+        concepts: {
+          type: 'objectAttribute',
+          value: {
+            type: 'array',
+            of: {
+              type: 'object',
+              attributes: {
+                _key: {type: 'objectAttribute', value: {type: 'string'}},
+                name: {type: 'objectAttribute', value: {type: 'string'}},
+              },
+            },
+          },
+        },
+      },
+    },
+  })
 
   t.end()
 })
@@ -1905,7 +2073,254 @@ t.test('complex', (t) => {
 
   const ast = parse(query)
   const res = typeEvaluate(ast, schemas)
-  t.matchSnapshot(res)
+  t.same(res, {
+    type: 'array',
+    of: {
+      type: 'object',
+      attributes: {
+        _id: {type: 'objectAttribute', value: {type: 'string'}},
+        _type: {type: 'objectAttribute', value: {type: 'string', value: 'post'}},
+        name: {type: 'objectAttribute', value: {type: 'string'}},
+        lastname: {
+          type: 'objectAttribute',
+          value: {type: 'union', of: [{type: 'string'}, {type: 'null'}]},
+        },
+        authorDetails: {
+          type: 'objectAttribute',
+          value: {
+            type: 'object',
+            attributes: {
+              _id: {type: 'objectAttribute', value: {type: 'string'}},
+              _type: {type: 'objectAttribute', value: {type: 'string', value: 'author'}},
+              name: {type: 'objectAttribute', value: {type: 'string'}},
+              firstname: {type: 'objectAttribute', value: {type: 'string'}},
+              lastname: {type: 'objectAttribute', value: {type: 'string'}},
+              object: {
+                type: 'objectAttribute',
+                value: {
+                  type: 'object',
+                  attributes: {subfield: {type: 'objectAttribute', value: {type: 'string'}}},
+                },
+              },
+              optionalObject: {
+                type: 'objectAttribute',
+                value: {
+                  type: 'union',
+                  of: [
+                    {
+                      type: 'object',
+                      attributes: {subfield: {type: 'objectAttribute', value: {type: 'string'}}},
+                    },
+                    {type: 'null'},
+                  ],
+                },
+              },
+            },
+          },
+        },
+        slugerDetails: {type: 'objectAttribute', value: {type: 'null'}},
+        authorOrGhost: {
+          type: 'objectAttribute',
+          value: {
+            type: 'union',
+            of: [
+              {
+                type: 'object',
+                attributes: {
+                  _type: {type: 'objectAttribute', value: {type: 'string', value: 'author'}},
+                  name: {type: 'objectAttribute', value: {type: 'string'}},
+                  details: {
+                    type: 'objectAttribute',
+                    value: {
+                      type: 'object',
+                      attributes: {
+                        firstname: {type: 'objectAttribute', value: {type: 'string'}},
+                        lastname: {type: 'objectAttribute', value: {type: 'string'}},
+                        object: {
+                          type: 'objectAttribute',
+                          value: {
+                            type: 'object',
+                            attributes: {
+                              subfield: {type: 'objectAttribute', value: {type: 'string'}},
+                            },
+                          },
+                        },
+                        optionalObject: {
+                          type: 'objectAttribute',
+                          value: {
+                            type: 'union',
+                            of: [
+                              {
+                                type: 'object',
+                                attributes: {
+                                  subfield: {type: 'objectAttribute', value: {type: 'string'}},
+                                },
+                              },
+                              {type: 'null'},
+                            ],
+                          },
+                        },
+                      },
+                    },
+                  },
+                },
+              },
+              {
+                type: 'object',
+                attributes: {
+                  _type: {type: 'objectAttribute', value: {type: 'string', value: 'ghost'}},
+                  name: {type: 'objectAttribute', value: {type: 'string'}},
+                  details: {
+                    type: 'objectAttribute',
+                    value: {
+                      type: 'object',
+                      attributes: {
+                        concepts: {
+                          type: 'objectAttribute',
+                          value: {
+                            type: 'array',
+                            of: {
+                              type: 'object',
+                              attributes: {
+                                name: {type: 'objectAttribute', value: {type: 'string'}},
+                                enabled: {type: 'objectAttribute', value: {type: 'boolean'}},
+                                posts: {
+                                  type: 'objectAttribute',
+                                  value: {
+                                    type: 'array',
+                                    of: {
+                                      type: 'object',
+                                      attributes: {
+                                        _id: {type: 'objectAttribute', value: {type: 'string'}},
+                                        name: {type: 'objectAttribute', value: {type: 'string'}},
+                                      },
+                                    },
+                                  },
+                                },
+                              },
+                            },
+                          },
+                        },
+                      },
+                    },
+                  },
+                },
+              },
+              {type: 'null'},
+            ],
+          },
+        },
+        allAuthorsOrGhosts: {
+          type: 'objectAttribute',
+          value: {
+            type: 'union',
+            of: [
+              {
+                type: 'array',
+                of: {
+                  type: 'union',
+                  of: [
+                    {
+                      type: 'object',
+                      attributes: {
+                        _type: {type: 'objectAttribute', value: {type: 'string', value: 'author'}},
+                        name: {type: 'objectAttribute', value: {type: 'string'}},
+                        details: {
+                          type: 'objectAttribute',
+                          value: {
+                            type: 'object',
+                            attributes: {
+                              firstname: {type: 'objectAttribute', value: {type: 'string'}},
+                              lastname: {type: 'objectAttribute', value: {type: 'string'}},
+                              object: {
+                                type: 'objectAttribute',
+                                value: {
+                                  type: 'object',
+                                  attributes: {
+                                    subfield: {type: 'objectAttribute', value: {type: 'string'}},
+                                  },
+                                },
+                              },
+                              optionalObject: {
+                                type: 'objectAttribute',
+                                value: {
+                                  type: 'union',
+                                  of: [
+                                    {
+                                      type: 'object',
+                                      attributes: {
+                                        subfield: {
+                                          type: 'objectAttribute',
+                                          value: {type: 'string'},
+                                        },
+                                      },
+                                    },
+                                    {type: 'null'},
+                                  ],
+                                },
+                              },
+                            },
+                          },
+                        },
+                      },
+                    },
+                    {
+                      type: 'object',
+                      attributes: {
+                        _type: {type: 'objectAttribute', value: {type: 'string', value: 'ghost'}},
+                        name: {type: 'objectAttribute', value: {type: 'string'}},
+                        details: {
+                          type: 'objectAttribute',
+                          value: {
+                            type: 'object',
+                            attributes: {
+                              concepts: {
+                                type: 'objectAttribute',
+                                value: {
+                                  type: 'array',
+                                  of: {
+                                    type: 'object',
+                                    attributes: {
+                                      name: {type: 'objectAttribute', value: {type: 'string'}},
+                                      enabled: {type: 'objectAttribute', value: {type: 'boolean'}},
+                                      posts: {
+                                        type: 'objectAttribute',
+                                        value: {
+                                          type: 'array',
+                                          of: {
+                                            type: 'object',
+                                            attributes: {
+                                              _id: {
+                                                type: 'objectAttribute',
+                                                value: {type: 'string'},
+                                              },
+                                              name: {
+                                                type: 'objectAttribute',
+                                                value: {type: 'string'},
+                                              },
+                                            },
+                                          },
+                                        },
+                                      },
+                                    },
+                                  },
+                                },
+                              },
+                            },
+                          },
+                        },
+                      },
+                    },
+                  ],
+                },
+              },
+              {type: 'null'},
+            ],
+          },
+        },
+      },
+    },
+  })
 
   t.end()
 })
@@ -1931,7 +2346,77 @@ t.test('complex 2', (t) => {
 
   const ast = parse(query)
   const res = typeEvaluate(ast, schemas)
-  t.matchSnapshot(res)
+  t.match(res, {
+    type: 'array',
+    of: {
+      type: 'object',
+      attributes: {
+        _id: {type: 'objectAttribute', value: {type: 'string'}},
+        name: {type: 'objectAttribute', value: {type: 'string'}},
+        authorFullName: {type: 'objectAttribute', value: {type: 'string'}},
+        slug: {type: 'objectAttribute', value: {type: 'null'}},
+        relatedConcepts: {
+          type: 'objectAttribute',
+          value: {
+            type: 'union',
+            of: [
+              {
+                type: 'array',
+                of: {
+                  type: 'object',
+                  attributes: {
+                    name: {type: 'objectAttribute', value: {type: 'string'}},
+                    isActive: {type: 'objectAttribute', value: {type: 'boolean'}},
+                    relatedPostsCount: {type: 'objectAttribute', value: {type: 'number'}},
+                  },
+                },
+              },
+              {type: 'null'},
+            ],
+          },
+        },
+        collaborators: {
+          type: 'objectAttribute',
+          value: {
+            type: 'union',
+            of: [
+              {
+                type: 'array',
+                of: {
+                  type: 'union',
+                  of: [
+                    {
+                      type: 'object',
+                      attributes: {
+                        _type: {type: 'objectAttribute', value: {type: 'string', value: 'author'}},
+                        name: {type: 'objectAttribute', value: {type: 'string'}},
+                        collaboratorPosts: {
+                          type: 'objectAttribute',
+                          value: {type: 'array', of: {type: 'string'}},
+                        },
+                      },
+                    },
+                    {
+                      type: 'object',
+                      attributes: {
+                        _type: {type: 'objectAttribute', value: {type: 'string', value: 'ghost'}},
+                        name: {type: 'objectAttribute', value: {type: 'string'}},
+                        collaboratorPosts: {
+                          type: 'objectAttribute',
+                          value: {type: 'array', of: {type: 'string'}},
+                        },
+                      },
+                    },
+                  ],
+                },
+              },
+              {type: 'null'},
+            ],
+          },
+        },
+      },
+    },
+  })
 
   t.end()
 })
@@ -1942,7 +2427,91 @@ t.test('InRange', (t) => {
   const ast = parse(query)
   const res = typeEvaluate(ast, schemas)
   t.same(res.type, 'array')
-  t.matchSnapshot(res)
+  t.same(res, {
+    type: 'array',
+    of: {
+      type: 'object',
+      attributes: {
+        _id: {type: 'objectAttribute', value: {type: 'string'}},
+        _type: {type: 'objectAttribute', value: {type: 'string', value: 'post'}},
+        name: {type: 'objectAttribute', value: {type: 'string'}},
+        lastname: {type: 'objectAttribute', value: {type: 'string'}, optional: true},
+        publishedAt: {type: 'objectAttribute', value: {type: 'string'}, optional: true},
+        author: {
+          type: 'objectAttribute',
+          value: {
+            type: 'object',
+            attributes: {
+              _ref: {type: 'objectAttribute', value: {type: 'string'}},
+              _type: {type: 'objectAttribute', value: {type: 'string', value: 'reference'}},
+              _weak: {type: 'objectAttribute', value: {type: 'boolean'}, optional: true},
+            },
+            dereferencesTo: 'author',
+          },
+        },
+        sluger: {type: 'objectAttribute', value: {type: 'inline', name: 'slug'}, optional: true},
+        authorOrGhost: {
+          type: 'objectAttribute',
+          value: {
+            type: 'union',
+            of: [
+              {
+                type: 'object',
+                attributes: {
+                  _ref: {type: 'objectAttribute', value: {type: 'string'}},
+                  _type: {type: 'objectAttribute', value: {type: 'string', value: 'reference'}},
+                  _weak: {type: 'objectAttribute', value: {type: 'boolean'}, optional: true},
+                },
+                dereferencesTo: 'author',
+              },
+              {
+                type: 'object',
+                attributes: {
+                  _ref: {type: 'objectAttribute', value: {type: 'string'}},
+                  _type: {type: 'objectAttribute', value: {type: 'string', value: 'reference'}},
+                  _weak: {type: 'objectAttribute', value: {type: 'boolean'}, optional: true},
+                },
+                dereferencesTo: 'ghost',
+              },
+            ],
+          },
+          optional: true,
+        },
+        allAuthorOrGhost: {
+          type: 'objectAttribute',
+          value: {
+            type: 'array',
+            of: {
+              type: 'union',
+              of: [
+                {
+                  type: 'object',
+                  attributes: {
+                    _ref: {type: 'objectAttribute', value: {type: 'string'}},
+                    _type: {type: 'objectAttribute', value: {type: 'string', value: 'reference'}},
+                    _weak: {type: 'objectAttribute', value: {type: 'boolean'}, optional: true},
+                    _key: {type: 'objectAttribute', value: {type: 'string'}},
+                  },
+                  dereferencesTo: 'author',
+                },
+                {
+                  type: 'object',
+                  attributes: {
+                    _ref: {type: 'objectAttribute', value: {type: 'string'}},
+                    _type: {type: 'objectAttribute', value: {type: 'string', value: 'reference'}},
+                    _weak: {type: 'objectAttribute', value: {type: 'boolean'}, optional: true},
+                    _key: {type: 'objectAttribute', value: {type: 'string'}},
+                  },
+                  dereferencesTo: 'ghost',
+                },
+              ],
+            },
+          },
+          optional: true,
+        },
+      },
+    },
+  })
 
   t.end()
 })
@@ -2984,7 +3553,48 @@ t.test('scoping', (t) => {
       },
     },
   ])
-  t.matchSnapshot(res)
+  t.same(res, {
+    type: 'union',
+    of: [
+      {
+        type: 'object',
+        attributes: {
+          _id: {type: 'objectAttribute', value: {type: 'string'}},
+          description: {
+            type: 'objectAttribute',
+            value: {
+              type: 'union',
+              of: [
+                {
+                  type: 'array',
+                  of: {
+                    type: 'object',
+                    attributes: {
+                      list: {
+                        type: 'objectAttribute',
+                        value: {
+                          type: 'array',
+                          of: {
+                            type: 'object',
+                            attributes: {
+                              _id: {type: 'objectAttribute', value: {type: 'string'}},
+                              refId: {type: 'objectAttribute', value: {type: 'string'}},
+                            },
+                          },
+                        },
+                      },
+                    },
+                  },
+                },
+                {type: 'null'},
+              ],
+            },
+          },
+        },
+      },
+      {type: 'null'},
+    ],
+  })
   t.end()
 })
 t.test('splat object with inline', (t) => {
@@ -3223,7 +3833,28 @@ t.test('splat object with union object', (t) => {
   const ast = parse(query)
   const res = typeEvaluate(ast, schemas)
 
-  t.matchSnapshot(res)
+  t.same(res, {
+    type: 'union',
+    of: [
+      {
+        type: 'object',
+        attributes: {
+          firstname: {type: 'objectAttribute', value: {type: 'string'}},
+          _id: {type: 'objectAttribute', value: {type: 'string'}},
+          _type: {type: 'objectAttribute', value: {type: 'string', value: 'author'}},
+        },
+      },
+      {
+        type: 'object',
+        attributes: {
+          lastname: {type: 'objectAttribute', value: {type: 'string'}},
+          _id: {type: 'objectAttribute', value: {type: 'string'}},
+          _type: {type: 'objectAttribute', value: {type: 'string', value: 'author'}},
+        },
+      },
+      {type: 'null'},
+    ],
+  })
   t.end()
 })
 t.test('splat on optional object', (t) => {
