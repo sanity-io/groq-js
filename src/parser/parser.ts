@@ -883,6 +883,7 @@ class GroqSyntaxError extends Error {
 
 /**
  * Parses a GROQ query and returns a tree structure.
+ * @public
  */
 export function parse(input: string, options: ParseOptions = {}): ExprNode {
   const result = rawParse(input)
