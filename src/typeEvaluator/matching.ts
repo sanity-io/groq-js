@@ -21,7 +21,6 @@ export function match(left: ConcreteTypeNode, right: ConcreteTypeNode): boolean 
       return undefined
     }
     if (left.of.type === 'string') {
-      // eslint-disable-next-line max-depth
       if (left.of.value === undefined) {
         return undefined
       }
@@ -29,9 +28,7 @@ export function match(left: ConcreteTypeNode, right: ConcreteTypeNode): boolean 
       tokens = tokens.concat(matchTokenize(left.of.value))
     }
     if (left.of.type === 'union') {
-      // eslint-disable-next-line max-depth
       for (const node of left.of.of) {
-        // eslint-disable-next-line max-depth
         if (node.type === 'string' && node.value !== undefined) {
           tokens = tokens.concat(matchTokenize(node.value))
         }
@@ -50,25 +47,20 @@ export function match(left: ConcreteTypeNode, right: ConcreteTypeNode): boolean 
       return undefined
     }
     if (right.of.type === 'string') {
-      // eslint-disable-next-line max-depth
       if (right.of.value === undefined) {
         return undefined
       }
       patterns = patterns.concat(matchAnalyzePattern(right.of.value))
     }
     if (right.of.type === 'union') {
-      // eslint-disable-next-line max-depth
       for (const node of right.of.of) {
-        // eslint-disable-next-line max-depth
         if (node.type === 'string') {
-          // eslint-disable-next-line max-depth
           if (node.value === undefined) {
             return undefined
           }
           patterns = patterns.concat(matchAnalyzePattern(node.value))
         }
 
-        // eslint-disable-next-line max-depth
         if (node.type !== 'string') {
           return false
         }

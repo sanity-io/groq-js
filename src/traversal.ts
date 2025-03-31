@@ -1,4 +1,3 @@
-/* eslint-disable camelcase */
 import type {ExprNode} from './nodeTypes'
 
 export type Traversal = (base: ExprNode) => ExprNode

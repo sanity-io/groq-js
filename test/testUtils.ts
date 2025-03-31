@@ -1,6 +1,10 @@
+import type {TAP} from 'tap'
+
+type Test = Parameters<Parameters<TAP['test']>[0]>[0]
+
 export async function throwsWithMessage(
-  t: Tap.Test,
-  funcUnderTest: () => {},
+  t: Test,
+  funcUnderTest: () => void,
   expectedMessage: string,
 ) {
   let didThrow = false

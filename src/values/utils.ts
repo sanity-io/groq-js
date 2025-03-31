@@ -16,7 +16,6 @@ export class StaticValue<P, T extends GroqType> {
     return this.type === 'array'
   }
 
-  // eslint-disable-next-line require-await
   async get(): Promise<any> {
     return this.data
   }
@@ -102,7 +101,6 @@ function isIterator(obj?: Iterator<any>) {
   return obj && typeof obj.next === 'function'
 }
 
-// eslint-disable-next-line @typescript-eslint/explicit-module-boundary-types
 export function fromJS(val: any): Value {
   if (isIterator(val)) {
     return new StreamValue(async function* () {
@@ -119,7 +117,7 @@ export function fromJS(val: any): Value {
 /**
  * Returns the type of the value.
  */
-// eslint-disable-next-line @typescript-eslint/explicit-module-boundary-types
+
 export function getType(data: any): GroqType {
   if (data === null || typeof data === 'undefined') {
     return 'null'

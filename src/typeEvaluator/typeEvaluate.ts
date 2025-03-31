@@ -135,7 +135,7 @@ function handleObjectSplatNode(
 
     const attributes: Record<string, ObjectAttribute> = {}
     for (const name in node.attributes) {
-      if (!node.attributes.hasOwnProperty(name)) {
+      if (!Object.prototype.hasOwnProperty.call(node.attributes, name)) {
         continue
       }
       attributes[name] = node.attributes[name]
@@ -153,8 +153,7 @@ function handleObjectSplatNode(
         return {type: 'null'}
       }
       for (const name in resolvedRest.attributes) {
-        // eslint-disable-next-line
-        if (!resolvedRest.attributes.hasOwnProperty(name)) {
+        if (!Object.prototype.hasOwnProperty.call(resolvedRest.attributes, name)) {
           continue
         }
         attributes[name] = resolvedRest.attributes[name]
@@ -164,7 +163,6 @@ function handleObjectSplatNode(
   })
 }
 
-// eslint-disable-next-line max-statements, complexity
 function handleObjectNode(node: ObjectNode, scope: Scope): TypeNode {
   $trace('object.node %O', node)
 
@@ -210,7 +208,7 @@ function handleObjectNode(node: ObjectNode, scope: Scope): TypeNode {
         case 'union': {
           for (const node of attributeNode.of) {
             // if one of the nodes is unknown we mark the entire object as unknown as we can't infer the type of the object
-            // eslint-disable-next-line max-depth
+
             if (node.type === 'unknown') {
               return node
             }
@@ -242,9 +240,7 @@ function handleObjectNode(node: ObjectNode, scope: Scope): TypeNode {
             continue
           }
           case 'union': {
-            // eslint-disable-next-line max-depth
             for (const node of attributeNode.of) {
-              // eslint-disable-next-line max-depth
               if (node.type !== 'object') {
                 return {type: 'unknown'}
               }
@@ -273,7 +269,7 @@ function handleObjectNode(node: ObjectNode, scope: Scope): TypeNode {
       if (variant.type === 'union') {
         for (const node of variant.of) {
           // We can only splat objects, so we bail out if we encounter a non-object node.
-          // eslint-disable-next-line max-depth
+
           if (node.type !== 'object') {
             return {type: 'unknown'}
           }
@@ -307,7 +303,7 @@ function handleObjectNode(node: ObjectNode, scope: Scope): TypeNode {
   for (const [idx, splatNode] of splatVariants) {
     if (splatNode.type === 'object') {
       for (const name in splatNode.attributes) {
-        if (!splatNode.attributes.hasOwnProperty(name)) {
+        if (!Object.prototype.hasOwnProperty.call(splatNode.attributes, name)) {
           continue
         }
         const attribute = splatNode.attributes[name]
@@ -364,7 +360,6 @@ function handleObjectNode(node: ObjectNode, scope: Scope): TypeNode {
       allVariantsAttributes.push([conditionalVariantIdx, variantAttributes])
     }
 
-    /* eslint-disable max-depth */
     for (const node of union.of) {
       matrix.push({
         type: 'object',
@@ -391,7 +386,7 @@ function handleObjectNode(node: ObjectNode, scope: Scope): TypeNode {
               const _after = [...unionGuaranteedAfter]
 
               for (const name in outer) {
-                if (!outer.hasOwnProperty(name)) {
+                if (!Object.prototype.hasOwnProperty.call(outer, name)) {
                   continue
                 }
 
@@ -409,7 +404,7 @@ function handleObjectNode(node: ObjectNode, scope: Scope): TypeNode {
               }
 
               for (const name in inner) {
-                if (!inner.hasOwnProperty(name)) {
+                if (!Object.prototype.hasOwnProperty.call(inner, name)) {
                   continue
                 }
                 if (outerIdx === unionIdx) {
@@ -448,7 +443,6 @@ function handleObjectNode(node: ObjectNode, scope: Scope): TypeNode {
         }
       }
     }
-    /* eslint-disable max-depth */
   }
 
   return optimizeUnions({
@@ -457,13 +451,11 @@ function handleObjectNode(node: ObjectNode, scope: Scope): TypeNode {
   })
 }
 
-// eslint-disable-next-line max-statements
 function handleOpCallNode(node: OpCallNode, scope: Scope): TypeNode {
   $trace('opcall.node %O', node)
   const lhs = walk({node: node.left, scope})
   const rhs = walk({node: node.right, scope})
   return mapNode(lhs, scope, (left) =>
-    // eslint-disable-next-line complexity, max-statements
     mapNode(rhs, scope, (right) => {
       $trace('opcall.node.concrete "%s" %O', node.op, {left, right})
 
@@ -1092,7 +1084,7 @@ export function overrideTypeForNode(node: ExprNode, type: TypeNode): void {
  * @returns The evaluated type of the node.
  * @internal
  */
-// eslint-disable-next-line complexity
+
 export function walk({node, scope}: {node: ExprNode; scope: Scope}): TypeNode {
   if (OVERRIDE_TYPE_SYMBOL in node) {
     return node[OVERRIDE_TYPE_SYMBOL] as TypeNode
@@ -1244,7 +1236,6 @@ function evaluateComparison(
   }
 }
 
-// eslint-disable-next-line complexity, max-statements
 function resolveFilter(expr: ExprNode, scope: Scope): UnionTypeNode {
   $trace('resolveFilter.expr %O', expr)
   const filtered = scope.value.of.filter((node) => {

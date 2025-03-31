@@ -554,7 +554,7 @@ function parseTraversal(str, pos) {
         position: pos,
       }
     }
-    case '-':
+    case '-': {
       if (str[pos + 1] !== '>') return {type: 'error', position: pos}
       // ->
 
@@ -577,6 +577,7 @@ function parseTraversal(str, pos) {
         marks,
         position: pos,
       }
+    }
     case '[': {
       pos = skipWS(str, pos + 1)
 
@@ -704,7 +705,7 @@ function parseObject(str, pos) {
   let marks = [{name: 'object', position: pos}]
   pos = skipWS(str, pos + 1)
 
-  loop: while (str[pos] !== '}') {
+  while (str[pos] !== '}') {
     let pairPos = pos
 
     if (str.slice(pos, pos + 3) === '...') {
