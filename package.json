@@ -57,6 +57,7 @@
     ]
   },
   "dependencies": {
+    "core-js-pure": "^3.41.0",
     "debug": "^4.3.4"
   },
   "devDependencies": {
