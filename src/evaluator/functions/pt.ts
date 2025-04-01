@@ -1,6 +1,7 @@
 import {type ExprNode, type Value} from '../../nodeTypes'
 import {isIterable, isRecord} from '../../values/utils'
 import {type EvaluateContext} from '../../types'
+import {iteratorFrom} from '../../values/iteratorFrom'
 
 interface PortableTextSpan {
   _type: 'span'
@@ -16,7 +17,7 @@ function portableTextContent(value: Value): string | null {
     const children = value['children']
     if (!isIterable(children)) return null
     return Array.from(
-      Iterator.from(children)
+      iteratorFrom(children)
         .filter(isSpan)
         .map((i) => i.text),
     ).join('')

@@ -1,11 +1,3 @@
-// @ts-expect-error no types
-// eslint-disable-next-line import-x/no-unresolved
-import Iterator from 'core-js-pure/actual/iterator'
-
-if (typeof globalThis !== 'undefined' && typeof globalThis.Iterator === 'undefined') {
-  globalThis.Iterator = Iterator
-}
-
 export {evaluate} from '../evaluator/evaluate'
 export type {
   EvaluateContext,

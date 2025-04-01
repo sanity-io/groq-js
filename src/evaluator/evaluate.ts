@@ -1,6 +1,7 @@
 import {type ExprNode, type Value} from '../nodeTypes'
 import {DateTime, isIterable, isRecord} from '../values/utils'
 import {type EvaluateContext, type EvaluateOptions} from '../types'
+import {iteratorFrom} from '../values/iteratorFrom'
 import {evaluateOpCall} from './operators'
 import {Scope} from './scope'
 import {compare} from './scoring'
@@ -70,7 +71,7 @@ function _evaluate(node: ExprNode, context: EvaluateContext): Value {
     case 'Filter': {
       const base = evaluate(node.base, context)
       if (!isIterable(base)) return null
-      return Iterator.from(base).filter((item) =>
+      return iteratorFrom(base).filter((item) =>
         evaluate(node.expr, {...context, scope: scope.createNested(item)}),
       )
     }
@@ -100,7 +101,7 @@ function _evaluate(node: ExprNode, context: EvaluateContext): Value {
       if (!isIterable(base)) return null
       const index = node.index
       if (index < 0) return Array.from(base).at(index) ?? null
-      return Iterator.from(base).drop(index).next().value ?? null
+      return iteratorFrom(base).drop(index).next().value ?? null
     }
 
     case 'Slice': {
@@ -135,7 +136,7 @@ function _evaluate(node: ExprNode, context: EvaluateContext): Value {
       if (!('_ref' in base) || typeof base['_ref'] !== 'string') return null
 
       return (
-        Iterator.from(dataset).find(
+        iteratorFrom(dataset).find(
           (doc) => isRecord(doc) && typeof doc['_id'] === 'string' && doc['_id'] === base['_ref'],
         ) ?? null
       )
@@ -256,7 +257,7 @@ function _evaluate(node: ExprNode, context: EvaluateContext): Value {
       const base = evaluate(node.base, context)
       if (!isIterable(base)) return null
 
-      return Iterator.from(base).map((item) =>
+      return iteratorFrom(base).map((item) =>
         evaluate(node.expr, {...context, scope: scope.createHidden(item)}),
       )
     }
@@ -264,10 +265,10 @@ function _evaluate(node: ExprNode, context: EvaluateContext): Value {
     case 'FlatMap': {
       const base = evaluate(node.base, context)
       if (!isIterable(base)) return null
-      return Iterator.from(base).flatMap((item) => {
+      return iteratorFrom(base).flatMap((item) => {
         const child = evaluate(node.expr, {...context, scope: scope.createHidden(item)})
         if (isIterable(child)) {
-          return Iterator.from(child)
+          return iteratorFrom(child)
         }
         return [child]
       })

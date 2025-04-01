@@ -1,6 +1,7 @@
 import {type ExprNode, type Value} from '../../nodeTypes'
 import {DateTime, isIterable, isRecord} from '../../values/utils'
 import {type EvaluateContext} from '../../types'
+import {iteratorFrom} from '../../values/iteratorFrom'
 
 export {lower, upper} from './string'
 
@@ -8,7 +9,7 @@ export function anywhere(args: ExprNode[], context: EvaluateContext): Value {
   const {evaluate} = context
   const base = evaluate(args[0], context)
   if (!isIterable(base)) return null
-  return Iterator.from(base).some((item) => item === true)
+  return iteratorFrom(base).some((item) => item === true)
 }
 anywhere.arity = 1
 
@@ -25,7 +26,7 @@ export function count(args: ExprNode[], context: EvaluateContext): Value {
   const {evaluate} = context
   const base = evaluate(args[0], context)
   if (!isIterable(base)) return null
-  return Iterator.from(base).reduce<number>((count) => count + 1, 0)
+  return iteratorFrom(base).reduce<number>((count) => count + 1, 0)
 }
 count.arity = 1
 
@@ -57,7 +58,7 @@ export function length(args: ExprNode[], context: EvaluateContext): Value {
   const {evaluate} = context
   const base = evaluate(args[0], context)
   if (typeof base === 'string') return countUTF8(base)
-  if (isIterable(base)) return Iterator.from(base).reduce<number>((length) => length + 1, 0)
+  if (isIterable(base)) return iteratorFrom(base).reduce<number>((length) => length + 1, 0)
   return null
 }
 length.arity = 1

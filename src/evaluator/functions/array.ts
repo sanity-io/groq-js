@@ -1,6 +1,7 @@
 import {type ExprNode, type Value} from '../../nodeTypes'
 import {DateTime, isIterable} from '../../values/utils'
 import {type EvaluateContext} from '../../types'
+import {iteratorFrom} from '../../values/iteratorFrom'
 
 export function join([baseArg, separatorArg]: ExprNode[], context: EvaluateContext): Value {
   const {evaluate} = context
@@ -34,7 +35,7 @@ export function compact(args: ExprNode[], context: EvaluateContext): Value {
   const {evaluate} = context
   const base = evaluate(args[0], context)
   if (!isIterable(base)) return null
-  return Iterator.from(base).filter((i = null) => i !== null)
+  return iteratorFrom(base).filter((i = null) => i !== null)
 }
 compact.arity = 1
 
@@ -45,7 +46,7 @@ export function unique(args: ExprNode[], context: EvaluateContext): Value {
 
   const resultMap = new Map()
 
-  for (const item of Iterator.from(base)) {
+  for (const item of iteratorFrom(base)) {
     let key
     if (item instanceof DateTime) {
       key = `dateTime:${item.toString()}`
@@ -75,7 +76,7 @@ export function intersects(args: ExprNode[], context: EvaluateContext): Value {
 
   const createSet = (iterable: Iterable<unknown>) =>
     new Set(
-      Iterator.from(iterable)
+      iteratorFrom(iterable)
         .filter(
           (i) =>
             i === null ||

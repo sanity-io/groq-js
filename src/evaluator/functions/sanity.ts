@@ -1,6 +1,7 @@
 import {type ExprNode, type Value} from '../../nodeTypes'
 import {isIterable, isRecord} from '../../values/utils'
 import {type EvaluateContext} from '../../types'
+import {iteratorFrom} from '../../values/iteratorFrom'
 
 export function projectId(_args: ExprNode[], context: EvaluateContext): Value {
   return context.sanity?.projectId ?? null
@@ -19,7 +20,7 @@ export function versionOf(args: ExprNode[], context: EvaluateContext): Value {
   const baseId = evaluate(args[0], context)
   if (typeof baseId !== 'string') return null
 
-  return Iterator.from(dataset)
+  return iteratorFrom(dataset)
     .filter((value): value is Record<string, Value> & {_id: string} => {
       if (!isRecord(value)) return false
       if (typeof value['_id'] !== 'string') return false
@@ -51,7 +52,7 @@ export function partOfRelease(args: ExprNode[], context: EvaluateContext): Value
   const baseId = evaluate(args[0], context)
   if (typeof baseId !== 'string') return null
 
-  return Iterator.from(dataset)
+  return iteratorFrom(dataset)
     .filter((value): value is Record<string, Value> & {_id: string} => {
       if (!isRecord(value)) return false
       if (typeof value['_id'] !== 'string') return false

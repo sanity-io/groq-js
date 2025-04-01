@@ -1,6 +1,7 @@
 import {type OpCallNode, type Value} from '../nodeTypes'
 import {DateTime, isIterable, isRecord} from '../values/utils'
 import {type EvaluateContext} from '../types'
+import {iteratorFrom} from '../values/iteratorFrom'
 import {matchPatternRegex, matchText, matchTokenize} from './matching'
 import {compare, isEqual} from './scoring'
 
@@ -92,7 +93,7 @@ export function evaluateOpCall(node: OpCallNode, context: EvaluateContext): Valu
       const right = evaluate(node.right, context)
 
       if (!isIterable(right)) return null
-      return Iterator.from(right).some((item) => isEqual(left, item))
+      return iteratorFrom(right).some((item) => isEqual(left, item))
     }
 
     case 'match': {

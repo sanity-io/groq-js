@@ -2,6 +2,7 @@ import {type ExprNode, type Value} from '../../nodeTypes'
 import {DateTime, isIterable, isRecord} from '../../values/utils'
 import {compare, evaluateScore} from '../scoring'
 import {type EvaluateContext} from '../../types'
+import {iteratorFrom} from '../../values/iteratorFrom'
 
 function getTypeRank(value: unknown): number {
   if (value instanceof DateTime) return 1
@@ -63,7 +64,7 @@ export function score(
   if (!isIterable(base)) return null
 
   return Array.from(
-    Iterator.from(base)
+    iteratorFrom(base)
       .filter(isRecord)
       .map((item) => {
         const prevScore = typeof item['_score'] === 'number' ? item['_score'] : 0
