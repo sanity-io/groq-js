@@ -1,5 +1,4 @@
 import {type GroqFunctionArity, type ParseOptions} from '../types'
-import {tryConstantEvaluate} from '../evaluator/constantEvaluate'
 import {
   type ArrayElementNode,
   type ExprNode,
@@ -10,7 +9,9 @@ import {
   type ParentNode,
   type SelectNode,
 } from '../nodeTypes'
-import {namespaces, pipeFunctions} from '../evaluator/functions'
+import {DateTime} from '../values/utils'
+import {namespaces, pipeFunctions} from '../evaluator/functions/namespaces'
+import {evaluate} from '../evaluator/evaluate'
 import {type Mark, MarkProcessor, type MarkVisitor} from './markProcessor'
 import {parse as rawParse} from './rawParser'
 import {
@@ -40,7 +41,10 @@ function expandHex(str: string): string {
   return String.fromCharCode(charCode)
 }
 
-class GroqQueryError extends Error {
+/**
+ * @public
+ */
+export class GroqQueryError extends Error {
   public override name = 'GroqQueryError'
 }
 
@@ -462,7 +466,7 @@ const EXPR_BUILDER: MarkVisitor<ExprNode> = {
 
     p.allowBoost = oldAllowBoost
 
-    const func = pipeFunctions[name]
+    const func = pipeFunctions[name as keyof typeof pipeFunctions]
     if (!func) {
       throw new GroqQueryError(`Undefined pipe function: ${name}`)
     }
@@ -564,7 +568,9 @@ const OBJECT_BUILDER: MarkVisitor<ObjectAttributeNode> = {
 
   object_pair(p) {
     const name = p.process(EXPR_BUILDER)
-    if (name.type !== 'Value') throw new Error('name must be string')
+    if (name.type !== 'Value' || typeof name.value !== 'string') {
+      throw new Error('name must be string')
+    }
 
     const value = p.process(EXPR_BUILDER)
     return {
@@ -595,15 +601,19 @@ const TRAVERSE_BUILDER: MarkVisitor<(rhs: TraversalResult | null) => TraversalRe
   square_bracket(p) {
     const expr = p.process(EXPR_BUILDER)
 
-    const value = tryConstantEvaluate(expr)
-    if (value && value.type === 'number') {
+    const value = evaluate(expr, {
+      timestamp: DateTime.now(),
+      identity: 'me',
+      dataset: null,
+    })
+    if (typeof value === 'number') {
       return (right) =>
-        traverseElement((base) => ({type: 'AccessElement', base, index: value.data}), right)
+        traverseElement((base) => ({type: 'AccessElement', base, index: value}), right)
     }
 
-    if (value && value.type === 'string') {
+    if (typeof value === 'string') {
       return (right) =>
-        traversePlain((base) => ({type: 'AccessAttribute', base, name: value.data}), right)
+        traversePlain((base) => ({type: 'AccessAttribute', base, name: value}), right)
     }
 
     return (right) =>
@@ -624,10 +634,10 @@ const TRAVERSE_BUILDER: MarkVisitor<(rhs: TraversalResult | null) => TraversalRe
     const left = p.process(EXPR_BUILDER)
     const right = p.process(EXPR_BUILDER)
 
-    const leftValue = tryConstantEvaluate(left)
-    const rightValue = tryConstantEvaluate(right)
+    const leftValue = evaluate(left)
+    const rightValue = evaluate(right)
 
-    if (!leftValue || !rightValue || leftValue.type !== 'number' || rightValue.type !== 'number') {
+    if (typeof leftValue !== 'number' || typeof rightValue !== 'number') {
       throw new GroqQueryError('slicing must use constant numbers')
     }
 
@@ -636,8 +646,8 @@ const TRAVERSE_BUILDER: MarkVisitor<(rhs: TraversalResult | null) => TraversalRe
         (base) => ({
           type: 'Slice',
           base,
-          left: leftValue.data,
-          right: rightValue.data,
+          left: leftValue,
+          right: rightValue,
           isInclusive,
         }),
         rhs,
@@ -871,7 +881,8 @@ function argumentShouldBeSelector(namespace: string, functionName: string, argCo
   return namespace == 'diff' && argCount == 2 && functionsRequiringSelectors.includes(functionName)
 }
 
-class GroqSyntaxError extends Error {
+/** @public */
+export class GroqSyntaxError extends Error {
   public position: number
   public override name = 'GroqSyntaxError'
 

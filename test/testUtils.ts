@@ -11,7 +11,7 @@ export async function throwsWithMessage(
 
   try {
     await funcUnderTest()
-  } catch (error: any) {
+  } catch (error) {
     didThrow = true
     t.same(error.message, expectedMessage)
   }

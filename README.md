@@ -8,7 +8,7 @@
 GROQ-JS is a JavaScript implementation of [GROQ](https://www.sanity.io/docs/how-queries-work) which follows the official specification.
 
 ```javascript
-import {parse, evaluate} from 'groq-js'
+import {parse, evaluate, toJS} from 'groq-js'
 
 let input = '*[_type == "user"]{name}'
 
@@ -21,10 +21,10 @@ let dataset = [
 ]
 
 // Evaluate a tree against a dataset
-let value = await evaluate(tree, {dataset})
+let value = evaluate(tree, {dataset})
 
 // Gather everything into one JavaScript object
-let result = await value.get()
+let result = toJS(value)
 
 console.log(result)
 ```

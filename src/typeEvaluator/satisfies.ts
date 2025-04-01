@@ -30,7 +30,7 @@ export function satisfies(type: TypeNode, value: unknown): boolean {
       return Object.entries(type.attributes).every(
         ([key, fieldType]) =>
           Object.prototype.hasOwnProperty.call(value, key) &&
-          satisfies(fieldType.value, (value as any)[key]),
+          satisfies(fieldType.value, value[key as keyof typeof value]),
       )
     default:
       throw new Error(`Unknown type="${type.type}"`)

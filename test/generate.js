@@ -3,9 +3,9 @@
 //
 // This is needed because Jest doesn't support asynchronously defined tests.
 
-const ndjson = require('ndjson')
 const fs = require('fs')
 const https = require('https')
+const ndjson = require('ndjson')
 const semver = require('semver')
 
 const SUPPORTED_FEATURES = new Set(['portableText'])
@@ -47,8 +47,9 @@ function space() {
 write(`const fs = require('fs')`)
 write(`const ndjson = require('ndjson')`)
 write(`const tap = require('tap')`)
+write(`const {evaluate} = require('../src/evaluator/evaluate')`)
 write(`const {parse} = require('../src/parser/parser')`)
-write(`const {evaluateQuery: evaluate} = require('../src/evaluator/evaluate')`)
+write(`const {toJS} = require('../src/values/utils')`)
 space()
 
 write(`tap.setTimeout(0)`)
@@ -196,8 +197,8 @@ process.stdin
         write(`if (!dataset) return`)
         write(`let params = ${JSON.stringify(entry.params || {})}`)
         write(`let tree = parse(query, {params})`)
-        write(`let value = await evaluate(tree, {dataset, params})`)
-        write(`let data = await value.get()`)
+        write(`let value = evaluate(tree, {dataset, params})`)
+        write(`let data = toJS(value)`)
         write(`data = JSON.parse(JSON.stringify(data))`)
         write(`replaceScoreWithPos(data)`)
         write(`t.match(data, result)`)

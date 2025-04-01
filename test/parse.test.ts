@@ -1,6 +1,6 @@
 import t from 'tap'
 
-import {parse} from '../src/parser/parser'
+import {GroqSyntaxError, parse} from '../src/parser/parser'
 import {throwsWithMessage} from './testUtils'
 
 t.test('Basic parsing', async (t) => {
@@ -171,10 +171,14 @@ t.test('Error reporting', async (t) => {
     const query = `*[_type == "]`
     try {
       parse(query)
-    } catch (error: any) {
-      t.same(error.name, 'GroqSyntaxError')
-      t.same(error.position, 13)
-      t.same(error.message, 'Syntax error in GROQ query at position 13')
+    } catch (error) {
+      if (error instanceof GroqSyntaxError) {
+        t.same(error.name, 'GroqSyntaxError')
+        t.same(error.position, 13)
+        t.same(error.message, 'Syntax error in GROQ query at position 13')
+      } else {
+        t.fail('Expected a GroqSyntaxError')
+      }
     }
   })
 })
@@ -325,8 +329,12 @@ t.test('Selector validation', async (t) => {
     for (const query of queries) {
       try {
         parse(query)
-      } catch (error: any) {
-        t.match(error.message, 'Syntax error in GROQ query at position')
+      } catch (error) {
+        if (error instanceof GroqSyntaxError) {
+          t.match(error.message, 'Syntax error in GROQ query at position')
+        } else {
+          t.fail('Expected a GroqSyntaxError')
+        }
       }
     }
   })
