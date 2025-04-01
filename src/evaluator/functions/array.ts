@@ -94,7 +94,13 @@ export function intersects(args: ExprNode[], context: EvaluateContext): Value {
   const leftSet = createSet(left)
   const rightSet = createSet(right)
 
-  // TODO: ensure polyfills for this are here
-  return !leftSet.isDisjointFrom(rightSet)
+  // Check for intersection manually for compatibility with older environments
+  for (const element of leftSet) {
+    if (rightSet.has(element)) {
+      return true // Found an intersection
+    }
+  }
+
+  return false // No intersection found
 }
 intersects.arity = 2
