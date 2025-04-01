@@ -1,83 +1,98 @@
-import {type ExprNode} from '../nodeTypes'
-import {gatherText, matchPatternRegex, matchTokenize, type Token} from './matching'
-import {Scope} from './scope'
-import {type Executor} from './types'
+import {type ExprNode, type Value} from '../nodeTypes'
+import {DateTime, isIterable} from '../values/utils'
+import {type EvaluateContext} from '../types'
+import {matchPatternRegex, matchTokenize} from './matching'
 
-// BM25 similarity constants
-const BM25k = 1.2
+export type Pattern = (tokens: string[] | IteratorObject<string>) => boolean
 
-export async function evaluateScore(
-  node: ExprNode,
-  scope: Scope,
-  execute: Executor,
-): Promise<number> {
-  if (node.type === 'OpCall' && node.op === 'match') {
-    return evaluateMatchScore(node.left, node.right, scope, execute)
+export function compare(a: Value, b: Value): number {
+  // Allow null values to be compared if they are both null.
+  // if (a === null && b === null) return 0
+
+  // Check if both values have the same type.
+  if (typeof a !== typeof b) {
+    throw new Error('Cannot compare values of different types')
   }
 
-  if (node.type === 'FuncCall' && node.name === 'boost') {
-    const innerScore = await evaluateScore(node.args[0], scope, execute)
-    const boost = await execute(node.args[1], scope)
-    if (boost.type === 'number' && innerScore > 0) {
-      return innerScore + boost.data
-    }
-
+  // For numbers and booleans.
+  if (typeof a === 'number' || typeof a === 'boolean') {
+    if (a < (b as number | boolean)) return -1
+    if (a > (b as number | boolean)) return 1
     return 0
   }
 
-  switch (node.type) {
-    case 'Or': {
-      const leftScore = await evaluateScore(node.left, scope, execute)
-      const rightScore = await evaluateScore(node.right, scope, execute)
-      return leftScore + rightScore
-    }
-    case 'And': {
-      const leftScore = await evaluateScore(node.left, scope, execute)
-      const rightScore = await evaluateScore(node.right, scope, execute)
-      if (leftScore === 0 || rightScore === 0) return 0
-      return leftScore + rightScore
-    }
-    default: {
-      const res = await execute(node, scope)
-      return res.type === 'boolean' && res.data === true ? 1 : 0
-    }
+  if (a instanceof DateTime && b instanceof DateTime) {
+    return a.getTime() - b.getTime()
+  }
+
+  // For strings.
+  if (typeof a === 'string' && typeof b === 'string') {
+    if (a < b) return -1
+    if (a > b) return 1
+    return 0
+  }
+
+  // For unsupported types.
+  throw new Error(
+    'Unsupported type: only numbers, booleans, strings, DateTime instances and null are supported',
+  )
+}
+
+export function isEqual(a: Value, b: Value): boolean {
+  try {
+    if (a === null && b === null) return true
+    return compare(a, b) === 0
+  } catch {
+    return false
   }
 }
 
-async function evaluateMatchScore(
-  left: ExprNode,
-  right: ExprNode,
-  scope: Scope,
-  execute: Executor,
-): Promise<number> {
-  const text = await execute(left, scope)
-  const pattern = await execute(right, scope)
+const BM25k = 1.2
 
-  let tokens: Token[] = []
-  let terms: RegExp[] = []
+export function evaluateScore(node: ExprNode, context: EvaluateContext): number {
+  const {evaluate} = context
 
-  await gatherText(text, (part) => {
-    tokens = tokens.concat(matchTokenize(part))
-  })
+  if (node.type === 'OpCall' && node.op === 'match') {
+    const left = evaluate(node.left, context)
+    const right = evaluate(node.right, context)
+    const tokens = (isIterable(left) ? Array.from(left) : [left])
+      .filter((i) => typeof i === 'string')
+      .flatMap(matchTokenize)
 
-  const didSucceed = await gatherText(pattern, (part) => {
-    terms = terms.concat(matchPatternRegex(part))
-  })
+    const terms = (isIterable(right) ? Array.from(right) : [right])
+      .filter((i) => typeof i === 'string')
+      .flatMap(matchPatternRegex)
 
-  if (!didSucceed) {
+    // if either iterable is empty
+    if (tokens.length === 0) return 0
+    if (terms.length === 0) return 0
+
+    return terms.reduce((score, re) => {
+      const freq = Array.from(tokens).reduce((c, token) => c + (re.test(token) ? 1 : 0), 0)
+      return score + (freq * (BM25k + 1)) / (freq + BM25k)
+    }, 0)
+  }
+
+  if (node.type === 'FuncCall' && node.name === 'boost') {
+    const [baseArg, boostArg] = node.args
+    const score = evaluateScore(baseArg, context)
+    const boost = evaluate(boostArg, context)
+    if (typeof boost === 'number' && score > 0) return score + boost
     return 0
   }
 
-  if (tokens.length === 0 || terms.length === 0) {
-    return 0
+  if (node.type === 'Or') {
+    const leftScore = evaluateScore(node.left, context)
+    const rightScore = evaluateScore(node.right, context)
+    return leftScore + rightScore
   }
 
-  let score = 0
-
-  for (const re of terms) {
-    const freq = tokens.reduce((c, token) => c + (re.test(token) ? 1 : 0), 0)
-    score += (freq * (BM25k + 1)) / (freq + BM25k)
+  if (node.type === 'And') {
+    const leftScore = evaluateScore(node.left, context)
+    const rightScore = evaluateScore(node.right, context)
+    if (leftScore === 0 || rightScore === 0) return 0
+    return leftScore + rightScore
   }
 
-  return score
+  return evaluate(node, context) === true ? 1 : 0
 }

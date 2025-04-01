@@ -14,7 +14,6 @@ export default tseslint.config(
   {
     plugins: {tsdoc},
     rules: {
-      '@typescript-eslint/no-explicit-any': 'off',
       '@typescript-eslint/no-unused-vars': ['error', {argsIgnorePattern: '^_'}],
       'import-x/consistent-type-specifier-style': ['error', 'prefer-inline'],
       'import-x/extensions': ['error', 'never'],

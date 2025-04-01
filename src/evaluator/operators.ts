@@ -1,184 +1,184 @@
-import {type OpCall} from '../nodeTypes'
-import {StreamValue} from '../values/StreamValue'
-import {
-  FALSE_VALUE,
-  fromDateTime,
-  fromJS,
-  fromNumber,
-  fromString,
-  NULL_VALUE,
-  TRUE_VALUE,
-} from '../values/utils'
-import {type Value} from '../values/types'
-import {isEqual} from './equality'
-import {
-  gatherText,
-  matchAnalyzePattern,
-  matchText,
-  matchTokenize,
-  type Pattern,
-  type Token,
-} from './matching'
-import {partialCompare} from './ordering'
+import {type OpCallNode, type Value} from '../nodeTypes'
+import {DateTime, isIterable, isRecord} from '../values/utils'
+import {type EvaluateContext} from '../types'
+import {matchPatternRegex, matchText, matchTokenize} from './matching'
+import {compare, isEqual} from './scoring'
 
-type GroqOperatorFn = (left: Value, right: Value) => Value | PromiseLike<Value>
-
-export const operators: {[key in OpCall]: GroqOperatorFn} = {
-  '==': function eq(left, right) {
-    return isEqual(left, right) ? TRUE_VALUE : FALSE_VALUE
-  },
-
-  '!=': function neq(left, right) {
-    return isEqual(left, right) ? FALSE_VALUE : TRUE_VALUE
-  },
-
-  '>': function gt(left, right) {
-    if (left.type === 'stream' || right.type === 'stream') return NULL_VALUE
-    const result = partialCompare(left.data, right.data)
-
-    if (result === null) {
-      return NULL_VALUE
-    }
-    return result > 0 ? TRUE_VALUE : FALSE_VALUE
-  },
-
-  '>=': function gte(left, right) {
-    if (left.type === 'stream' || right.type === 'stream') return NULL_VALUE
-    const result = partialCompare(left.data, right.data)
-
-    if (result === null) {
-      return NULL_VALUE
-    }
-    return result >= 0 ? TRUE_VALUE : FALSE_VALUE
-  },
-
-  '<': function lt(left, right) {
-    if (left.type === 'stream' || right.type === 'stream') return NULL_VALUE
-    const result = partialCompare(left.data, right.data)
-
-    if (result === null) {
-      return NULL_VALUE
-    }
-    return result < 0 ? TRUE_VALUE : FALSE_VALUE
-  },
-
-  '<=': function lte(left, right) {
-    if (left.type === 'stream' || right.type === 'stream') return NULL_VALUE
-    const result = partialCompare(left.data, right.data)
-
-    if (result === null) {
-      return NULL_VALUE
-    }
-    return result <= 0 ? TRUE_VALUE : FALSE_VALUE
-  },
-
-  'in': async function inop(left, right) {
-    if (right.type === 'path') {
-      if (left.type !== 'string') {
-        return NULL_VALUE
-      }
-
-      return right.data.matches(left.data) ? TRUE_VALUE : FALSE_VALUE
-    }
-
-    if (right.isArray()) {
-      for await (const b of right) {
-        if (isEqual(left, b)) {
-          return TRUE_VALUE
-        }
-      }
-
-      return FALSE_VALUE
-    }
-
-    return NULL_VALUE
-  },
-
-  'match': async function match(left, right) {
-    let tokens: Token[] = []
-    let patterns: Pattern[] = []
-
-    await gatherText(left, (part) => {
-      tokens = tokens.concat(matchTokenize(part))
-    })
-
-    const didSucceed = await gatherText(right, (part) => {
-      patterns = patterns.concat(matchAnalyzePattern(part))
-    })
-    if (!didSucceed) {
-      return FALSE_VALUE
-    }
-
-    const matched = matchText(tokens, patterns)
-
-    return matched ? TRUE_VALUE : FALSE_VALUE
-  },
-
-  '+': function plus(left, right) {
-    if (left.type === 'datetime' && right.type === 'number') {
-      return fromDateTime(left.data.add(right.data))
-    }
-
-    if (left.type === 'number' && right.type === 'number') {
-      return fromNumber(left.data + right.data)
-    }
-
-    if (left.type === 'string' && right.type === 'string') {
-      return fromString(left.data + right.data)
-    }
-
-    if (left.type === 'object' && right.type === 'object') {
-      return fromJS({...left.data, ...right.data})
-    }
-
-    if (left.type === 'array' && right.type === 'array') {
-      return fromJS(left.data.concat(right.data))
-    }
-
-    if (left.isArray() && right.isArray()) {
-      return new StreamValue(async function* () {
-        for await (const val of left) {
-          yield val
-        }
-
-        for await (const val of right) {
-          yield val
-        }
-      })
-    }
-
-    return NULL_VALUE
-  },
-
-  '-': function minus(left, right) {
-    if (left.type === 'datetime' && right.type === 'number') {
-      return fromDateTime(left.data.add(-right.data))
-    }
-
-    if (left.type === 'datetime' && right.type === 'datetime') {
-      return fromNumber(left.data.difference(right.data))
-    }
-
-    if (left.type === 'number' && right.type === 'number') {
-      return fromNumber(left.data - right.data)
-    }
-
-    return NULL_VALUE
-  },
-
-  '*': numericOperator((a, b) => a * b),
-  '/': numericOperator((a, b) => a / b),
-  '%': numericOperator((a, b) => a % b),
-  '**': numericOperator((a, b) => Math.pow(a, b)),
+function* concat<T>(a: Iterable<T>, b: Iterable<T>): Generator<T> {
+  for (const item of a) yield item
+  for (const item of b) yield item
 }
 
-function numericOperator(impl: (a: number, b: number) => number): GroqOperatorFn {
-  return function (left, right) {
-    if (left.type === 'number' && right.type === 'number') {
-      const result = impl(left.data, right.data)
-      return fromNumber(result)
+export function evaluateOpCall(node: OpCallNode, context: EvaluateContext): Value {
+  const {evaluate} = context
+
+  switch (node.op) {
+    case '==': {
+      return isEqual(evaluate(node.left, context), evaluate(node.right, context))
     }
 
-    return NULL_VALUE
+    case '!=': {
+      return !isEqual(evaluate(node.left, context), evaluate(node.right, context))
+    }
+
+    case '>': {
+      const left = evaluate(node.left, context)
+      const right = evaluate(node.right, context)
+      try {
+        return compare(left, right) > 0
+      } catch {
+        return null
+      }
+    }
+
+    case '>=': {
+      const left = evaluate(node.left, context)
+      const right = evaluate(node.right, context)
+      try {
+        return compare(left, right) >= 0
+      } catch {
+        return null
+      }
+    }
+
+    case '<': {
+      const left = evaluate(node.left, context)
+      const right = evaluate(node.right, context)
+      try {
+        return compare(left, right) < 0
+      } catch {
+        return null
+      }
+    }
+
+    case '<=': {
+      const left = evaluate(node.left, context)
+      const right = evaluate(node.right, context)
+      try {
+        return compare(left, right) <= 0
+      } catch {
+        return null
+      }
+    }
+
+    case 'in': {
+      const left = evaluate(node.left, context)
+
+      // for `path` functions we don't evaluate it because evaluating a `path`
+      // function in all other scenarios returns the value inside the `path`
+      // function if it's a string (null otherwise). we check the node before
+      // evaluating to ensure that what we're checking is within a path function
+      if (
+        node.right.type === 'FuncCall' &&
+        node.right.name === 'path' &&
+        node.right.namespace === 'global'
+      ) {
+        if (typeof left !== 'string') return null
+        const pattern = evaluate(node.right.args[0], context)
+
+        if (typeof pattern !== 'string') return null
+        return new RegExp(
+          `^${pattern
+            .split('.')
+            .map((part) => {
+              if (part === '*') return '[^.]+'
+              if (part === '**') return '.*'
+              return part.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')
+            })
+            .join('.')}$`,
+        ).test(left)
+      }
+
+      const right = evaluate(node.right, context)
+
+      if (!isIterable(right)) return null
+      return Iterator.from(right).some((item) => isEqual(left, item))
+    }
+
+    case 'match': {
+      const left = evaluate(node.left, context)
+      const right = evaluate(node.right, context)
+      // Convert right side to array of patterns, handling both iterable and single values
+      const patterns = isIterable(right) ? Array.from(right) : [right]
+      // If any pattern is null, return null to indicate no match is possible
+      if (patterns.some((i) => i === null)) return false
+
+      const terms = patterns.filter((i) => typeof i === 'string').flatMap(matchPatternRegex)
+      const source = new Set(
+        (isIterable(left) ? Array.from(left) : [left])
+          .filter((i) => typeof i === 'string')
+          .flatMap(matchTokenize),
+      )
+
+      // if there are no patterns or tokens return false
+      if (!terms.length) return false
+      if (!source.size) return false
+
+      return matchText(Array.from(source), terms)
+    }
+
+    case '+': {
+      const left = evaluate(node.left, context)
+      const right = evaluate(node.right, context)
+
+      if (left instanceof DateTime && typeof right === 'number') {
+        return DateTime.from(new Date(left.getTime() + right * 1000))
+      }
+      if (typeof left === 'number' && typeof right === 'number') return left + right
+      if (typeof left === 'string' && typeof right === 'string') return `${left}${right}`
+      if (isIterable(left) && isIterable(right)) return concat(left, right)
+      if (isRecord(left) && isRecord(right)) return {...left, ...right}
+      return null
+    }
+
+    case '-': {
+      const left = evaluate(node.left, context)
+      const right = evaluate(node.right, context)
+
+      if (left instanceof DateTime && typeof right === 'number') {
+        return DateTime.from(new Date(left.getTime() - right * 1000))
+      }
+
+      if (left instanceof DateTime && right instanceof DateTime) {
+        return (left.getTime() - right.getTime()) / 1000
+      }
+
+      if (typeof left === 'number' && typeof right === 'number') return left - right
+      return null
+    }
+
+    case '*': {
+      const left = evaluate(node.left, context)
+      const right = evaluate(node.right, context)
+      if (typeof left !== 'number' || typeof right !== 'number') return null
+      return left * right
+    }
+
+    case '/': {
+      const left = evaluate(node.left, context)
+      const right = evaluate(node.right, context)
+      if (typeof left !== 'number' || typeof right !== 'number') return null
+      if (right === 0) return null
+      return left / right
+    }
+
+    case '%': {
+      const left = evaluate(node.left, context)
+      const right = evaluate(node.right, context)
+      if (typeof left !== 'number' || typeof right !== 'number') return null
+      return left % right
+    }
+
+    case '**': {
+      const left = evaluate(node.left, context)
+      const right = evaluate(node.right, context)
+      if (typeof left !== 'number' || typeof right !== 'number') return null
+      const result = left ** right
+      return Number.isFinite(result) ? result : null
+    }
+
+    default: {
+      throw new Error(`Unknown operator: ${node.op}`)
+    }
   }
 }

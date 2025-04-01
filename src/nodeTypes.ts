@@ -1,13 +1,27 @@
 import {type GroqFunction, type GroqPipeFunction} from './types'
+import {type DateTime} from './values/utils'
 
 /**
- * Any sort of node which appears as syntax
+ * Represents any possible value in the system.
+ * @public
+ */
+export type Value =
+  | null
+  | string
+  | boolean
+  | number
+  | DateTime
+  | Iterable<Value>
+  | {[key: string]: Value}
+
+/**
+ * Any sort of node which appears as syntax.
  * @public
  */
 export type SyntaxNode = ExprNode | ArrayElementNode | ObjectAttributeNode | SelectAlternativeNode
 
 /**
- * Represents any kind of object attribute in an object literal
+ * Represents different types of object attribute nodes.
  * @public
  */
 export type ObjectAttributeNode =
@@ -169,6 +183,7 @@ export interface EverythingNode extends BaseNode {
  */
 export interface FuncCallNode extends BaseNode {
   type: 'FuncCall'
+  /** @internal */
   func: GroqFunction
   namespace: string
   name: string
@@ -297,6 +312,7 @@ export interface ParentNode extends BaseNode {
  */
 export interface PipeFuncCallNode extends BaseNode {
   type: 'PipeFuncCall'
+  /** @internal */
   func: GroqPipeFunction
   base: ExprNode
   name: string
@@ -361,9 +377,9 @@ export interface TupleNode extends BaseNode {
  * Represents a literal value (string, number, boolean, etc.)
  * @public
  */
-export interface ValueNode<P = any> {
+export interface ValueNode {
   type: 'Value'
-  value: P
+  value: Value
 }
 
 /**

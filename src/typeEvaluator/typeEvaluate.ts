@@ -1073,7 +1073,7 @@ const OVERRIDE_TYPE_SYMBOL = Symbol('groq-js.type')
  * @internal - This is only exported for testing purposes.
  */
 export function overrideTypeForNode(node: ExprNode, type: TypeNode): void {
-  ;(node as any)[OVERRIDE_TYPE_SYMBOL] = type
+  ;(node as unknown as {[OVERRIDE_TYPE_SYMBOL]: TypeNode})[OVERRIDE_TYPE_SYMBOL] = type
 }
 
 /**
