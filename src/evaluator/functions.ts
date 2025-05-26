@@ -768,6 +768,18 @@ dateTime['now'] = async function now(_args, scope) {
 }
 dateTime['now'].arity = 0
 
+/**
+ * Text query function - no-op implementation.
+ *
+ * groq-js has no search engine, but we provide this no-op implementation
+ * to avoid throwing errors when parsing queries that use text::query().
+ */
+const text: FunctionSet = {}
+text['query'] = () => {
+  throw new Error('not implemented')
+}
+text['query'].arity = 1
+
 export const namespaces: NamespaceSet = {
   global: _global,
   string,
@@ -779,4 +791,5 @@ export const namespaces: NamespaceSet = {
   math,
   dateTime,
   releases,
+  text,
 }
