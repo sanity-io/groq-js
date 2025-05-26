@@ -5,6 +5,12 @@
 All notable changes to this project will be documented in this file. See
 [Conventional Commits](https://conventionalcommits.org) for commit guidelines.
 
+## [1.17.0](https://github.com/sanity-io/groq-js/compare/v1.16.1...v1.17.0) (2025-05-26)
+
+### Features
+
+- add support for text::query() ([#283](https://github.com/sanity-io/groq-js/issues/283)) ([0a1cce6](https://github.com/sanity-io/groq-js/commit/0a1cce65bae952d0bda738d9ad10d31a9830a58f))
+
 ## [1.16.1](https://github.com/sanity-io/groq-js/compare/v1.16.0...v1.16.1) (2025-03-10)
 
 ### Bug Fixes
