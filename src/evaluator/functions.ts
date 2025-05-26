@@ -776,7 +776,7 @@ dateTime['now'].arity = 0
  */
 const text: FunctionSet = {}
 text['query'] = () => {
-  return NULL_VALUE
+  throw new Error('not implemented')
 }
 text['query'].arity = 1
 
