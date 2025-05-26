@@ -94,6 +94,10 @@ t.test('Expression parsing', async (t) => {
     t.test('throws when an undefined namespace is used', async (t) => {
       throwsWithMessage(t, () => parse('invalid::func()'), 'Undefined namespace: invalid')
     })
+
+    t.test('allows text namespace functions', async (t) => {
+      t.doesNotThrow(() => parse('text::query("foo bar")'))
+    })
   })
 
   t.test('throws when nothing is passed', async (t) => {
