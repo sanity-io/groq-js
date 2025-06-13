@@ -8,7 +8,7 @@ const fs = require('fs')
 const https = require('https')
 const semver = require('semver')
 
-const SUPPORTED_FEATURES = new Set(['portableText'])
+const SUPPORTED_FEATURES = new Set(['portableText', 'contentReleases'])
 // We implement GROQ-1.revision1. The final patch has to be there for it to be a valid SemVer.
 // E.g. GROQ-1.revision2 maps to 1.2.0
 const GROQ_VERSION = '1.2.0'
