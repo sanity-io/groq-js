@@ -293,10 +293,10 @@ t.test('Basic parsing', async (t) => {
         {_id: 'doc2'},
       ]
 
-      const tree = parse('{"versions": sanity::versionOf("doc1")}')
+      const tree = parse('*[sanity::versionOf("doc1")]._id')
       const value = await evaluate(tree, {dataset})
       const data = await value.get()
-      t.same(data, {versions: ['doc1', 'drafts.doc1', 'versions.sale.doc1']})
+      t.same(data, ['doc1', 'drafts.doc1', 'versions.sale.doc1'])
     })
 
     t.test('sanity::partOfRelease()', async (t) => {
@@ -310,10 +310,10 @@ t.test('Basic parsing', async (t) => {
         {_id: 'sale.doc2'},
       ]
 
-      const tree = parse('{"documentsInBundle": sanity::partOfRelease("sale")}')
+      const tree = parse('*[sanity::partOfRelease("sale")]._id')
       const value = await evaluate(tree, {dataset})
       const data = await value.get()
-      t.same(data, {documentsInBundle: ['versions.sale.doc1', 'versions.sale.doc2']})
+      t.same(data, ['versions.sale.doc1', 'versions.sale.doc2'])
     })
   })
 

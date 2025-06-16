@@ -454,63 +454,34 @@ sanity['dataset'] = async function (_args, scope) {
 
 // eslint-disable-next-line require-await
 sanity['versionOf'] = async function (args, scope, execute) {
-  if (!scope.source.isArray()) return NULL_VALUE
-
   const value = await execute(args[0], scope)
   if (value.type !== 'string') return NULL_VALUE
   const baseId = value.data
 
-  // All the documents are a version of document 'bar' if its document ID is of
-  // the form versions.releaseId.bar
-  const versionIds: string[] = []
-  for await (const value of scope.source) {
-    if (getType(value) === 'object') {
-      const val = await value.get()
-      if (val && typeof val._id === 'string') {
-        const components = val._id.split('.')
-        if (
-          val._id === baseId ||
-          (components.length >= 3 &&
-            components[0] === 'versions' &&
-            components.slice(2).join('.') === baseId) ||
-          (components.length >= 2 &&
-            components[0] === 'drafts' &&
-            components.slice(1).join('.') === baseId)
-        ) {
-          versionIds.push(val._id)
-        }
-      }
-    }
-  }
+  const val = await scope.value.get()
+  const components = val._id.split('.')
 
-  return fromJS(versionIds)
+  return fromJS(
+    val._id === baseId ||
+      (components.length >= 3 &&
+        components[0] === 'versions' &&
+        components.slice(2).join('.') === baseId) ||
+      (components.length >= 2 &&
+        components[0] === 'drafts' &&
+        components.slice(1).join('.') === baseId),
+  )
 }
 sanity['versionOf'].arity = 1
 
 // eslint-disable-next-line require-await
 sanity['partOfRelease'] = async function (args, scope, execute) {
-  if (!scope.source.isArray()) return NULL_VALUE
-
   const value = await execute(args[0], scope)
   if (value.type !== 'string') return NULL_VALUE
   const baseId = value.data
 
-  // A document is part of a release 'foo' if its document ID is of the form
-  // versions.foo.documentGroupId
-  const documentIdsInRelease: string[] = []
-  for await (const value of scope.source) {
-    if (getType(value) === 'object') {
-      const val = await value.get()
-      if (val && typeof val._id === 'string') {
-        const components = val._id.split('.')
-        if (components.length >= 3 && components[0] === 'versions' && components[1] === baseId) {
-          documentIdsInRelease.push(val._id)
-        }
-      }
-    }
-  }
-
-  return fromJS(documentIdsInRelease)
+  const val = await scope.value.get()
+  const components = val._id.split('.')
+  return fromJS(components.length >= 3 && components[0] === 'versions' && components[1] === baseId)
 }
 sanity['partOfRelease'].arity = 1
 
