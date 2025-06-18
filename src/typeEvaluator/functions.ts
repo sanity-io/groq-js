@@ -448,25 +448,25 @@ export function handleFuncCallNode(node: FuncCallNode, scope: Scope): TypeNode {
       const typeNode = walk({node: node.args[0], scope})
       return mapNode(typeNode, scope, (typeNode) => {
         if (typeNode.type === 'unknown') {
-          return nullUnion({type: 'array', of: {type: 'string'}})
+          return nullUnion({type: 'boolean'})
         }
         if (typeNode.type !== 'string') {
           return {type: 'null'}
         }
-        return {type: 'array', of: {type: 'string'}}
+        return {type: 'boolean'}
       })
     }
     case 'sanity.partOfRelease': {
       const typeNode = walk({node: node.args[0], scope})
       return mapNode(typeNode, scope, (typeNode) => {
         if (typeNode.type === 'unknown') {
-          return nullUnion({type: 'array', of: {type: 'string'}})
+          return nullUnion({type: 'boolean'})
         }
 
         if (typeNode.type !== 'string') {
           return {type: 'null'}
         }
-        return {type: 'array', of: {type: 'string'}}
+        return {type: 'boolean'}
       })
     }
     default: {
