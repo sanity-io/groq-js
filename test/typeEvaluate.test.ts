@@ -3275,24 +3275,21 @@ t.test('splat on optional object', (t) => {
 })
 
 t.test('function: sanity::versionOf', (t) => {
-  const query = `*[_type == "author"] {
-    "versions": sanity::versionOf("foo")
+  const query = `{
+    "versions": *[_type == "author" && sanity::versionOf("foo")]._id
   }`
   const ast = parse(query)
   const res = typeEvaluate(ast, schemas)
 
   t.strictSame(res, {
-    type: 'array',
-    of: {
-      type: 'object',
-      attributes: {
-        versions: {
-          type: 'objectAttribute',
-          value: {
-            type: 'array',
-            of: {
-              type: 'string',
-            },
+    type: 'object',
+    attributes: {
+      versions: {
+        type: 'objectAttribute',
+        value: {
+          type: 'array',
+          of: {
+            type: 'string',
           },
         },
       },
@@ -3302,24 +3299,21 @@ t.test('function: sanity::versionOf', (t) => {
 })
 
 t.test('function: sanity::partOfRelease', (t) => {
-  const query = `*[_type == "author"] {
-    "saleBundleDocuments": sanity::partOfRelease("sale")
+  const query = `{
+    "saleBundleDocuments": *[_type == "author" && sanity::partOfRelease("sale")]._id
   }`
   const ast = parse(query)
   const res = typeEvaluate(ast, schemas)
 
   t.strictSame(res, {
-    type: 'array',
-    of: {
-      type: 'object',
-      attributes: {
-        saleBundleDocuments: {
-          type: 'objectAttribute',
-          value: {
-            type: 'array',
-            of: {
-              type: 'string',
-            },
+    type: 'object',
+    attributes: {
+      saleBundleDocuments: {
+        type: 'objectAttribute',
+        value: {
+          type: 'array',
+          of: {
+            type: 'string',
           },
         },
       },
