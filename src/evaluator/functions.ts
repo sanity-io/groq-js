@@ -459,17 +459,32 @@ sanity['versionOf'] = async function (args, scope, execute) {
   const baseId = value.data
 
   const val = await scope.value.get()
+  if (!val || typeof val._id !== 'string') return NULL_VALUE
+
   const components = val._id.split('.')
 
-  return fromJS(
-    val._id === baseId ||
-      (components.length >= 3 &&
-        components[0] === 'versions' &&
-        components.slice(2).join('.') === baseId) ||
-      (components.length >= 2 &&
-        components[0] === 'drafts' &&
-        components.slice(1).join('.') === baseId),
-  )
+  // published document
+  if (val._id === baseId) return TRUE_VALUE
+
+  // draft document
+  if (
+    components.length >= 2 &&
+    components[0] === 'drafts' &&
+    components.slice(1).join('.') === baseId
+  ) {
+    return TRUE_VALUE
+  }
+
+  // version document
+  if (
+    components.length >= 3 &&
+    components[0] === 'versions' &&
+    components.slice(2).join('.') === baseId
+  ) {
+    return TRUE_VALUE
+  }
+
+  return FALSE_VALUE
 }
 sanity['versionOf'].arity = 1
 
@@ -480,6 +495,8 @@ sanity['partOfRelease'] = async function (args, scope, execute) {
   const baseId = value.data
 
   const val = await scope.value.get()
+  if (!val || typeof val._id !== 'string') return NULL_VALUE
+
   const components = val._id.split('.')
   return fromJS(components.length >= 3 && components[0] === 'versions' && components[1] === baseId)
 }

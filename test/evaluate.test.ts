@@ -291,6 +291,7 @@ t.test('Basic parsing', async (t) => {
         {_id: 'versions.sale.doc1'},
         {_id: 'weekend.sale.doc1'},
         {_id: 'doc2'},
+        {_id: 123}, // Non-string ID should be ignored
       ]
 
       const tree = parse('*[sanity::versionOf("doc1")]._id')
@@ -308,6 +309,7 @@ t.test('Basic parsing', async (t) => {
         {_id: 'versions.sale'},
         {_id: 'weekend.sale.doc1'},
         {_id: 'sale.doc2'},
+        {_id: 123}, // Non-string ID should be ignored
       ]
 
       const tree = parse('*[sanity::partOfRelease("sale")]._id')
