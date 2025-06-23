@@ -5,6 +5,14 @@
 All notable changes to this project will be documented in this file. See
 [Conventional Commits](https://conventionalcommits.org) for commit guidelines.
 
+## [1.17.1](https://github.com/sanity-io/groq-js/compare/v1.17.0...v1.17.1) (2025-06-23)
+
+### Bug Fixes
+
+- address review comments ([4ede432](https://github.com/sanity-io/groq-js/commit/4ede4329f2b5adf34466229448cfdbeb65b1bd39))
+- correct implementation of release functions ([a73f741](https://github.com/sanity-io/groq-js/commit/a73f741fbecbfb91a89d17aee8d6fc8afdf8736f))
+- correct type evaluator as well ([abe586e](https://github.com/sanity-io/groq-js/commit/abe586edcff80cb55b65958bc6c6cf316d5c5670))
+
 ## [1.17.0](https://github.com/sanity-io/groq-js/compare/v1.16.1...v1.17.0) (2025-05-26)
 
 ### Features
