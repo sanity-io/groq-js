@@ -22,6 +22,24 @@ const PREC_POS = 10
 const PREC_NOT = 10
 const PREC_NEG = 8
 
+// Export precedence constants for use in formatter
+const PRECEDENCE_CONSTANTS = {
+  PREC_PAIR,
+  PREC_OR,
+  PREC_AND,
+  PREC_COMP,
+  PREC_ORDER,
+  PREC_ADD,
+  PREC_SUB,
+  PREC_MUL,
+  PREC_DIV,
+  PREC_MOD,
+  PREC_POW,
+  PREC_POS,
+  PREC_NOT,
+  PREC_NEG
+}
+
 function parse(str) {
   let pos = 0
   pos = skipWS(str, pos)
@@ -804,4 +822,4 @@ function parseRegexStr(str, pos, re) {
   return m ? m[0] : null
 }
 
-export {parse}
+export {parse, PRECEDENCE_CONSTANTS}

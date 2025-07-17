@@ -31,3 +31,7 @@ export {DateTime, Path} from './values'
 // Type evaluation
 export type * from './typeEvaluator'
 export {createReferenceTypeNode, typeEvaluate} from './typeEvaluator'
+
+// Formatting
+export {format} from './formatter'
+export type {FormatOptions} from './formatter'
