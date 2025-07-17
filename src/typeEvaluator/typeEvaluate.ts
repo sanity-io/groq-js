@@ -104,17 +104,17 @@ function mapDeref(base: TypeNode, scope: Scope): TypeNode {
 
 function handleDerefNode(node: DerefNode, scope: Scope): TypeNode {
   $trace('deref.node %O', node)
-  const base = walk({node: node.base, scope})
-  $trace('deref.base %O', base)
+  return mapNode(walk({node: node.base, scope}), scope, (base) => {
+    $trace('deref.base %O', base)
 
-  if (base.type === 'null' || base.type === 'unknown') {
-    return {type: 'null'} satisfies NullTypeNode
-  }
+    if (base.type === 'null' || base.type === 'unknown') {
+      return {type: 'null'} satisfies NullTypeNode
+    }
+    const derefedNode = mapDeref(base, scope)
+    $trace('deref.derefedNode %O', derefedNode)
 
-  const derefedNode = mapDeref(base, scope)
-  $trace('deref.derefedNode %O', derefedNode)
-
-  return derefedNode
+    return derefedNode
+  })
 }
 
 function handleObjectSplatNode(
