@@ -321,9 +321,59 @@ t.test('Property name formatting', async (t) => {
   })
 })
 
+t.skip('Preserves line comments', async (t) => {
+  const query = `*[_type == "post"]{
+  // This is a comment
+  title,
+  // Another comment
+  author->{ name,
+    // Author bio
+    bio } }`
+
+  const expected = `*[_type == "post"] {
+  // This is a comment
+  title,
+  // Another comment
+  author-> {
+    name,
+    // Author bio
+    bio
+  }
+}`
+  const result = format(parse(query))
+  t.equal(result, expected)
+})
+
+t.skip('Preserves end of line comments', async (t) => {
+  const query = `*[_type == "post"]{
+  title, // A comment about title
+  author->{ name,
+    bio } }`
+
+  const expected = `*[_type == "post"] {
+  title, // A comment about title
+  author-> {
+    name,
+    bio
+  }
+}`
+  const result = format(parse(query))
+  t.equal(result, expected)
+})
+
 t.test('Consecutive projections', async (t) => {
   t.test('Should format consecutive projections correctly', async (t) => {
-    const query = '*[_type == "track"]{\n  _id,\n  courses[]-> {\n    ...,\n    lessons[]\n  }\n} {\n  "tracks": @,\n  "courseIds": @.courses[][@._id]\n}'
+    const query =
+`*[_type == "track"]{
+  _id,
+    courses[]->{
+        ...,
+            lessons[]
+              }
+            } {
+                "tracks": @,
+                  "courseIds": @.courses[][@._id]
+                  }`
     const result = format(parse(query))
     const expected = `*[_type == "track"] {
   _id,
