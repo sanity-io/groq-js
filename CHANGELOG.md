@@ -5,6 +5,12 @@
 All notable changes to this project will be documented in this file. See
 [Conventional Commits](https://conventionalcommits.org) for commit guidelines.
 
+## [1.17.2](https://github.com/sanity-io/groq-js/compare/v1.17.1...v1.17.2) (2025-07-18)
+
+### Bug Fixes
+
+- **typeEvaluator:** map derefs to handle inlined references ([b854b02](https://github.com/sanity-io/groq-js/commit/b854b02629101b09dde406ca1eb5c1184da88d66))
+
 ## [1.17.1](https://github.com/sanity-io/groq-js/compare/v1.17.0...v1.17.1) (2025-06-23)
 
 ### Bug Fixes
