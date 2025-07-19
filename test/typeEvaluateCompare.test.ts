@@ -158,22 +158,24 @@ function inArray(input: AnnotatedValue[]): AnnotatedValue[] {
 /**
  * We have five different categories. This is mainly here so that we can exclude.
  */
-enum Category {
+const Categories = {
   /** primitives + unknown. */
-  PRIMITIVES,
+  PRIMITIVES: 0,
   /** A single object + unknown. */
-  OBJECT,
+  OBJECT: 1,
   /** A single array + unknown. */
-  ARRAY,
+  ARRAY: 2,
   /** Objects of primitives + unknown. */
-  OBJECTS,
+  OBJECTS: 3,
   /** Arrays of primitives + unknown. */
-  ARRAYS,
+  ARRAYS: 4,
   /** Array of objects of primities. */
-  OBJECTS_IN_ARRAYS,
+  OBJECTS_IN_ARRAYS: 5,
   /** Arrays of arrays. */
-  ARRAYS_IN_ARRAYS,
-}
+  ARRAYS_IN_ARRAYS: 6,
+} as const
+
+export type Category = (typeof Categories)[keyof typeof Categories]
 
 const num = primitives[1]
 
@@ -198,16 +200,16 @@ const valuesForCategories: AnnotatedValue[][][] = [
 const SCHEMA: [] = []
 
 const ALL_CATEGORIES = [
-  Category.PRIMITIVES,
-  Category.OBJECT,
-  Category.ARRAY,
-  Category.OBJECTS,
-  Category.ARRAYS,
-  Category.OBJECTS_IN_ARRAYS,
-  Category.ARRAYS_IN_ARRAYS,
+  Categories.PRIMITIVES,
+  Categories.OBJECT,
+  Categories.ARRAY,
+  Categories.OBJECTS,
+  Categories.ARRAYS,
+  Categories.OBJECTS_IN_ARRAYS,
+  Categories.ARRAYS_IN_ARRAYS,
 ]
 
-const trivialVariant = [Category.PRIMITIVES, Category.OBJECT, Category.ARRAY]
+const trivialVariant = [Categories.PRIMITIVES, Categories.OBJECT, Categories.ARRAY]
 
 type CachedResult = {
   params: ExprNode[]
@@ -418,8 +420,8 @@ const opVariants: Record<OpCall, Category[]> = {
   '-': trivialVariant,
   '/': trivialVariant,
   '**': trivialVariant,
-  'in': [Category.PRIMITIVES, Category.ARRAYS],
-  'match': [Category.PRIMITIVES, Category.ARRAYS],
+  'in': [Categories.PRIMITIVES, Categories.ARRAYS],
+  'match': [Categories.PRIMITIVES, Categories.ARRAYS],
 }
 
 const ops = Object.keys(operators) as OpCall[]

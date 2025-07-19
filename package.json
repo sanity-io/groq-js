@@ -68,7 +68,7 @@
     "debug": "^4.3.4"
   },
   "devDependencies": {
-    "@sanity/pkg-utils": "6.11.14",
+    "@sanity/pkg-utils": "^7.2.2",
     "@sanity/prettier-config": "^1.0.3",
     "@sanity/semantic-release-preset": "^5.0.0",
     "@types/debug": "^4.1.12",
@@ -87,7 +87,7 @@
     "semver": "^7.5.4",
     "tap": "^16.3.10",
     "tsx": "^4.19.2",
-    "typescript": "5.7.2"
+    "typescript": "5.8.3"
   },
   "engines": {
     "node": ">= 14"
