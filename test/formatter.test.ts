@@ -70,18 +70,24 @@ t.test('Object formatting', async (t) => {
   t.test('Simple object', async (t) => {
     const tree = parse('{name,age}')
     const result = format(tree)
-    t.equal(result, `{
+    t.equal(
+      result,
+      `{
   name,
   age
-}`)
+}`,
+    )
   })
 
   t.test('Object with explicit keys', async (t) => {
     const tree = parse('{"key":value}')
     const result = format(tree)
-    t.equal(result, `{
+    t.equal(
+      result,
+      `{
   "key": value
-}`)
+}`,
+    )
   })
 })
 
@@ -167,33 +173,46 @@ t.test('Formatting improvements', async (t) => {
   t.test('GROQ query spacing', async (t) => {
     // Test that GROQ queries get proper spacing
     t.equal(format(parse('*[_type=="post"]')), '*[_type == "post"]')
-    t.equal(format(parse('*[_type=="post"]{title,body}')), `*[_type == "post"] {
+    t.equal(
+      format(parse('*[_type=="post"]{title,body}')),
+      `*[_type == "post"] {
   title,
   body
-}`)
+}`,
+    )
     t.equal(format(parse('*|order(name)')), '* | order(name)')
-    t.equal(format(parse('author->{name,bio}')), `author-> {
+    t.equal(
+      format(parse('author->{name,bio}')),
+      `author-> {
   name,
   bio
-}`)
+}`,
+    )
   })
 
   t.test('Array and object spacing', async (t) => {
     // Test that arrays and objects get proper spacing
     t.equal(format(parse('[1,2,3]')), '[1, 2, 3]')
     t.equal(format(parse('[1,...more]')), '[1, ...more]')
-    t.equal(format(parse('{name,age}')), `{
+    t.equal(
+      format(parse('{name,age}')),
+      `{
   name,
   age
-}`)
-    t.equal(format(parse('{"key":value}')), `{
+}`,
+    )
+    t.equal(
+      format(parse('{"key":value}')),
+      `{
   "key": value
-}`)
+}`,
+    )
   })
 
   t.test('Complex nested formatting', async (t) => {
     // Test complex nested structures
-    const messy = '*[_type=="post"&&published==true]{title,author->{name,bio},tags[type=="category"]}'
+    const messy =
+      '*[_type=="post"&&published==true]{title,author->{name,bio},tags[type=="category"]}'
     const clean = `*[_type == "post" && published == true] {
   title,
   author-> {
@@ -230,7 +249,8 @@ t.test('Pretty formatting', async (t) => {
   })
 
   t.test('Complex query formatting', async (t) => {
-    const query = '*[_type=="post"&&published==true]{title,"excerpt":body[0...100],author->{name,bio},"tags":tags[type=="category"]}'
+    const query =
+      '*[_type=="post"&&published==true]{title,"excerpt":body[0...100],author->{name,bio},"tags":tags[type=="category"]}'
     const expected = `*[_type == "post" && published == true] {
   title,
   "excerpt": body[0...100],
@@ -248,21 +268,27 @@ t.test('Complex queries', async (t) => {
   t.test('Filter with projection', async (t) => {
     const tree = parse('*[_type == "post"]{title, body}')
     const result = format(tree)
-    t.equal(result, `*[_type == "post"] {
+    t.equal(
+      result,
+      `*[_type == "post"] {
   title,
   body
-}`)
+}`,
+    )
   })
 
   t.test('Nested object - pretty', async (t) => {
     const tree = parse('*[_type == "post"]{title, author->{name}}')
     const result = format(tree)
-    t.equal(result, `*[_type == "post"] {
+    t.equal(
+      result,
+      `*[_type == "post"] {
   title,
   author-> {
     name
   }
-}`)
+}`,
+    )
   })
 })
 
@@ -270,54 +296,78 @@ t.test('Property name formatting', async (t) => {
   t.test('Should not add quotes for extractable property names', async (t) => {
     // Simple property access
     t.equal(format(parse('{name, age}')), '{\n  name,\n  age\n}')
-    
+
     // Array filtering - should not add quotes
-    t.equal(format(parse('{tags[type == "category"]}')), `{
+    t.equal(
+      format(parse('{tags[type == "category"]}')),
+      `{
   tags[type == "category"]
-}`)
-    
+}`,
+    )
+
     // Array element access - should not add quotes
-    t.equal(format(parse('{author[0]}')), `{
+    t.equal(
+      format(parse('{author[0]}')),
+      `{
   author[0]
-}`)
-    
+}`,
+    )
+
     // Complex expressions with array access - should not add quotes
-    t.equal(format(parse('{author[0]->{name, bio}}')), `{
+    t.equal(
+      format(parse('{author[0]->{name, bio}}')),
+      `{
   author[0]-> {
     name,
     bio
   }
-}`)
-    
+}`,
+    )
+
     // Array slicing - should not add quotes
-    t.equal(format(parse('{posts[0..5]}')), `{
+    t.equal(
+      format(parse('{posts[0..5]}')),
+      `{
   posts[0..5]
-}`)
-    
+}`,
+    )
+
     // Dereferencing - should not add quotes
-    t.equal(format(parse('{author->}')), `{
+    t.equal(
+      format(parse('{author->}')),
+      `{
   author->
-}`)
-    
+}`,
+    )
+
     // Projection - should not add quotes
-    t.equal(format(parse('{posts{title}}')), `{
+    t.equal(
+      format(parse('{posts{title}}')),
+      `{
   posts {
     title
   }
-}`)
+}`,
+    )
   })
-  
+
   t.test('Should use quotes for non-extractable property names', async (t) => {
     // When property name doesn't match the expression, use explicit quotes
-    t.equal(format(parse('{"custom": value}')), `{
+    t.equal(
+      format(parse('{"custom": value}')),
+      `{
   "custom": value
-}`)
-    
+}`,
+    )
+
     // When property name matches expression, use shorthand (even if original had quotes)
-    t.equal(format(parse('{"title": title, author}')), `{
+    t.equal(
+      format(parse('{"title": title, author}')),
+      `{
   title,
   author
-}`)
+}`,
+    )
   })
 })
 
@@ -363,8 +413,7 @@ t.skip('Preserves end of line comments', async (t) => {
 
 t.test('Consecutive projections', async (t) => {
   t.test('Should format consecutive projections correctly', async (t) => {
-    const query =
-`*[_type == "track"]{
+    const query = `*[_type == "track"]{
   _id,
     courses[]->{
         ...,

@@ -16,7 +16,7 @@ const {
   PREC_POW,
   PREC_POS,
   PREC_NOT,
-  PREC_NEG
+  PREC_NEG,
 } = PRECEDENCE_CONSTANTS
 
 // Operator precedence mapping using parser constants

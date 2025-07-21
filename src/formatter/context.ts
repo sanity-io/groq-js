@@ -32,8 +32,4 @@ export class IndentationManager {
   newLine(): string {
     return `\n${this.getIndentation()}`
   }
-
-  space(): string {
-    return ' '
-  }
 }

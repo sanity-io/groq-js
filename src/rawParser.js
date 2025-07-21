@@ -37,7 +37,7 @@ const PRECEDENCE_CONSTANTS = {
   PREC_POW,
   PREC_POS,
   PREC_NOT,
-  PREC_NEG
+  PREC_NEG,
 }
 
 function parse(str) {

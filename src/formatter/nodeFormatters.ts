@@ -31,7 +31,7 @@ export class NodeFormatter {
       case 'Parent':
         return '^'.repeat(node.n)
       case 'Parameter':
-        return `$${  node.name}`
+        return `$${node.name}`
       case 'AccessAttribute':
         return this.formatAccessAttribute(node)
       case 'AccessElement':
@@ -103,13 +103,13 @@ export class NodeFormatter {
 
   private formatAccessAttribute(node: any): string {
     if (node.base) {
-      return `${this.formatWithParens(node.base)  }.${  node.name}`
+      return `${this.formatWithParens(node.base)}.${node.name}`
     }
     return node.name
   }
 
   private formatAccessElement(node: any): string {
-    return `${this.formatWithParens(node.base)  }[${  node.index  }]`
+    return `${this.formatWithParens(node.base)}[${node.index}]`
   }
 
   private formatArray(node: any): string {
@@ -120,16 +120,16 @@ export class NodeFormatter {
     const elements = node.elements.map((elem: ArrayElementNode) => {
       let result = this.formatNode(elem.value)
       if (elem.isSplat) {
-        result = `...${  result}`
+        result = `...${result}`
       }
       return result
     })
 
-    return `[${  elements.join(', ')  }]`
+    return `[${elements.join(', ')}]`
   }
 
   private formatArrayCoerce(node: any): string {
-    return `${this.formatWithParens(node.base)  }[]`
+    return `${this.formatWithParens(node.base)}[]`
   }
 
   private formatObject(node: any): string {
@@ -141,9 +141,9 @@ export class NodeFormatter {
     const attributes = node.attributes.map((attr: ObjectAttributeNode) => {
       return this.formatObjectAttribute(attr)
     })
-    const innerContent = this.indent.newLine() + attributes.join(`,${  this.indent.newLine()}`)
+    const innerContent = this.indent.newLine() + attributes.join(`,${this.indent.newLine()}`)
     this.indent.unindent()
-    return `{${  innerContent  }${this.indent.newLine()  }}`
+    return `{${innerContent}${this.indent.newLine()}}`
   }
 
   private formatObjectAttribute(attr: ObjectAttributeNode): string {
@@ -185,7 +185,7 @@ export class NodeFormatter {
         if (attr.value.type === 'This') {
           return '...'
         }
-        return `...${  this.formatNode(attr.value)}`
+        return `...${this.formatNode(attr.value)}`
       case 'ObjectConditionalSplat':
         return `${this.formatNode(attr.condition)} => ${this.formatNode(attr.value)}`
       default:
@@ -196,25 +196,27 @@ export class NodeFormatter {
   private extractSimplePropertyName(node: ExprNode): string | null {
     // This implements the GROQ spec's DetermineName() algorithm
     // See section 4.6 Object in the GROQ specification
-    
+
     // If node is a ThisAttribute (simple property access)
     if (node.type === 'AccessAttribute' && !node.base) {
       return node.name
     }
-    
+
     // If node is ArrayPostfix, Dereference, ElementAccess, Filter, Map, Projection, SelectorGroup, or Slice
     // Get the base expression and recurse
-    if (node.type === 'ArrayCoerce' || 
-        node.type === 'Deref' || 
-        node.type === 'AccessElement' || 
-        node.type === 'Filter' || 
-        node.type === 'Map' || 
-        node.type === 'Projection' || 
-        node.type === 'Group' || 
-        node.type === 'Slice') {
+    if (
+      node.type === 'ArrayCoerce' ||
+      node.type === 'Deref' ||
+      node.type === 'AccessElement' ||
+      node.type === 'Filter' ||
+      node.type === 'Map' ||
+      node.type === 'Projection' ||
+      node.type === 'Group' ||
+      node.type === 'Slice'
+    ) {
       return this.extractSimplePropertyName((node as any).base)
     }
-    
+
     return null
   }
 
@@ -227,10 +229,10 @@ export class NodeFormatter {
     const rightStr = this.formatWithParens(right)
 
     if (op === ':') {
-      return `${leftStr  }: ${  rightStr}`
+      return `${leftStr}: ${rightStr}`
     }
 
-    return `${leftStr  } ${  op  } ${  rightStr}`
+    return `${leftStr} ${op} ${rightStr}`
   }
 
   private formatUnaryOp(op: string, operand: ExprNode): string {
@@ -238,20 +240,20 @@ export class NodeFormatter {
   }
 
   private formatGroup(node: any): string {
-    return `(${  this.formatNode(node.base)  })`
+    return `(${this.formatNode(node.base)})`
   }
 
   private formatFuncCall(node: any): string {
-    const namespace = node.namespace !== 'global' ? `${node.namespace  }::` : ''
+    const namespace = node.namespace !== 'global' ? `${node.namespace}::` : ''
     const args = node.args.map((arg: ExprNode) => this.formatNode(arg))
-    return `${namespace + node.name  }(${  args.join(', ')  })`
+    return `${namespace + node.name}(${args.join(', ')})`
   }
 
   private formatPipeFuncCall(node: any): string {
     const baseStr = this.formatWithParens(node.base)
     const args = node.args.map((arg: ExprNode) => this.formatNode(arg))
-    const argsStr = args.length > 0 ? `(${  args.join(', ')  })` : ''
-    return `${baseStr  } | ${  node.name  }${argsStr}`
+    const argsStr = args.length > 0 ? `(${args.join(', ')})` : ''
+    return `${baseStr} | ${node.name}${argsStr}`
   }
 
   private formatDeref(node: any): string {
@@ -259,11 +261,11 @@ export class NodeFormatter {
     if (node.base.type === 'This') {
       return '->'
     }
-    return `${this.formatWithParens(node.base)  }->`
+    return `${this.formatWithParens(node.base)}->`
   }
 
   private formatFilter(node: any): string {
-    return `${this.formatWithParens(node.base)  }[${  this.formatNode(node.expr)  }]`
+    return `${this.formatWithParens(node.base)}[${this.formatNode(node.expr)}]`
   }
 
   private formatProjection(node: any): string {
@@ -271,37 +273,33 @@ export class NodeFormatter {
     if (node.base.type === 'This') {
       return this.formatNode(node.expr)
     }
-    
+
     const baseStr = this.formatWithParens(node.base)
     const exprStr = this.formatNode(node.expr)
-    
+
     // Add space before { in projections for better readability
     if (exprStr.startsWith('{')) {
       return baseStr + ' ' + exprStr
     }
-    
+
     return baseStr + exprStr
   }
 
   private formatSlice(node: any): string {
     const operator = node.isInclusive ? '..' : '...'
-    return `${this.formatWithParens(node.base)  }[${  node.left  }${operator  }${node.right  }]`
+    return `${this.formatWithParens(node.base)}[${node.left}${operator}${node.right}]`
   }
 
   private formatInRange(node: any): string {
     const operator = node.isInclusive ? '..' : '...'
-    return (
-      `${this.formatNode(node.base) 
-      } in ${ 
-      this.formatNode(node.left) 
-      }${operator 
-      }${this.formatNode(node.right)}`
-    )
+    return `${this.formatNode(node.base)} in ${this.formatNode(node.left)}${
+      operator
+    }${this.formatNode(node.right)}`
   }
 
   private formatSelect(node: any): string {
     const alternatives = node.alternatives.map((alt: SelectAlternativeNode) => {
-      return `${this.formatNode(alt.condition)  } => ${  this.formatNode(alt.value)}`
+      return `${this.formatNode(alt.condition)} => ${this.formatNode(alt.value)}`
     })
 
     const args = alternatives
@@ -309,7 +307,7 @@ export class NodeFormatter {
       args.push(this.formatNode(node.fallback))
     }
 
-    return `select(${  args.join(', ')  })`
+    return `select(${args.join(', ')})`
   }
 
   private formatAsc(node: any): string {
@@ -322,7 +320,7 @@ export class NodeFormatter {
 
   private formatTuple(node: any): string {
     const members = node.members.map((member: ExprNode) => this.formatNode(member))
-    return `(${  members.join(', ')  })`
+    return `(${members.join(', ')})`
   }
 
   private formatMap(node: any): string {
@@ -333,15 +331,15 @@ export class NodeFormatter {
       const space = ' '
       return this.formatWithParens(node.base) + space + this.formatNode(node.expr)
     }
-    return `${this.formatWithParens(node.base)  }[${  this.formatNode(node.expr)  }]`
+    return `${this.formatWithParens(node.base)}[${this.formatNode(node.expr)}]`
   }
 
   private formatFlatMap(node: any): string {
-    return `${this.formatWithParens(node.base)  }[]${  this.formatNode(node.expr)}`
+    return `${this.formatWithParens(node.base)}[]${this.formatNode(node.expr)}`
   }
 
   private formatContext(node: any): string {
-    return `${node.key  }()`
+    return `${node.key}()`
   }
 
   private formatWithParens(node: ExprNode): string {
