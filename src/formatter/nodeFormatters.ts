@@ -1,8 +1,29 @@
 import type {
-  ArrayElementNode,
+  AccessAttributeNode,
+  AccessElementNode,
+  ArrayCoerceNode,
+  ArrayNode,
+  AscNode,
+  ContextNode,
+  DerefNode,
+  DescNode,
   ExprNode,
+  FilterNode,
+  FlatMapNode,
+  FuncCallNode,
+  GroupNode,
+  InRangeNode,
+  MapNode,
   ObjectAttributeNode,
+  ObjectNode,
+  OpCallNode,
+  PipeFuncCallNode,
+  ProjectionNode,
   SelectAlternativeNode,
+  SelectNode,
+  SliceNode,
+  TupleNode,
+  ValueNode,
 } from '../nodeTypes'
 import type {FormatContext} from './context'
 import {IndentationManager} from './context'
@@ -87,11 +108,11 @@ export class NodeFormatter {
       case 'Selector':
         return '<selector>'
       default:
-        throw new Error(`Unknown node type: ${(node as any).type}`)
+        throw new Error(`Unknown node type: ${(node as ExprNode).type}`)
     }
   }
 
-  private formatValue(node: any): string {
+  private formatValue(node: ValueNode): string {
     const value = node.value
     if (value === null) return 'null'
     if (value === true) return 'true'
@@ -101,23 +122,23 @@ export class NodeFormatter {
     return String(value)
   }
 
-  private formatAccessAttribute(node: any): string {
+  private formatAccessAttribute(node: AccessAttributeNode): string {
     if (node.base) {
       return `${this.formatWithParens(node.base)}.${node.name}`
     }
     return node.name
   }
 
-  private formatAccessElement(node: any): string {
+  private formatAccessElement(node: AccessElementNode): string {
     return `${this.formatWithParens(node.base)}[${node.index}]`
   }
 
-  private formatArray(node: any): string {
+  private formatArray(node: ArrayNode): string {
     if (node.elements.length === 0) {
       return '[]'
     }
 
-    const elements = node.elements.map((elem: ArrayElementNode) => {
+    const elements = node.elements.map((elem) => {
       let result = this.formatNode(elem.value)
       if (elem.isSplat) {
         result = `...${result}`
@@ -128,11 +149,11 @@ export class NodeFormatter {
     return `[${elements.join(', ')}]`
   }
 
-  private formatArrayCoerce(node: any): string {
+  private formatArrayCoerce(node: ArrayCoerceNode): string {
     return `${this.formatWithParens(node.base)}[]`
   }
 
-  private formatObject(node: any): string {
+  private formatObject(node: ObjectNode): string {
     if (node.attributes.length === 0) {
       return '{}'
     }
@@ -189,7 +210,7 @@ export class NodeFormatter {
       case 'ObjectConditionalSplat':
         return `${this.formatNode(attr.condition)} => ${this.formatNode(attr.value)}`
       default:
-        throw new Error(`Unknown object attribute type: ${(attr as any).type}`)
+        throw new Error(`Unknown object attribute type: ${(attr as ObjectAttributeNode).type}`)
     }
   }
 
@@ -214,13 +235,13 @@ export class NodeFormatter {
       node.type === 'Group' ||
       node.type === 'Slice'
     ) {
-      return this.extractSimplePropertyName((node as any).base)
+      return this.extractSimplePropertyName(node.base)
     }
 
     return null
   }
 
-  private formatOpCall(node: any): string {
+  private formatOpCall(node: OpCallNode): string {
     return this.formatBinaryOp(node.left, node.op, node.right)
   }
 
@@ -239,24 +260,24 @@ export class NodeFormatter {
     return op + this.formatWithParens(operand)
   }
 
-  private formatGroup(node: any): string {
+  private formatGroup(node: GroupNode): string {
     return `(${this.formatNode(node.base)})`
   }
 
-  private formatFuncCall(node: any): string {
-    const namespace = node.namespace !== 'global' ? `${node.namespace}::` : ''
+  private formatFuncCall(node: FuncCallNode): string {
+    const namespace = node.namespace === 'global' ? '' : `${node.namespace}::`
     const args = node.args.map((arg: ExprNode) => this.formatNode(arg))
     return `${namespace + node.name}(${args.join(', ')})`
   }
 
-  private formatPipeFuncCall(node: any): string {
+  private formatPipeFuncCall(node: PipeFuncCallNode): string {
     const baseStr = this.formatWithParens(node.base)
     const args = node.args.map((arg: ExprNode) => this.formatNode(arg))
     const argsStr = args.length > 0 ? `(${args.join(', ')})` : ''
     return `${baseStr} | ${node.name}${argsStr}`
   }
 
-  private formatDeref(node: any): string {
+  private formatDeref(node: DerefNode): string {
     // For dereference, omit 'This' (@) since it's implicit
     if (node.base.type === 'This') {
       return '->'
@@ -264,11 +285,11 @@ export class NodeFormatter {
     return `${this.formatWithParens(node.base)}->`
   }
 
-  private formatFilter(node: any): string {
+  private formatFilter(node: FilterNode): string {
     return `${this.formatWithParens(node.base)}[${this.formatNode(node.expr)}]`
   }
 
-  private formatProjection(node: any): string {
+  private formatProjection(node: ProjectionNode): string {
     // Handle projections - if base is This (@), omit it for cleaner output
     if (node.base.type === 'This') {
       return this.formatNode(node.expr)
@@ -279,25 +300,25 @@ export class NodeFormatter {
 
     // Add space before { in projections for better readability
     if (exprStr.startsWith('{')) {
-      return baseStr + ' ' + exprStr
+      return `${baseStr} ${exprStr}`
     }
 
     return baseStr + exprStr
   }
 
-  private formatSlice(node: any): string {
+  private formatSlice(node: SliceNode): string {
     const operator = node.isInclusive ? '..' : '...'
     return `${this.formatWithParens(node.base)}[${node.left}${operator}${node.right}]`
   }
 
-  private formatInRange(node: any): string {
+  private formatInRange(node: InRangeNode): string {
     const operator = node.isInclusive ? '..' : '...'
     return `${this.formatNode(node.base)} in ${this.formatNode(node.left)}${
       operator
     }${this.formatNode(node.right)}`
   }
 
-  private formatSelect(node: any): string {
+  private formatSelect(node: SelectNode): string {
     const alternatives = node.alternatives.map((alt: SelectAlternativeNode) => {
       return `${this.formatNode(alt.condition)} => ${this.formatNode(alt.value)}`
     })
@@ -310,20 +331,20 @@ export class NodeFormatter {
     return `select(${args.join(', ')})`
   }
 
-  private formatAsc(node: any): string {
+  private formatAsc(node: AscNode): string {
     return `${this.formatNode(node.base)} asc`
   }
 
-  private formatDesc(node: any): string {
+  private formatDesc(node: DescNode): string {
     return `${this.formatNode(node.base)} desc`
   }
 
-  private formatTuple(node: any): string {
+  private formatTuple(node: TupleNode): string {
     const members = node.members.map((member: ExprNode) => this.formatNode(member))
     return `(${members.join(', ')})`
   }
 
-  private formatMap(node: any): string {
+  private formatMap(node: MapNode): string {
     // Map operations - handle projections specially
     if (node.expr.type === 'Projection') {
       // This is a projection like *[condition] {...} or chained projections
@@ -334,11 +355,11 @@ export class NodeFormatter {
     return `${this.formatWithParens(node.base)}[${this.formatNode(node.expr)}]`
   }
 
-  private formatFlatMap(node: any): string {
+  private formatFlatMap(node: FlatMapNode): string {
     return `${this.formatWithParens(node.base)}[]${this.formatNode(node.expr)}`
   }
 
-  private formatContext(node: any): string {
+  private formatContext(node: ContextNode): string {
     return `${node.key}()`
   }
 
