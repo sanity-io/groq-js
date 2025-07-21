@@ -160,7 +160,7 @@ t.test('Formatting improvements', async (t) => {
     t.equal(format(parse('a!=b')), 'a != b')
     t.equal(format(parse('a>=b')), 'a >= b')
     t.equal(format(parse('a<=b')), 'a <= b')
-    t.equal(format(parse('a+b*c')), 'a + (b * c)')
+    t.equal(format(parse('a+b*c')), 'a + b * c')
     t.equal(format(parse('a&&b||c')), 'a && b || c')
   })
 
@@ -194,7 +194,7 @@ t.test('Formatting improvements', async (t) => {
   t.test('Complex nested formatting', async (t) => {
     // Test complex nested structures
     const messy = '*[_type=="post"&&published==true]{title,author->{name,bio},tags[type=="category"]}'
-    const clean = `*[_type == "post" && (published == true)] {
+    const clean = `*[_type == "post" && published == true] {
   title,
   author-> {
     name,
@@ -231,7 +231,7 @@ t.test('Pretty formatting', async (t) => {
 
   t.test('Complex query formatting', async (t) => {
     const query = '*[_type=="post"&&published==true]{title,"excerpt":body[0...100],author->{name,bio},"tags":tags[type=="category"]}'
-    const expected = `*[_type == "post" && (published == true)] {
+    const expected = `*[_type == "post" && published == true] {
   title,
   "excerpt": body[0...100],
   author-> {

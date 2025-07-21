@@ -7,7 +7,6 @@ import type {
 import type {FormatContext} from './context'
 import {IndentationManager} from './context'
 import {escapeString} from './utils'
-import {getNodePrecedence} from './precedence'
 
 export class NodeFormatter {
   private indent: IndentationManager
@@ -224,8 +223,8 @@ export class NodeFormatter {
   }
 
   private formatBinaryOp(left: ExprNode, op: string, right: ExprNode): string {
-    const leftStr = this.formatWithParens(left, op, 'left')
-    const rightStr = this.formatWithParens(right, op, 'right')
+    const leftStr = this.formatWithParens(left)
+    const rightStr = this.formatWithParens(right)
 
     if (op === ':') {
       return `${leftStr  }: ${  rightStr}`
@@ -314,11 +313,11 @@ export class NodeFormatter {
   }
 
   private formatAsc(node: any): string {
-    return `asc(${  this.formatNode(node.base)  })`
+    return `${this.formatNode(node.base)} asc`
   }
 
   private formatDesc(node: any): string {
-    return `desc(${  this.formatNode(node.base)  })`
+    return `${this.formatNode(node.base)} desc`
   }
 
   private formatTuple(node: any): string {
@@ -345,47 +344,9 @@ export class NodeFormatter {
     return `${node.key  }()`
   }
 
-  private formatWithParens(node: ExprNode, parentOp?: string, position?: 'left' | 'right'): string {
-    const formatted = this.formatNode(node)
-    // Only add parentheses when truly needed for precedence
-    if (this.needsParentheses(node, parentOp, position)) {
-      return `(${  formatted  })`
-    }
-    return formatted
+  private formatWithParens(node: ExprNode): string {
+    // Only preserve explicit parentheses from the original AST (Group nodes)
+    // Don't add any new parentheses based on precedence
+    return this.formatNode(node)
   }
-
-  private needsParentheses(node: ExprNode, parentOp?: string, position?: 'left' | 'right'): boolean {
-    // Never add parentheses for simple expressions
-    if (node.type === 'AccessAttribute' || node.type === 'Value' || node.type === 'Parameter') {
-      return false
-    }
-    
-    // Always add parentheses for range operations
-    if (node.type === 'InRange') {
-      return true
-    }
-    
-    if (!parentOp) {
-      return false
-    }
-    
-    // Handle operator precedence - only add parentheses when truly needed
-    const nodePrecedence = getNodePrecedence(node)
-    const parentPrecedence = typeof parentOp === 'string' ? 0 : getNodePrecedence(parentOp)
-    
-    // Lower precedence always needs parentheses
-    if (nodePrecedence < parentPrecedence) {
-      return true
-    }
-    
-    // For right operands with higher precedence, add parentheses to show explicit grouping
-    if (position === 'right' && nodePrecedence > parentPrecedence) {
-      return true
-    }
-    
-    return false
-  }
-
-
-  // Removed duplicate precedence logic - now using shared precedence from precedence.ts
 }
