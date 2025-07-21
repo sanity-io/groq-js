@@ -80,41 +80,35 @@ export function typeEvaluate(ast: ExprNode, schema: Schema): TypeNode {
   return optimized
 }
 
-function mapDeref(base: TypeNode, scope: Scope): TypeNode {
-  if (base.type === 'union') {
-    return {
-      type: 'union',
-      of: base.of.map((node) => mapDeref(node, scope)),
+function mapDeref(node: TypeNode, scope: Scope): TypeNode {
+  return mapNode(node, scope, (base) => {
+    if (base.type === 'array') {
+      return {
+        type: 'array',
+        of: mapDeref(base.of, scope),
+      }
     }
-  }
 
-  if (base.type === 'array') {
-    return {
-      type: 'array',
-      of: mapDeref(base.of, scope),
+    if (base.type === 'object') {
+      if (base.dereferencesTo !== undefined) {
+        return scope.context.lookupRef(base.dereferencesTo)
+      }
+
+      if (base.rest !== undefined) {
+        return mapDeref(resolveInline(base.rest, scope), scope)
+      }
     }
-  }
 
-  if (base.type === 'object' && base.dereferencesTo !== undefined) {
-    return scope.context.lookupRef(base.dereferencesTo)
-  }
-
-  return {type: 'null'}
+    return {type: 'null'}
+  })
 }
 
 function handleDerefNode(node: DerefNode, scope: Scope): TypeNode {
   $trace('deref.node %O', node)
-  return mapNode(walk({node: node.base, scope}), scope, (base) => {
-    $trace('deref.base %O', base)
+  const derefedNode = mapDeref(walk({node: node.base, scope}), scope)
+  $trace('deref.derefedNode %O', derefedNode)
 
-    if (base.type === 'null' || base.type === 'unknown') {
-      return {type: 'null'} satisfies NullTypeNode
-    }
-    const derefedNode = mapDeref(base, scope)
-    $trace('deref.derefedNode %O', derefedNode)
-
-    return derefedNode
-  })
+  return derefedNode
 }
 
 function handleObjectSplatNode(
