@@ -25,15 +25,33 @@ import type {
   TupleNode,
   ValueNode,
 } from '../nodeTypes'
-import type {FormatContext} from './context'
-import {IndentationManager} from './context'
-import {escapeString} from './utils'
 
+class IndentationManager {
+  private currentIndent = 0
+
+  constructor(private indentString: string = '  ') { }
+
+  indent(): void {
+    this.currentIndent++
+  }
+
+  unindent(): void {
+    this.currentIndent--
+  }
+
+  current(): string {
+    return this.indentString.repeat(this.currentIndent)
+  }
+
+  newLine(): string {
+    return `\n${this.current()}`
+  }
+}
 export class NodeFormatter {
   private indent: IndentationManager
 
-  constructor(context: FormatContext) {
-    this.indent = new IndentationManager(context)
+  constructor(indentString: string) {
+    this.indent = new IndentationManager(indentString)
   }
 
   format(node: ExprNode): string {
@@ -114,13 +132,22 @@ export class NodeFormatter {
 
   private formatValue(node: ValueNode): string {
     const value = node.value
-    if (value === null) return 'null'
-    if (value === true) return 'true'
-    if (value === false) return 'false'
-    if (typeof value === 'string') return `"${escapeString(value)}"`
-    if (typeof value === 'number') return String(value)
+    if (typeof value === 'string') {
+      // https://spec.groq.dev/GROQ-1.revision3/#sec-String
+      const backspace = String.fromCharCode(8) // U+0008 backspace
+      return `"${value
+        .replace(/\\/g, '\\\\')
+        .replace(/"/g, '\\"')
+        .replace(new RegExp(backspace, 'g'), '\\b')
+        .replace(/\f/g, '\\f')
+        .replace(/\n/g, '\\n')
+        .replace(/\r/g, '\\r')
+        .replace(/\t/g, '\\t')
+        }"`
+    }
     return String(value)
   }
+
 
   private formatAccessAttribute(node: AccessAttributeNode): string {
     if (node.base) {
@@ -134,10 +161,6 @@ export class NodeFormatter {
   }
 
   private formatArray(node: ArrayNode): string {
-    if (node.elements.length === 0) {
-      return '[]'
-    }
-
     const elements = node.elements.map((elem) => {
       let result = this.formatNode(elem.value)
       if (elem.isSplat) {
@@ -217,6 +240,7 @@ export class NodeFormatter {
   private extractSimplePropertyName(node: ExprNode): string | null {
     // This implements the GROQ spec's DetermineName() algorithm
     // See section 4.6 Object in the GROQ specification
+    // https://spec.groq.dev/GROQ-1.revision3/#DetermineName()
 
     // If node is a ThisAttribute (simple property access)
     if (node.type === 'AccessAttribute' && !node.base) {
@@ -313,9 +337,8 @@ export class NodeFormatter {
 
   private formatInRange(node: InRangeNode): string {
     const operator = node.isInclusive ? '..' : '...'
-    return `${this.formatNode(node.base)} in ${this.formatNode(node.left)}${
-      operator
-    }${this.formatNode(node.right)}`
+    return `${this.formatNode(node.base)} in ${this.formatNode(node.left)}${operator
+      }${this.formatNode(node.right)}`
   }
 
   private formatSelect(node: SelectNode): string {

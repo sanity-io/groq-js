@@ -1,5 +1,4 @@
 import type {ExprNode} from '../nodeTypes'
-import {createFormatContext} from './context'
 import {NodeFormatter} from './nodeFormatters'
 
 export interface FormatOptions {
@@ -11,7 +10,6 @@ export interface FormatOptions {
  * Format a GROQ AST node into pretty format
  */
 export function format(node: ExprNode, options: FormatOptions = {}): string {
-  const context = createFormatContext(options)
-  const formatter = new NodeFormatter(context)
+  const formatter = new NodeFormatter(options.indent ?? '  ')
   return formatter.format(node)
 }
