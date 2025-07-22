@@ -18,39 +18,39 @@ t.test('Basic formatting', async (t) => {
   t.test('String escaping according to GROQ spec', async (t) => {
     // Test that the formatter properly escapes control characters when formatting strings
     // Note: When we parse a string, escape sequences are already converted to actual characters
-    
+
     // Basic quote escaping - string contains actual quote character
     const quoteTree = {type: 'Value', value: 'test "quote"'} as any
     t.equal(format(quoteTree), '"test \\"quote\\""')
-    
+
     // Backslash escaping - string contains actual backslash
     const backslashTree = {type: 'Value', value: 'test\\backslash'} as any
     t.equal(format(backslashTree), '"test\\\\backslash"')
-    
+
     // Newline escaping - string contains actual newline
     const newlineTree = {type: 'Value', value: 'test\nline'} as any
     t.equal(format(newlineTree), '"test\\nline"')
-    
+
     // Carriage return escaping - string contains actual CR
     const crTree = {type: 'Value', value: 'test\rreturn'} as any
     t.equal(format(crTree), '"test\\rreturn"')
-    
+
     // Tab escaping - string contains actual tab
     const tabTree = {type: 'Value', value: 'test\ttab'} as any
     t.equal(format(tabTree), '"test\\ttab"')
-    
+
     // Form feed escaping - string contains actual form feed
     const ffTree = {type: 'Value', value: 'test\fform'} as any
     t.equal(format(ffTree), '"test\\fform"')
-    
+
     // Backspace escaping - string contains actual backspace
     const bsTree = {type: 'Value', value: 'test\x08space'} as any
     t.equal(format(bsTree), '"test\\bspace"')
-    
+
     // Combined escapes - string contains actual control characters
     const combinedTree = {type: 'Value', value: 'line1\nline2\ttab\r\n'} as any
     t.equal(format(combinedTree), '"line1\\nline2\\ttab\\r\\n"')
-    
+
     // Test that parsed strings with escape sequences work correctly
     t.equal(format(parse('"test\\nline"')), '"test\\nline"')
     t.equal(format(parse('"test\\ttab"')), '"test\\ttab"')

@@ -29,7 +29,7 @@ import type {
 class IndentationManager {
   private currentIndent = 0
 
-  constructor(private indentString: string = '  ') { }
+  constructor(private indentString: string = '  ') {}
 
   indent(): void {
     this.currentIndent++
@@ -142,12 +142,10 @@ export class NodeFormatter {
         .replace(/\f/g, '\\f')
         .replace(/\n/g, '\\n')
         .replace(/\r/g, '\\r')
-        .replace(/\t/g, '\\t')
-        }"`
+        .replace(/\t/g, '\\t')}"`
     }
     return String(value)
   }
-
 
   private formatAccessAttribute(node: AccessAttributeNode): string {
     if (node.base) {
@@ -337,8 +335,9 @@ export class NodeFormatter {
 
   private formatInRange(node: InRangeNode): string {
     const operator = node.isInclusive ? '..' : '...'
-    return `${this.formatNode(node.base)} in ${this.formatNode(node.left)}${operator
-      }${this.formatNode(node.right)}`
+    return `${this.formatNode(node.base)} in ${this.formatNode(node.left)}${
+      operator
+    }${this.formatNode(node.right)}`
   }
 
   private formatSelect(node: SelectNode): string {
