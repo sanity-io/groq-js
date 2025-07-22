@@ -3322,6 +3322,137 @@ t.test('function: sanity::partOfRelease', (t) => {
   t.end()
 })
 
+t.test('deref inline', (t) => {
+  const query = `*[_type == "test"] { field-> { _type } }`
+  const ast = parse(query)
+  const res = typeEvaluate(ast, [
+    {
+      type: 'document',
+      name: 'test',
+      attributes: {
+        _type: {
+          type: 'objectAttribute',
+          value: {
+            type: 'string',
+            value: 'test',
+          },
+        },
+        field: {
+          type: 'objectAttribute',
+          value: {
+            type: 'inline',
+            name: 'dest',
+          },
+        },
+      },
+    },
+    {
+      type: 'type',
+      name: 'dest',
+      value: createReferenceTypeNode('post'),
+    },
+    ...schemas,
+  ])
+  t.strictSame(res, {
+    type: 'array',
+    of: {
+      type: 'object',
+      attributes: {
+        field: {
+          type: 'objectAttribute',
+          value: {
+            type: 'object',
+            attributes: {
+              _type: {
+                type: 'objectAttribute',
+                value: {
+                  type: 'string',
+                  value: 'post',
+                },
+              },
+            },
+          },
+        },
+      },
+    },
+  } satisfies TypeNode)
+  t.end()
+})
+
+t.test('deref union of inline', (t) => {
+  const query = `*[_type == "test"] { field-> { _type } }`
+  const ast = parse(query)
+  const res = typeEvaluate(ast, [
+    {
+      type: 'document',
+      name: 'test',
+      attributes: {
+        _type: {
+          type: 'objectAttribute',
+          value: {
+            type: 'string',
+            value: 'test',
+          },
+        },
+        field: {
+          type: 'objectAttribute',
+          value: {
+            type: 'inline',
+            name: 'dest',
+          },
+        },
+      },
+    },
+    {
+      type: 'type',
+      name: 'dest',
+      value: unionOf(createReferenceTypeNode('post'), createReferenceTypeNode('author'), {
+        type: 'null',
+      }),
+    },
+    ...schemas,
+  ])
+  t.strictSame(res, {
+    type: 'array',
+    of: {
+      type: 'object',
+      attributes: {
+        field: {
+          type: 'objectAttribute',
+          value: unionOf(
+            {
+              type: 'object',
+              attributes: {
+                _type: {
+                  type: 'objectAttribute',
+                  value: {
+                    type: 'string',
+                    value: 'author',
+                  },
+                },
+              },
+            },
+            {
+              type: 'object',
+              attributes: {
+                _type: {
+                  type: 'objectAttribute',
+                  value: {
+                    type: 'string',
+                    value: 'post',
+                  },
+                },
+              },
+            },
+            {type: 'null'},
+          ),
+        },
+      },
+    },
+  } satisfies TypeNode)
+  t.end()
+})
+
 function findSchemaType(name: string): TypeNode {
   const type = schemas.find((s) => s.name === name)
   if (!type) {
