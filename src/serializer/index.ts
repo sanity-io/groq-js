@@ -9,7 +9,7 @@ export interface SerializeOptions {
 /**
  * Serialize a GROQ AST node into formatted string
  */
-export function serialize(node: ExprNode, options: SerializeOptions = {}): string {
-  const serializer = new NodeSerializer({ indentString: options.indentString })
+export function serializeString(node: ExprNode, options: SerializeOptions = {}): string {
+  const serializer = new NodeSerializer({indentString: options.indentString})
   return serializer.serialize(node)
 }

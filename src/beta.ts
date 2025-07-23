@@ -1,7 +1,7 @@
 // Beta/experimental features - API subject to change
 
 // Serializer exports
-export {serialize} from './serializer'
+export {serializeString} from './serializer'
 export type {SerializeOptions} from './serializer'
 
 // Node types (needed by ExprNode)
