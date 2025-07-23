@@ -5,6 +5,12 @@
 All notable changes to this project will be documented in this file. See
 [Conventional Commits](https://conventionalcommits.org) for commit guidelines.
 
+## [1.17.3](https://github.com/sanity-io/groq-js/compare/v1.17.2...v1.17.3) (2025-07-23)
+
+### Bug Fixes
+
+- **typeEvaluator:** resolve rest field on deref ([4a22363](https://github.com/sanity-io/groq-js/commit/4a22363de7afb6a36605e95fcf5a416cdd560218))
+
 ## [1.17.2](https://github.com/sanity-io/groq-js/compare/v1.17.1...v1.17.2) (2025-07-18)
 
 ### Bug Fixes
