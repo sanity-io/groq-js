@@ -515,3 +515,21 @@ t.test('Round-trip serialization', async (t) => {
     })
   }
 })
+
+t.test('Indent customization', async (t) => {
+  t.test('Should support custom indent strings', async (t) => {
+    const tree = parse('{name, age}')
+
+    // Test default indent (should be "  ")
+    const defaultResult = serialize(tree)
+    t.match(defaultResult, /^{\n  name,\n  age\n}$/, 'Default should use two spaces')
+
+    // Test custom indent string
+    const tabResult = serialize(tree, {indentString: '\t'})
+    t.match(tabResult, /^{\n\tname,\n\tage\n}$/, 'Should use custom tab indent')
+
+    // Test custom space indent
+    const fourSpaceResult = serialize(tree, {indentString: '    '})
+    t.match(fourSpaceResult, /^{\n    name,\n    age\n}$/, 'Should use four spaces')
+  })
+})

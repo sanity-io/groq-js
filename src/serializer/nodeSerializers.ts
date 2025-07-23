@@ -29,7 +29,11 @@ import type {
 class IndentationManager {
   private currentIndent = 0
 
-  constructor(private indentString: string = '  ') {}
+  constructor(indentString?: string) {
+    this.indentString = indentString ?? '  '
+  }
+
+  private indentString: string
 
   indent(): void {
     this.currentIndent++
@@ -47,16 +51,20 @@ class IndentationManager {
     return `\n${this.current()}`
   }
 }
-export class NodeSerializer {
-  private indent: IndentationManager
+export interface NodeSerializerOptions {
+  indentString?: string
+}
 
-  constructor(indentString: string) {
-    this.indent = new IndentationManager(indentString)
-  }
+export class NodeSerializer {
+  constructor(private options: NodeSerializerOptions = {}) {}
 
   serialize(node: ExprNode): string {
+    // Create fresh IndentationManager for each serialization
+    this.indent = new IndentationManager(this.options.indentString)
     return this.serializeNode(node)
   }
+
+  private indent!: IndentationManager
 
   // eslint-disable-next-line complexity
   private serializeNode(node: ExprNode): string {
