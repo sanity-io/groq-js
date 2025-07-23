@@ -126,7 +126,8 @@ export class NodeFormatter {
       case 'Selector':
         return '<selector>'
       default:
-        throw new Error(`Unknown node type: ${(node as ExprNode).type}`)
+				// @ts-expect-error handle all cases
+        throw new Error(`Unknown node type: ${node.type}`)
     }
   }
 
