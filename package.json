@@ -28,6 +28,12 @@
       "require": "./dist/1.js",
       "default": "./dist/1.js"
     },
+    "./beta": {
+      "source": "./src/beta.ts",
+      "import": "./dist/beta.mjs",
+      "require": "./dist/beta.js",
+      "default": "./dist/beta.js"
+    },
     "./package.json": "./package.json"
   },
   "main": "./dist/index.js",
@@ -37,6 +43,9 @@
     "*": {
       "1": [
         "./dist/1.d.ts"
+      ],
+      "beta": [
+        "./dist/beta.d.ts"
       ]
     }
   },

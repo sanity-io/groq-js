@@ -1,6 +1,7 @@
 import t from 'tap'
 
-import {format, parse} from '../src/1'
+import {parse} from '../src/1'
+import {format} from '../src/beta'
 
 t.test('Basic formatting', async (t) => {
   t.test('Simple value', async (t) => {
