@@ -47,22 +47,22 @@ class IndentationManager {
     return `\n${this.current()}`
   }
 }
-export class NodeFormatter {
+export class NodeSerializer {
   private indent: IndentationManager
 
   constructor(indentString: string) {
     this.indent = new IndentationManager(indentString)
   }
 
-  format(node: ExprNode): string {
-    return this.formatNode(node)
+  serialize(node: ExprNode): string {
+    return this.serializeNode(node)
   }
 
   // eslint-disable-next-line complexity
-  private formatNode(node: ExprNode): string {
+  private serializeNode(node: ExprNode): string {
     switch (node.type) {
       case 'Value':
-        return this.formatValue(node)
+        return this.serializeValue(node)
       case 'Everything':
         return '*'
       case 'This':
@@ -72,66 +72,66 @@ export class NodeFormatter {
       case 'Parameter':
         return `$${node.name}`
       case 'AccessAttribute':
-        return this.formatAccessAttribute(node)
+        return this.serializeAccessAttribute(node)
       case 'AccessElement':
-        return this.formatAccessElement(node)
+        return this.serializeAccessElement(node)
       case 'Array':
-        return this.formatArray(node)
+        return this.serializeArray(node)
       case 'ArrayCoerce':
-        return this.formatArrayCoerce(node)
+        return this.serializeArrayCoerce(node)
       case 'Object':
-        return this.formatObject(node)
+        return this.serializeObject(node)
       case 'OpCall':
-        return this.formatOpCall(node)
+        return this.serializeOpCall(node)
       case 'And':
-        return this.formatBinaryOp(node.left, '&&', node.right)
+        return this.serializeBinaryOp(node.left, '&&', node.right)
       case 'Or':
-        return this.formatBinaryOp(node.left, '||', node.right)
+        return this.serializeBinaryOp(node.left, '||', node.right)
       case 'Not':
-        return this.formatUnaryOp('!', node.base)
+        return this.serializeUnaryOp('!', node.base)
       case 'Neg':
-        return this.formatUnaryOp('-', node.base)
+        return this.serializeUnaryOp('-', node.base)
       case 'Pos':
-        return this.formatUnaryOp('+', node.base)
+        return this.serializeUnaryOp('+', node.base)
       case 'Group':
-        return this.formatGroup(node)
+        return this.serializeGroup(node)
       case 'FuncCall':
-        return this.formatFuncCall(node)
+        return this.serializeFuncCall(node)
       case 'PipeFuncCall':
-        return this.formatPipeFuncCall(node)
+        return this.serializePipeFuncCall(node)
       case 'Deref':
-        return this.formatDeref(node)
+        return this.serializeDeref(node)
       case 'Filter':
-        return this.formatFilter(node)
+        return this.serializeFilter(node)
       case 'Projection':
-        return this.formatProjection(node)
+        return this.serializeProjection(node)
       case 'Slice':
-        return this.formatSlice(node)
+        return this.serializeSlice(node)
       case 'InRange':
-        return this.formatInRange(node)
+        return this.serializeInRange(node)
       case 'Select':
-        return this.formatSelect(node)
+        return this.serializeSelect(node)
       case 'Asc':
-        return this.formatAsc(node)
+        return this.serializeAsc(node)
       case 'Desc':
-        return this.formatDesc(node)
+        return this.serializeDesc(node)
       case 'Tuple':
-        return this.formatTuple(node)
+        return this.serializeTuple(node)
       case 'Map':
-        return this.formatMap(node)
+        return this.serializeMap(node)
       case 'FlatMap':
-        return this.formatFlatMap(node)
+        return this.serializeFlatMap(node)
       case 'Context':
-        return this.formatContext(node)
+        return this.serializeContext(node)
       case 'Selector':
         return '<selector>'
       default:
-				// @ts-expect-error handle all cases
+        // @ts-expect-error handle all cases
         throw new Error(`Unknown node type: ${node.type}`)
     }
   }
 
-  private formatValue(node: ValueNode): string {
+  private serializeValue(node: ValueNode): string {
     const value = node.value
     if (typeof value === 'string') {
       // https://spec.groq.dev/GROQ-1.revision3/#sec-String
@@ -148,20 +148,20 @@ export class NodeFormatter {
     return String(value)
   }
 
-  private formatAccessAttribute(node: AccessAttributeNode): string {
+  private serializeAccessAttribute(node: AccessAttributeNode): string {
     if (node.base) {
-      return `${this.formatWithParens(node.base)}.${node.name}`
+      return `${this.serializeWithParens(node.base)}.${node.name}`
     }
     return node.name
   }
 
-  private formatAccessElement(node: AccessElementNode): string {
-    return `${this.formatWithParens(node.base)}[${node.index}]`
+  private serializeAccessElement(node: AccessElementNode): string {
+    return `${this.serializeWithParens(node.base)}[${node.index}]`
   }
 
-  private formatArray(node: ArrayNode): string {
+  private serializeArray(node: ArrayNode): string {
     const elements = node.elements.map((elem) => {
-      let result = this.formatNode(elem.value)
+      let result = this.serializeNode(elem.value)
       if (elem.isSplat) {
         result = `...${result}`
       }
@@ -171,31 +171,31 @@ export class NodeFormatter {
     return `[${elements.join(', ')}]`
   }
 
-  private formatArrayCoerce(node: ArrayCoerceNode): string {
-    return `${this.formatWithParens(node.base)}[]`
+  private serializeArrayCoerce(node: ArrayCoerceNode): string {
+    return `${this.serializeWithParens(node.base)}[]`
   }
 
-  private formatObject(node: ObjectNode): string {
+  private serializeObject(node: ObjectNode): string {
     if (node.attributes.length === 0) {
       return '{}'
     }
 
     this.indent.indent()
     const attributes = node.attributes.map((attr: ObjectAttributeNode) => {
-      return this.formatObjectAttribute(attr)
+      return this.serializeObjectAttribute(attr)
     })
     const innerContent = this.indent.newLine() + attributes.join(`,${this.indent.newLine()}`)
     this.indent.unindent()
     return `{${innerContent}${this.indent.newLine()}}`
   }
 
-  private formatObjectAttribute(attr: ObjectAttributeNode): string {
+  private serializeObjectAttribute(attr: ObjectAttributeNode): string {
     switch (attr.type) {
       case 'ObjectAttributeValue': {
         // Check if this is a simple property or a complex expression
         const simpleKey = this.extractSimplePropertyName(attr.value)
         if (simpleKey && attr.name === simpleKey) {
-          return this.formatNode(attr.value)
+          return this.serializeNode(attr.value)
         }
 
         // Special handling for dereferencing projections: author->{...}
@@ -207,7 +207,7 @@ export class NodeFormatter {
           attr.value.base.base.name === attr.name
         ) {
           const space = ' '
-          return `${attr.name}->${space}${this.formatNode(attr.value.expr)}`
+          return `${attr.name}->${space}${this.serializeNode(attr.value.expr)}`
         }
 
         // Special handling for simple dereferencing operations
@@ -221,16 +221,16 @@ export class NodeFormatter {
         }
 
         // For all other cases, always use quotes for explicit property names
-        return `"${attr.name}": ${this.formatNode(attr.value)}`
+        return `"${attr.name}": ${this.serializeNode(attr.value)}`
       }
       case 'ObjectSplat':
         // For object spread, omit 'This' (@) since it's implicit
         if (attr.value.type === 'This') {
           return '...'
         }
-        return `...${this.formatNode(attr.value)}`
+        return `...${this.serializeNode(attr.value)}`
       case 'ObjectConditionalSplat':
-        return `${this.formatNode(attr.condition)} => ${this.formatNode(attr.value)}`
+        return `${this.serializeNode(attr.condition)} => ${this.serializeNode(attr.value)}`
       default:
         throw new Error(`Unknown object attribute type: ${(attr as ObjectAttributeNode).type}`)
     }
@@ -264,13 +264,13 @@ export class NodeFormatter {
     return null
   }
 
-  private formatOpCall(node: OpCallNode): string {
-    return this.formatBinaryOp(node.left, node.op, node.right)
+  private serializeOpCall(node: OpCallNode): string {
+    return this.serializeBinaryOp(node.left, node.op, node.right)
   }
 
-  private formatBinaryOp(left: ExprNode, op: string, right: ExprNode): string {
-    const leftStr = this.formatWithParens(left)
-    const rightStr = this.formatWithParens(right)
+  private serializeBinaryOp(left: ExprNode, op: string, right: ExprNode): string {
+    const leftStr = this.serializeWithParens(left)
+    const rightStr = this.serializeWithParens(right)
 
     if (op === ':') {
       return `${leftStr}: ${rightStr}`
@@ -279,47 +279,47 @@ export class NodeFormatter {
     return `${leftStr} ${op} ${rightStr}`
   }
 
-  private formatUnaryOp(op: string, operand: ExprNode): string {
-    return op + this.formatWithParens(operand)
+  private serializeUnaryOp(op: string, operand: ExprNode): string {
+    return op + this.serializeWithParens(operand)
   }
 
-  private formatGroup(node: GroupNode): string {
-    return `(${this.formatNode(node.base)})`
+  private serializeGroup(node: GroupNode): string {
+    return `(${this.serializeNode(node.base)})`
   }
 
-  private formatFuncCall(node: FuncCallNode): string {
+  private serializeFuncCall(node: FuncCallNode): string {
     const namespace = node.namespace === 'global' ? '' : `${node.namespace}::`
-    const args = node.args.map((arg: ExprNode) => this.formatNode(arg))
+    const args = node.args.map((arg: ExprNode) => this.serializeNode(arg))
     return `${namespace + node.name}(${args.join(', ')})`
   }
 
-  private formatPipeFuncCall(node: PipeFuncCallNode): string {
-    const baseStr = this.formatWithParens(node.base)
-    const args = node.args.map((arg: ExprNode) => this.formatNode(arg))
+  private serializePipeFuncCall(node: PipeFuncCallNode): string {
+    const baseStr = this.serializeWithParens(node.base)
+    const args = node.args.map((arg: ExprNode) => this.serializeNode(arg))
     const argsStr = args.length > 0 ? `(${args.join(', ')})` : ''
     return `${baseStr} | ${node.name}${argsStr}`
   }
 
-  private formatDeref(node: DerefNode): string {
+  private serializeDeref(node: DerefNode): string {
     // For dereference, omit 'This' (@) since it's implicit
     if (node.base.type === 'This') {
       return '->'
     }
-    return `${this.formatWithParens(node.base)}->`
+    return `${this.serializeWithParens(node.base)}->`
   }
 
-  private formatFilter(node: FilterNode): string {
-    return `${this.formatWithParens(node.base)}[${this.formatNode(node.expr)}]`
+  private serializeFilter(node: FilterNode): string {
+    return `${this.serializeWithParens(node.base)}[${this.serializeNode(node.expr)}]`
   }
 
-  private formatProjection(node: ProjectionNode): string {
+  private serializeProjection(node: ProjectionNode): string {
     // Handle projections - if base is This (@), omit it for cleaner output
     if (node.base.type === 'This') {
-      return this.formatNode(node.expr)
+      return this.serializeNode(node.expr)
     }
 
-    const baseStr = this.formatWithParens(node.base)
-    const exprStr = this.formatNode(node.expr)
+    const baseStr = this.serializeWithParens(node.base)
+    const exprStr = this.serializeNode(node.expr)
 
     // Add space before { in projections for better readability
     if (exprStr.startsWith('{')) {
@@ -329,66 +329,66 @@ export class NodeFormatter {
     return baseStr + exprStr
   }
 
-  private formatSlice(node: SliceNode): string {
+  private serializeSlice(node: SliceNode): string {
     const operator = node.isInclusive ? '..' : '...'
-    return `${this.formatWithParens(node.base)}[${node.left}${operator}${node.right}]`
+    return `${this.serializeWithParens(node.base)}[${node.left}${operator}${node.right}]`
   }
 
-  private formatInRange(node: InRangeNode): string {
+  private serializeInRange(node: InRangeNode): string {
     const operator = node.isInclusive ? '..' : '...'
-    return `${this.formatNode(node.base)} in ${this.formatNode(node.left)}${
+    return `${this.serializeNode(node.base)} in ${this.serializeNode(node.left)}${
       operator
-    }${this.formatNode(node.right)}`
+    }${this.serializeNode(node.right)}`
   }
 
-  private formatSelect(node: SelectNode): string {
+  private serializeSelect(node: SelectNode): string {
     const alternatives = node.alternatives.map((alt: SelectAlternativeNode) => {
-      return `${this.formatNode(alt.condition)} => ${this.formatNode(alt.value)}`
+      return `${this.serializeNode(alt.condition)} => ${this.serializeNode(alt.value)}`
     })
 
     const args = alternatives
     if (node.fallback) {
-      args.push(this.formatNode(node.fallback))
+      args.push(this.serializeNode(node.fallback))
     }
 
     return `select(${args.join(', ')})`
   }
 
-  private formatAsc(node: AscNode): string {
-    return `${this.formatNode(node.base)} asc`
+  private serializeAsc(node: AscNode): string {
+    return `${this.serializeNode(node.base)} asc`
   }
 
-  private formatDesc(node: DescNode): string {
-    return `${this.formatNode(node.base)} desc`
+  private serializeDesc(node: DescNode): string {
+    return `${this.serializeNode(node.base)} desc`
   }
 
-  private formatTuple(node: TupleNode): string {
-    const members = node.members.map((member: ExprNode) => this.formatNode(member))
+  private serializeTuple(node: TupleNode): string {
+    const members = node.members.map((member: ExprNode) => this.serializeNode(member))
     return `(${members.join(', ')})`
   }
 
-  private formatMap(node: MapNode): string {
+  private serializeMap(node: MapNode): string {
     // Map operations - handle projections specially
     if (node.expr.type === 'Projection') {
       // This is a projection like *[condition] {...} or chained projections
       // Add space only in pretty mode
       const space = ' '
-      return this.formatWithParens(node.base) + space + this.formatNode(node.expr)
+      return this.serializeWithParens(node.base) + space + this.serializeNode(node.expr)
     }
-    return `${this.formatWithParens(node.base)}[${this.formatNode(node.expr)}]`
+    return `${this.serializeWithParens(node.base)}[${this.serializeNode(node.expr)}]`
   }
 
-  private formatFlatMap(node: FlatMapNode): string {
-    return `${this.formatWithParens(node.base)}[]${this.formatNode(node.expr)}`
+  private serializeFlatMap(node: FlatMapNode): string {
+    return `${this.serializeWithParens(node.base)}[]${this.serializeNode(node.expr)}`
   }
 
-  private formatContext(node: ContextNode): string {
+  private serializeContext(node: ContextNode): string {
     return `${node.key}()`
   }
 
-  private formatWithParens(node: ExprNode): string {
+  private serializeWithParens(node: ExprNode): string {
     // Only preserve explicit parentheses from the original AST (Group nodes)
     // Don't add any new parentheses based on precedence
-    return this.formatNode(node)
+    return this.serializeNode(node)
   }
 }

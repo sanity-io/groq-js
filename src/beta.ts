@@ -1,8 +1,8 @@
 // Beta/experimental features - API subject to change
 
-// Formatter exports
-export {format} from './formatter'
-export type {FormatOptions} from './formatter'
+// Serializer exports
+export {serialize} from './serializer'
+export type {SerializeOptions} from './serializer'
 
 // Node types (needed by ExprNode)
 export * from './nodeTypes'

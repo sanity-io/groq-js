@@ -1,118 +1,118 @@
 import t from 'tap'
 
 import {parse} from '../src/1'
-import {format} from '../src/beta'
+import {serialize} from '../src/beta'
 
-t.test('Basic formatting', async (t) => {
+t.test('Basic serialization', async (t) => {
   t.test('Simple value', async (t) => {
     const tree = parse('42')
-    const result = format(tree)
+    const result = serialize(tree)
     t.equal(result, '42')
   })
 
   t.test('String value', async (t) => {
     const tree = parse('"hello"')
-    const result = format(tree)
+    const result = serialize(tree)
     t.equal(result, '"hello"')
   })
 
   t.test('String escaping according to GROQ spec', async (t) => {
-    // Test that the formatter properly escapes control characters when formatting strings
+    // Test that the serializer properly escapes control characters when serializing strings
     // Note: When we parse a string, escape sequences are already converted to actual characters
 
     // Basic quote escaping - string contains actual quote character
     const quoteTree = {type: 'Value', value: 'test "quote"'} as any
-    t.equal(format(quoteTree), '"test \\"quote\\""')
+    t.equal(serialize(quoteTree), '"test \\"quote\\""')
 
     // Backslash escaping - string contains actual backslash
     const backslashTree = {type: 'Value', value: 'test\\backslash'} as any
-    t.equal(format(backslashTree), '"test\\\\backslash"')
+    t.equal(serialize(backslashTree), '"test\\\\backslash"')
 
     // Newline escaping - string contains actual newline
     const newlineTree = {type: 'Value', value: 'test\nline'} as any
-    t.equal(format(newlineTree), '"test\\nline"')
+    t.equal(serialize(newlineTree), '"test\\nline"')
 
     // Carriage return escaping - string contains actual CR
     const crTree = {type: 'Value', value: 'test\rreturn'} as any
-    t.equal(format(crTree), '"test\\rreturn"')
+    t.equal(serialize(crTree), '"test\\rreturn"')
 
     // Tab escaping - string contains actual tab
     const tabTree = {type: 'Value', value: 'test\ttab'} as any
-    t.equal(format(tabTree), '"test\\ttab"')
+    t.equal(serialize(tabTree), '"test\\ttab"')
 
     // Form feed escaping - string contains actual form feed
     const ffTree = {type: 'Value', value: 'test\fform'} as any
-    t.equal(format(ffTree), '"test\\fform"')
+    t.equal(serialize(ffTree), '"test\\fform"')
 
     // Backspace escaping - string contains actual backspace
     const bsTree = {type: 'Value', value: 'test\x08space'} as any
-    t.equal(format(bsTree), '"test\\bspace"')
+    t.equal(serialize(bsTree), '"test\\bspace"')
 
     // Combined escapes - string contains actual control characters
     const combinedTree = {type: 'Value', value: 'line1\nline2\ttab\r\n'} as any
-    t.equal(format(combinedTree), '"line1\\nline2\\ttab\\r\\n"')
+    t.equal(serialize(combinedTree), '"line1\\nline2\\ttab\\r\\n"')
 
     // Test that parsed strings with escape sequences work correctly
-    t.equal(format(parse('"test\\nline"')), '"test\\nline"')
-    t.equal(format(parse('"test\\ttab"')), '"test\\ttab"')
-    t.equal(format(parse('"test\\\\"')), '"test\\\\"')
+    t.equal(serialize(parse('"test\\nline"')), '"test\\nline"')
+    t.equal(serialize(parse('"test\\ttab"')), '"test\\ttab"')
+    t.equal(serialize(parse('"test\\\\"')), '"test\\\\"')
   })
 
   t.test('Boolean values', async (t) => {
-    t.equal(format(parse(' true ')), 'true')
-    t.equal(format(parse('false ')), 'false')
-    t.equal(format(parse('null')), 'null')
+    t.equal(serialize(parse(' true ')), 'true')
+    t.equal(serialize(parse('false ')), 'false')
+    t.equal(serialize(parse('null')), 'null')
   })
 
   t.test('Everything selector', async (t) => {
     const tree = parse('*')
-    const result = format(tree)
+    const result = serialize(tree)
     t.equal(result, '*')
   })
 
   t.test('This reference', async (t) => {
     const tree = parse('@')
-    const result = format(tree)
+    const result = serialize(tree)
     t.equal(result, '@')
   })
 
   t.test('Parameter', async (t) => {
     const tree = parse('$param')
-    const result = format(tree)
+    const result = serialize(tree)
     t.equal(result, '$param')
   })
 })
 
-t.test('Array formatting', async (t) => {
+t.test('Array serialization', async (t) => {
   t.test('Empty array', async (t) => {
     const tree = parse('[ ]')
-    const result = format(tree)
+    const result = serialize(tree)
     t.equal(result, '[]')
   })
 
   t.test('Array with elements', async (t) => {
     const tree = parse('[1,2, 3]')
-    const result = format(tree)
+    const result = serialize(tree)
     t.equal(result, '[1, 2, 3]')
   })
 
   t.test('Array with spread', async (t) => {
     const tree = parse('[1,... arr]')
-    const result = format(tree)
+    const result = serialize(tree)
     t.equal(result, '[1, ...arr]')
   })
 })
 
-t.test('Object formatting', async (t) => {
+t.test('Object serialization', async (t) => {
   t.test('Empty object', async (t) => {
     const tree = parse('{}')
-    const result = format(tree)
+    const result = serialize(tree)
     t.equal(result, '{}')
   })
 
   t.test('Simple object', async (t) => {
     const tree = parse('{name,age}')
-    const result = format(tree)
+    const result = serialize(tree)
     t.equal(
       result,
       `{
@@ -124,7 +124,7 @@ t.test('Object formatting', async (t) => {
 
   t.test('Object with explicit keys', async (t) => {
     const tree = parse('{"key":value}')
-    const result = format(tree)
+    const result = serialize(tree)
     t.equal(
       result,
       `{
@@ -134,47 +134,47 @@ t.test('Object formatting', async (t) => {
   })
 })
 
-t.test('Operator formatting', async (t) => {
+t.test('Operator serialization', async (t) => {
   t.test('Arithmetic operators', async (t) => {
-    t.equal(format(parse('1 +2')), '1 + 2')
-    t.equal(format(parse('3- 4')), '3 - 4')
-    t.equal(format(parse('5*6')), '5 * 6')
-    t.equal(format(parse('7/8')), '7 / 8')
-    t.equal(format(parse('9 %10')), '9 % 10')
+    t.equal(serialize(parse('1 +2')), '1 + 2')
+    t.equal(serialize(parse('3- 4')), '3 - 4')
+    t.equal(serialize(parse('5*6')), '5 * 6')
+    t.equal(serialize(parse('7/8')), '7 / 8')
+    t.equal(serialize(parse('9 %10')), '9 % 10')
   })
 
   t.test('Comparison operators', async (t) => {
-    t.equal(format(parse('a==b')), 'a == b')
-    t.equal(format(parse('a !=b')), 'a != b')
-    t.equal(format(parse('a> b')), 'a > b')
-    t.equal(format(parse('a<b')), 'a < b')
-    t.equal(format(parse('a>= b')), 'a >= b')
-    t.equal(format(parse('a <=b')), 'a <= b')
+    t.equal(serialize(parse('a==b')), 'a == b')
+    t.equal(serialize(parse('a !=b')), 'a != b')
+    t.equal(serialize(parse('a> b')), 'a > b')
+    t.equal(serialize(parse('a<b')), 'a < b')
+    t.equal(serialize(parse('a>= b')), 'a >= b')
+    t.equal(serialize(parse('a <=b')), 'a <= b')
   })
 
   t.test('Logical operators', async (t) => {
-    t.equal(format(parse('a &&b')), 'a && b')
-    t.equal(format(parse('a|| b')), 'a || b')
-    t.equal(format(parse('!a')), '!a')
+    t.equal(serialize(parse('a &&b')), 'a && b')
+    t.equal(serialize(parse('a|| b')), 'a || b')
+    t.equal(serialize(parse('!a')), '!a')
   })
 })
 
 t.test('Function calls', async (t) => {
   t.test('Simple function call', async (t) => {
     const tree = parse('count( *)')
-    const result = format(tree)
+    const result = serialize(tree)
     t.equal(result, 'count(*)')
   })
 
   t.test('Function with multiple arguments', async (t) => {
     const tree = parse('select( true=> 1,false =>2)')
-    const result = format(tree)
+    const result = serialize(tree)
     t.equal(result, 'select(true => 1, false => 2)')
   })
 
   t.test('Namespaced function', async (t) => {
     const tree = parse('string::split( "hello world"," ")')
-    const result = format(tree)
+    const result = serialize(tree)
     t.equal(result, 'string::split("hello world", " ")')
   })
 })
@@ -182,50 +182,53 @@ t.test('Function calls', async (t) => {
 t.test('Pipe operations', async (t) => {
   t.test('Simple pipe', async (t) => {
     const tree = parse('*|order( name)')
-    const result = format(tree)
+    const result = serialize(tree)
     t.equal(result, '* | order(name)')
   })
 
   t.test('Multiple pipes', async (t) => {
     const tree = parse('*|order(name)|score(0.5)')
-    const result = format(tree)
+    const result = serialize(tree)
     t.equal(result, '* | order(name) | score(0.5)')
   })
 })
 
-t.test('Formatting improvements', async (t) => {
+t.test('Serialization improvements', async (t) => {
   t.test('Function argument spacing', async (t) => {
     // Test that missing spaces are added
-    t.equal(format(parse('count(*)')), 'count(*)')
-    t.equal(format(parse('select(true=>1,false=>2)')), 'select(true => 1, false => 2)')
-    t.equal(format(parse('string::split("hello world"," ")')), 'string::split("hello world", " ")')
-    t.equal(format(parse('array::join(tags,", ")')), 'array::join(tags, ", ")')
-    t.equal(format(parse('length(name)')), 'length(name)')
+    t.equal(serialize(parse('count(*)')), 'count(*)')
+    t.equal(serialize(parse('select(true=>1,false=>2)')), 'select(true => 1, false => 2)')
+    t.equal(
+      serialize(parse('string::split("hello world"," ")')),
+      'string::split("hello world", " ")',
+    )
+    t.equal(serialize(parse('array::join(tags,", ")')), 'array::join(tags, ", ")')
+    t.equal(serialize(parse('length(name)')), 'length(name)')
   })
 
   t.test('Operator spacing normalization', async (t) => {
     // Test that operators get proper spacing
-    t.equal(format(parse('a==b')), 'a == b')
-    t.equal(format(parse('a!=b')), 'a != b')
-    t.equal(format(parse('a>=b')), 'a >= b')
-    t.equal(format(parse('a<=b')), 'a <= b')
-    t.equal(format(parse('a+b*c')), 'a + b * c')
-    t.equal(format(parse('a&&b||c')), 'a && b || c')
+    t.equal(serialize(parse('a==b')), 'a == b')
+    t.equal(serialize(parse('a!=b')), 'a != b')
+    t.equal(serialize(parse('a>=b')), 'a >= b')
+    t.equal(serialize(parse('a<=b')), 'a <= b')
+    t.equal(serialize(parse('a+b*c')), 'a + b * c')
+    t.equal(serialize(parse('a&&b||c')), 'a && b || c')
   })
 
   t.test('GROQ query spacing', async (t) => {
     // Test that GROQ queries get proper spacing
-    t.equal(format(parse('*[_type=="post"]')), '*[_type == "post"]')
+    t.equal(serialize(parse('*[_type=="post"]')), '*[_type == "post"]')
     t.equal(
-      format(parse('*[_type=="post"]{title,body}')),
+      serialize(parse('*[_type=="post"]{title,body}')),
       `*[_type == "post"] {
   title,
   body
 }`,
     )
-    t.equal(format(parse('*|order(name)')), '* | order(name)')
+    t.equal(serialize(parse('*|order(name)')), '* | order(name)')
     t.equal(
-      format(parse('author->{name,bio}')),
+      serialize(parse('author->{name,bio}')),
       `author-> {
   name,
   bio
@@ -235,17 +238,17 @@ t.test('Formatting improvements', async (t) => {
 
   t.test('Array and object spacing', async (t) => {
     // Test that arrays and objects get proper spacing
-    t.equal(format(parse('[1,2,3]')), '[1, 2, 3]')
-    t.equal(format(parse('[1,...more]')), '[1, ...more]')
+    t.equal(serialize(parse('[1,2,3]')), '[1, 2, 3]')
+    t.equal(serialize(parse('[1,...more]')), '[1, ...more]')
     t.equal(
-      format(parse('{name,age}')),
+      serialize(parse('{name,age}')),
       `{
   name,
   age
 }`,
     )
     t.equal(
-      format(parse('{"key":value}')),
+      serialize(parse('{"key":value}')),
       `{
   "key": value
 }`,
@@ -264,22 +267,22 @@ t.test('Formatting improvements', async (t) => {
   },
   tags[type == "category"]
 }`
-    t.equal(format(parse(messy)), clean)
+    t.equal(serialize(parse(messy)), clean)
   })
 })
 
-t.test('Pretty formatting', async (t) => {
-  t.test('Simple object formatting', async (t) => {
+t.test('Pretty serialization', async (t) => {
+  t.test('Simple object serialization', async (t) => {
     const query = '{name,age,email}'
     const expected = `{
   name,
   age,
   email
 }`
-    t.equal(format(parse(query)), expected)
+    t.equal(serialize(parse(query)), expected)
   })
 
-  t.test('Nested projection formatting', async (t) => {
+  t.test('Nested projection serialization', async (t) => {
     const query = '*[_type=="post"]{title,author->{name,bio}}'
     const expected = `*[_type == "post"] {
   title,
@@ -288,10 +291,10 @@ t.test('Pretty formatting', async (t) => {
     bio
   }
 }`
-    t.equal(format(parse(query)), expected)
+    t.equal(serialize(parse(query)), expected)
   })
 
-  t.test('Complex query formatting', async (t) => {
+  t.test('Complex query serialization', async (t) => {
     const query =
       '*[_type=="post"&&published==true]{title,"excerpt":body[0...100],author->{name,bio},"tags":tags[type=="category"]}'
     const expected = `*[_type == "post" && published == true] {
@@ -303,14 +306,14 @@ t.test('Pretty formatting', async (t) => {
   },
   tags[type == "category"]
 }`
-    t.equal(format(parse(query)), expected)
+    t.equal(serialize(parse(query)), expected)
   })
 })
 
 t.test('Complex queries', async (t) => {
   t.test('Filter with projection', async (t) => {
     const tree = parse('*[_type == "post"]{title, body}')
-    const result = format(tree)
+    const result = serialize(tree)
     t.equal(
       result,
       `*[_type == "post"] {
@@ -322,7 +325,7 @@ t.test('Complex queries', async (t) => {
 
   t.test('Nested object - pretty', async (t) => {
     const tree = parse('*[_type == "post"]{title, author->{name}}')
-    const result = format(tree)
+    const result = serialize(tree)
     t.equal(
       result,
       `*[_type == "post"] {
@@ -335,14 +338,14 @@ t.test('Complex queries', async (t) => {
   })
 })
 
-t.test('Property name formatting', async (t) => {
+t.test('Property name serialization', async (t) => {
   t.test('Should not add quotes for extractable property names', async (t) => {
     // Simple property access
-    t.equal(format(parse('{name, age}')), '{\n  name,\n  age\n}')
+    t.equal(serialize(parse('{name, age}')), '{\n  name,\n  age\n}')
 
     // Array filtering - should not add quotes
     t.equal(
-      format(parse('{tags[type == "category"]}')),
+      serialize(parse('{tags[type == "category"]}')),
       `{
   tags[type == "category"]
 }`,
@@ -350,7 +353,7 @@ t.test('Property name formatting', async (t) => {
 
     // Array element access - should not add quotes
     t.equal(
-      format(parse('{author[0]}')),
+      serialize(parse('{author[0]}')),
       `{
   author[0]
 }`,
@@ -358,7 +361,7 @@ t.test('Property name formatting', async (t) => {
 
     // Complex expressions with array access - should not add quotes
     t.equal(
-      format(parse('{author[0]->{name, bio}}')),
+      serialize(parse('{author[0]->{name, bio}}')),
       `{
   author[0]-> {
     name,
@@ -369,7 +372,7 @@ t.test('Property name formatting', async (t) => {
 
     // Array slicing - should not add quotes
     t.equal(
-      format(parse('{posts[0..5]}')),
+      serialize(parse('{posts[0..5]}')),
       `{
   posts[0..5]
 }`,
@@ -377,7 +380,7 @@ t.test('Property name formatting', async (t) => {
 
     // Dereferencing - should not add quotes
     t.equal(
-      format(parse('{author->}')),
+      serialize(parse('{author->}')),
       `{
   author->
 }`,
@@ -385,7 +388,7 @@ t.test('Property name formatting', async (t) => {
 
     // Projection - should not add quotes
     t.equal(
-      format(parse('{posts{title}}')),
+      serialize(parse('{posts{title}}')),
       `{
   posts {
     title
@@ -397,7 +400,7 @@ t.test('Property name formatting', async (t) => {
   t.test('Should use quotes for non-extractable property names', async (t) => {
     // When property name doesn't match the expression, use explicit quotes
     t.equal(
-      format(parse('{"custom": value}')),
+      serialize(parse('{"custom": value}')),
       `{
   "custom": value
 }`,
@@ -405,7 +408,7 @@ t.test('Property name formatting', async (t) => {
 
     // When property name matches expression, use shorthand (even if original had quotes)
     t.equal(
-      format(parse('{"title": title, author}')),
+      serialize(parse('{"title": title, author}')),
       `{
   title,
   author
@@ -433,7 +436,7 @@ t.skip('Preserves line comments', async (t) => {
     bio
   }
 }`
-  const result = format(parse(query))
+  const result = serialize(parse(query))
   t.equal(result, expected)
 })
 
@@ -450,12 +453,12 @@ t.skip('Preserves end of line comments', async (t) => {
     bio
   }
 }`
-  const result = format(parse(query))
+  const result = serialize(parse(query))
   t.equal(result, expected)
 })
 
 t.test('Consecutive projections', async (t) => {
-  t.test('Should format consecutive projections correctly', async (t) => {
+  t.test('Should serialize consecutive projections correctly', async (t) => {
     const query = `*[_type == "track"]{
   _id,
     courses[]->{
@@ -466,7 +469,7 @@ t.test('Consecutive projections', async (t) => {
                 "tracks": @,
                   "courseIds": @.courses[][@._id]
                   }`
-    const result = format(parse(query))
+    const result = serialize(parse(query))
     const expected = `*[_type == "track"] {
   _id,
   courses[] -> {
@@ -481,7 +484,7 @@ t.test('Consecutive projections', async (t) => {
   })
 })
 
-t.test('Round-trip formatting', async (t) => {
+t.test('Round-trip serialization', async (t) => {
   const queries = [
     '*',
     '42',
@@ -503,12 +506,12 @@ t.test('Round-trip formatting', async (t) => {
   for (const query of queries) {
     t.test(`Round-trip: ${query}`, async (t) => {
       const tree = parse(query)
-      const formatted = format(tree)
-      const reparsed = parse(formatted)
+      const serialized = serialize(tree)
+      const reparsed = parse(serialized)
 
       // The trees should be functionally equivalent
-      // We'll do a simple string comparison of the formatted output
-      t.equal(format(reparsed), formatted, `Round-trip failed for: ${query}`)
+      // We'll do a simple string comparison of the serialized output
+      t.equal(serialize(reparsed), serialized, `Round-trip failed for: ${query}`)
     })
   }
 })
