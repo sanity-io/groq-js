@@ -768,6 +768,20 @@ text['query'] = () => {
 }
 text['query'].arity = 1
 
+const geo: FunctionSet = {}
+geo['latLng'] = () => {
+  throw new Error('not implemented')
+}
+geo['containes'] = () => {
+  throw new Error('not implemented')
+}
+geo['intersects'] = () => {
+  throw new Error('not implemented')
+}
+geo['distance'] = () => {
+  throw new Error('not implemented')
+}
+
 export const namespaces: NamespaceSet = {
   global: _global,
   string,
@@ -780,4 +794,5 @@ export const namespaces: NamespaceSet = {
   dateTime,
   releases,
   text,
+  geo,
 }
