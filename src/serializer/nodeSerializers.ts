@@ -266,11 +266,6 @@ export class NodeSerializer {
   private serializeBinaryOp(left: ExprNode, op: string, right: ExprNode): string {
     const leftStr = this.serializeNode(left)
     const rightStr = this.serializeNode(right)
-
-    if (op === ':') {
-      return `${leftStr}: ${rightStr}`
-    }
-
     return `${leftStr} ${op} ${rightStr}`
   }
 
