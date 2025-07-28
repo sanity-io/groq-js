@@ -227,7 +227,8 @@ export class NodeSerializer {
       case 'ObjectConditionalSplat':
         return `${this.serializeNode(attr.condition)} => ${this.serializeNode(attr.value)}`
       default:
-        throw new Error(`Unknown object attribute type: ${(attr as ObjectAttributeNode).type}`)
+        // @ts-expect-error handle all cases
+        throw new Error(`Unknown object attribute type: ${attr.type}`)
     }
   }
 
