@@ -76,7 +76,7 @@ export class NodeSerializer {
       case 'This':
         return '@'
       case 'Parent':
-        return '^'.repeat(node.n)
+        return Array(node.n).fill('^').join('.')
       case 'Parameter':
         return `$${node.name}`
       case 'AccessAttribute':
@@ -145,7 +145,16 @@ export class NodeSerializer {
 
   private serializeAccessAttribute(node: AccessAttributeNode): string {
     if (node.base) {
-      return `${this.serializeNode(node.base)}.${node.name}`
+      const baseStr = this.serializeNode(node.base)
+      // If base is a dereference (ends with ->), don't add a dot
+      if (node.base.type === 'Deref') {
+        return `${baseStr}${node.name}`
+      }
+      // Use bracket notation if the name is not a valid identifier
+      if (!this.isValidIdentifier(node.name)) {
+        return `${baseStr}[${JSON.stringify(node.name)}]`
+      }
+      return `${baseStr}.${node.name}`
     }
     return node.name
   }
@@ -291,9 +300,9 @@ export class NodeSerializer {
   }
 
   private serializeDeref(node: DerefNode): string {
-    // For dereference, omit 'This' (@) since it's implicit
+    // For dereference with This (@), we need to include the @ symbol
     if (node.base.type === 'This') {
-      return '->'
+      return '@->'
     }
     return `${this.serializeNode(node.base)}->`
   }
@@ -360,18 +369,106 @@ export class NodeSerializer {
   private serializeMap(node: MapNode): string {
     // Map operations - handle projections specially
     if (node.expr.type === 'Projection') {
+      // Check if projection base is a Deref with AccessAttribute(@, ...) pattern
+      // In that case, we can serialize more cleanly by removing the redundant @
+      if (
+        node.expr.base.type === 'Deref' &&
+        node.expr.base.base.type === 'AccessAttribute' &&
+        node.expr.base.base.base?.type === 'This'
+      ) {
+        // Serialize the AccessAttribute without the @ prefix
+        const attrName = node.expr.base.base.name
+        const exprStr = this.serializeNode(node.expr.expr)
+        const projStr = exprStr.startsWith('{')
+          ? `${attrName}-> ${exprStr}`
+          : `${attrName}->${exprStr}`
+        return `${this.serializeNode(node.base)}.${projStr}`
+      }
+
+      // Check if projection base is Deref(This) - serialize as -> without @
+      if (node.expr.base.type === 'Deref' && node.expr.base.base.type === 'This') {
+        const baseStr = this.serializeNode(node.base)
+        const exprStr = this.serializeNode(node.expr.expr)
+        const projStr = exprStr.startsWith('{') ? `-> ${exprStr}` : `->${exprStr}`
+        return `${baseStr}${projStr}`
+      }
+
       // This is a projection like *[condition] {...} or chained projections
       // Add space between base and projection
-      return this.serializeNode(node.base) + ' ' + this.serializeNode(node.expr)
+      return `${this.serializeNode(node.base)} ${this.serializeNode(node.expr)}`
     }
+
+    // Special case for Deref(This) in Map context - serialize as -> without @
+    if (node.expr.type === 'Deref' && node.expr.base.type === 'This') {
+      return `${this.serializeNode(node.base)}->`
+    }
+
+    // Check if this is a property access chain that starts with This (@)
+    if (this.isPropertyAccessFromThis(node.expr)) {
+      // Serialize the expression without the @ prefix
+      const exprStr = this.serializeNode(node.expr)
+      // Remove the leading @ if present
+      const cleanExpr = exprStr.startsWith('@') ? exprStr.slice(1) : exprStr
+      return `${this.serializeNode(node.base)}${cleanExpr}`
+    }
+
     return `${this.serializeNode(node.base)}[${this.serializeNode(node.expr)}]`
   }
 
+  private isPropertyAccessFromThis(node: ExprNode): boolean {
+    // Check if this expression represents a simple property access chain starting from This (@)
+    // Map nodes are not considered simple property access even if they contain property access
+    if (node.type === 'Map' || node.type === 'FlatMap') {
+      return false
+    }
+    if (node.type === 'AccessAttribute') {
+      return !node.base || node.base.type === 'This' || this.isPropertyAccessFromThis(node.base)
+    }
+    if (node.type === 'Deref') {
+      return this.isPropertyAccessFromThis(node.base)
+    }
+    if (node.type === 'ArrayCoerce') {
+      return this.isPropertyAccessFromThis(node.base)
+    }
+    return false
+  }
+
   private serializeFlatMap(node: FlatMapNode): string {
+    // First try serializing the expression
+    const exprStr = this.serializeNode(node.expr)
+
+    // If the expression starts with @ (This reference), we can potentially combine it
+    if (exprStr.startsWith('@')) {
+      // Remove the @ prefix and combine with base
+      const cleanExpr = exprStr.slice(1)
+      return `${this.serializeNode(node.base)}${cleanExpr}`
+    }
+
+    // If the expression doesn't start with @, it might be a complex expression
+    // that still represents a valid property access chain
+    if (node.expr.type === 'ArrayCoerce' && this.isPropertyAccessFromThis(node.expr)) {
+      return `${this.serializeNode(node.base)}${exprStr}`
+    }
+
+    // If the expression is a Map/FlatMap that produces valid property access syntax,
+    // we can combine it directly
+    if (
+      (node.expr.type === 'Map' || node.expr.type === 'FlatMap') &&
+      !exprStr.startsWith('@') &&
+      !exprStr.includes('[]@')
+    ) {
+      return `${this.serializeNode(node.base)}${exprStr}`
+    }
+
     return `${this.serializeNode(node.base)}[]${this.serializeNode(node.expr)}`
   }
 
   private serializeContext(node: ContextNode): string {
     return `${node.key}()`
+  }
+
+  private isValidIdentifier(name: string): boolean {
+    const IDENT = /^[a-zA-Z_][a-zA-Z_0-9]*/
+    return IDENT.test(name)
   }
 }

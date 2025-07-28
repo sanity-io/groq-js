@@ -2,6 +2,7 @@ import t from 'tap'
 
 import {parse} from '../src/1'
 import {serializeString} from '../src/beta'
+import {parseGroqFixtures} from './testUtils'
 
 t.test('Basic serialization', async (t) => {
   t.test('Simple value', async (t) => {
@@ -472,7 +473,7 @@ t.test('Consecutive projections', async (t) => {
     const result = serializeString(parse(query))
     const expected = `*[_type == "track"] {
   _id,
-  courses[] -> {
+  courses[]-> {
     ...,
     lessons[]
   }
@@ -484,35 +485,127 @@ t.test('Consecutive projections', async (t) => {
   })
 })
 
-t.test('Round-trip serialization', async (t) => {
-  const queries = [
+t.test('AST preservation through serialization', async (t) => {
+  const basicQueries = [
+    // Basic literals
     '*',
     '42',
     '"hello"',
     'true',
     'false',
     'null',
+
+    // Arrays and objects
     '[]',
     '[1, 2, 3]',
     '{}',
     '{name}',
+    '{name, age}',
+    '{"key": value}',
+
+    // Arithmetic operators
     'a + b',
+    'a - b',
+    'a * b',
+    'a / b',
+    'a % b',
+    'a ** b',
+
+    // Comparison operators
     'a == b',
+    'a != b',
+    'a > b',
+    'a >= b',
+    'a < b',
+    'a <= b',
+
+    // Logical operators
     'a && b',
+    'a || b',
+    'a in b',
+    'a match b',
+
+    // Unary operators
+    '!a',
+    '-a',
+    '+a',
+
+    // Functions
     'count(*)',
+    'length(name)',
+    'defined(foo)',
+
+    // Pipes
     '* | order(name)',
+
+    // Access and navigation
+    'obj.field',
+    'obj[0]',
+    'obj["key"]',
+    'obj->',
+
+    // Filters and projections
+    '*[_type == "post"]',
+    '*[count > 5]',
+    '*{title, slug}',
+
+    // Array operations
+    'arr[]',
+    'arr[@ > 5]',
+    'arr[0]',
+    'arr[0..3]',
+
+    // Parameters and context
+    '$param',
+    '@',
+
+    // Groups and precedence
+    '(a + b) * c',
+    'a + (b * c)',
+
+    // Slicing
+    'arr[0..5]',
+    'arr[1...3]',
   ]
 
-  for (const query of queries) {
-    t.test(`Round-trip: ${query}`, async (t) => {
-      const tree = parse(query)
-      const serialized = serializeString(tree)
-      const reparsed = parse(serialized)
+  // Load real-world queries from Sanity documentation
+  const fixtureQueries = parseGroqFixtures()
 
-      // The trees should be functionally equivalent
-      // We'll do a simple string comparison of the serialized output
-      t.equal(serializeString(reparsed), serialized, `Round-trip failed for: ${query}`)
-    })
+  // Combine basic test queries with real-world queries
+  const allQueries = [...basicQueries, ...fixtureQueries]
+
+  for (const query of allQueries) {
+    t.test(
+      `AST preservation: ${query.slice(0, 50)}${query.length > 50 ? '...' : ''}`,
+      async (t) => {
+        let tree
+        let serialized
+        let reparsed
+
+        try {
+          tree = parse(query)
+        } catch (error: any) {
+          throw new Error(`Parse error in query: ${query}\nError: ${error.message}`)
+        }
+
+        try {
+          serialized = serializeString(tree)
+        } catch (error: any) {
+          throw new Error(`Serialization error in query: ${query}\nError: ${error.message}`)
+        }
+
+        try {
+          reparsed = parse(serialized)
+        } catch (error: any) {
+          throw new Error(
+            `Failed to parse serialized output for query: ${query}\nSerialized as: ${serialized}\nError: ${error.message}`,
+          )
+        }
+
+        // The trees should be functionally equivalent - compare ASTs
+        t.strictSame(reparsed, tree, `AST preservation failed for: ${query}`)
+      },
+    )
   }
 })
 
@@ -520,16 +613,16 @@ t.test('Indent customization', async (t) => {
   t.test('Should support custom indent strings', async (t) => {
     const tree = parse('{name, age}')
 
-    // Test default indent (should be "  ")
+    // Test default 2 space indent (should be "  ")
     const defaultResult = serializeString(tree)
-    t.match(defaultResult, /^{\n  name,\n  age\n}$/, 'Default should use two spaces')
+    t.match(defaultResult, /^{\n {2}name,\n {2}age\n}$/, 'Default should use two spaces')
 
     // Test custom indent string
     const tabResult = serializeString(tree, {indentString: '\t'})
     t.match(tabResult, /^{\n\tname,\n\tage\n}$/, 'Should use custom tab indent')
 
-    // Test custom space indent
+    // Test custom 4 space indent
     const fourSpaceResult = serializeString(tree, {indentString: '    '})
-    t.match(fourSpaceResult, /^{\n    name,\n    age\n}$/, 'Should use four spaces')
+    t.match(fourSpaceResult, /^{\n {4}name,\n {4}age\n}$/, 'Should use four spaces')
   })
 })
