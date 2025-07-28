@@ -201,8 +201,7 @@ export class NodeSerializer {
           attr.value.base.base.type === 'AccessAttribute' &&
           attr.value.base.base.name === attr.name
         ) {
-          const space = ' '
-          return `${attr.name}->${space}${this.serializeNode(attr.value.expr)}`
+          return `${attr.name}-> ${this.serializeNode(attr.value.expr)}`
         }
 
         // Special handling for simple dereferencing operations
@@ -362,9 +361,8 @@ export class NodeSerializer {
     // Map operations - handle projections specially
     if (node.expr.type === 'Projection') {
       // This is a projection like *[condition] {...} or chained projections
-      // Add space only in pretty mode
-      const space = ' '
-      return this.serializeNode(node.base) + space + this.serializeNode(node.expr)
+      // Add space between base and projection
+      return this.serializeNode(node.base) + ' ' + this.serializeNode(node.expr)
     }
     return `${this.serializeNode(node.base)}[${this.serializeNode(node.expr)}]`
   }
