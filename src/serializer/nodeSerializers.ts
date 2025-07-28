@@ -158,13 +158,13 @@ export class NodeSerializer {
 
   private serializeAccessAttribute(node: AccessAttributeNode): string {
     if (node.base) {
-      return `${this.serializeWithParens(node.base)}.${node.name}`
+      return `${this.serializeNode(node.base)}.${node.name}`
     }
     return node.name
   }
 
   private serializeAccessElement(node: AccessElementNode): string {
-    return `${this.serializeWithParens(node.base)}[${node.index}]`
+    return `${this.serializeNode(node.base)}[${node.index}]`
   }
 
   private serializeArray(node: ArrayNode): string {
@@ -180,7 +180,7 @@ export class NodeSerializer {
   }
 
   private serializeArrayCoerce(node: ArrayCoerceNode): string {
-    return `${this.serializeWithParens(node.base)}[]`
+    return `${this.serializeNode(node.base)}[]`
   }
 
   private serializeObject(node: ObjectNode): string {
@@ -277,8 +277,8 @@ export class NodeSerializer {
   }
 
   private serializeBinaryOp(left: ExprNode, op: string, right: ExprNode): string {
-    const leftStr = this.serializeWithParens(left)
-    const rightStr = this.serializeWithParens(right)
+    const leftStr = this.serializeNode(left)
+    const rightStr = this.serializeNode(right)
 
     if (op === ':') {
       return `${leftStr}: ${rightStr}`
@@ -288,7 +288,7 @@ export class NodeSerializer {
   }
 
   private serializeUnaryOp(op: string, operand: ExprNode): string {
-    return op + this.serializeWithParens(operand)
+    return op + this.serializeNode(operand)
   }
 
   private serializeGroup(node: GroupNode): string {
@@ -302,7 +302,7 @@ export class NodeSerializer {
   }
 
   private serializePipeFuncCall(node: PipeFuncCallNode): string {
-    const baseStr = this.serializeWithParens(node.base)
+    const baseStr = this.serializeNode(node.base)
     const args = node.args.map((arg: ExprNode) => this.serializeNode(arg))
     const argsStr = args.length > 0 ? `(${args.join(', ')})` : ''
     return `${baseStr} | ${node.name}${argsStr}`
@@ -313,11 +313,11 @@ export class NodeSerializer {
     if (node.base.type === 'This') {
       return '->'
     }
-    return `${this.serializeWithParens(node.base)}->`
+    return `${this.serializeNode(node.base)}->`
   }
 
   private serializeFilter(node: FilterNode): string {
-    return `${this.serializeWithParens(node.base)}[${this.serializeNode(node.expr)}]`
+    return `${this.serializeNode(node.base)}[${this.serializeNode(node.expr)}]`
   }
 
   private serializeProjection(node: ProjectionNode): string {
@@ -326,7 +326,7 @@ export class NodeSerializer {
       return this.serializeNode(node.expr)
     }
 
-    const baseStr = this.serializeWithParens(node.base)
+    const baseStr = this.serializeNode(node.base)
     const exprStr = this.serializeNode(node.expr)
 
     // Add space before { in projections for better readability
@@ -339,7 +339,7 @@ export class NodeSerializer {
 
   private serializeSlice(node: SliceNode): string {
     const operator = node.isInclusive ? '..' : '...'
-    return `${this.serializeWithParens(node.base)}[${node.left}${operator}${node.right}]`
+    return `${this.serializeNode(node.base)}[${node.left}${operator}${node.right}]`
   }
 
   private serializeInRange(node: InRangeNode): string {
@@ -381,22 +381,17 @@ export class NodeSerializer {
       // This is a projection like *[condition] {...} or chained projections
       // Add space only in pretty mode
       const space = ' '
-      return this.serializeWithParens(node.base) + space + this.serializeNode(node.expr)
+      return this.serializeNode(node.base) + space + this.serializeNode(node.expr)
     }
-    return `${this.serializeWithParens(node.base)}[${this.serializeNode(node.expr)}]`
+    return `${this.serializeNode(node.base)}[${this.serializeNode(node.expr)}]`
   }
 
   private serializeFlatMap(node: FlatMapNode): string {
-    return `${this.serializeWithParens(node.base)}[]${this.serializeNode(node.expr)}`
+    return `${this.serializeNode(node.base)}[]${this.serializeNode(node.expr)}`
   }
 
   private serializeContext(node: ContextNode): string {
     return `${node.key}()`
   }
 
-  private serializeWithParens(node: ExprNode): string {
-    // Only preserve explicit parentheses from the original AST (Group nodes)
-    // Don't add any new parentheses based on precedence
-    return this.serializeNode(node)
-  }
 }
