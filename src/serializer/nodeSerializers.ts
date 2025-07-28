@@ -140,20 +140,7 @@ export class NodeSerializer {
   }
 
   private serializeValue(node: ValueNode): string {
-    const value = node.value
-    if (typeof value === 'string') {
-      // https://spec.groq.dev/GROQ-1.revision3/#sec-String
-      const backspace = String.fromCharCode(8) // U+0008 backspace
-      return `"${value
-        .replace(/\\/g, '\\\\')
-        .replace(/"/g, '\\"')
-        .replace(new RegExp(backspace, 'g'), '\\b')
-        .replace(/\f/g, '\\f')
-        .replace(/\n/g, '\\n')
-        .replace(/\r/g, '\\r')
-        .replace(/\t/g, '\\t')}"`
-    }
-    return String(value)
+    return JSON.stringify(node.value)
   }
 
   private serializeAccessAttribute(node: AccessAttributeNode): string {
