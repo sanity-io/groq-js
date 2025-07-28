@@ -132,7 +132,7 @@ export class NodeSerializer {
       case 'Context':
         return this.serializeContext(node)
       case 'Selector':
-        return '<selector>'
+        throw new Error('Can't serialize Selector')
       default:
         // @ts-expect-error handle all cases
         throw new Error(`Unknown node type: ${node.type}`)
