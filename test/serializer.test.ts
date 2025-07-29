@@ -1,7 +1,7 @@
 import t from 'tap'
 
 import {parse} from '../src/1'
-import {serializeString} from '../src/beta'
+import {serializeString} from '../src/experimental'
 import {parseGroqFixtures} from './testUtils'
 
 t.test('Basic serialization', async (t) => {
