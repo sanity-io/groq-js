@@ -156,11 +156,7 @@ let lastWarning = ''
 let warningMatchCount = 0
 function writeWarning(message) {
   const matches = lastWarning === message
-  const newline = lastWarning === '' 
-    ? '' 
-    : matches
-      ? process.stderr.isTTY ? '\r' : '\n'
-      : '\n'
+  const newline = lastWarning === '' ? '' : matches ? (process.stderr.isTTY ? '\r' : '\n') : '\n'
   const counter = matches && process.stderr.isTTY ? ` [${++warningMatchCount}]` : ''
   process.stderr.write(`${newline}[warning] ${message}${counter}`)
   if (!matches) {
@@ -187,7 +183,9 @@ process.stdin
       const supported = entry.features.every((f) => SUPPORTED_FEATURES.has(f))
       if (!supported) {
         const missing = entry.features.filter((f) => !SUPPORTED_FEATURES.has(f))
-        writeWarning(`Skipping unsupported test: ${entry.name} (missing ${JSON.stringify(missing)})`)
+        writeWarning(
+          `Skipping unsupported test: ${entry.name} (missing ${JSON.stringify(missing)})`,
+        )
         return
       }
 
