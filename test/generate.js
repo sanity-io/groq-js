@@ -159,9 +159,9 @@ function writeWarning(message) {
   const newline = lastWarning === '' 
     ? '' 
     : matches
-      ? '\r'
+      ? process.stderr.isTTY ? '\r' : '\n'
       : '\n'
-  const counter = matches ? ` [${++warningMatchCount}]` : ''
+  const counter = matches && process.stderr.isTTY ? ` [${++warningMatchCount}]` : ''
   process.stderr.write(`${newline}[warning] ${message}${counter}`)
   if (!matches) {
     lastWarning = message
