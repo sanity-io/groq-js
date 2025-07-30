@@ -152,6 +152,23 @@ function cmpString(a, b) {
   return 0
 }
 
+let lastWarning = ''
+let warningMatchCount = 0
+function writeWarning(message) {
+  const matches = lastWarning === message
+  const newline = lastWarning === '' 
+    ? '' 
+    : matches
+      ? '\r'
+      : '\n'
+  const counter = matches ? ` [${++warningMatchCount}]` : ''
+  process.stderr.write(`${newline}[warning] ${message}${counter}`)
+  if (!matches) {
+    lastWarning = message
+    warningMatchCount = 0
+  }
+}
+
 process.stdin
   .pipe(ndjson.parse())
   .on('data', (entry) => {
@@ -169,7 +186,8 @@ process.stdin
     if (entry._type === 'test') {
       const supported = entry.features.every((f) => SUPPORTED_FEATURES.has(f))
       if (!supported) {
-        process.stderr.write(`[warning] Skipping unsupported test: ${entry.name}\n`)
+        const missing = entry.features.filter((f) => !SUPPORTED_FEATURES.has(f))
+        writeWarning(`Skipping unsupported test: ${entry.name} (missing ${JSON.stringify(missing)})`)
         return
       }
 
@@ -182,7 +200,7 @@ process.stdin
 
       if (/perf/.test(entry.filename)) return
       if (isDisabled(entry.name)) {
-        process.stderr.write(`[warning] Skipping disabled test: ${entry.name}\n`)
+        writeWarning(`Skipping disabled test: ${entry.name}`)
         return
       }
 
@@ -208,5 +226,8 @@ process.stdin
     }
   })
   .on('end', () => {
+    if (lastWarning !== '') {
+      process.stderr.write('\n')
+    }
     closeStack()
   })
