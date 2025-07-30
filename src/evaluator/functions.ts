@@ -772,7 +772,7 @@ const geo: FunctionSet = {}
 geo['latLng'] = () => {
   throw new Error('not implemented')
 }
-geo['containes'] = () => {
+geo['contains'] = () => {
   throw new Error('not implemented')
 }
 geo['intersects'] = () => {

@@ -2,7 +2,12 @@ import t from 'tap'
 
 import {parse} from '../src/parser'
 import {typeEvaluate} from '../src/typeEvaluator/typeEvaluate'
-import {createReferenceTypeNode, nullUnion, unionOf} from '../src/typeEvaluator/typeHelpers'
+import {
+  createGeoJson,
+  createReferenceTypeNode,
+  nullUnion,
+  unionOf,
+} from '../src/typeEvaluator/typeHelpers'
 import type {
   ArrayTypeNode,
   Document,
@@ -177,6 +182,21 @@ const authorDocument = {
           },
         },
       },
+    },
+    position: {
+      type: 'objectAttribute',
+      optional: true,
+      value: createGeoJson(),
+    },
+    area: {
+      type: 'objectAttribute',
+      optional: true,
+      value: createGeoJson('Polygon'),
+    },
+    line: {
+      type: 'objectAttribute',
+      optional: true,
+      value: createGeoJson('LineString'),
     },
   },
 } satisfies Document
@@ -502,8 +522,15 @@ t.test('sanity-io/sanity:6628: in operator with optional field', (t) => {
       type: 'document',
       name: 'test',
       attributes: {
-        _type: {type: 'objectAttribute', value: {type: 'string', value: 'test'}},
-        foo: {type: 'objectAttribute', value: {type: 'string'}, optional: true},
+        _type: {
+          type: 'objectAttribute',
+          value: {type: 'string', value: 'test'},
+        },
+        foo: {
+          type: 'objectAttribute',
+          value: {type: 'string'},
+          optional: true,
+        },
       },
     },
   ])
@@ -1549,6 +1576,21 @@ t.test('with splat', (t) => {
           value: {
             type: 'string',
           },
+        },
+        position: {
+          type: 'objectAttribute',
+          optional: true,
+          value: createGeoJson(),
+        },
+        area: {
+          type: 'objectAttribute',
+          optional: true,
+          value: createGeoJson('Polygon'),
+        },
+        line: {
+          type: 'objectAttribute',
+          optional: true,
+          value: createGeoJson('LineString'),
         },
       },
     },
@@ -2897,6 +2939,49 @@ t.test('function: math::*', (t) => {
   t.end()
 })
 
+t.test('function: geo::*', (t) => {
+  const query = `*[_type == "author"] {
+    "distance": geo::distance(position, [52.24, 12.34]),
+    "intersects": geo::intersects(area, line),
+    "contains": geo::contains(area, [52.24, 12.34]),
+    "latLng": geo::latLng(52.24, 12.34),
+  }`
+  const ast = parse(query)
+  const res = typeEvaluate(ast, schemas)
+
+  t.strictSame(res, {
+    type: 'array',
+    of: {
+      type: 'object',
+      attributes: {
+        distance: {
+          type: 'objectAttribute',
+          value: nullUnion({
+            type: 'number',
+          }),
+        },
+        intersects: {
+          type: 'objectAttribute',
+          value: nullUnion({
+            type: 'boolean',
+          }),
+        },
+        contains: {
+          type: 'objectAttribute',
+          value: nullUnion({
+            type: 'boolean',
+          }),
+        },
+        latLng: {
+          type: 'objectAttribute',
+          value: nullUnion(createGeoJson()),
+        },
+      },
+    },
+  })
+  t.end()
+})
+
 t.test('scoping', (t) => {
   const ast = parse(`*[_type == "mainDocument" && _id == $id]{
     _id,
@@ -2927,7 +3012,10 @@ t.test('scoping', (t) => {
             type: 'object',
             attributes: {
               _ref: {type: 'objectAttribute', value: {type: 'string'}},
-              _type: {type: 'objectAttribute', value: {type: 'string', value: 'reference'}},
+              _type: {
+                type: 'objectAttribute',
+                value: {type: 'string', value: 'reference'},
+              },
             },
             dereferencesTo: 'mainDocument',
           },
@@ -2972,7 +3060,10 @@ t.test('scoping', (t) => {
                 {
                   type: 'object',
                   attributes: {
-                    _key: {type: 'objectAttribute', value: {type: 'string'}},
+                    _key: {
+                      type: 'objectAttribute',
+                      value: {type: 'string'},
+                    },
                   },
                   rest: {type: 'inline', name: 'listRelevantThings'},
                 },

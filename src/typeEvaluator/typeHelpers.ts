@@ -136,3 +136,53 @@ export function isFuncCall(node: ExprNode, name: string): boolean {
 
   return node.type === 'FuncCall' && `${node.namespace}::${node.name}` === name
 }
+
+export function createGeoJson(type: 'Point' | 'LineString' | 'Polygon' = 'Point'): ObjectTypeNode {
+  let coordinateAttribute: ArrayTypeNode = {
+    type: 'array',
+    of: {
+      type: 'number',
+    },
+  }
+  if (type === 'LineString') {
+    coordinateAttribute = {
+      type: 'array',
+      of: {
+        type: 'array',
+        of: {
+          type: 'number',
+        },
+      },
+    } satisfies ArrayTypeNode
+  }
+  if (type === 'Polygon') {
+    coordinateAttribute = {
+      type: 'array',
+      of: {
+        type: 'array',
+        of: {
+          type: 'array',
+          of: {
+            type: 'number',
+          },
+        },
+      },
+    }
+  }
+  return {
+    type: 'object',
+    attributes: {
+      type: {
+        type: 'objectAttribute',
+        value: {
+          type: 'string',
+          value: type,
+        },
+      },
+      coordinates: {
+        type: 'objectAttribute',
+        value: coordinateAttribute,
+      },
+    },
+  } satisfies ObjectTypeNode
+}

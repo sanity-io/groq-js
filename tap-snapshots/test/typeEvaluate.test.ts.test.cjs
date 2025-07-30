@@ -940,6 +940,37 @@ Object {
           "type": "array",
         },
       },
+      "area": Object {
+        "optional": true,
+        "type": "objectAttribute",
+        "value": Object {
+          "attributes": Object {
+            "coordinates": Object {
+              "type": "objectAttribute",
+              "value": Object {
+                "of": Object {
+                  "of": Object {
+                    "of": Object {
+                      "type": "number",
+                    },
+                    "type": "array",
+                  },
+                  "type": "array",
+                },
+                "type": "array",
+              },
+            },
+            "type": Object {
+              "type": "objectAttribute",
+              "value": Object {
+                "type": "string",
+                "value": "Polygon",
+              },
+            },
+          },
+          "type": "object",
+        },
+      },
       "firstname": Object {
         "type": "objectAttribute",
         "value": Object {
@@ -950,6 +981,34 @@ Object {
         "type": "objectAttribute",
         "value": Object {
           "type": "string",
+        },
+      },
+      "line": Object {
+        "optional": true,
+        "type": "objectAttribute",
+        "value": Object {
+          "attributes": Object {
+            "coordinates": Object {
+              "type": "objectAttribute",
+              "value": Object {
+                "of": Object {
+                  "of": Object {
+                    "type": "number",
+                  },
+                  "type": "array",
+                },
+                "type": "array",
+              },
+            },
+            "type": Object {
+              "type": "objectAttribute",
+              "value": Object {
+                "type": "string",
+                "value": "LineString",
+              },
+            },
+          },
+          "type": "object",
         },
       },
       "name": Object {
@@ -988,6 +1047,31 @@ Object {
               "type": "objectAttribute",
               "value": Object {
                 "type": "string",
+              },
+            },
+          },
+          "type": "object",
+        },
+      },
+      "position": Object {
+        "optional": true,
+        "type": "objectAttribute",
+        "value": Object {
+          "attributes": Object {
+            "coordinates": Object {
+              "type": "objectAttribute",
+              "value": Object {
+                "of": Object {
+                  "type": "number",
+                },
+                "type": "array",
+              },
+            },
+            "type": Object {
+              "type": "objectAttribute",
+              "value": Object {
+                "type": "string",
+                "value": "Point",
               },
             },
           },
