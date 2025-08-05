@@ -155,11 +155,11 @@ function cmpString(a, b) {
 let lastWarning = ''
 let warningMatchCount = 0
 function writeWarning(message) {
-  const matches = lastWarning === message
-  const newline = lastWarning === '' ? '' : matches ? (process.stderr.isTTY ? '\r' : '\n') : '\n'
-  const counter = matches && process.stderr.isTTY ? ` [${++warningMatchCount}]` : ''
-  process.stderr.write(`${newline}[warning] ${message}${counter}`)
-  if (!matches) {
+  if (process.stderr.isTTY && lastWarning === message) {
+    process.stderr.write(`\r[warning] ${message} [${++warningMatchCount}]`)
+  } else {
+    if (lastWarning !== '') process.stderr.write('\n')
+    process.stderr.write(`[warning] ${message}`)
     lastWarning = message
     warningMatchCount = 0
   }
