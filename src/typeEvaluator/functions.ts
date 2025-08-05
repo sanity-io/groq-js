@@ -1,9 +1,9 @@
 /* eslint-disable max-statements */
 import type {FuncCallNode} from '../nodeTypes'
 import {optimizeUnions} from './optimizations'
-import {Scope} from './scope'
+import type {Scope} from './scope'
 import {walk} from './typeEvaluate'
-import {mapNode, nullUnion} from './typeHelpers'
+import {createGeoJson, mapNode, nullUnion} from './typeHelpers'
 import type {NullTypeNode, TypeNode} from './types'
 
 function unionWithoutNull(unionTypeNode: TypeNode): TypeNode {
@@ -443,6 +443,31 @@ export function handleFuncCallNode(node: FuncCallNode, scope: Scope): TypeNode {
           return {type: 'array', of: {type: 'string'}}
         })
       })
+    }
+    case 'geo.latLng': {
+      const latTypeNode = walk({node: node.args[0], scope})
+      const lngTypeNode = walk({node: node.args[1], scope})
+      return mapNode(latTypeNode, scope, (latNode) => {
+        return mapNode(lngTypeNode, scope, (lngNode) => {
+          if (latNode.type == 'unknown' || lngNode.type == 'unknown') {
+            return nullUnion(createGeoJson())
+          }
+          if (latNode.type !== 'number' || lngNode.type !== 'number') {
+            return {type: 'null'}
+          }
+
+          return nullUnion(createGeoJson())
+        })
+      })
+    }
+    case 'geo.contains': {
+      return nullUnion({type: 'boolean'})
+    }
+    case 'geo.intersects': {
+      return nullUnion({type: 'boolean'})
+    }
+    case 'geo.distance': {
+      return nullUnion({type: 'number'})
     }
     case 'sanity.versionOf': {
       const typeNode = walk({node: node.args[0], scope})

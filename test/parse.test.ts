@@ -98,6 +98,9 @@ t.test('Expression parsing', async (t) => {
     t.test('allows text namespace functions', async (t) => {
       t.doesNotThrow(() => parse('text::query("foo bar")'))
     })
+    t.test('allows geo namespace functions', async (t) => {
+      t.doesNotThrow(() => parse('geo::distance([52.24, 10.21], [52.10, 10.45])'))
+    })
   })
 
   t.test('throws when nothing is passed', async (t) => {
