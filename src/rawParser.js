@@ -480,7 +480,8 @@ function parseExpr(str, pos, level) {
 
             if (isGroup) {
               pos = skipWS(str, pos)
-              if (str[pos] !== ')') return {type: 'error', error: 'Unexpected ")" in group', position: pos}
+              if (str[pos] !== ')')
+                return {type: 'error', error: 'Unexpected ")" in group', position: pos}
               pos++
             }
 
@@ -531,7 +532,8 @@ function parseGroupOrTuple(str, pos) {
         if (str[pos] !== ',') break
         pos = skipWS(str, pos + 1)
       }
-      if (str[pos] !== ')') return {type: 'error', error: 'Expected ")" after tuple expression', position: pos}
+      if (str[pos] !== ')')
+        return {type: 'error', error: 'Expected ")" after tuple expression', position: pos}
       pos++
       marks.push({name: 'tuple_end', position: pos})
       break
@@ -575,7 +577,8 @@ function parseTraversal(str, pos) {
       }
     }
     case '-':
-      if (str[pos + 1] !== '>') return {type: 'error', error: 'Expected ">" in reference', position: pos}
+      if (str[pos + 1] !== '>')
+        return {type: 'error', error: 'Expected ">" in reference', position: pos}
       // ->
 
       let marks = [{name: 'deref', position: startPos}]
@@ -627,7 +630,8 @@ function parseTraversal(str, pos) {
         let rhs = parseExpr(str, pos, 0)
         if (rhs.type === 'error') return rhs
         pos = skipWS(str, rhs.position)
-        if (str[pos] !== ']') return {type: 'error', error: 'Expected "]" after array expression', position: pos}
+        if (str[pos] !== ']')
+          return {type: 'error', error: 'Expected "]" after array expression', position: pos}
 
         return {
           type: 'success',
@@ -639,7 +643,8 @@ function parseTraversal(str, pos) {
         }
       }
 
-      if (str[pos] !== ']') return {type: 'error', error: 'Expected "]" after array expression', position: pos}
+      if (str[pos] !== ']')
+        return {type: 'error', error: 'Expected "]" after array expression', position: pos}
 
       return {
         type: 'success',
@@ -681,7 +686,8 @@ function parseFuncCall(str, startPos, pos) {
     if (!nameLen) return {type: 'error', error: 'Expected function name', position: pos}
     marks.push({name: 'ident', position: pos}, {name: 'ident_end', position: pos + nameLen})
     pos = skipWS(str, pos + nameLen)
-    if (str[pos] !== '(') return {type: 'error', error: 'Expected "(" after function name', position: pos}
+    if (str[pos] !== '(')
+      return {type: 'error', error: 'Expected "(" after function name', position: pos}
     pos++
     // Consume any whitespace in front of the function argument.
     pos = skipWS(str, pos)
