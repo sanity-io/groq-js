@@ -32,7 +32,7 @@ function parse(str) {
     if (result.failPosition) {
       pos = result.failPosition - 1
     }
-    return {type: 'error', position: pos}
+    return {type: 'error', error: 'Expected end of query', position: pos}
   }
   delete result.position
   delete result.failPosition
@@ -48,7 +48,7 @@ function parseExpr(str, pos, level) {
   // while handling the RHS of the multiplication in `1 + 2 * 3 + 4` we only parse `3`.
   //
   // `lhsLevel` is the precedence level of the currently parsed expression on
-  // the left-hand side. This is mainly used to handle non-associcativeness.
+  // the left-hand side. This is mainly used to handle non-associativeness.
 
   // This means that you'll see code like:
   // - `if (level > PREC_XXX) break`: Operator is at this precedence level.
@@ -77,34 +77,12 @@ function parseExpr(str, pos, level) {
       break
     }
     case '(': {
-      let rhs = parseExpr(str, skipWS(str, pos + 1), 0)
-      if (rhs.type === 'error') return rhs
-      pos = skipWS(str, rhs.position)
-      switch (str[pos]) {
-        case ',': {
-          // Tuples
-          marks = [{name: 'tuple', position: startPos}].concat(rhs.marks)
-          pos = skipWS(str, pos + 1)
-          while (true) {
-            rhs = parseExpr(str, pos, 0)
-            if (rhs.type === 'error') return rhs
-            pos = skipWS(str, rhs.position)
-            if (str[pos] !== ',') break
-            pos = skipWS(str, pos + 1)
-          }
-          if (str[pos] !== ')') return {type: 'error', position: pos}
-          pos++
-          marks.push({name: 'tuple_end', position: pos})
-          break
-        }
-        case ')': {
-          pos++
-          marks = [{name: 'group', position: startPos}].concat(rhs.marks)
-          break
-        }
-        default:
-          return {type: 'error', position: pos}
-      }
+      let result = parseGroupOrTuple(str, pos)
+      if (result.type === 'error') return result
+
+      pos = result.position
+      marks = result.marks
+
       break
     }
     case '!': {
@@ -147,7 +125,7 @@ function parseExpr(str, pos, level) {
         pos++
         marks.push({name: 'array_end', position: pos})
       } else {
-        return {type: 'error', position: pos}
+        return {type: 'error', error: 'Expected "]" after array expression', position: pos}
       }
 
       break
@@ -210,7 +188,7 @@ function parseExpr(str, pos, level) {
             pos++
           }
           let expLen = parseRegex(str, pos, NUM)
-          if (!expLen) return {type: 'error', position: pos}
+          if (!expLen) return {type: 'error', error: 'Exponent must be a number', position: pos}
           pos += expLen
         }
 
@@ -401,7 +379,7 @@ function parseExpr(str, pos, level) {
           // pipe call
           let identPos = skipWS(str, innerPos + 1)
           let identLen = parseRegex(str, identPos, IDENT)
-          if (!identLen) return {type: 'error', position: identPos}
+          if (!identLen) return {type: 'error', error: 'Expected identifier', position: identPos}
           pos = identPos + identLen
           if (str[pos] === '(' || str[pos] === ':') {
             let result = parseFuncCall(str, identPos, pos)
@@ -440,7 +418,7 @@ function parseExpr(str, pos, level) {
         break
       }
       case 'd': {
-        // asc
+        // desc
         if (str.slice(innerPos, innerPos + 4) !== 'desc') break loop
         if (level > PREC_ORDER || lhsLevel < PREC_ORDER) break loop
         marks.unshift({name: 'desc', position: startPos})
@@ -502,7 +480,7 @@ function parseExpr(str, pos, level) {
 
             if (isGroup) {
               pos = skipWS(str, pos)
-              if (str[pos] !== ')') return {type: 'error', position: pos}
+              if (str[pos] !== ')') return {type: 'error', error: 'Unexpected ")" in group', position: pos}
               pos++
             }
 
@@ -534,14 +512,56 @@ function parseExpr(str, pos, level) {
   return {type: 'success', marks, position: pos, failPosition}
 }
 
+function parseGroupOrTuple(str, pos) {
+  const startPos = pos
+  let marks
+  let rhs = parseExpr(str, skipWS(str, pos + 1), 0)
+  if (rhs.type === 'error') return rhs
+  pos = skipWS(str, rhs.position)
+  switch (str[pos]) {
+    case ',': {
+      // Tuples
+      marks = [{name: 'tuple', position: startPos}].concat(rhs.marks)
+      pos = skipWS(str, pos + 1)
+      while (true) {
+        rhs = parseExpr(str, pos, 0)
+        if (rhs.type === 'error') return rhs
+        marks.push(...rhs.marks)
+        pos = skipWS(str, rhs.position)
+        if (str[pos] !== ',') break
+        pos = skipWS(str, pos + 1)
+      }
+      if (str[pos] !== ')') return {type: 'error', error: 'Expected ")" after tuple expression', position: pos}
+      pos++
+      marks.push({name: 'tuple_end', position: pos})
+      break
+    }
+    case ')': {
+      pos++
+      marks = [{name: 'group', position: startPos}].concat(rhs.marks)
+      break
+    }
+    default:
+      return {type: 'error', error: `Unexpected character "${str[pos]}"`, position: pos}
+  }
+
+  return {type: 'success', marks, position: pos}
+}
+
 function parseTraversal(str, pos) {
   let startPos = pos
   switch (str[pos]) {
     case '.': {
       pos = skipWS(str, pos + 1)
+
+      // TODO: allow tuples/groups in a traversal for selectors
+      // if (str[pos] === '(') {
+      //   return parseGroupOrTuple(str, pos)
+      // }
+
       let identStart = pos
       let identLen = parseRegex(str, pos, IDENT)
-      if (!identLen) return {type: 'error', position: pos}
+      if (!identLen) return {type: 'error', error: 'Expected identifier', position: pos}
       pos += identLen
 
       return {
@@ -555,7 +575,7 @@ function parseTraversal(str, pos) {
       }
     }
     case '-':
-      if (str[pos + 1] !== '>') return {type: 'error', position: pos}
+      if (str[pos + 1] !== '>') return {type: 'error', error: 'Expected ">" in reference', position: pos}
       // ->
 
       let marks = [{name: 'deref', position: startPos}]
@@ -607,7 +627,7 @@ function parseTraversal(str, pos) {
         let rhs = parseExpr(str, pos, 0)
         if (rhs.type === 'error') return rhs
         pos = skipWS(str, rhs.position)
-        if (str[pos] !== ']') return {type: 'error', position: pos}
+        if (str[pos] !== ']') return {type: 'error', error: 'Expected "]" after array expression', position: pos}
 
         return {
           type: 'success',
@@ -619,7 +639,7 @@ function parseTraversal(str, pos) {
         }
       }
 
-      if (str[pos] !== ']') return {type: 'error', position: pos}
+      if (str[pos] !== ']') return {type: 'error', error: 'Expected "]" after array expression', position: pos}
 
       return {
         type: 'success',
@@ -645,7 +665,7 @@ function parseTraversal(str, pos) {
     }
   }
 
-  return {type: 'error', position: pos}
+  return {type: 'error', error: 'Unexpected character in traversal', position: pos}
 }
 
 function parseFuncCall(str, startPos, pos) {
@@ -658,10 +678,10 @@ function parseFuncCall(str, startPos, pos) {
     marks.push({name: 'ident', position: startPos}, {name: 'ident_end', position: pos})
     pos = skipWS(str, pos + 2)
     let nameLen = parseRegex(str, pos, IDENT)
-    if (!nameLen) return {type: 'error', position: pos}
+    if (!nameLen) return {type: 'error', error: 'Expected function name', position: pos}
     marks.push({name: 'ident', position: pos}, {name: 'ident_end', position: pos + nameLen})
     pos = skipWS(str, pos + nameLen)
-    if (str[pos] !== '(') return {type: 'error', position: pos}
+    if (str[pos] !== '(') return {type: 'error', error: 'Expected "(" after function name', position: pos}
     pos++
     // Consume any whitespace in front of the function argument.
     pos = skipWS(str, pos)
@@ -679,6 +699,16 @@ function parseFuncCall(str, startPos, pos) {
       marks = marks.concat(result.marks)
       lastPos = result.position
       pos = skipWS(str, result.position)
+
+      // TODO: allow traversals in function arguments for selectors
+      // if (str[pos] === '.') {
+      //   result = parseTraversal(str, pos)
+      //   if (result.type === 'error') return result
+      //   marks = marks.concat(result.marks)
+      //   lastPos = result.position
+      //   pos = skipWS(str, result.position)
+      // }
+
       if (str[pos] !== ',') break
       pos = skipWS(str, pos + 1)
       // Also allow trailing commas
@@ -687,7 +717,7 @@ function parseFuncCall(str, startPos, pos) {
   }
 
   if (str[pos] !== ')') {
-    return {type: 'error', position: pos}
+    return {type: 'error', error: 'Expected ")" after function arguments', position: pos}
   }
 
   // NOTE: a bit arbitrary the func_args_end points comes before the whitespace.
@@ -739,7 +769,7 @@ function parseObject(str, pos) {
   }
 
   if (str[pos] !== '}') {
-    return {type: 'error', position: pos}
+    return {type: 'error', error: 'Expected "}" after object', position: pos}
   }
 
   pos++
@@ -752,7 +782,7 @@ function parseString(str, pos) {
   pos = pos + 1
   const marks = [{name: 'str', position: pos}]
   str: for (; ; pos++) {
-    if (pos > str.length) return {type: 'error', position: pos}
+    if (pos > str.length) return {type: 'error', error: 'Unexpected end of query', position: pos}
 
     switch (str[pos]) {
       case token: {
