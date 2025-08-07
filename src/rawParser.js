@@ -250,9 +250,7 @@ function parseExpr(str, pos, level) {
       }
       marks.push({name: 'traversal_end', position: pos})
       continue
-    } else if (trav.type === 'error') {
-      return trav
-    } // ignore if type === 'warning'
+    } // ignore if type === 'error'
 
     let token = str[innerPos]
     switch (token) {
@@ -565,8 +563,7 @@ function parseTraversal(str, pos) {
 
       let identStart = pos
       let identLen = parseRegex(str, pos, IDENT)
-      // return a warning if no identifier found as this might be a range
-      if (!identLen) return {type: 'warning', error: 'Expected identifier after "."', position: pos}
+      if (!identLen) return {type: 'error', error: 'Expected identifier after "."', position: pos}
       pos += identLen
 
       return {
@@ -673,7 +670,7 @@ function parseTraversal(str, pos) {
     }
   }
 
-  return {type: 'warning', error: 'Unexpected character in traversal', position: pos}
+  return {type: 'error', error: 'Unexpected character in traversal', position: pos}
 }
 
 function parseFuncCall(str, startPos, pos) {
@@ -792,8 +789,7 @@ function parseString(str, pos) {
   pos = pos + 1
   const marks = [{name: 'str', position: pos}]
   str: for (; ; pos++) {
-    if (pos > str.length)
-      return {type: 'error', error: 'Unexpected end of query', position: str.length}
+    if (pos > str.length) return {type: 'error', error: 'Unexpected end of query', position: pos}
 
     switch (str[pos]) {
       case token: {

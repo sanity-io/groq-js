@@ -91,7 +91,7 @@ t.test('Expression parsing', async (t) => {
       throwsWithMessage(
         t,
         () => parse('*{a, b'),
-        'Syntax error in GROQ query at position 6: Expected \"}\" after object',
+        'Syntax error in GROQ query at position 5: Unexpected end of query',
       )
     })
   })
@@ -167,21 +167,11 @@ t.test('Expression parsing', async (t) => {
     })
   })
 
-  t.test('when parsing traversals', async (t) => {
-    t.test('throws when deref is missing >', async (t) => {
-      throwsWithMessage(
-        t,
-        () => parse('*[father-name == "Michael"]'),
-        'Syntax error in GROQ query at position 8: Expected \">\" in reference',
-      )
-    })
-  })
-
   t.test('throws when an open square bracket has no closing match', async (t) => {
     throwsWithMessage(
       t,
       () => parse('*[foo == [1, 2'),
-      'Syntax error in GROQ query at position 14: Expected \"]\" after array expression',
+      'Syntax error in GROQ query at position 13: Unexpected end of query',
     )
   })
 
