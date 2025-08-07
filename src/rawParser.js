@@ -792,7 +792,8 @@ function parseString(str, pos) {
   pos = pos + 1
   const marks = [{name: 'str', position: pos}]
   str: for (; ; pos++) {
-    if (pos > str.length) return {type: 'error', error: 'Unexpected end of query', position: str.length}
+    if (pos > str.length)
+      return {type: 'error', error: 'Unexpected end of query', position: str.length}
 
     switch (str[pos]) {
       case token: {
