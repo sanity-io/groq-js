@@ -873,8 +873,8 @@ class GroqSyntaxError extends Error {
   public position: number
   public override name = 'GroqSyntaxError'
 
-  constructor(position: number) {
-    super(`Syntax error in GROQ query at position ${position}`)
+  constructor(position: number, detail: string) {
+    super(`Syntax error in GROQ query at position ${position}: ${detail}`)
     this.position = position
   }
 }
@@ -885,8 +885,8 @@ class GroqSyntaxError extends Error {
 export function parse(input: string, options: ParseOptions = {}): ExprNode {
   const result = rawParse(input)
   if (result.type === 'error') {
-    throw new GroqSyntaxError(result.position)
+    throw new GroqSyntaxError(result.position, result.error)
   }
-  const processor = new MarkProcessor(input, result.marks as Mark[], options)
+  const processor = new MarkProcessor(input, result.marks, options)
   return processor.process(EXPR_BUILDER)
 }

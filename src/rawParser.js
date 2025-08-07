@@ -32,7 +32,7 @@ function parse(str) {
     if (result.failPosition) {
       pos = result.failPosition - 1
     }
-    return {type: 'error', error: 'Expected end of query', position: pos}
+    return {type: 'error', error: 'Unexpected end of query', position: pos}
   }
   delete result.position
   delete result.failPosition
@@ -227,7 +227,7 @@ function parseExpr(str, pos, level) {
   }
 
   if (!marks) {
-    return {type: 'error', position: pos}
+    return {type: 'error', error: 'Expected expression', position: pos}
   }
 
   let lhsLevel = 12
@@ -250,7 +250,9 @@ function parseExpr(str, pos, level) {
       }
       marks.push({name: 'traversal_end', position: pos})
       continue
-    }
+    } else if (trav.type === 'error') {
+      return trav
+    } // ignore if type === 'warning'
 
     let token = str[innerPos]
     switch (token) {
@@ -481,7 +483,7 @@ function parseExpr(str, pos, level) {
             if (isGroup) {
               pos = skipWS(str, pos)
               if (str[pos] !== ')')
-                return {type: 'error', error: 'Unexpected ")" in group', position: pos}
+                return {type: 'error', error: 'Expected ")" in group', position: pos}
               pos++
             }
 
@@ -563,7 +565,8 @@ function parseTraversal(str, pos) {
 
       let identStart = pos
       let identLen = parseRegex(str, pos, IDENT)
-      if (!identLen) return {type: 'error', error: 'Expected identifier', position: pos}
+      // return a warning if no identifier found as this might be a range
+      if (!identLen) return {type: 'warning', error: 'Expected identifier after "."', position: pos}
       pos += identLen
 
       return {
@@ -670,7 +673,7 @@ function parseTraversal(str, pos) {
     }
   }
 
-  return {type: 'error', error: 'Unexpected character in traversal', position: pos}
+  return {type: 'warning', error: 'Unexpected character in traversal', position: pos}
 }
 
 function parseFuncCall(str, startPos, pos) {
@@ -710,6 +713,7 @@ function parseFuncCall(str, startPos, pos) {
       // if (str[pos] === '.') {
       //   result = parseTraversal(str, pos)
       //   if (result.type === 'error') return result
+      //   TODO: what to do with type === 'warning'?
       //   marks = marks.concat(result.marks)
       //   lastPos = result.position
       //   pos = skipWS(str, result.position)
@@ -788,7 +792,7 @@ function parseString(str, pos) {
   pos = pos + 1
   const marks = [{name: 'str', position: pos}]
   str: for (; ; pos++) {
-    if (pos > str.length) return {type: 'error', error: 'Unexpected end of query', position: pos}
+    if (pos > str.length) return {type: 'error', error: 'Unexpected end of query', position: str.length}
 
     switch (str[pos]) {
       case token: {
