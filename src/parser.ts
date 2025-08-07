@@ -1,7 +1,7 @@
 /* eslint-disable camelcase */
 import {tryConstantEvaluate} from './evaluator'
 import {type GroqFunctionArity, namespaces, pipeFunctions} from './evaluator/functions'
-import {type Mark, MarkProcessor, type MarkVisitor} from './markProcessor'
+import {MarkProcessor, type MarkVisitor} from './markProcessor'
 import type {
   ArrayElementNode,
   ExprNode,
