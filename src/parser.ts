@@ -885,7 +885,7 @@ class GroqSyntaxError extends Error {
 export function parse(input: string, options: ParseOptions = {}): ExprNode {
   const result = rawParse(input)
   if (result.type === 'error') {
-    throw new GroqSyntaxError(result.position, result.error)
+    throw new GroqSyntaxError(result.position, result.message)
   }
   const processor = new MarkProcessor(input, result.marks, options)
   return processor.process(EXPR_BUILDER)

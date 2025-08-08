@@ -13,5 +13,5 @@ export declare function parse(input: string):
   | {
       type: 'error'
       position: number
-      error: string
+      message: string
     }
