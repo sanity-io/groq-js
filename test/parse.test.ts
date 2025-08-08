@@ -60,7 +60,7 @@ t.test('Error reporting', async (t) => {
     } catch (error: any) {
       t.same(error.name, 'GroqSyntaxError')
       t.same(error.position, 13)
-      t.same(error.message, 'Syntax error in GROQ query at position 13')
+      t.same(error.message, 'Syntax error in GROQ query at position 13: Unexpected end of query')
     }
   })
 })
@@ -76,15 +76,43 @@ t.test('Expression parsing', async (t) => {
     })
   })
 
+  t.test('when parsing numbers', async (t) => {
+    t.test('throws when the exponent is not a number', async (t) => {
+      throwsWithMessage(
+        t,
+        () => parse('1.2eX'),
+        'Syntax error in GROQ query at position 4: Exponent must be a number',
+      )
+    })
+  })
+
   t.test('when parsing objects', async (t) => {
     t.test('throws when the object is not terminated properly', async (t) => {
-      throwsWithMessage(t, () => parse('*{a, b'), 'Syntax error in GROQ query at position 5')
+      throwsWithMessage(
+        t,
+        () => parse('*{a, b'),
+        'Syntax error in GROQ query at position 5: Unexpected end of query',
+      )
+    })
+  })
+
+  t.test('when parsing arrays', async (t) => {
+    t.test('throws when the array is not terminated properly', async (t) => {
+      throwsWithMessage(
+        t,
+        () => parse('{"a":[0}'),
+        'Syntax error in GROQ query at position 7: Expected \"]\" after array expression',
+      )
     })
   })
 
   t.test('when parsing functions', async (t) => {
     t.test('throws when the function call is not terminated properly', async (t) => {
-      throwsWithMessage(t, () => parse('count(*[]'), 'Syntax error in GROQ query at position 9')
+      throwsWithMessage(
+        t,
+        () => parse('count(*[]'),
+        'Syntax error in GROQ query at position 9: Expected \")\" after function arguments',
+      )
     })
 
     t.test('throws when using boost() when `allowBoost` is false', async (t) => {
@@ -104,15 +132,47 @@ t.test('Expression parsing', async (t) => {
   })
 
   t.test('throws when nothing is passed', async (t) => {
-    throwsWithMessage(t, () => parse(''), 'Syntax error in GROQ query at position 0')
+    throwsWithMessage(
+      t,
+      () => parse(''),
+      'Syntax error in GROQ query at position 0: Expected expression',
+    )
   })
 
-  t.test('has support for tuples', async (t) => {
-    t.doesNotThrow(() => parse('(a, b, c)'))
+  t.test('when parsing tuples', async (t) => {
+    t.test('has support for tuples', async (t) => {
+      t.doesNotThrow(() => parse('(a, b, c)'))
+    })
+
+    t.test('throws when the tuple has a syntax error', async (t) => {
+      throwsWithMessage(
+        t,
+        () => parse('(a, b;)'),
+        'Syntax error in GROQ query at position 5: Expected \")\" after tuple expression',
+      )
+    })
+  })
+
+  t.test('when parsing groups', async (t) => {
+    t.test('has support for groups', async (t) => {
+      t.doesNotThrow(() => parse('(a)'))
+    })
+
+    t.test('throws when the group has a syntax error', async (t) => {
+      throwsWithMessage(
+        t,
+        () => parse('(a;)'),
+        'Syntax error in GROQ query at position 2: Unexpected character \";\"',
+      )
+    })
   })
 
   t.test('throws when an open square bracket has no closing match', async (t) => {
-    throwsWithMessage(t, () => parse('*[foo == [1, 2'), 'Syntax error in GROQ query at position 13')
+    throwsWithMessage(
+      t,
+      () => parse('*[foo == [1, 2'),
+      'Syntax error in GROQ query at position 13: Unexpected end of query',
+    )
   })
 
   t.test('when parsing pipecalls', async (t) => {
@@ -122,6 +182,14 @@ t.test('Expression parsing', async (t) => {
 
     t.test('throws when using an invalid function', async (t) => {
       throwsWithMessage(t, () => parse('* | func()'), 'Undefined pipe function: func')
+    })
+
+    t.test('throws when using invalid syntax', async (t) => {
+      throwsWithMessage(
+        t,
+        () => parse('* | 1'),
+        'Syntax error in GROQ query at position 4: Expected identifier',
+      )
     })
   })
 
