@@ -11,6 +11,7 @@ import type {
   OpCall,
   ParentNode,
   SelectNode,
+  SelectorNode,
 } from './nodeTypes'
 import {parse as rawParse} from './rawParser'
 import {
@@ -35,6 +36,8 @@ const ESCAPE_SEQUENCE: {[key in EscapeSequences]: string} = {
   'r': '\r',
   't': '\t',
 }
+
+type TraverseFunc = (right: TraversalResult | null) => TraversalResult
 
 function expandHex(str: string): string {
   const charCode = parseInt(str, 16)
@@ -79,7 +82,7 @@ const EXPR_BUILDER: MarkVisitor<ExprNode> = {
 
   traverse(p) {
     const base = p.process(EXPR_BUILDER)
-    const traversalList: Array<(right: TraversalResult | null) => TraversalResult> = []
+    const traversalList: Array<TraverseFunc> = []
     while (p.getMark().name !== 'traversal_end') {
       traversalList.push(p.process(TRAVERSE_BUILDER))
     }
@@ -368,10 +371,7 @@ const EXPR_BUILDER: MarkVisitor<ExprNode> = {
 
     while (p.getMark().name !== 'func_args_end') {
       if (argumentShouldBeSelector(namespace, name, args.length)) {
-        // Since the diff/delta functions aren't validated yet we only want to validate the selector
-        // being used. We expect the null valued arg to throw an error at evaluation time.
-        p.process(SELECTOR_BUILDER)
-        args.push({type: 'Selector'})
+        args.push(p.process(SELECTOR_BUILDER))
       } else {
         args.push(p.process(EXPR_BUILDER))
       }
@@ -589,7 +589,7 @@ const OBJECT_BUILDER: MarkVisitor<ObjectAttributeNode> = {
   },
 }
 
-const TRAVERSE_BUILDER: MarkVisitor<(rhs: TraversalResult | null) => TraversalResult> = {
+const TRAVERSE_BUILDER: MarkVisitor<TraverseFunc> = {
   square_bracket(p) {
     const expr = p.process(EXPR_BUILDER)
 
@@ -681,10 +681,9 @@ const TRAVERSE_BUILDER: MarkVisitor<(rhs: TraversalResult | null) => TraversalRe
   },
 }
 
-const SELECTOR_BUILDER: MarkVisitor<null> = {
+const SELECTOR_BUILDER: MarkVisitor<SelectorNode> = {
   group(p) {
-    p.process(SELECTOR_BUILDER)
-    return null
+    return p.process(SELECTOR_BUILDER)
   },
 
   everything() {
@@ -704,18 +703,103 @@ const SELECTOR_BUILDER: MarkVisitor<null> = {
   },
 
   traverse(p) {
-    p.process(SELECTOR_BUILDER)
+    const outer = p.process(SELECTOR_BUILDER)
+    const traversalList: Array<TraverseFunc> = []
     while (p.getMark().name !== 'traversal_end') {
-      p.process(TRAVERSE_BUILDER)
-    }
+      if (p.getMark().name === 'array_postfix') {
+        p.shift()
 
+        traversalList.push((right) =>
+          traversePlain((base) => {
+            return {
+              type: 'Selector',
+              base: outer,
+              expr: {type: 'ArrayCoerce', base},
+            }
+          }, right),
+        )
+      } else if (p.getMark().name === 'square_bracket') {
+        p.shift()
+
+        const expr = p.process(EXPR_BUILDER)
+
+        const value = tryConstantEvaluate(expr)
+        if (value && value.type === 'number') {
+          throw new Error('Invalid array access expression')
+        } else if (value && value.type === 'string') {
+          traversalList.push((right) =>
+            traversePlain((base) => {
+              return {
+                type: 'Selector',
+                base: outer,
+                expr: {type: 'AccessAttribute', base, name: value.data},
+              }
+            }, right),
+          )
+        } else {
+          traversalList.push((right) =>
+            traversePlain((base) => {
+              return {
+                type: 'Selector',
+                base: outer,
+                expr: {
+                  type: 'Filter',
+                  base,
+                  expr,
+                },
+              }
+            }, right),
+          )
+        }
+      } else {
+        const selector = p.process(SELECTOR_BUILDER)
+        let expr = selector.base
+        while (expr.type === 'Selector') {
+          expr = expr.base
+        }
+
+        traversalList.push((right) =>
+          traversePlain((base) => {
+            if (base.type !== 'Selector')
+              throw new Error(`Unexpected selector traversal base type ${base.type}`)
+
+            return {type: 'Selector', base, expr}
+          }, right),
+        )
+      }
+    }
     p.shift()
-    return null
+    let traversal: TraversalResult | null = null
+    for (let i = traversalList.length - 1; i >= 0; i--) {
+      traversal = traversalList[i](traversal)
+    }
+    if (traversal === null) throw new Error('BUG: unexpected empty traversal')
+    const result = traversal.build(outer)
+    if (result.type !== 'Selector')
+      throw new Error(`Unexpected selector traversal result type ${result.type}`)
+    return result
   },
 
   this_attr(p) {
-    p.processString()
-    return null
+    const name = p.processString()
+    return {
+      type: 'Selector',
+      base: {
+        type: 'AccessAttribute',
+        name,
+      },
+    }
+  },
+
+  attr_access(p) {
+    const name = p.processString()
+    return {
+      type: 'Selector',
+      base: {
+        type: 'AccessAttribute',
+        name,
+      },
+    }
   },
 
   neg() {
@@ -782,14 +866,25 @@ const SELECTOR_BUILDER: MarkVisitor<null> = {
     throw new Error('Invalid selector syntax')
   },
 
-  tuple() {
-    // This should only throw an error until we add support for tuples in selectors.
-    throw new Error('Invalid selector syntax')
+  tuple(p) {
+    const selectors: Array<SelectorNode> = []
+    while (p.getMark().name !== 'tuple_end') {
+      selectors.push(p.process(SELECTOR_BUILDER))
+    }
+    p.shift()
+
+    return {
+      type: 'Selector',
+      base: {
+        type: 'Tuple',
+        members: selectors,
+      },
+    }
   },
 
   func_call(p, mark) {
     const func = EXPR_BUILDER['func_call'](p, mark) as FuncCallNode
-    if (func.name === 'anywhere' && func.args.length === 1) return null
+    if (func.name === 'anywhere' && func.args.length === 1) return {type: 'Selector', base: func}
 
     throw new Error('Invalid selector syntax')
   },
@@ -874,7 +969,7 @@ class GroqSyntaxError extends Error {
   public override name = 'GroqSyntaxError'
 
   constructor(position: number, detail: string) {
-    super(`Syntax error in GROQ query at position ${position}: ${detail}`)
+    super(`Syntax error in GROQ query at position ${position}${detail ? ': ' + detail : ''}`)
     this.position = position
   }
 }

@@ -11,6 +11,7 @@ import {
 import {operators} from './operators'
 import {partialCompare} from './ordering'
 import {Scope} from './scope'
+import {evaluateSelector} from './selector'
 import type {EvaluateOptions, Executor} from './types'
 
 export function evaluate(
@@ -51,10 +52,10 @@ const EXECUTORS: ExecutorMap = {
     return scope.value
   },
 
-  Selector() {
-    // These should be evaluated separely using a different evaluator.
-    // At the mooment we haven't implemented this.
-    throw new Error('Selectors can not be evaluated')
+  async Selector(node, scope) {
+    const result = await evaluateSelector(node, scope.source, scope)
+
+    return fromJS(result)
   },
 
   Everything(_, scope) {

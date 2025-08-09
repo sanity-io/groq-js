@@ -19,7 +19,9 @@ import {portableTextContent} from './pt'
 import {Scope} from './scope'
 import {evaluateScore} from './scoring'
 import type {Executor} from './types'
-import {isEqual} from './equality'
+import {deepEqual, isEqual} from './equality'
+import {evaluate} from './evaluate'
+import { valueAtPath } from './keyPath'
 
 function hasReference(value: any, pathSet: Set<string>): boolean {
   switch (getType(value)) {
@@ -625,7 +627,6 @@ type ObjectWithScore = Record<string, unknown> & {_score: number}
 
 const delta: FunctionSet = {}
 // eslint-disable-next-line require-await
-// eslint-disable-next-line require-await
 delta['operation'] = async function (_args, scope) {
   const hasBefore = scope.context.before !== null
   const hasAfter = scope.context.after !== null
@@ -645,7 +646,8 @@ delta['operation'] = async function (_args, scope) {
   return NULL_VALUE
 }
 
-delta['changedAny'] = () => {
+delta['changedAny'] = (args, scope) => {
+
   throw new Error('not implemented')
 }
 delta['changedAny'].arity = 1
@@ -658,8 +660,58 @@ delta['changedOnly'].arity = 1
 delta['changedOnly'].mode = 'delta'
 
 const diff: FunctionSet = {}
-diff['changedAny'] = () => {
-  throw new Error('not implemented')
+diff['changedAny'] = async (args, scope, execute) => {
+  const lhs = args[0]
+  const rhs = args[1]
+  const selector = args[2]
+
+  const before = await execute(lhs, scope)
+  const after = await execute(rhs, scope)
+
+  const beforeSelectorScope = new Scope(scope.params, before, fromJS(null), scope.context, null)
+  const beforeSelectedKeyPaths = await evaluate(selector, beforeSelectorScope)
+  const afterSelectorScope = new Scope(scope.params, after, fromJS(null), scope.context, null)
+  const afterSelectedKeyPaths = await evaluate(selector, afterSelectorScope)
+  if (!beforeSelectedKeyPaths.isArray() || !afterSelectedKeyPaths.isArray()) {
+    throw new Error(`Unexpected result from selector evaluation`)
+  }
+  const beforePaths: string[] = await beforeSelectedKeyPaths.get()
+  const afterPaths: string[] = await afterSelectedKeyPaths.get()
+  console.log('path arrays', beforePaths, afterPaths)
+  if (beforePaths.length !== afterPaths.length) {
+    return fromJS(true)
+  }
+
+  for (const path of beforePaths) {
+    // this checks if array parts are different lengths, not sure if it's needed though
+    // let parts = path.split('[')
+    // while (parts.length > 1) {
+    //   console.log('first part', parts[0])
+    //   const beforeArr = await valueAtPath(before, parts[0])
+    //   const afterArr = await valueAtPath(after, parts[0])
+    //   if (!Array.isArray(beforeArr) || !Array.isArray(afterArr) || beforeArr.length !== afterArr.length) {
+    //     console.log('changed!', beforeArr, afterArr)
+    //     return fromJS(true)
+    //   }
+
+    //   parts = [`${parts[0]}[${parts[1]}`, ...parts.slice(2)]
+    // }
+
+    const beforeValue = await valueAtPath(before, path)
+    const afterValue = await valueAtPath(after, path)
+
+    console.log('changedAny path', path)
+    console.dir(beforeValue)
+    console.dir(afterValue)
+
+    if (!deepEqual(beforeValue, afterValue)) {
+      return fromJS(true)
+    }
+  }
+
+  return fromJS(false)
+
+  // throw new Error('not implemented')
 }
 diff['changedAny'].arity = 3
 

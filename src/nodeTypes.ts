@@ -214,8 +214,20 @@ export interface SelectNode extends BaseNode {
   fallback?: ExprNode
 }
 
+type SelectorBase = SelectorNode | AccessAttributeNode | GroupNode | TupleNode | FuncCallNode
+
+export type SelectorExpr =
+  | AccessAttributeNode
+  | ArrayCoerceNode
+  | FuncCallNode
+  | FilterNode
+  | GroupNode
+  | TupleNode
+
 export interface SelectorNode extends BaseNode {
   type: 'Selector'
+  base: SelectorBase
+  expr?: SelectorExpr
 }
 
 export interface ThisNode extends BaseNode {
