@@ -21,7 +21,7 @@ import {evaluateScore} from './scoring'
 import type {Executor} from './types'
 import {deepEqual, isEqual} from './equality'
 import {evaluate} from './evaluate'
-import { valueAtPath } from './keyPath'
+import {valueAtPath} from './keyPath'
 
 function hasReference(value: any, pathSet: Set<string>): boolean {
   switch (getType(value)) {
@@ -646,8 +646,7 @@ delta['operation'] = async function (_args, scope) {
   return NULL_VALUE
 }
 
-delta['changedAny'] = (args, scope) => {
-
+delta['changedAny'] = (_args, _scope) => {
   throw new Error('not implemented')
 }
 delta['changedAny'].arity = 1
@@ -687,7 +686,11 @@ diff['changedAny'] = async (args, scope, execute) => {
     while (parts.length > 1) {
       const beforeArr = await valueAtPath(before, parts[0])
       const afterArr = await valueAtPath(after, parts[0])
-      if (!Array.isArray(beforeArr) || !Array.isArray(afterArr) || beforeArr.length !== afterArr.length) {
+      if (
+        !Array.isArray(beforeArr) ||
+        !Array.isArray(afterArr) ||
+        beforeArr.length !== afterArr.length
+      ) {
         return fromJS(true)
       }
 

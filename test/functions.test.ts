@@ -206,13 +206,17 @@ t.test('Functions', async (t) => {
     })
 
     t.test('with different before/after but matched selector', async (t) => {
-      const tree = parse('diff::changedAny({"foo": "bar", "fizz": "bazz"}, {"foo": "bar", "fizz": "buzz"}, foo)')
+      const tree = parse(
+        'diff::changedAny({"foo": "bar", "fizz": "bazz"}, {"foo": "bar", "fizz": "buzz"}, foo)',
+      )
       const result = await evaluate(tree)
       t.ok((await result.get()) === false, 'result should be `false`')
     })
 
     t.test('with different before/after and differing selector', async (t) => {
-      const tree = parse('diff::changedAny({"foo": "bar", "fizz": "bazz"}, {"foo": "car", "fizz": "buzz"}, foo)')
+      const tree = parse(
+        'diff::changedAny({"foo": "bar", "fizz": "bazz"}, {"foo": "car", "fizz": "buzz"}, foo)',
+      )
       const result = await evaluate(tree)
       t.ok((await result.get()) === true, 'result should be `true`')
     })

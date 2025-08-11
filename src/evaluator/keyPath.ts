@@ -1,8 +1,12 @@
-import type { Value } from "../values"
+import type {Value} from '../values'
 
 const partRegex = /^([a-zA-Z_][a-zA-Z_0-9]*)?((?:\[(?:\d+|"(?:[^"]|\\")*"|'(?:[^']|\\')*')\])*)$/
 
-export async function valueAtPath(arg: Value, keyPath: string, options?: {throwOnReferenceError?: boolean}): Promise<any> {
+export async function valueAtPath(
+  arg: Value,
+  keyPath: string,
+  options?: {throwOnReferenceError?: boolean},
+): Promise<any> {
   function tryAccessor(arg: any, accessor: string | number): any | undefined {
     try {
       return arg[accessor]
@@ -30,9 +34,9 @@ export async function valueAtPath(arg: Value, keyPath: string, options?: {throwO
       const accessorList = accessors.substring(1).split('[')
 
       for (let accessor of accessorList) {
-        accessor = accessor.substring(0, accessor.length-1)
-        if (accessor[0] === '"' || accessor[0] === '\'') {
-          accessor = accessor.substring(1, accessor.length-1)
+        accessor = accessor.substring(0, accessor.length - 1)
+        if (accessor[0] === '"' || accessor[0] === "'") {
+          accessor = accessor.substring(1, accessor.length - 1)
 
           current = tryAccessor(current, accessor)
         } else {

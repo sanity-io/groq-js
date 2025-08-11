@@ -47,7 +47,7 @@ export async function evaluateSelector(
     case 'FuncCall': {
       if (base.name !== 'anywhere') throw new Error(`Invalid function in selector: ${base.name}`)
       if (base.args.length !== 1) throw new Error('Invalid arguments for anywhere')
-      
+
       const expr = base.args[0]
 
       const result = await evaluate(expr, scope)
@@ -55,7 +55,7 @@ export async function evaluateSelector(
       const pathList: string[] = []
       if (result.isArray()) {
         const arr: any[] = await result.get()
-        for (let i=0; i < arr.length; i++) {
+        for (let i = 0; i < arr.length; i++) {
           pathList.push(`[${i}]`)
         }
       } else {
@@ -68,7 +68,7 @@ export async function evaluateSelector(
 
         // other types don't make sense here, return an empty array
       }
-      
+
       return pathList
     }
     case 'Selector':
@@ -98,7 +98,7 @@ export async function evaluateSelector(
               ...expr,
               base: {type: 'This'},
             }
-            
+
             for (let i = 0; i < innerValue.length; i++) {
               const item = innerValue[i]
               const nestedScope = scope.createNested(fromJS([item]))

@@ -1,6 +1,6 @@
 import t from 'tap'
 import {valueAtPath} from '../../src/evaluator/keyPath'
-import { fromJS } from '../../src/values'
+import {fromJS} from '../../src/values'
 
 const obj: any = {left: {a: 1}, right: [{foo: 2}, [{bar: 3}]]}
 
