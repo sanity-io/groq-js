@@ -677,32 +677,25 @@ diff['changedAny'] = async (args, scope, execute) => {
   }
   const beforePaths: string[] = await beforeSelectedKeyPaths.get()
   const afterPaths: string[] = await afterSelectedKeyPaths.get()
-  console.log('path arrays', beforePaths, afterPaths)
   if (beforePaths.length !== afterPaths.length) {
     return fromJS(true)
   }
 
   for (const path of beforePaths) {
-    // this checks if array parts are different lengths, not sure if it's needed though
-    // let parts = path.split('[')
-    // while (parts.length > 1) {
-    //   console.log('first part', parts[0])
-    //   const beforeArr = await valueAtPath(before, parts[0])
-    //   const afterArr = await valueAtPath(after, parts[0])
-    //   if (!Array.isArray(beforeArr) || !Array.isArray(afterArr) || beforeArr.length !== afterArr.length) {
-    //     console.log('changed!', beforeArr, afterArr)
-    //     return fromJS(true)
-    //   }
+    // this checks if array parts are different lengths
+    let parts = path.split('[')
+    while (parts.length > 1) {
+      const beforeArr = await valueAtPath(before, parts[0])
+      const afterArr = await valueAtPath(after, parts[0])
+      if (!Array.isArray(beforeArr) || !Array.isArray(afterArr) || beforeArr.length !== afterArr.length) {
+        return fromJS(true)
+      }
 
-    //   parts = [`${parts[0]}[${parts[1]}`, ...parts.slice(2)]
-    // }
+      parts = [`${parts[0]}[${parts[1]}`, ...parts.slice(2)]
+    }
 
     const beforeValue = await valueAtPath(before, path)
     const afterValue = await valueAtPath(after, path)
-
-    console.log('changedAny path', path)
-    console.dir(beforeValue)
-    console.dir(afterValue)
 
     if (!deepEqual(beforeValue, afterValue)) {
       return fromJS(true)

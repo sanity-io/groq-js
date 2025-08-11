@@ -104,7 +104,6 @@ export async function evaluateSelector(
               const nestedScope = scope.createNested(fromJS([item]))
               const result = await evaluate(filter, nestedScope)
               const matched = await result.get()
-              console.log('filter', {i, matched, item})
               if (matched.length > 0) nestedPaths.push(`${keyPath}[${i}]`)
             }
           }

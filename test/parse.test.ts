@@ -238,6 +238,7 @@ t.test('Selector validation', async (t) => {
       'diff::changedAny({}, {}, foo.bar[baz == 1])',
       'diff::changedAny({}, {}, (foo))',
       'diff::changedAny({}, {}, anywhere(foo))',
+      'diff::changedAny({}, {}, (foo, bar))',
     ]
 
     for (const query of queries) {
@@ -250,7 +251,6 @@ t.test('Selector validation', async (t) => {
       'diff::changedAny({}, {}, "foo")',
       'diff::changedAny({}, {}, 1 + 2)',
       'diff::changedAny({}, {}, 5)',
-      'diff::changedAny({}, {}, (foo, bar))', // BUG: fails because we don't support tuples inside traversals yet
     ]
 
     for (const query of queries) {
