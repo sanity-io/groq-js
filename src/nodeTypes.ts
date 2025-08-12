@@ -84,9 +84,9 @@ export interface ArrayNode extends BaseNode {
   elements: ArrayElementNode[]
 }
 
-export interface ArrayCoerceNode extends BaseNode {
+export interface ArrayCoerceNode<Base = ExprNode> extends BaseNode {
   type: 'ArrayCoerce'
-  base: ExprNode
+  base: Base
 }
 
 export interface AscNode extends BaseNode {
@@ -121,9 +121,9 @@ export interface FuncCallNode extends BaseNode {
   args: ExprNode[]
 }
 
-export interface GroupNode extends BaseNode {
+export interface GroupNode<Base = ExprNode> extends BaseNode {
   type: 'Group'
-  base: ExprNode
+  base: Base
 }
 
 export interface InRangeNode extends BaseNode {
@@ -214,29 +214,27 @@ export interface SelectNode extends BaseNode {
   fallback?: ExprNode
 }
 
-type SelectorBase = SelectorNode | AccessAttributeNode | GroupNode | TupleNode | FuncCallNode
+export type SelectorNode =
+  | AccessAttributeNode<SelectorNode>
+  | GroupNode<SelectorNode>
+  | TupleNode<SelectorNode>
+  | ArrayCoerceNode<SelectorNode>
+  | FilterNode<SelectorNode>
+  | SelectorNested
 
-export type SelectorExpr =
-  | AccessAttributeNode
-  | ArrayCoerceNode
-  | FuncCallNode
-  | FilterNode
-  | GroupNode
-  | TupleNode
-
-export interface SelectorNode extends BaseNode {
-  type: 'Selector'
-  base: SelectorBase
-  expr?: SelectorExpr
+export interface SelectorNested extends BaseNode {
+  type: 'SelectorNested'
+  base: SelectorNode
+  nested: GroupNode<SelectorNode> | TupleNode<SelectorNode>
 }
 
 export interface ThisNode extends BaseNode {
   type: 'This'
 }
 
-export interface TupleNode extends BaseNode {
+export interface TupleNode<Base = ExprNode> extends BaseNode {
   type: 'Tuple'
-  members: Array<ExprNode>
+  members: Array<Base>
 }
 
 export interface ValueNode<P = any> {
@@ -256,9 +254,9 @@ export interface MapNode extends BaseNode {
   expr: ExprNode
 }
 
-export interface AccessAttributeNode extends BaseNode {
+export interface AccessAttributeNode<T = ExprNode> extends BaseNode {
   type: 'AccessAttribute'
-  base?: ExprNode
+  base?: T
   name: string
 }
 
@@ -276,9 +274,9 @@ export interface SliceNode extends BaseNode {
   isInclusive: boolean
 }
 
-export interface FilterNode extends BaseNode {
+export interface FilterNode<Base = ExprNode> extends BaseNode {
   type: 'Filter'
-  base: ExprNode
+  base: Base
   expr: ExprNode
 }
 
