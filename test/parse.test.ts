@@ -237,7 +237,6 @@ t.test('Selector validation', async (t) => {
       'diff::changedAny({}, {}, foo[])',
       'diff::changedAny({}, {}, foo.bar[baz == 1])',
       'diff::changedAny({}, {}, (foo))',
-      'diff::changedAny({}, {}, anywhere(foo))',
       'diff::changedAny({}, {}, (foo, bar))',
     ]
 

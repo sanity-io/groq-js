@@ -703,21 +703,12 @@ const SELECTOR_BUILDER: MarkVisitor<SelectorNode> = {
   },
 
   traverse(p) {
-    const outer = p.process(SELECTOR_BUILDER)
-    const traversalList: Array<TraverseFunc> = []
+    let node: SelectorNode = p.process(SELECTOR_BUILDER)
     while (p.getMark().name !== 'traversal_end') {
       if (p.getMark().name === 'array_postfix') {
         p.shift()
 
-        traversalList.push((right) =>
-          traversePlain((base) => {
-            return {
-              type: 'Selector',
-              base: outer,
-              expr: {type: 'ArrayCoerce', base},
-            }
-          }, right),
-        )
+        node = {type: 'ArrayCoerce', base: node}
       } else if (p.getMark().name === 'square_bracket') {
         p.shift()
 
@@ -727,79 +718,35 @@ const SELECTOR_BUILDER: MarkVisitor<SelectorNode> = {
         if (value && value.type === 'number') {
           throw new Error('Invalid array access expression')
         } else if (value && value.type === 'string') {
-          traversalList.push((right) =>
-            traversePlain((base) => {
-              return {
-                type: 'Selector',
-                base: outer,
-                expr: {type: 'AccessAttribute', base, name: value.data},
-              }
-            }, right),
-          )
+          node = {type: 'AccessAttribute', base: node, name: value.data}
         } else {
-          traversalList.push((right) =>
-            traversePlain((base) => {
-              return {
-                type: 'Selector',
-                base: outer,
-                expr: {
-                  type: 'Filter',
-                  base,
-                  expr,
-                },
-              }
-            }, right),
-          )
+          node = {type: 'Filter', base: node, expr}
         }
+      } else if (p.getMark().name === 'attr_access') {
+        p.shift()
+        const name = p.processString()
+        node = {type: 'AccessAttribute', base: node, name}
+      } else if (p.getMark().name === 'tuple' || p.getMark().name === 'group') {
+        const selector: GroupNode<SelectorNode> | TupleNode<SelectorNode> = p.process(
+          SELECTOR_BUILDER,
+          // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        ) as any
+        node = {type: 'SelectorNested', base: node, nested: selector}
       } else {
-        const selector = p.process(SELECTOR_BUILDER)
-        let expr = selector.base
-        while (expr.type === 'Selector') {
-          expr = expr.base
-        }
-
-        traversalList.push((right) =>
-          traversePlain((base) => {
-            if (base.type !== 'Selector')
-              throw new Error(`Unexpected selector traversal base type ${base.type}`)
-
-            return {type: 'Selector', base, expr}
-          }, right),
-        )
+        throw new Error('Invalid selector syntax')
       }
     }
     p.shift()
-    let traversal: TraversalResult | null = null
-    for (let i = traversalList.length - 1; i >= 0; i--) {
-      traversal = traversalList[i](traversal)
-    }
-    if (traversal === null) throw new Error('BUG: unexpected empty traversal')
-    const result = traversal.build(outer)
-    if (result.type !== 'Selector')
-      throw new Error(`Unexpected selector traversal result type ${result.type}`)
-    return result
+    return node
   },
 
   this_attr(p) {
     const name = p.processString()
-    return {
-      type: 'Selector',
-      base: {
-        type: 'AccessAttribute',
-        name,
-      },
-    }
+    return {type: 'AccessAttribute', name}
   },
 
-  attr_access(p) {
-    const name = p.processString()
-    return {
-      type: 'Selector',
-      base: {
-        type: 'AccessAttribute',
-        name,
-      },
-    }
+  attr_access() {
+    throw new Error('Invalid selector syntax')
   },
 
   neg() {
@@ -873,19 +820,10 @@ const SELECTOR_BUILDER: MarkVisitor<SelectorNode> = {
     }
     p.shift()
 
-    return {
-      type: 'Selector',
-      base: {
-        type: 'Tuple',
-        members: selectors,
-      },
-    }
+    return {type: 'Tuple', members: selectors}
   },
 
-  func_call(p, mark) {
-    const func = EXPR_BUILDER['func_call'](p, mark) as FuncCallNode
-    if (func.name === 'anywhere' && func.args.length === 1) return {type: 'Selector', base: func}
-
+  func_call() {
     throw new Error('Invalid selector syntax')
   },
 

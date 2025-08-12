@@ -706,15 +706,6 @@ function parseFuncCall(str, startPos, pos) {
       lastPos = result.position
       pos = skipWS(str, result.position)
 
-      // allow traversals in function arguments for selectors
-      if (str[pos] === '.') {
-        result = parseTraversal(str, pos)
-        if (result.type === 'error') return result
-        marks = marks.concat(result.marks)
-        lastPos = result.position
-        pos = skipWS(str, result.position)
-      }
-
       if (str[pos] !== ',') break
       pos = skipWS(str, pos + 1)
       // Also allow trailing commas
