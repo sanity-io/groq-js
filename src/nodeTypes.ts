@@ -216,16 +216,46 @@ export interface SelectNode extends BaseNode {
 
 export type SelectorNode =
   | AccessAttributeNode<SelectorNode>
+  | SelectorFuncCallNode
   | GroupNode<SelectorNode>
   | TupleNode<SelectorNode>
   | ArrayCoerceNode<SelectorNode>
   | FilterNode<SelectorNode>
-  | SelectorNested
+  | SelectorNestedNode
+export function isSelectorNode(node: BaseNode): node is SelectorNode {
+  return [
+    'AccessAttribute',
+    'SelectorFuncCall',
+    'Group',
+    'Tuple',
+    'ArrayCoerce',
+    'Filter',
+    'SelectorNested',
+  ].includes(node.type)
+}
 
-export interface SelectorNested extends BaseNode {
+export interface SelectorFuncCallNode extends BaseNode {
+  type: 'SelectorFuncCall'
+  name: 'anywhere'
+  arg: ExprNode
+}
+
+export type SelectorNested =
+  | AccessAttributeNode<SelectorNode>
+  | ArrayCoerceNode<SelectorNode>
+  | FilterNode<SelectorNode>
+  | GroupNode<SelectorNode>
+  | TupleNode<SelectorNode>
+export function isSelectorNested(node: BaseNode): node is SelectorNested {
+  return ['AccessAttribute', 'ArrayCoerce', 'Filter', 'Group', 'Tuple', 'SelectorNested'].includes(
+    node.type,
+  )
+}
+
+export interface SelectorNestedNode extends BaseNode {
   type: 'SelectorNested'
   base: SelectorNode
-  nested: GroupNode<SelectorNode> | TupleNode<SelectorNode>
+  nested: SelectorNested
 }
 
 export interface ThisNode extends BaseNode {

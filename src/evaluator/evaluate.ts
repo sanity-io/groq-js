@@ -11,7 +11,6 @@ import {
 import {operators} from './operators'
 import {partialCompare} from './ordering'
 import {Scope} from './scope'
-import {evaluateSelector} from './selector'
 import type {EvaluateOptions, Executor} from './types'
 
 export function evaluate(
@@ -52,10 +51,12 @@ const EXECUTORS: ExecutorMap = {
     return scope.value
   },
 
-  async Selector(node, scope) {
-    const result = await evaluateSelector(node, scope.source, scope)
+  SelectorNested() {
+    throw new Error('Unexpected node type: SelectorNested')
+  },
 
-    return fromJS(result)
+  SelectorFuncCall() {
+    throw new Error('Unexpected node type: SelectorFuncCall')
   },
 
   Everything(_, scope) {

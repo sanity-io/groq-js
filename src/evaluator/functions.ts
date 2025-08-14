@@ -1,4 +1,4 @@
-import type {ExprNode} from '../nodeTypes'
+import {isSelectorNode, type ExprNode} from '../nodeTypes'
 import {
   DateTime,
   FALSE_VALUE,
@@ -20,8 +20,8 @@ import {Scope} from './scope'
 import {evaluateScore} from './scoring'
 import type {Executor} from './types'
 import {deepEqual, isEqual} from './equality'
-import {evaluate} from './evaluate'
 import {valueAtPath} from './keyPath'
+import {evaluateSelector} from './selector'
 
 function hasReference(value: any, pathSet: Set<string>): boolean {
   switch (getType(value)) {
@@ -663,19 +663,19 @@ diff['changedAny'] = async (args, scope, execute) => {
   const lhs = args[0]
   const rhs = args[1]
   const selector = args[2]
+  if (!isSelectorNode(selector)) throw new Error('changedAny third argument must be a selector')
 
   const before = await execute(lhs, scope)
   const after = await execute(rhs, scope)
 
-  const beforeSelectorScope = new Scope(scope.params, before, fromJS(null), scope.context, null)
-  const beforeSelectedKeyPaths = await evaluate(selector, beforeSelectorScope)
-  const afterSelectorScope = new Scope(scope.params, after, fromJS(null), scope.context, null)
-  const afterSelectedKeyPaths = await evaluate(selector, afterSelectorScope)
-  if (!beforeSelectedKeyPaths.isArray() || !afterSelectedKeyPaths.isArray()) {
-    throw new Error(`Unexpected result from selector evaluation`)
-  }
-  const beforePaths: string[] = await beforeSelectedKeyPaths.get()
-  const afterPaths: string[] = await afterSelectedKeyPaths.get()
+  const beforeSelectorScope = scope.createHidden(before)
+  const beforePaths = await evaluateSelector(
+    selector,
+    beforeSelectorScope.value,
+    beforeSelectorScope,
+  )
+  const afterSelectorScope = scope.createHidden(after)
+  const afterPaths = await evaluateSelector(selector, afterSelectorScope.value, afterSelectorScope)
   if (beforePaths.length !== afterPaths.length) {
     return fromJS(true)
   }

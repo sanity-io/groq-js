@@ -2,16 +2,17 @@
 import {tryConstantEvaluate} from './evaluator'
 import {type GroqFunctionArity, namespaces, pipeFunctions} from './evaluator/functions'
 import {MarkProcessor, type MarkVisitor} from './markProcessor'
-import type {
-  ArrayElementNode,
-  ExprNode,
-  FuncCallNode,
-  ObjectAttributeNode,
-  ObjectSplatNode,
-  OpCall,
-  ParentNode,
-  SelectNode,
-  SelectorNode,
+import {
+  isSelectorNested,
+  type ArrayElementNode,
+  type ExprNode,
+  type FuncCallNode,
+  type ObjectAttributeNode,
+  type ObjectSplatNode,
+  type OpCall,
+  type ParentNode,
+  type SelectNode,
+  type SelectorNode,
 } from './nodeTypes'
 import {parse as rawParse} from './rawParser'
 import {
@@ -727,10 +728,9 @@ const SELECTOR_BUILDER: MarkVisitor<SelectorNode> = {
         const name = p.processString()
         node = {type: 'AccessAttribute', base: node, name}
       } else if (p.getMark().name === 'tuple' || p.getMark().name === 'group') {
-        const selector: GroupNode<SelectorNode> | TupleNode<SelectorNode> = p.process(
-          SELECTOR_BUILDER,
-          // eslint-disable-next-line @typescript-eslint/no-explicit-any
-        ) as any
+        const selector = p.process(SELECTOR_BUILDER)
+        if (!isSelectorNested(selector))
+          throw new Error(`Unexpected result parsing nested selector: ${selector.type}`)
         node = {type: 'SelectorNested', base: node, nested: selector}
       } else {
         throw new Error('Invalid selector syntax')
@@ -823,7 +823,16 @@ const SELECTOR_BUILDER: MarkVisitor<SelectorNode> = {
     return {type: 'Tuple', members: selectors}
   },
 
-  func_call() {
+  func_call(p, mark) {
+    const func = EXPR_BUILDER['func_call'](p, mark) as FuncCallNode
+    if (func.name === 'anywhere' && func.args.length === 1) {
+      return {
+        type: 'SelectorFuncCall',
+        name: 'anywhere',
+        arg: func.args[0],
+      }
+    }
+
     throw new Error('Invalid selector syntax')
   },
 
