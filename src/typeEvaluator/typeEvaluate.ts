@@ -1192,7 +1192,8 @@ export function walk({node, scope}: {node: ExprNode; scope: Scope}): TypeNode {
     case 'Desc':
     case 'Context':
     case 'Tuple':
-    case 'Selector':
+    case 'SelectorFuncCall':
+    case 'SelectorNested':
     case 'InRange': {
       return {type: 'unknown'}
     }

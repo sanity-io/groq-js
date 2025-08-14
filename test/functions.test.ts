@@ -193,9 +193,32 @@ t.test('Functions', async (t) => {
   })
 
   t.test('diff::changedAny()', async (t) => {
-    t.test('throws `not implemented` error', async (t) => {
+    t.test('with empty before/after', async (t) => {
       const tree = parse('diff::changedAny({}, {}, foo)')
-      throwsWithMessage(t, async () => await evaluate(tree, {}), 'not implemented')
+      const result = await evaluate(tree)
+      t.ok((await result.get()) === false, 'result should be `false`')
+    })
+
+    t.test('with matching before/after', async (t) => {
+      const tree = parse('diff::changedAny({"foo": "bar"}, {"foo": "bar"}, foo)')
+      const result = await evaluate(tree)
+      t.ok((await result.get()) === false, 'result should be `false`')
+    })
+
+    t.test('with different before/after but matched selector', async (t) => {
+      const tree = parse(
+        'diff::changedAny({"foo": "bar", "fizz": "bazz"}, {"foo": "bar", "fizz": "buzz"}, foo)',
+      )
+      const result = await evaluate(tree)
+      t.ok((await result.get()) === false, 'result should be `false`')
+    })
+
+    t.test('with different before/after and differing selector', async (t) => {
+      const tree = parse(
+        'diff::changedAny({"foo": "bar", "fizz": "bazz"}, {"foo": "car", "fizz": "buzz"}, foo)',
+      )
+      const result = await evaluate(tree)
+      t.ok((await result.get()) === true, 'result should be `true`')
     })
   })
 })

@@ -2,15 +2,17 @@
 import {tryConstantEvaluate} from './evaluator'
 import {type GroqFunctionArity, namespaces, pipeFunctions} from './evaluator/functions'
 import {MarkProcessor, type MarkVisitor} from './markProcessor'
-import type {
-  ArrayElementNode,
-  ExprNode,
-  FuncCallNode,
-  ObjectAttributeNode,
-  ObjectSplatNode,
-  OpCall,
-  ParentNode,
-  SelectNode,
+import {
+  isSelectorNested,
+  type ArrayElementNode,
+  type ExprNode,
+  type FuncCallNode,
+  type ObjectAttributeNode,
+  type ObjectSplatNode,
+  type OpCall,
+  type ParentNode,
+  type SelectNode,
+  type SelectorNode,
 } from './nodeTypes'
 import {parse as rawParse} from './rawParser'
 import {
@@ -35,6 +37,8 @@ const ESCAPE_SEQUENCE: {[key in EscapeSequences]: string} = {
   'r': '\r',
   't': '\t',
 }
+
+type TraverseFunc = (right: TraversalResult | null) => TraversalResult
 
 function expandHex(str: string): string {
   const charCode = parseInt(str, 16)
@@ -79,7 +83,7 @@ const EXPR_BUILDER: MarkVisitor<ExprNode> = {
 
   traverse(p) {
     const base = p.process(EXPR_BUILDER)
-    const traversalList: Array<(right: TraversalResult | null) => TraversalResult> = []
+    const traversalList: Array<TraverseFunc> = []
     while (p.getMark().name !== 'traversal_end') {
       traversalList.push(p.process(TRAVERSE_BUILDER))
     }
@@ -368,10 +372,7 @@ const EXPR_BUILDER: MarkVisitor<ExprNode> = {
 
     while (p.getMark().name !== 'func_args_end') {
       if (argumentShouldBeSelector(namespace, name, args.length)) {
-        // Since the diff/delta functions aren't validated yet we only want to validate the selector
-        // being used. We expect the null valued arg to throw an error at evaluation time.
-        p.process(SELECTOR_BUILDER)
-        args.push({type: 'Selector'})
+        args.push(p.process(SELECTOR_BUILDER))
       } else {
         args.push(p.process(EXPR_BUILDER))
       }
@@ -589,7 +590,7 @@ const OBJECT_BUILDER: MarkVisitor<ObjectAttributeNode> = {
   },
 }
 
-const TRAVERSE_BUILDER: MarkVisitor<(rhs: TraversalResult | null) => TraversalResult> = {
+const TRAVERSE_BUILDER: MarkVisitor<TraverseFunc> = {
   square_bracket(p) {
     const expr = p.process(EXPR_BUILDER)
 
@@ -681,10 +682,9 @@ const TRAVERSE_BUILDER: MarkVisitor<(rhs: TraversalResult | null) => TraversalRe
   },
 }
 
-const SELECTOR_BUILDER: MarkVisitor<null> = {
+const SELECTOR_BUILDER: MarkVisitor<SelectorNode> = {
   group(p) {
-    p.process(SELECTOR_BUILDER)
-    return null
+    return p.process(SELECTOR_BUILDER)
   },
 
   everything() {
@@ -704,18 +704,49 @@ const SELECTOR_BUILDER: MarkVisitor<null> = {
   },
 
   traverse(p) {
-    p.process(SELECTOR_BUILDER)
+    let node: SelectorNode = p.process(SELECTOR_BUILDER)
     while (p.getMark().name !== 'traversal_end') {
-      p.process(TRAVERSE_BUILDER)
-    }
+      if (p.getMark().name === 'array_postfix') {
+        p.shift()
 
+        node = {type: 'ArrayCoerce', base: node}
+      } else if (p.getMark().name === 'square_bracket') {
+        p.shift()
+
+        const expr = p.process(EXPR_BUILDER)
+
+        const value = tryConstantEvaluate(expr)
+        if (value && value.type === 'number') {
+          throw new Error('Invalid array access expression')
+        } else if (value && value.type === 'string') {
+          node = {type: 'AccessAttribute', base: node, name: value.data}
+        } else {
+          node = {type: 'Filter', base: node, expr}
+        }
+      } else if (p.getMark().name === 'attr_access') {
+        p.shift()
+        const name = p.processString()
+        node = {type: 'AccessAttribute', base: node, name}
+      } else if (p.getMark().name === 'tuple' || p.getMark().name === 'group') {
+        const selector = p.process(SELECTOR_BUILDER)
+        if (!isSelectorNested(selector))
+          throw new Error(`Unexpected result parsing nested selector: ${selector.type}`)
+        node = {type: 'SelectorNested', base: node, nested: selector}
+      } else {
+        throw new Error('Invalid selector syntax')
+      }
+    }
     p.shift()
-    return null
+    return node
   },
 
   this_attr(p) {
-    p.processString()
-    return null
+    const name = p.processString()
+    return {type: 'AccessAttribute', name}
+  },
+
+  attr_access() {
+    throw new Error('Invalid selector syntax')
   },
 
   neg() {
@@ -782,14 +813,25 @@ const SELECTOR_BUILDER: MarkVisitor<null> = {
     throw new Error('Invalid selector syntax')
   },
 
-  tuple() {
-    // This should only throw an error until we add support for tuples in selectors.
-    throw new Error('Invalid selector syntax')
+  tuple(p) {
+    const selectors: Array<SelectorNode> = []
+    while (p.getMark().name !== 'tuple_end') {
+      selectors.push(p.process(SELECTOR_BUILDER))
+    }
+    p.shift()
+
+    return {type: 'Tuple', members: selectors}
   },
 
   func_call(p, mark) {
     const func = EXPR_BUILDER['func_call'](p, mark) as FuncCallNode
-    if (func.name === 'anywhere' && func.args.length === 1) return null
+    if (func.name === 'anywhere' && func.args.length === 1) {
+      return {
+        type: 'SelectorFuncCall',
+        name: 'anywhere',
+        arg: func.args[0],
+      }
+    }
 
     throw new Error('Invalid selector syntax')
   },
@@ -874,7 +916,7 @@ class GroqSyntaxError extends Error {
   public override name = 'GroqSyntaxError'
 
   constructor(position: number, detail: string) {
-    super(`Syntax error in GROQ query at position ${position}: ${detail}`)
+    super(`Syntax error in GROQ query at position ${position}${detail ? ': ' + detail : ''}`)
     this.position = position
   }
 }

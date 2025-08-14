@@ -15,9 +15,10 @@ const GROQ_VERSION = '1.2.0'
 const DISABLED_TESTS = [
   'Filters / documents, nested 3', // very slow
   'Parameters / Undefined',
-  /diff functions/, // we don't have full selector support yet
   /score\(\) function \/ Illegal use/, // we're missing validation here
 ]
+
+const WHITESPACE_REGEX = /\s+/g
 
 const OUTPUT = process.stdout
 const STACK = []
@@ -165,6 +166,8 @@ function writeWarning(message) {
   }
 }
 
+let lastEntryName = ''
+
 process.stdin
   .pipe(ndjson.parse())
   .on('data', (entry) => {
@@ -175,11 +178,14 @@ process.stdin
         download(entry._id, entry.url)
       }
 
+      if (lastEntryName !== '') {
+        closeStack()
+        lastEntryName = ''
+      }
+
       write(`DATASETS.set(${JSON.stringify(entry._id)}, ${JSON.stringify(entry)})`)
       space()
-    }
-
-    if (entry._type === 'test') {
+    } else if (entry._type === 'test') {
       const supported = entry.features.every((f) => SUPPORTED_FEATURES.has(f))
       if (!supported) {
         const missing = entry.features.filter((f) => !SUPPORTED_FEATURES.has(f))
@@ -202,9 +208,20 @@ process.stdin
         return
       }
 
-      openStack(`tap.test(${JSON.stringify(entry.name)}, async (t) => {BODY})`)
+      if (lastEntryName !== entry.name) {
+        if (lastEntryName !== '') {
+          closeStack()
+          space()
+        }
+        lastEntryName = entry.name
+
+        openStack(`tap.test(${JSON.stringify(entry.name)}, async (t) => {BODY})`)
+      }
+
+      openStack(
+        `t.test(${JSON.stringify(entry.query.replaceAll(WHITESPACE_REGEX, ' ').trim())}, async (tt) => {BODY})`,
+      )
       write(`let query = ${JSON.stringify(entry.query)}`)
-      write(`t.comment(query)`)
       if (entry.valid) {
         write(`let result = ${JSON.stringify(entry.result)}`)
         write(`let dataset = await loadDocuments(${JSON.stringify(entry.dataset._ref)})`)
@@ -215,15 +232,18 @@ process.stdin
         write(`let data = await value.get()`)
         write(`data = JSON.parse(JSON.stringify(data))`)
         write(`replaceScoreWithPos(data)`)
-        write(`t.match(data, result)`)
+        write(`tt.match(data, result)`)
       } else {
-        write(`t.throws(() => parse(query))`)
+        write(`tt.throws(() => parse(query))`)
       }
       closeStack()
       space()
     }
   })
   .on('end', () => {
+    if (lastEntryName !== '') {
+      closeStack()
+    }
     if (lastWarning !== '') {
       process.stderr.write('\n')
     }
