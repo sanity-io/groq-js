@@ -52,7 +52,7 @@
     "prepublishOnly": "npm run build",
     "prettify": "prettier --write .",
     "prettify-check": "prettier --check .",
-    "test": "tap --no-timeout --coverage-report=html --no-browser test/*.test.*",
+    "test": "tap --no-timeout --coverage-report=html --no-browser --files=test/**/*.test.*",
     "test:generate": "./test/generate.sh"
   },
   "browserslist": "extends @sanity/browserslist-config",
