@@ -706,8 +706,6 @@ diff['changedAny'] = async (args, scope, execute) => {
   }
 
   return fromJS(false)
-
-  // throw new Error('not implemented')
 }
 diff['changedAny'].arity = 3
 
