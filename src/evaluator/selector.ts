@@ -3,53 +3,45 @@ import {fromJS, type Value} from '../values'
 import {evaluate} from './evaluate'
 import {valueAtPath} from './keyPath'
 import type {Scope} from './scope'
+import type {KeyPath} from './types'
 
 export async function evaluateSelector(
   node: SelectorNode,
   value: Value,
   scope: Scope,
-): Promise<string[]> {
+): Promise<KeyPath[]> {
   switch (node.type) {
     case 'Group':
       return await evaluateSelector(node.base, value, scope)
     case 'Tuple':
-      const tuplePaths: Array<string> = []
+      const tuplePaths: Array<KeyPath> = []
       for (const member of node.members) {
-        tuplePaths.push(...(await evaluateSelector(member, value, scope)))
+        const memberPaths = await evaluateSelector(member, value, scope)
+        tuplePaths.push(...memberPaths)
       }
       return tuplePaths
     case 'AccessAttribute':
-      const pathParts: Array<string[]> = [[node.name]]
-      let pathCount = 1
-      let selector = node.base
-      if (selector) {
-        const accessPaths = await evaluateSelector(selector, value, scope)
-        pathParts.unshift(accessPaths)
-        pathCount *= accessPaths.length
+      if (node.base) {
+        const accessPaths = await evaluateSelector(node.base, value, scope)
+        return accessPaths.map((path) => [...path, node.name])
       }
 
-      const pathList: Array<string[]> = []
-      for (let i = 0; i < pathCount; i++) {
-        const current = pathParts.map((parts) => parts[i % parts.length])
-        pathList.push(current)
-      }
-
-      return pathList.map((parts) => parts.filter((s) => s.length > 0).join('.'))
+      return [[node.name]]
     case 'ArrayCoerce': {
       const paths = await evaluateSelector(node.base, value, scope)
 
-      const nestedPaths: string[] = []
+      const arrayPaths: KeyPath[] = []
       for (const keyPath of paths) {
-        const innerValue = await valueAtPath(value, keyPath, {throwOnReferenceError: false})
+        const innerValue = await valueAtPath(value, keyPath)
 
         if (Array.isArray(innerValue)) {
-          for (let i = 0; i <= innerValue.length; i++) {
-            nestedPaths.push(`${keyPath}[${i}]`)
+          for (let i = 0; i < innerValue.length; i++) {
+            arrayPaths.push([...keyPath, i])
           }
         }
       }
 
-      return nestedPaths
+      return arrayPaths
     }
     case 'Filter': {
       const paths = await evaluateSelector(node.base, value, scope)
@@ -60,80 +52,78 @@ export async function evaluateSelector(
         base: {type: 'This'},
       }
 
-      const nestedPaths: string[] = []
+      const arrayPaths: KeyPath[] = []
       for (const keyPath of paths) {
-        const innerValue = await valueAtPath(value, keyPath, {throwOnReferenceError: false})
+        const innerValue = await valueAtPath(value, keyPath)
         if (Array.isArray(innerValue)) {
           for (let i = 0; i < innerValue.length; i++) {
             const item = innerValue[i]
             const nestedScope = scope.createNested(fromJS([item]))
             const result = await evaluate(filter, nestedScope)
             const matched = await result.get()
-            if (matched.length > 0) nestedPaths.push(`${keyPath}[${i}]`)
+            if (matched.length > 0) arrayPaths.push([...keyPath, i])
           }
         }
       }
 
-      return nestedPaths
+      return arrayPaths
     }
     case 'SelectorFuncCall': {
       return anywhere(node.arg, scope.createHidden(value))
     }
-    case 'SelectorNested':
+    case 'SelectorNested': {
       const {base, nested: expr} = node
 
       const paths = await evaluateSelector(base, value, scope)
-      const nestedPaths: string[] = []
+      const nestedPaths: KeyPath[] = []
       for (const keyPath of paths) {
-        const innerValue = await valueAtPath(value, keyPath, {throwOnReferenceError: false})
+        const innerValue = await valueAtPath(value, keyPath)
 
-        if (expr.type === 'ArrayCoerce') {
-          const arrayPaths = await evaluateSelector(expr, fromJS(innerValue), scope)
-          for (let i = 0; i < arrayPaths.length; i++) {
-            nestedPaths.push(`${keyPath}.${arrayPaths[i]}`)
-          }
-        } else if (expr.type === 'AccessAttribute') {
-          const accessPaths = await evaluateSelector(expr, fromJS(innerValue), scope)
-          for (let i = 0; i < accessPaths.length; i++) {
-            nestedPaths.push(`${keyPath}.${accessPaths[i]}`)
-          }
-        } else if (expr.type === 'Filter') {
-          const arrayPaths = await evaluateSelector(expr, fromJS(innerValue), scope)
-          for (let i = 0; i < arrayPaths.length; i++) {
-            nestedPaths.push(`${keyPath}.${arrayPaths[i]}`)
-          }
-        } else if (expr.type === 'Group') {
-          const innerResult = await evaluateSelector(expr.base, fromJS(innerValue), scope)
-          for (const innerKeyPath of innerResult) {
-            nestedPaths.push(`${keyPath}.${innerKeyPath}`)
-          }
-        } else if (expr.type === 'Tuple') {
-          for (const inner of expr.members) {
-            const innerResult = await evaluateSelector(inner, fromJS(innerValue), scope)
-            for (const innerKeyPath of innerResult) {
-              nestedPaths.push(`${keyPath}.${innerKeyPath}`)
+        switch (expr.type) {
+          case 'AccessAttribute':
+          case 'ArrayCoerce':
+          case 'Filter':
+            const accessPaths = await evaluateSelector(expr, fromJS(innerValue), scope)
+            for (let i = 0; i < accessPaths.length; i++) {
+              nestedPaths.push([...keyPath, ...accessPaths[i]])
             }
-          }
+            break
+
+          case 'Group':
+            const innerResult = await evaluateSelector(expr.base, fromJS(innerValue), scope)
+            for (const innerKeyPath of innerResult) {
+              nestedPaths.push([...keyPath, ...innerKeyPath])
+            }
+            break
+
+          case 'Tuple':
+            for (const inner of expr.members) {
+              const innerResult = await evaluateSelector(inner, fromJS(innerValue), scope)
+              for (const innerKeyPath of innerResult) {
+                nestedPaths.push([...keyPath, ...innerKeyPath])
+              }
+            }
         }
       }
       return nestedPaths
+    }
   }
 }
 
-async function anywhere(expr: ExprNode, scope: Scope, base: string[] = []): Promise<string[]> {
+async function anywhere(expr: ExprNode, scope: Scope, base: KeyPath = []): Promise<KeyPath[]> {
   const value = scope.value
 
-  const pathList: string[] = []
+  const pathList: KeyPath[] = []
   if (value.isArray()) {
     const arr: any[] = await value.get()
     for (let i = 0; i < arr.length; i++) {
-      const subPaths = await anywhere(expr, scope.createHidden(fromJS(arr[i])), [...base, `[${i}]`])
+      const subPaths = await anywhere(expr, scope.createHidden(fromJS(arr[i])), [...base, i])
       pathList.push(...subPaths)
     }
   } else if (value.type === 'object') {
     const result = await evaluate(expr, scope)
     if (result.type === 'boolean' && result.data === true) {
-      pathList.push(base.join('.'))
+      pathList.push(base)
     }
 
     for (const key of Object.keys(value.data)) {

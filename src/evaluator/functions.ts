@@ -681,20 +681,20 @@ diff['changedAny'] = async (args, scope, execute) => {
   }
 
   for (const path of beforePaths) {
-    // this checks if array parts are different lengths
-    let parts = path.split('[')
-    while (parts.length > 1) {
-      const beforeArr = await valueAtPath(before, parts[0])
-      const afterArr = await valueAtPath(after, parts[0])
-      if (
-        !Array.isArray(beforeArr) ||
-        !Array.isArray(afterArr) ||
-        beforeArr.length !== afterArr.length
-      ) {
-        return fromJS(true)
-      }
+    for (let i = 0; i < path.length; i++) {
+      if (typeof path[i] === 'number') {
+        const slice = path.slice(0, i)
+        const beforeArr = await valueAtPath(before, slice)
+        const afterArr = await valueAtPath(after, slice)
 
-      parts = [`${parts[0]}[${parts[1]}`, ...parts.slice(2)]
+        if (
+          !Array.isArray(beforeArr) ||
+          !Array.isArray(afterArr) ||
+          beforeArr.length !== afterArr.length
+        ) {
+          return fromJS(true)
+        }
+      }
     }
 
     const beforeValue = await valueAtPath(before, path)

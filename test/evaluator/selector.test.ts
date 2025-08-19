@@ -37,7 +37,7 @@ t.test('evaluateSelector', async (t) => {
     }
     const result = await evaluateSelector(node, scope.value, scope)
 
-    t.match(result, ['attr'])
+    t.match(result, [['attr']])
   })
   t.test('attr in group', async (t) => {
     // Selector: (attr)
@@ -50,7 +50,7 @@ t.test('evaluateSelector', async (t) => {
     }
     const result = await evaluateSelector(node, scope.value, scope)
 
-    t.match(result, ['attr'])
+    t.match(result, [['attr']])
   })
   t.test('tuple', async (t) => {
     // Selector: (tuple1, tuple2)
@@ -69,7 +69,7 @@ t.test('evaluateSelector', async (t) => {
     }
     const result = await evaluateSelector(node, scope.value, scope)
 
-    t.match(result, ['tuple1', 'tuple2'])
+    t.match(result, [['tuple1'], ['tuple2']])
   })
   t.test('anywhere(_type == "foo")', async (t) => {
     const node: SelectorFuncCallNode = {
@@ -84,7 +84,7 @@ t.test('evaluateSelector', async (t) => {
     }
     const result = await evaluateSelector(node, scope.value, scope)
 
-    t.match(result, [''])
+    t.match(result, [[]])
   })
   t.test('attr.dot_attr', async (t) => {
     const node: AccessAttributeNode<SelectorNode> = {
@@ -94,7 +94,7 @@ t.test('evaluateSelector', async (t) => {
     }
     const result = await evaluateSelector(node, scope.value, scope)
 
-    t.match(result, ['attr.dot_attr'])
+    t.match(result, [['attr', 'dot_attr']])
   })
   t.test('(attr_in_group).dot_attr', async (t) => {
     const node: AccessAttributeNode<SelectorNode> = {
@@ -104,7 +104,7 @@ t.test('evaluateSelector', async (t) => {
     }
     const result = await evaluateSelector(node, scope.value, scope)
 
-    t.match(result, ['attr_in_group.dot_attr'])
+    t.match(result, [['attr_in_group', 'dot_attr']])
   })
   t.test('(tuple1, tuple2).dot_attr', async (t) => {
     const node: AccessAttributeNode<SelectorNode> = {
@@ -120,7 +120,10 @@ t.test('evaluateSelector', async (t) => {
     }
     const result = await evaluateSelector(node, scope.value, scope)
 
-    t.match(result, ['tuple1.dot_attr', 'tuple2.dot_attr'])
+    t.match(result, [
+      ['tuple1', 'dot_attr'],
+      ['tuple2', 'dot_attr'],
+    ])
   })
   t.test('anywhere(_type == "foo").dot_attr', async (t) => {
     const node: AccessAttributeNode<SelectorNode> = {
@@ -139,7 +142,7 @@ t.test('evaluateSelector', async (t) => {
     }
     const result = await evaluateSelector(node, scope.value, scope)
 
-    t.match(result, ['dot_attr'])
+    t.match(result, [['dot_attr']])
   })
   t.test('(attr_in_group).(attr_in_dot_group)', async (t) => {
     const node: SelectorNestedNode = {
@@ -149,7 +152,7 @@ t.test('evaluateSelector', async (t) => {
     }
     const result = await evaluateSelector(node, scope.value, scope)
 
-    t.match(result, ['attr_in_group.attr_in_dot_group'])
+    t.match(result, [['attr_in_group', 'attr_in_dot_group']])
   })
   t.test('(tuple1, tuple2).(attr_in_dot_group)', async (t) => {
     const node: SelectorNestedNode = {
@@ -165,7 +168,10 @@ t.test('evaluateSelector', async (t) => {
     }
     const result = await evaluateSelector(node, scope.value, scope)
 
-    t.match(result, ['tuple1.attr_in_dot_group', 'tuple2.attr_in_dot_group'])
+    t.match(result, [
+      ['tuple1', 'attr_in_dot_group'],
+      ['tuple2', 'attr_in_dot_group'],
+    ])
   })
   t.test('array_attr[]', async (t) => {
     const node: ArrayCoerceNode<SelectorNode> = {
@@ -174,7 +180,11 @@ t.test('evaluateSelector', async (t) => {
     }
     const result = await evaluateSelector(node, scope.value, scope)
 
-    t.match(result, ['[0]', '[1]', '[2]'])
+    t.match(result, [
+      ['array_attr', 0],
+      ['array_attr', 1],
+      ['array_attr', 2],
+    ])
   })
   t.test('(array_attr)[]', async (t) => {
     const node: ArrayCoerceNode<SelectorNode> = {
@@ -183,7 +193,11 @@ t.test('evaluateSelector', async (t) => {
     }
     const result = await evaluateSelector(node, scope.value, scope)
 
-    t.match(result, ['[0]', '[1]', '[2]'])
+    t.match(result, [
+      ['array_attr', 0],
+      ['array_attr', 1],
+      ['array_attr', 2],
+    ])
   })
   t.test('array_attr[expr == 1]', async (t) => {
     const node: FilterNode<SelectorNode> = {
@@ -198,7 +212,7 @@ t.test('evaluateSelector', async (t) => {
     }
     const result = await evaluateSelector(node, scope.value, scope)
 
-    t.match(result, ['[1]'])
+    t.match(result, [['array_attr', 1]])
   })
   t.test('(attr.dot_attr)', async (t) => {
     const node: GroupNode<SelectorNode> = {
@@ -211,7 +225,7 @@ t.test('evaluateSelector', async (t) => {
     }
     const result = await evaluateSelector(node, scope.value, scope)
 
-    t.match(result, ['attr.dot_attr'])
+    t.match(result, [['attr', 'dot_attr']])
   })
   t.test('((tuple1, tuple2).(dot_tuple1, dot_tuple2))', async (t) => {
     const node: GroupNode<SelectorNode> = {
@@ -237,10 +251,45 @@ t.test('evaluateSelector', async (t) => {
     const result = await evaluateSelector(node, scope.value, scope)
 
     t.match(result, [
-      'tuple1.dot_tuple1',
-      'tuple1.dot_tuple2',
-      'tuple2.dot_tuple1',
-      'tuple2.dot_tuple2',
+      ['tuple1', 'dot_tuple1'],
+      ['tuple1', 'dot_tuple2'],
+      ['tuple2', 'dot_tuple1'],
+      ['tuple2', 'dot_tuple2'],
+    ])
+  })
+  t.test('((tuple1, tuple2).(dot_tuple1, dot_tuple2)).attr', async (t) => {
+    const group: GroupNode<SelectorNode> = {
+      type: 'Group',
+      base: {
+        type: 'SelectorNested',
+        base: {
+          type: 'Tuple',
+          members: [
+            {type: 'AccessAttribute', name: 'tuple1'},
+            {type: 'AccessAttribute', name: 'tuple2'},
+          ],
+        },
+        nested: {
+          type: 'Tuple',
+          members: [
+            {type: 'AccessAttribute', name: 'dot_tuple1'},
+            {type: 'AccessAttribute', name: 'dot_tuple2'},
+          ],
+        },
+      },
+    }
+    const node: AccessAttributeNode<SelectorNode> = {
+      type: 'AccessAttribute',
+      base: group,
+      name: 'attr',
+    }
+    const result = await evaluateSelector(node, scope.value, scope)
+
+    t.match(result, [
+      ['tuple1', 'dot_tuple1', 'attr'],
+      ['tuple1', 'dot_tuple2', 'attr'],
+      ['tuple2', 'dot_tuple1', 'attr'],
+      ['tuple2', 'dot_tuple2', 'attr'],
     ])
   })
   t.test('base.nested[]', async (t) => {
@@ -251,7 +300,11 @@ t.test('evaluateSelector', async (t) => {
     }
     const result = await evaluateSelector(node, scope.value, scope)
 
-    t.match(result, ['base.nested[0]', 'base.nested[1]', 'base.nested[2]'])
+    t.match(result, [
+      ['base', 'nested', 0],
+      ['base', 'nested', 1],
+      ['base', 'nested', 2],
+    ])
   })
   t.test('base.nested[expr > 0]', async (t) => {
     const node: SelectorNestedNode = {
@@ -270,7 +323,10 @@ t.test('evaluateSelector', async (t) => {
     }
     const result = await evaluateSelector(node, scope.value, scope)
 
-    t.match(result, ['base.nested[1]', 'base.nested[2]'])
+    t.match(result, [
+      ['base', 'nested', 1],
+      ['base', 'nested', 2],
+    ])
   })
   t.test('foo.(anywhere(_type == "bar")).baz', async (t) => {
     const node: SelectorNestedNode = {
@@ -296,6 +352,9 @@ t.test('evaluateSelector', async (t) => {
     }
     const result = await evaluateSelector(node, scope.value, scope)
 
-    t.match(result, ['foo.baz', 'foo.data.baz'])
+    t.match(result, [
+      ['foo', 'baz'],
+      ['foo', 'data', 'baz'],
+    ])
   })
 })
