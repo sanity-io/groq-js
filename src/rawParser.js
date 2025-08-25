@@ -556,10 +556,10 @@ function parseTraversal(str, pos) {
     case '.': {
       pos = skipWS(str, pos + 1)
 
-      // TODO: allow tuples/groups in a traversal for selectors
-      // if (str[pos] === '(') {
-      //   return parseGroupOrTuple(str, pos)
-      // }
+      // allow tuples/groups in a traversal for selectors
+      if (str[pos] === '(') {
+        return parseGroupOrTuple(str, pos)
+      }
 
       let identStart = pos
       let identLen = parseRegex(str, pos, IDENT)
@@ -705,16 +705,6 @@ function parseFuncCall(str, startPos, pos) {
       marks = marks.concat(result.marks)
       lastPos = result.position
       pos = skipWS(str, result.position)
-
-      // TODO: allow traversals in function arguments for selectors
-      // if (str[pos] === '.') {
-      //   result = parseTraversal(str, pos)
-      //   if (result.type === 'error') return result
-      //   TODO: what to do with type === 'warning'?
-      //   marks = marks.concat(result.marks)
-      //   lastPos = result.position
-      //   pos = skipWS(str, result.position)
-      // }
 
       if (str[pos] !== ',') break
       pos = skipWS(str, pos + 1)

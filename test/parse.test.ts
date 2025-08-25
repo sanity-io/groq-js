@@ -237,7 +237,10 @@ t.test('Selector validation', async (t) => {
       'diff::changedAny({}, {}, foo[])',
       'diff::changedAny({}, {}, foo.bar[baz == 1])',
       'diff::changedAny({}, {}, (foo))',
-      'diff::changedAny({}, {}, anywhere(foo))',
+      'diff::changedAny({}, {}, anywhere(baz == 1))',
+      'diff::changedAny({}, {}, (foo, bar))',
+      'diff::changedAny({}, {}, a.(foo).bar)',
+      'diff::changedAny({}, {}, a[].(foo, bar).b)',
     ]
 
     for (const query of queries) {
@@ -250,28 +253,10 @@ t.test('Selector validation', async (t) => {
       'diff::changedAny({}, {}, "foo")',
       'diff::changedAny({}, {}, 1 + 2)',
       'diff::changedAny({}, {}, 5)',
-      'diff::changedAny({}, {}, (foo, bar))', // BUG: fails because we don't support tuples inside traversals yet
     ]
 
     for (const query of queries) {
       throwsWithMessage(t, () => parse(query), 'Invalid selector syntax')
-    }
-  })
-
-  // BUG: the below cases throw syntax errors because we don't support their syntax *yet*.
-  // These are valid selectors according to the spec, but not according to our implementation.
-  t.test('fails due to syntax error', async (t) => {
-    const queries = [
-      'diff::changedAny({}, {}, a.(foo).bar)',
-      'diff::changedAny({}, {}, a[].(foo, bar).b)',
-    ]
-
-    for (const query of queries) {
-      try {
-        parse(query)
-      } catch (error: any) {
-        t.match(error.message, 'Syntax error in GROQ query at position')
-      }
     }
   })
 })

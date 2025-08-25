@@ -1,4 +1,4 @@
-import type {ExprNode} from '../nodeTypes'
+import {isSelectorNode, type ExprNode} from '../nodeTypes'
 import {
   DateTime,
   FALSE_VALUE,
@@ -19,7 +19,9 @@ import {portableTextContent} from './pt'
 import {Scope} from './scope'
 import {evaluateScore} from './scoring'
 import type {Executor} from './types'
-import {isEqual} from './equality'
+import {deepEqual, isEqual} from './equality'
+import {valueAtPath} from './keyPath'
+import {evaluateSelector} from './selector'
 
 function hasReference(value: any, pathSet: Set<string>): boolean {
   switch (getType(value)) {
@@ -625,7 +627,6 @@ type ObjectWithScore = Record<string, unknown> & {_score: number}
 
 const delta: FunctionSet = {}
 // eslint-disable-next-line require-await
-// eslint-disable-next-line require-await
 delta['operation'] = async function (_args, scope) {
   const hasBefore = scope.context.before !== null
   const hasAfter = scope.context.after !== null
@@ -645,7 +646,7 @@ delta['operation'] = async function (_args, scope) {
   return NULL_VALUE
 }
 
-delta['changedAny'] = () => {
+delta['changedAny'] = (_args, _scope) => {
   throw new Error('not implemented')
 }
 delta['changedAny'].arity = 1
@@ -658,8 +659,53 @@ delta['changedOnly'].arity = 1
 delta['changedOnly'].mode = 'delta'
 
 const diff: FunctionSet = {}
-diff['changedAny'] = () => {
-  throw new Error('not implemented')
+diff['changedAny'] = async (args, scope, execute) => {
+  const lhs = args[0]
+  const rhs = args[1]
+  const selector = args[2]
+  if (!isSelectorNode(selector)) throw new Error('changedAny third argument must be a selector')
+
+  const before = await execute(lhs, scope)
+  const after = await execute(rhs, scope)
+
+  const beforeSelectorScope = scope.createHidden(before)
+  const beforePaths = await evaluateSelector(
+    selector,
+    beforeSelectorScope.value,
+    beforeSelectorScope,
+  )
+  const afterSelectorScope = scope.createHidden(after)
+  const afterPaths = await evaluateSelector(selector, afterSelectorScope.value, afterSelectorScope)
+  if (beforePaths.length !== afterPaths.length) {
+    return fromJS(true)
+  }
+
+  for (const path of beforePaths) {
+    for (let i = 0; i < path.length; i++) {
+      if (typeof path[i] === 'number') {
+        const slice = path.slice(0, i)
+        const beforeArr = await valueAtPath(before, slice)
+        const afterArr = await valueAtPath(after, slice)
+
+        if (
+          !Array.isArray(beforeArr) ||
+          !Array.isArray(afterArr) ||
+          beforeArr.length !== afterArr.length
+        ) {
+          return fromJS(true)
+        }
+      }
+    }
+
+    const beforeValue = await valueAtPath(before, path)
+    const afterValue = await valueAtPath(after, path)
+
+    if (!deepEqual(beforeValue, afterValue)) {
+      return fromJS(true)
+    }
+  }
+
+  return fromJS(false)
 }
 diff['changedAny'].arity = 3
 

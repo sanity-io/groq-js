@@ -53,3 +53,5 @@ export interface Context {
   }
   dereference?: DereferenceFunction
 }
+
+export type KeyPath = Array<string | number>
