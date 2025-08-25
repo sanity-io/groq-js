@@ -18,7 +18,7 @@ export function isEqual(a: Value, b: Value): boolean {
 }
 
 export function deepEqual(a: any, b: any): boolean {
-  if (a === null && b === null) return true
+  if (a === null || b === null) return a === b
   const typeOfA = typeof a
   const typeOfB = typeof b
   if (typeOfA === 'undefined' && typeOfB === 'undefined') return true
