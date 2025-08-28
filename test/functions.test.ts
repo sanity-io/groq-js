@@ -186,9 +186,86 @@ t.test('Functions', async (t) => {
   })
 
   t.test('diff::changedOnly()', async (t) => {
-    t.test('throws `not implemented` error', async (t) => {
+    t.test('with empty before/after unchanged selector', async (t) => {
       const tree = parse('diff::changedOnly({}, {}, foo)')
-      throwsWithMessage(t, async () => await evaluate(tree, {}), 'not implemented')
+      const result = await evaluate(tree)
+      t.ok((await result.get()) === true, 'result should be `true`')
+    })
+
+    t.test('with scalar before/after and unchanged selector', async (t) => {
+      const tree = parse('diff::changedOnly(1, 2, foo)')
+      const result = await evaluate(tree)
+      t.ok((await result.get()) === false, 'result should be `false`')
+    })
+
+    t.test('with unchanged selector', async (t) => {
+      const tree = parse('diff::changedOnly({"foo": 1}, {"foo": 1}, foo)')
+      const result = await evaluate(tree)
+      t.ok((await result.get()) === true, 'result should be `true`')
+    })
+
+    t.test('with changed selector', async (t) => {
+      const tree = parse('diff::changedOnly({"foo": 1}, {"foo": 2}, foo)')
+      const result = await evaluate(tree)
+      t.ok((await result.get()) === true, 'result should be `true`')
+    })
+
+    t.test('with changed selector', async (t) => {
+      const tree = parse('diff::changedOnly({"foo": {"bar": 1}}, {"foo": {"bar": 2}}, foo.bar)')
+      const result = await evaluate(tree)
+      t.ok((await result.get()) === true, 'result should be `true`')
+    })
+
+    t.test('with change not in selector, selector not defined', async (t) => {
+      const tree = parse('diff::changedOnly({"foo": 1}, {"foo": 2}, bar)')
+      const result = await evaluate(tree)
+      t.ok((await result.get()) === false, 'result should be `false`')
+    })
+
+    t.test('with change not in selector, long selector not defined', async (t) => {
+      const tree = parse('diff::changedOnly({"foo": 1}, {"foo": 2}, foo.bar)')
+      const result = await evaluate(tree)
+      t.ok((await result.get()) === false, 'result should be `false`')
+    })
+
+    t.test('with change not in selector', async (t) => {
+      const tree = parse('diff::changedOnly({"foo": 1, "bar": 3}, {"foo": 2, "bar": 3}, bar)')
+      const result = await evaluate(tree)
+      t.ok((await result.get()) === false, 'result should be `false`')
+    })
+
+    t.test('with change in selector and not in selector', async (t) => {
+      const tree = parse('diff::changedOnly({"foo": 1, "bar": 3}, {"foo": 2, "bar": 4}, bar)')
+      const result = await evaluate(tree)
+      t.ok((await result.get()) === false, 'result should be `false`')
+    })
+
+    t.test('with change only in selector', async (t) => {
+      const tree = parse('diff::changedOnly({"foo": 1, "bar": 3}, {"foo": 1, "bar": 4}, bar)')
+      const result = await evaluate(tree)
+      t.ok((await result.get()) === true, 'result should be `true`')
+    })
+
+    t.test('with change only in nested selector', async (t) => {
+      const tree = parse('diff::changedOnly({"foo": {"bar": 3}}, {"foo": {"bar": 4}}, foo.bar)')
+      const result = await evaluate(tree)
+      t.ok((await result.get()) === true, 'result should be `true`')
+    })
+
+    t.test('with change only in tuple selector', async (t) => {
+      const tree = parse(
+        'diff::changedOnly({"foo": {"bar": 3}}, {"foo": {"bar": 4}}, (foo, foo.bar))',
+      )
+      const result = await evaluate(tree)
+      t.ok((await result.get()) === true, 'result should be `true`')
+    })
+
+    t.test('with change in child of tuple selector', async (t) => {
+      const tree = parse(
+        'diff::changedOnly({"foo": {"bar": 3, "baz": 5}}, {"foo": {"bar": 4, "baz": 6}}, (foo, foo.bar))',
+      )
+      const result = await evaluate(tree)
+      t.ok((await result.get()) === true, 'result should be `true`')
     })
   })
 
