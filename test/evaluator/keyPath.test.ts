@@ -74,7 +74,7 @@ t.test('diffKeyPaths', async (t) => {
     ]
 
     for (const pair of pairs) {
-      const result = await Array.fromAsync(diffKeyPaths(fromJS(pair.a), fromJS(pair.b)))
+      const result = await fromAsync(diffKeyPaths(fromJS(pair.a), fromJS(pair.b)))
       t.same(result, [[]], pair.label)
     }
   })
@@ -92,7 +92,7 @@ t.test('diffKeyPaths', async (t) => {
     ]
 
     for (const pair of pairs) {
-      const result = await Array.fromAsync(diffKeyPaths(fromJS(pair.a), fromJS(pair.b)))
+      const result = await fromAsync(diffKeyPaths(fromJS(pair.a), fromJS(pair.b)))
       t.same(result, [], pair.label)
     }
   })
@@ -106,7 +106,7 @@ t.test('diffKeyPaths', async (t) => {
     ]
 
     for (const pair of pairs) {
-      const result = await Array.fromAsync(diffKeyPaths(fromJS(pair.a), fromJS(pair.b)))
+      const result = await fromAsync(diffKeyPaths(fromJS(pair.a), fromJS(pair.b)))
       t.same(result, pair.expected, pair.label)
     }
   })
@@ -121,7 +121,7 @@ t.test('diffKeyPaths', async (t) => {
     ]
 
     for (const pair of pairs) {
-      const result = await Array.fromAsync(diffKeyPaths(fromJS(pair.a), fromJS(pair.b)))
+      const result = await fromAsync(diffKeyPaths(fromJS(pair.a), fromJS(pair.b)))
       t.same(result, [], pair.label)
     }
   })
@@ -144,7 +144,7 @@ t.test('diffKeyPaths', async (t) => {
     ]
 
     for (const pair of pairs) {
-      const result = await Array.fromAsync(diffKeyPaths(fromJS(pair.a), fromJS(pair.b)))
+      const result = await fromAsync(diffKeyPaths(fromJS(pair.a), fromJS(pair.b)))
       t.same(result, pair.expected, pair.label)
     }
   })
@@ -157,7 +157,7 @@ t.test('diffKeyPaths', async (t) => {
     ]
 
     for (const pair of pairs) {
-      const result = await Array.fromAsync(diffKeyPaths(fromJS(pair.a), fromJS(pair.b)))
+      const result = await fromAsync(diffKeyPaths(fromJS(pair.a), fromJS(pair.b)))
       t.same(result, [], pair.label)
     }
   })
@@ -176,7 +176,7 @@ t.test('diffKeyPaths', async (t) => {
 
     const streamA = new StreamValue(a)
     const streamB = new StreamValue(b)
-    const result = await Array.fromAsync(diffKeyPaths(streamA, streamB))
+    const result = await fromAsync(diffKeyPaths(streamA, streamB))
     t.same(result, [[2]], 'streams')
   })
 
@@ -193,7 +193,7 @@ t.test('diffKeyPaths', async (t) => {
 
     const streamA = new StreamValue(a)
     const streamB = new StreamValue(b)
-    const result = await Array.fromAsync(diffKeyPaths(streamA, streamB))
+    const result = await fromAsync(diffKeyPaths(streamA, streamB))
     t.same(result, [[]], 'streams')
   })
 
@@ -211,7 +211,20 @@ t.test('diffKeyPaths', async (t) => {
 
     const streamA = new StreamValue(a)
     const streamB = new StreamValue(b)
-    const result = await Array.fromAsync(diffKeyPaths(streamA, streamB))
+    const result = await fromAsync(diffKeyPaths(streamA, streamB))
     t.same(result, [], 'streams')
   })
 })
+
+async function fromAsync<T>(generator: AsyncGenerator<T>): Promise<Array<T>> {
+  const result = Array<T>(0)
+
+  let i = 0
+  for await (const item of generator) {
+    result[i] = item
+
+    i++
+  }
+
+  return result
+}
