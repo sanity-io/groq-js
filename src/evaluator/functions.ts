@@ -20,7 +20,7 @@ import {Scope} from './scope'
 import {evaluateScore} from './scoring'
 import type {Executor} from './types'
 import {deepEqual, isEqual} from './equality'
-import {valueAtPath} from './keyPath'
+import {diffKeyPaths, startsWith, valueAtPath} from './keyPath'
 import {evaluateSelector} from './selector'
 
 function hasReference(value: any, pathSet: Set<string>): boolean {
@@ -709,8 +709,38 @@ diff['changedAny'] = async (args, scope, execute) => {
 }
 diff['changedAny'].arity = 3
 
-diff['changedOnly'] = () => {
-  throw new Error('not implemented')
+diff['changedOnly'] = async (args, scope, execute) => {
+  const lhs = args[0]
+  const rhs = args[1]
+  const selector = args[2]
+  if (!isSelectorNode(selector)) throw new Error('changedOnly third argument must be a selector')
+
+  const before = await execute(lhs, scope)
+  const after = await execute(rhs, scope)
+
+  const beforeSelectorScope = scope.createHidden(before)
+  const selectedPaths = await evaluateSelector(
+    selector,
+    beforeSelectorScope.value,
+    beforeSelectorScope,
+  )
+
+  for await (const diffPath of diffKeyPaths(before, after)) {
+    let found = false
+    for (const selectedPath of selectedPaths) {
+      // it matches if the diff path starts with the selected path
+      const match = startsWith(diffPath, selectedPath)
+      if (match) {
+        found = true
+        break
+      }
+    }
+    if (!found) {
+      return fromJS(false)
+    }
+  }
+
+  return fromJS(true)
 }
 diff['changedOnly'].arity = 3
 

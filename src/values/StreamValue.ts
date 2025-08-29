@@ -19,7 +19,7 @@ export class StreamValue {
     return true
   }
 
-  async get(): Promise<any> {
+  async get(): Promise<any[]> {
     const result = []
     for await (const value of this) {
       result.push(await value.get())
