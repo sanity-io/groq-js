@@ -494,6 +494,20 @@ export function handleFuncCallNode(node: FuncCallNode, scope: Scope): TypeNode {
         return {type: 'boolean'}
       })
     }
+    case 'documents.get': {
+      const typeNode = walk({node: node.args[0], scope})
+      return mapNode(typeNode, scope, (typeNode) => {
+        if (typeNode.type === 'unknown') {
+          return typeNode
+        }
+
+        if (typeNode.type !== 'object') {
+          return {type: 'null'}
+        }
+
+        return {type: 'unknown'}
+      })
+    }
     default: {
       return {type: 'unknown'}
     }
