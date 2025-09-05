@@ -12,8 +12,6 @@ export async function changedAny(
   selector: SelectorNode,
   scope: Scope,
 ): Promise<BooleanValue> {
-  console.log('changedAny', before, after)
-
   const beforeSelectorScope = scope.createHidden(before)
   const beforePaths = await evaluateSelector(
     selector,
