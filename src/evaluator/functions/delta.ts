@@ -1,5 +1,7 @@
 import type {FunctionSet} from '.'
+import {isSelectorNode} from '../../nodeTypes'
 import {fromString, NULL_VALUE} from '../../values'
+import {changedAny, changedOnly} from './diff'
 
 const delta: FunctionSet = {}
 // eslint-disable-next-line require-await
@@ -22,14 +24,24 @@ delta['operation'] = async function (_args, scope) {
   return NULL_VALUE
 }
 
-delta['changedAny'] = (_args, _scope) => {
-  throw new Error('not implemented')
+delta['changedAny'] = (args, scope) => {
+  const before = scope.context.before || NULL_VALUE
+  const after = scope.context.after || NULL_VALUE
+  const selector = args[0]
+  if (!isSelectorNode(selector)) throw new Error('changedAny first argument must be a selector')
+
+  return changedAny(before, after, selector, scope)
 }
 delta['changedAny'].arity = 1
 delta['changedAny'].mode = 'delta'
 
-delta['changedOnly'] = () => {
-  throw new Error('not implemented')
+delta['changedOnly'] = (args, scope) => {
+  const before = scope.context.before || NULL_VALUE
+  const after = scope.context.after || NULL_VALUE
+  const selector = args[0]
+  if (!isSelectorNode(selector)) throw new Error('changedOnly first argument must be a selector')
+
+  return changedOnly(before, after, selector, scope)
 }
 delta['changedOnly'].arity = 1
 delta['changedOnly'].mode = 'delta'

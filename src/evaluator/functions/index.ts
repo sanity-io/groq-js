@@ -19,6 +19,8 @@ export {default as pipeFunctions} from './pipeFunctions'
 
 /** @public */
 export type GroqFunctionArg = ExprNode
+
+/** @internal */
 export type WithOptions<T> = T & {
   arity?: GroqFunctionArity
   mode?: 'normal' | 'delta'
