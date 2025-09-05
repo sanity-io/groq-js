@@ -2982,6 +2982,37 @@ t.test('function: geo::*', (t) => {
   t.end()
 })
 
+t.test('function: documents::*', (t) => {
+  const query = `*[_type == "post"] {
+    "name": documents::get(name),
+    "author": documents::get(author),
+  }`
+  const ast = parse(query)
+  const res = typeEvaluate(ast, schemas)
+
+  t.strictSame(res, {
+    type: 'array',
+    of: {
+      type: 'object',
+      attributes: {
+        name: {
+          type: 'objectAttribute',
+          value: {
+            type: 'null',
+          },
+        },
+        author: {
+          type: 'objectAttribute',
+          value: {
+            type: 'unknown',
+          },
+        },
+      },
+    },
+  })
+  t.end()
+})
+
 t.test('scoping', (t) => {
   const ast = parse(`*[_type == "mainDocument" && _id == $id]{
     _id,
