@@ -1,20 +1,17 @@
 import type {FunctionSet} from '.'
-import {isSelectorNode} from '../../nodeTypes'
-import {fromJS} from '../../values'
+import {isSelectorNode, type SelectorNode} from '../../nodeTypes'
+import {FALSE_VALUE, TRUE_VALUE, type BooleanValue, type Value} from '../../values'
 import {deepEqual} from '../equality'
 import {diffKeyPaths, startsWith, valueAtPath} from '../keyPath'
+import type {Scope} from '../scope'
 import {evaluateSelector} from '../selector'
 
-const diff: FunctionSet = {}
-diff['changedAny'] = async (args, scope, execute) => {
-  const lhs = args[0]
-  const rhs = args[1]
-  const selector = args[2]
-  if (!isSelectorNode(selector)) throw new Error('changedAny third argument must be a selector')
-
-  const before = await execute(lhs, scope)
-  const after = await execute(rhs, scope)
-
+export async function changedAny(
+  before: Value,
+  after: Value,
+  selector: SelectorNode,
+  scope: Scope,
+): Promise<BooleanValue> {
   const beforeSelectorScope = scope.createHidden(before)
   const beforePaths = await evaluateSelector(
     selector,
@@ -24,7 +21,7 @@ diff['changedAny'] = async (args, scope, execute) => {
   const afterSelectorScope = scope.createHidden(after)
   const afterPaths = await evaluateSelector(selector, afterSelectorScope.value, afterSelectorScope)
   if (beforePaths.length !== afterPaths.length) {
-    return fromJS(true)
+    return TRUE_VALUE
   }
 
   for (const path of beforePaths) {
@@ -39,7 +36,7 @@ diff['changedAny'] = async (args, scope, execute) => {
           !Array.isArray(afterArr) ||
           beforeArr.length !== afterArr.length
         ) {
-          return fromJS(true)
+          return TRUE_VALUE
         }
       }
     }
@@ -48,23 +45,19 @@ diff['changedAny'] = async (args, scope, execute) => {
     const afterValue = await valueAtPath(after, path)
 
     if (!deepEqual(beforeValue, afterValue)) {
-      return fromJS(true)
+      return TRUE_VALUE
     }
   }
 
-  return fromJS(false)
+  return FALSE_VALUE
 }
-diff['changedAny'].arity = 3
 
-diff['changedOnly'] = async (args, scope, execute) => {
-  const lhs = args[0]
-  const rhs = args[1]
-  const selector = args[2]
-  if (!isSelectorNode(selector)) throw new Error('changedOnly third argument must be a selector')
-
-  const before = await execute(lhs, scope)
-  const after = await execute(rhs, scope)
-
+export async function changedOnly(
+  before: Value,
+  after: Value,
+  selector: SelectorNode,
+  scope: Scope,
+): Promise<BooleanValue> {
   const beforeSelectorScope = scope.createHidden(before)
   const selectedPaths = await evaluateSelector(
     selector,
@@ -83,11 +76,37 @@ diff['changedOnly'] = async (args, scope, execute) => {
       }
     }
     if (!found) {
-      return fromJS(false)
+      return FALSE_VALUE
     }
   }
 
-  return fromJS(true)
+  return TRUE_VALUE
+}
+
+const diff: FunctionSet = {}
+diff['changedAny'] = async (args, scope, execute) => {
+  const lhs = args[0]
+  const rhs = args[1]
+  const selector = args[2]
+  if (!isSelectorNode(selector)) throw new Error('changedAny third argument must be a selector')
+
+  const before = await execute(lhs, scope)
+  const after = await execute(rhs, scope)
+
+  return changedAny(before, after, selector, scope)
+}
+diff['changedAny'].arity = 3
+
+diff['changedOnly'] = async (args, scope, execute) => {
+  const lhs = args[0]
+  const rhs = args[1]
+  const selector = args[2]
+  if (!isSelectorNode(selector)) throw new Error('changedOnly third argument must be a selector')
+
+  const before = await execute(lhs, scope)
+  const after = await execute(rhs, scope)
+
+  return changedOnly(before, after, selector, scope)
 }
 diff['changedOnly'].arity = 3
 

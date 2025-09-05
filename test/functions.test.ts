@@ -149,9 +149,85 @@ t.test('Functions', async (t) => {
 
   t.test('delta::changedOnly()', async (t) => {
     t.test('with delta mode enabled', async (t) => {
-      t.test('throws `not implemented` error', async (t) => {
+      t.test('with empty before/after unchanged selector', async (t) => {
         const tree = parse('delta::changedOnly(foo)', {mode: 'delta'})
-        throwsWithMessage(t, async () => await evaluate(tree, {}), 'not implemented')
+        const result = await evaluate(tree, {before: {}, after: {}})
+        t.ok((await result.get()) === true, 'result should be `true`')
+      })
+
+      t.test('with scalar before/after and unchanged selector', async (t) => {
+        const tree = parse('delta::changedOnly(foo)', {mode: 'delta'})
+        const result = await evaluate(tree, {before: 1, after: 2})
+        t.ok((await result.get()) === false, 'result should be `false`')
+      })
+
+      t.test('with unchanged selector', async (t) => {
+        const tree = parse('delta::changedOnly(foo)', {mode: 'delta'})
+        const result = await evaluate(tree, {before: {foo: 1}, after: {foo: 1}})
+        t.ok((await result.get()) === true, 'result should be `true`')
+      })
+
+      t.test('with changed selector', async (t) => {
+        const tree = parse('delta::changedOnly(foo)', {mode: 'delta'})
+        const result = await evaluate(tree, {before: {foo: 1}, after: {foo: 2}})
+        t.ok((await result.get()) === true, 'result should be `true`')
+      })
+
+      t.test('with changed selector', async (t) => {
+        const tree = parse('delta::changedOnly(foo.bar)', {mode: 'delta'})
+        const result = await evaluate(tree, {before: {foo: {bar: 1}}, after: {foo: {bar: 2}}})
+        t.ok((await result.get()) === true, 'result should be `true`')
+      })
+
+      t.test('with change not in selector, selector not defined', async (t) => {
+        const tree = parse('delta::changedOnly(bar)', {mode: 'delta'})
+        const result = await evaluate(tree, {before: {foo: 1}, after: {foo: 2}})
+        t.ok((await result.get()) === false, 'result should be `false`')
+      })
+
+      t.test('with change not in selector, long selector not defined', async (t) => {
+        const tree = parse('delta::changedOnly(foo.bar)', {mode: 'delta'})
+        const result = await evaluate(tree, {before: {foo: 1}, after: {foo: 2}})
+        t.ok((await result.get()) === false, 'result should be `false`')
+      })
+
+      t.test('with change not in selector', async (t) => {
+        const tree = parse('delta::changedOnly(bar)', {mode: 'delta'})
+        const result = await evaluate(tree, {before: {foo: 1, bar: 3}, after: {foo: 2, bar: 3}})
+        t.ok((await result.get()) === false, 'result should be `false`')
+      })
+
+      t.test('with change in selector and not in selector', async (t) => {
+        const tree = parse('delta::changedOnly(bar)', {mode: 'delta'})
+        const result = await evaluate(tree, {before: {foo: 1, bar: 3}, after: {foo: 2, bar: 4}})
+        t.ok((await result.get()) === false, 'result should be `false`')
+      })
+
+      t.test('with change only in selector', async (t) => {
+        const tree = parse('delta::changedOnly(bar)', {mode: 'delta'})
+        const result = await evaluate(tree, {before: {foo: 1, bar: 3}, after: {foo: 1, bar: 4}})
+        t.ok((await result.get()) === true, 'result should be `true`')
+      })
+
+      t.test('with change only in nested selector', async (t) => {
+        const tree = parse('delta::changedOnly(foo.bar)', {mode: 'delta'})
+        const result = await evaluate(tree, {before: {foo: {bar: 3}}, after: {foo: {bar: 4}}})
+        t.ok((await result.get()) === true, 'result should be `true`')
+      })
+
+      t.test('with change only in tuple selector', async (t) => {
+        const tree = parse('delta::changedOnly((foo, foo.bar))', {mode: 'delta'})
+        const result = await evaluate(tree, {before: {foo: {bar: 3}}, after: {foo: {bar: 4}}})
+        t.ok((await result.get()) === true, 'result should be `true`')
+      })
+
+      t.test('with change in child of tuple selector', async (t) => {
+        const tree = parse('delta::changedOnly((foo, foo.bar))', {mode: 'delta'})
+        const result = await evaluate(tree, {
+          before: {foo: {bar: 3, baz: 5}},
+          after: {foo: {bar: 4, baz: 6}},
+        })
+        t.ok((await result.get()) === true, 'result should be `true`')
       })
     })
 
@@ -168,9 +244,34 @@ t.test('Functions', async (t) => {
 
   t.test('delta::changedAny()', async (t) => {
     t.test('with delta mode enabled', async (t) => {
-      t.test('throws `not implemented` error', async (t) => {
+      t.test('with empty before/after', async (t) => {
         const tree = parse('delta::changedAny(foo)', {mode: 'delta'})
-        throwsWithMessage(t, async () => await evaluate(tree, {}), 'not implemented')
+        const result = await evaluate(tree, {before: {}, after: {}})
+        t.ok((await result.get()) === false, 'result should be `false`')
+      })
+
+      t.test('with matching before/after', async (t) => {
+        const tree = parse('delta::changedAny(foo)', {mode: 'delta'})
+        const result = await evaluate(tree, {before: {foo: 'bar'}, after: {foo: 'bar'}})
+        t.ok((await result.get()) === false, 'result should be `false`')
+      })
+
+      t.test('with different before/after but matched selector', async (t) => {
+        const tree = parse('delta::changedAny(foo)', {mode: 'delta'})
+        const result = await evaluate(tree, {
+          before: {foo: 'bar', fizz: 'bazz'},
+          after: {foo: 'bar', fizz: 'buzz'},
+        })
+        t.ok((await result.get()) === false, 'result should be `false`')
+      })
+
+      t.test('with different before/after and differing selector', async (t) => {
+        const tree = parse('delta::changedAny(foo)', {mode: 'delta'})
+        const result = await evaluate(tree, {
+          before: {foo: 'bar', fizz: 'bazz'},
+          after: {foo: 'car', fizz: 'buzz'},
+        })
+        t.ok((await result.get()) === true, 'result should be `true`')
       })
     })
 
