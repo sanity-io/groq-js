@@ -48,9 +48,11 @@ export class StreamValue {
     }
 
     let currentResolver: (value?: void | PromiseLike<void> | undefined) => void
+    let currentRejector: (reason?: any) => void
     const setupTicker = () => {
-      this.ticker = new Promise((resolve) => {
+      this.ticker = new Promise((resolve, reject) => {
         currentResolver = resolve
+        currentRejector = reject
       })
     }
 
@@ -60,13 +62,17 @@ export class StreamValue {
     }
 
     const fetch = async () => {
-      for await (const value of this.generator()) {
-        this.data.push(value)
-        tick()
-      }
+      try {
+        for await (const value of this.generator()) {
+          this.data.push(value)
+          tick()
+        }
 
-      this.isDone = true
-      tick()
+        this.isDone = true
+        tick()
+      } catch (error) {
+        currentRejector(error)
+      }
     }
 
     setupTicker()
