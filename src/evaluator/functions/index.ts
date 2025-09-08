@@ -6,6 +6,7 @@ import array from './array'
 import dateTime from './dateTime'
 import delta from './delta'
 import diff from './diff'
+import documents from './documents'
 import geo from './geo'
 import _global from './global'
 import math from './math'
@@ -59,4 +60,5 @@ export const namespaces: NamespaceSet = {
   releases,
   text,
   geo,
+  documents,
 }
