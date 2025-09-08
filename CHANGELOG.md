@@ -5,6 +5,22 @@
 All notable changes to this project will be documented in this file. See
 [Conventional Commits](https://conventionalcommits.org) for commit guidelines.
 
+## [1.18.0](https://github.com/sanity-io/groq-js/compare/v1.17.3...v1.18.0) (2025-09-08)
+
+### Features
+
+- Add parser error messages ([#292](https://github.com/sanity-io/groq-js/issues/292)) ([24c555e](https://github.com/sanity-io/groq-js/commit/24c555e3c419be158e3984198b4f4ca2b3701628))
+- Add support for diff::changedOnly ([#294](https://github.com/sanity-io/groq-js/issues/294)) ([3c2b553](https://github.com/sanity-io/groq-js/commit/3c2b55373dfbdd55de64524fdb09e7f5eafc6d2f))
+- Enable support for delta mode changedAny and changedOnly ([#298](https://github.com/sanity-io/groq-js/issues/298)) ([e51f4c6](https://github.com/sanity-io/groq-js/commit/e51f4c6c56fa051a5a8d7277399d084bf8735575))
+- **parser:** Add geo namespace with noop ([889ebff](https://github.com/sanity-io/groq-js/commit/889ebff7ed3f54c1fc2809b759fc15b67e9296b7))
+- Support diff::changedAny function ([#293](https://github.com/sanity-io/groq-js/issues/293)) ([7f3ead8](https://github.com/sanity-io/groq-js/commit/7f3ead89374f5069af2ff7f71d3ee566ed700812))
+- **typeEvaluator:** Handle geo functions in type evaluator ([351d499](https://github.com/sanity-io/groq-js/commit/351d499a25fb6ee0247f2e6bf5c40844b55f5270))
+
+### Bug Fixes
+
+- Handle exceptions during StreamValue fetch ([#295](https://github.com/sanity-io/groq-js/issues/295)) ([6e13515](https://github.com/sanity-io/groq-js/commit/6e13515ee871cd6b42fb1f7315336488b74a3100))
+- **test:** Cleanup warning output from generate.js ([#291](https://github.com/sanity-io/groq-js/issues/291)) ([c7bb73c](https://github.com/sanity-io/groq-js/commit/c7bb73ce4e488a76b0713afe62293a7b3e88b022))
+
 ## [1.17.3](https://github.com/sanity-io/groq-js/compare/v1.17.2...v1.17.3) (2025-07-23)
 
 ### Bug Fixes
