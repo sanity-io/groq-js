@@ -1,6 +1,6 @@
 import t from 'tap'
 
-import {evaluate, evaluateSync, parse} from '../src/1'
+import {evaluate, evaluateSync, parse, toJS} from '../src/1'
 import type {ExprNode} from '../src/nodeTypes'
 import {throwsWithMessage} from './testUtils'
 
@@ -360,6 +360,6 @@ t.test('evaluateSync', async (t) => {
     const query = `1 + 1`
     const tree = parse(query)
     const value = evaluateSync(tree)
-    t.same(value.data, 2)
+    t.same(toJS(value), 2)
   })
 })
