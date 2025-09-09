@@ -1,15 +1,16 @@
 import type {FunctionSet} from '.'
 import {FALSE_VALUE, fromJS, NULL_VALUE, StreamValue, TRUE_VALUE} from '../../values'
 import {isEqual} from '../equality'
+import {asyncOnlyExecutor, executeAsync} from '../evaluate'
 
 const array: FunctionSet = {}
 
-array['join'] = async function (args, scope, execute) {
-  const arr = await execute(args[0], scope)
+array['join'] = asyncOnlyExecutor(async function (args, scope) {
+  const arr = await executeAsync(args[0], scope)
   if (!arr.isArray()) {
     return NULL_VALUE
   }
-  const sep = await execute(args[1], scope)
+  const sep = await executeAsync(args[1], scope)
   if (sep.type !== 'string') {
     return NULL_VALUE
   }
@@ -32,11 +33,11 @@ array['join'] = async function (args, scope, execute) {
     needSep = true
   }
   return fromJS(buf)
-}
+})
 array['join'].arity = 2
 
-array['compact'] = async function (args, scope, execute) {
-  const arr = await execute(args[0], scope)
+array['compact'] = asyncOnlyExecutor(async function (args, scope) {
+  const arr = await executeAsync(args[0], scope)
   if (!arr.isArray()) {
     return NULL_VALUE
   }
@@ -48,11 +49,11 @@ array['compact'] = async function (args, scope, execute) {
       }
     }
   })
-}
+})
 array['compact'].arity = 1
 
-array['unique'] = async function (args, scope, execute) {
-  const value = await execute(args[0], scope)
+array['unique'] = asyncOnlyExecutor(async function (args, scope) {
+  const value = await executeAsync(args[0], scope)
   if (!value.isArray()) {
     return NULL_VALUE
   }
@@ -75,18 +76,18 @@ array['unique'] = async function (args, scope, execute) {
       }
     }
   })
-}
+})
 array['unique'].arity = 1
 
-array['intersects'] = async function (args, scope, execute) {
+array['intersects'] = asyncOnlyExecutor(async function (args, scope) {
   // Intersects returns true if the two arrays have at least one element in common. Only
   // primitives are supported; non-primitives are ignored.
-  const arr1 = await execute(args[0], scope)
+  const arr1 = await executeAsync(args[0], scope)
   if (!arr1.isArray()) {
     return NULL_VALUE
   }
 
-  const arr2 = await execute(args[1], scope)
+  const arr2 = await executeAsync(args[1], scope)
   if (!arr2.isArray()) {
     return NULL_VALUE
   }
@@ -100,7 +101,7 @@ array['intersects'] = async function (args, scope, execute) {
   }
 
   return FALSE_VALUE
-}
+})
 array['intersects'].arity = 2
 
 export default array

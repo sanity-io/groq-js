@@ -1,6 +1,6 @@
 import t from 'tap'
 
-import {evaluate, parse} from '../src/1'
+import {evaluate, evaluateSync, parse} from '../src/1'
 import type {ExprNode} from '../src/nodeTypes'
 import {throwsWithMessage} from './testUtils'
 
@@ -352,5 +352,14 @@ t.test('Basic parsing', async (t) => {
       {name: 'Michael', father: null},
       {name: 'George Michael', father: 'Michael'},
     ])
+  })
+})
+
+t.test('evaluateSync', async (t) => {
+  t.test('Example query', async (t) => {
+    const query = `1 + 1`
+    const tree = parse(query)
+    const value = evaluateSync(tree)
+    t.same(value.data, 2)
   })
 })

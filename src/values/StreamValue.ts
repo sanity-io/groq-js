@@ -1,4 +1,5 @@
-import type {Value} from './types'
+import type {ArrayValue, Value} from './types'
+import {StaticValue} from './utils'
 
 export class StreamValue {
   type: 'stream' = 'stream'
@@ -25,6 +26,10 @@ export class StreamValue {
       result.push(await value.get())
     }
     return result
+  }
+
+  async asStatic(): Promise<ArrayValue> {
+    return new StaticValue(await this.get(), 'array')
   }
 
   async *[Symbol.asyncIterator](): AsyncGenerator<Value, void, unknown> {

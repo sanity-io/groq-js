@@ -1,5 +1,6 @@
 import type {GroqPipeFunction, WithOptions} from '.'
 import {fromJS, NULL_VALUE} from '../../values'
+import {asyncOnlyExecutor, executeAsync} from '../evaluate'
 import {totalCompare} from '../ordering'
 import {evaluateScore} from '../scoring'
 
@@ -7,7 +8,7 @@ type ObjectWithScore = Record<string, unknown> & {_score: number}
 
 const pipeFunctions: {[key: string]: WithOptions<GroqPipeFunction>} = {}
 
-pipeFunctions['order'] = async function order(base, args, scope, execute) {
+pipeFunctions['order'] = asyncOnlyExecutor(async function order({base, args}, scope) {
   // eslint-disable-next-line max-len
   // This is a workaround for https://github.com/rpetrich/babel-plugin-transform-async-to-promises/issues/59
   await true
@@ -42,7 +43,7 @@ pipeFunctions['order'] = async function order(base, args, scope, execute) {
     const newScope = scope.createNested(value)
     const tuple = [await value.get(), idx]
     for (let i = 0; i < n; i++) {
-      const result = await execute(mappers[i], newScope)
+      const result = await executeAsync(mappers[i], newScope)
       tuple.push(await result.get())
     }
     aux.push(tuple)
@@ -64,12 +65,12 @@ pipeFunctions['order'] = async function order(base, args, scope, execute) {
   })
 
   return fromJS(aux.map((v) => v[0]))
-}
+})
 pipeFunctions['order'].arity = (count) => count >= 1
 
 // eslint-disable-next-line require-await
 // eslint-disable-next-line require-await
-pipeFunctions['score'] = async function score(base, args, scope, execute) {
+pipeFunctions['score'] = asyncOnlyExecutor(async function order({base, args}, scope) {
   if (!base.isArray()) return NULL_VALUE
 
   // Anything that isn't an object should be sorted first.
@@ -86,7 +87,7 @@ pipeFunctions['score'] = async function score(base, args, scope, execute) {
     let valueScore = typeof value.data['_score'] === 'number' ? value.data['_score'] : 0
 
     for (const arg of args) {
-      valueScore += await evaluateScore(arg, newScope, execute)
+      valueScore += await evaluateScore(arg, newScope)
     }
 
     const newObject = Object.assign({}, value.data, {_score: valueScore})
@@ -95,7 +96,7 @@ pipeFunctions['score'] = async function score(base, args, scope, execute) {
 
   scored.sort((a, b) => b._score - a._score)
   return fromJS(scored)
-}
+})
 
 pipeFunctions['score'].arity = (count) => count >= 1
 

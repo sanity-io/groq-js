@@ -1,10 +1,11 @@
 import type {FunctionSet} from '.'
 import {fromJS, getType} from '../../values'
+import {asyncOnlyExecutor} from '../evaluate'
 
 const releases: FunctionSet = {}
 
 // eslint-disable-next-line require-await
-releases['all'] = async function (_args, scope) {
+releases['all'] = asyncOnlyExecutor(async function (_args, scope) {
   const allReleases: string[] = []
   for await (const value of scope.source) {
     if (getType(value) === 'object') {
@@ -16,7 +17,7 @@ releases['all'] = async function (_args, scope) {
   }
 
   return fromJS(allReleases)
-}
+})
 releases['all'].arity = 0
 
 export default releases

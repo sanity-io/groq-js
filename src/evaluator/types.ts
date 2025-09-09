@@ -1,8 +1,12 @@
 import type {ExprNode} from '../nodeTypes'
-import type {Value} from '../values'
+import type {AnyStaticValue, Value} from '../values'
 import {Scope} from './scope'
 
-export type Executor<N = ExprNode> = (node: N, scope: Scope) => Value | PromiseLike<Value>
+export type Executor<N = ExprNode> = {
+  executeSync(node: N, scope: Scope): AnyStaticValue
+  executeAsync(node: N, scope: Scope): Promise<Value>
+}
+
 export type Document = {
   _id?: string
   _type?: string
