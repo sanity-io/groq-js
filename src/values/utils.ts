@@ -121,6 +121,70 @@ export function fromJS(val: any): Value {
 }
 
 /**
+ * Returns a normalized JavaScript value. This eliminates internal values
+ * such as DateTime and Path by turning them into the JSON representation.
+ */
+export function toJS(val: AnyStaticValue): unknown {
+  const normalized = maybeNormalize(val.data)
+  if (normalized === undefined) return val.data
+  return normalized
+}
+
+/**
+ * maybeNormalize eliminates custom values such as DateTime and Path.
+ * This method returns `undefined` in the scenario where the data contains no
+ * custom values and the data is already normalized.
+ */
+function maybeNormalize(data: unknown): unknown | undefined {
+  if (data === null || typeof data === 'undefined') return
+
+  if (Array.isArray(data)) {
+    let result: undefined | unknown[]
+    for (let i = 0; i < data.length; i++) {
+      let normalized = maybeNormalize(data[i])
+      if (normalized !== undefined && result === undefined) {
+        // This is the first value which had to be converted.
+        result = data.slice(0, i)
+      }
+
+      if (result !== undefined) {
+        if (normalized === undefined) normalized = data[i]
+        result.push(normalized)
+      }
+    }
+
+    return result
+  }
+
+  if (typeof data === 'object') {
+    if ('toJSON' in data && typeof data.toJSON === 'function') {
+      return data.toJSON()
+    }
+
+    const entries = Object.entries(data)
+    let result: undefined | Record<string, unknown>
+
+    for (let i = 0; i < entries.length; i++) {
+      const [key, value] = entries[i]!
+      let normalized = maybeNormalize(value)
+      if (normalized !== undefined && result === undefined) {
+        // This is the first value which had to be converted.
+        result = Object.fromEntries(entries.slice(0, i))
+      }
+
+      if (result !== undefined) {
+        if (normalized === undefined) normalized = value
+        result[key] = normalized
+      }
+    }
+
+    return result
+  }
+
+  return
+}
+
+/**
  * Returns the type of the value.
  */
 // eslint-disable-next-line @typescript-eslint/explicit-module-boundary-types
