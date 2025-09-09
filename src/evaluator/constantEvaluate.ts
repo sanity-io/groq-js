@@ -1,6 +1,6 @@
 import type {ExprNode} from '../nodeTypes'
-import {NULL_VALUE, type Value} from '../values'
-import {evaluate} from './evaluate'
+import {NULL_VALUE, type AnyStaticValue} from '../values'
+import {executeSync} from './evaluate'
 import {Scope} from './scope'
 
 function canConstantEvaluate(node: ExprNode): boolean {
@@ -38,7 +38,7 @@ const DUMMY_SCOPE = new Scope(
   null,
 )
 
-export function tryConstantEvaluate(node: ExprNode): Value | null {
+export function tryConstantEvaluate(node: ExprNode): AnyStaticValue | null {
   if (!canConstantEvaluate(node)) {
     return null
   }
@@ -46,10 +46,6 @@ export function tryConstantEvaluate(node: ExprNode): Value | null {
   return constantEvaluate(node)
 }
 
-function constantEvaluate(node: ExprNode): Value {
-  const value = evaluate(node, DUMMY_SCOPE, constantEvaluate)
-  if ('then' in value) {
-    throw new Error('BUG: constant evaluate should never return a promise')
-  }
-  return value
+function constantEvaluate(node: ExprNode): AnyStaticValue {
+  return executeSync(node, DUMMY_SCOPE)
 }
