@@ -1,36 +1,37 @@
 import type {FunctionSet} from '.'
 import {FALSE_VALUE, fromJS, fromString, NULL_VALUE, TRUE_VALUE} from '../../values'
+import {asyncOnlyExecutor, executeAsync} from '../evaluate'
 
 const string: FunctionSet = {}
 
-string['lower'] = async function (args, scope, execute) {
-  const value = await execute(args[0], scope)
+string['lower'] = asyncOnlyExecutor(async function (args, scope) {
+  const value = await executeAsync(args[0], scope)
 
   if (value.type !== 'string') {
     return NULL_VALUE
   }
 
   return fromString(value.data.toLowerCase())
-}
+})
 string['lower'].arity = 1
 
-string['upper'] = async function (args, scope, execute) {
-  const value = await execute(args[0], scope)
+string['upper'] = asyncOnlyExecutor(async function (args, scope) {
+  const value = await executeAsync(args[0], scope)
 
   if (value.type !== 'string') {
     return NULL_VALUE
   }
 
   return fromString(value.data.toUpperCase())
-}
+})
 string['upper'].arity = 1
 
-string['split'] = async function (args, scope, execute) {
-  const str = await execute(args[0], scope)
+string['split'] = asyncOnlyExecutor(async function (args, scope) {
+  const str = await executeAsync(args[0], scope)
   if (str.type !== 'string') {
     return NULL_VALUE
   }
-  const sep = await execute(args[1], scope)
+  const sep = await executeAsync(args[1], scope)
   if (sep.type !== 'string') {
     return NULL_VALUE
   }
@@ -43,22 +44,22 @@ string['split'] = async function (args, scope, execute) {
     return fromJS(Array.from(str.data))
   }
   return fromJS(str.data.split(sep.data))
-}
+})
 string['split'].arity = 2
 
-string['startsWith'] = async function (args, scope, execute) {
-  const str = await execute(args[0], scope)
+string['startsWith'] = asyncOnlyExecutor(async function (args, scope) {
+  const str = await executeAsync(args[0], scope)
   if (str.type !== 'string') {
     return NULL_VALUE
   }
 
-  const prefix = await execute(args[1], scope)
+  const prefix = await executeAsync(args[1], scope)
   if (prefix.type !== 'string') {
     return NULL_VALUE
   }
 
   return str.data.startsWith(prefix.data) ? TRUE_VALUE : FALSE_VALUE
-}
+})
 string['startsWith'].arity = 2
 
 export default string

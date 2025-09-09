@@ -1,10 +1,11 @@
 import type {FunctionSet} from '.'
 import {DateTime, fromDateTime} from '../../values'
+import {constantExecutor} from '../evaluate'
 
 const dateTime: FunctionSet = {}
-dateTime['now'] = async function now(_args, scope) {
-  return fromDateTime(new DateTime(scope.context.timestamp))
-}
+dateTime['now'] = constantExecutor((_, scope) =>
+  fromDateTime(new DateTime(scope.context.timestamp)),
+)
 dateTime['now'].arity = 0
 
 export default dateTime

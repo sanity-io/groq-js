@@ -2,6 +2,7 @@ import type {FunctionSet} from '.'
 import {isSelectorNode, type SelectorNode} from '../../nodeTypes'
 import {FALSE_VALUE, TRUE_VALUE, type BooleanValue, type Value} from '../../values'
 import {deepEqual} from '../equality'
+import {asyncOnlyExecutor, executeAsync} from '../evaluate'
 import {diffKeyPaths, startsWith, valueAtPath} from '../keyPath'
 import type {Scope} from '../scope'
 import {evaluateSelector} from '../selector'
@@ -84,30 +85,30 @@ export async function changedOnly(
 }
 
 const diff: FunctionSet = {}
-diff['changedAny'] = async (args, scope, execute) => {
+diff['changedAny'] = asyncOnlyExecutor(async (args, scope) => {
   const lhs = args[0]
   const rhs = args[1]
   const selector = args[2]
   if (!isSelectorNode(selector)) throw new Error('changedAny third argument must be a selector')
 
-  const before = await execute(lhs, scope)
-  const after = await execute(rhs, scope)
+  const before = await executeAsync(lhs, scope)
+  const after = await executeAsync(rhs, scope)
 
   return changedAny(before, after, selector, scope)
-}
+})
 diff['changedAny'].arity = 3
 
-diff['changedOnly'] = async (args, scope, execute) => {
+diff['changedOnly'] = asyncOnlyExecutor(async (args, scope) => {
   const lhs = args[0]
   const rhs = args[1]
   const selector = args[2]
   if (!isSelectorNode(selector)) throw new Error('changedOnly third argument must be a selector')
 
-  const before = await execute(lhs, scope)
-  const after = await execute(rhs, scope)
+  const before = await executeAsync(lhs, scope)
+  const after = await executeAsync(rhs, scope)
 
   return changedOnly(before, after, selector, scope)
-}
+})
 diff['changedOnly'].arity = 3
 
 export default diff

@@ -1,17 +1,18 @@
 import type {FunctionSet} from '.'
+import {constantExecutor} from '../evaluate'
 
 const geo: FunctionSet = {}
-geo['latLng'] = () => {
+geo['latLng'] = constantExecutor(() => {
   throw new Error('not implemented')
-}
-geo['contains'] = () => {
+})
+geo['contains'] = constantExecutor(() => {
   throw new Error('not implemented')
-}
-geo['intersects'] = () => {
+})
+geo['intersects'] = constantExecutor(() => {
   throw new Error('not implemented')
-}
-geo['distance'] = () => {
+})
+geo['distance'] = constantExecutor(() => {
   throw new Error('not implemented')
-}
+})
 
 export default geo

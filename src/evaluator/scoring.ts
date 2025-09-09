@@ -1,23 +1,19 @@
 import type {ExprNode} from '../nodeTypes'
+import {executeAsync} from './evaluate'
 import {gatherText, matchPatternRegex, matchTokenize, type Token} from './matching'
 import {Scope} from './scope'
-import type {Executor} from './types'
 
 // BM25 similarity constants
 const BM25k = 1.2
 
-export async function evaluateScore(
-  node: ExprNode,
-  scope: Scope,
-  execute: Executor,
-): Promise<number> {
+export async function evaluateScore(node: ExprNode, scope: Scope): Promise<number> {
   if (node.type === 'OpCall' && node.op === 'match') {
-    return evaluateMatchScore(node.left, node.right, scope, execute)
+    return evaluateMatchScore(node.left, node.right, scope)
   }
 
   if (node.type === 'FuncCall' && node.name === 'boost') {
-    const innerScore = await evaluateScore(node.args[0], scope, execute)
-    const boost = await execute(node.args[1], scope)
+    const innerScore = await evaluateScore(node.args[0], scope)
+    const boost = await executeAsync(node.args[1], scope)
     if (boost.type === 'number' && innerScore > 0) {
       return innerScore + boost.data
     }
@@ -27,31 +23,26 @@ export async function evaluateScore(
 
   switch (node.type) {
     case 'Or': {
-      const leftScore = await evaluateScore(node.left, scope, execute)
-      const rightScore = await evaluateScore(node.right, scope, execute)
+      const leftScore = await evaluateScore(node.left, scope)
+      const rightScore = await evaluateScore(node.right, scope)
       return leftScore + rightScore
     }
     case 'And': {
-      const leftScore = await evaluateScore(node.left, scope, execute)
-      const rightScore = await evaluateScore(node.right, scope, execute)
+      const leftScore = await evaluateScore(node.left, scope)
+      const rightScore = await evaluateScore(node.right, scope)
       if (leftScore === 0 || rightScore === 0) return 0
       return leftScore + rightScore
     }
     default: {
-      const res = await execute(node, scope)
+      const res = await executeAsync(node, scope)
       return res.type === 'boolean' && res.data === true ? 1 : 0
     }
   }
 }
 
-async function evaluateMatchScore(
-  left: ExprNode,
-  right: ExprNode,
-  scope: Scope,
-  execute: Executor,
-): Promise<number> {
-  const text = await execute(left, scope)
-  const pattern = await execute(right, scope)
+async function evaluateMatchScore(left: ExprNode, right: ExprNode, scope: Scope): Promise<number> {
+  const text = await executeAsync(left, scope)
+  const pattern = await executeAsync(right, scope)
 
   let tokens: Token[] = []
   let terms: RegExp[] = []
