@@ -1,7 +1,7 @@
 import {formatRFC3339, parseRFC3339} from './dateHelpers'
 import {Path} from './Path'
 import {StreamValue} from './StreamValue'
-import type {BooleanValue, GroqType, NullValue, Value} from './types'
+import type {AnyStaticValue, BooleanValue, GroqType, NullValue, Value} from './types'
 
 export class StaticValue<P, T extends GroqType> {
   data: P
@@ -19,6 +19,10 @@ export class StaticValue<P, T extends GroqType> {
   // eslint-disable-next-line require-await
   async get(): Promise<any> {
     return this.data
+  }
+
+  asStatic(): this {
+    return this
   }
 
   [Symbol.asyncIterator](): Generator<Value, void, unknown> {
@@ -79,7 +83,7 @@ export class DateTime {
   }
 }
 
-export function fromNumber(num: number): Value {
+export function fromNumber(num: number): AnyStaticValue {
   if (Number.isFinite(num)) {
     return new StaticValue(num, 'number')
   }

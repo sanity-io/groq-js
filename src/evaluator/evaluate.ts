@@ -6,6 +6,7 @@ import {
   NULL_VALUE,
   StreamValue,
   TRUE_VALUE,
+  type AnyStaticValue,
   type Value,
 } from '../values'
 import {operators} from './operators'
@@ -13,69 +14,105 @@ import {partialCompare} from './ordering'
 import {Scope} from './scope'
 import type {EvaluateOptions, Executor} from './types'
 
-export function evaluate(
-  node: ExprNode,
-  scope: Scope,
-  execute: Executor = evaluate,
-): Value | PromiseLike<Value> {
-  const func = EXECUTORS[node.type]
-  return func(node as any, scope, execute)
+export function evaluate(node: ExprNode, scope: Scope): Value | PromiseLike<Value> {
+  return executeAsync(node, scope)
+}
+
+export function executeSync(node: ExprNode, scope: Scope): AnyStaticValue {
+  const exec = EXECUTORS[node.type]
+  return exec.executeSync(node as any, scope)
+}
+
+export function executeAsync(node: ExprNode, scope: Scope): Promise<Value> {
+  const exec = EXECUTORS[node.type]
+  return exec.executeAsync(node as any, scope)
 }
 
 type NarrowNode<T, N> = T extends {type: N} ? T : never
 
 type ExecutorMap = {
-  [key in ExprNode['type']]: (
-    node: NarrowNode<ExprNode, key>,
-    scope: Scope,
-    exec: Executor,
-  ) => Value | PromiseLike<Value>
+  [key in ExprNode['type']]: Executor<NarrowNode<ExprNode, key>>
 }
 
 /**
- * Applies the function to a value, but tries to avoid creating unnecessary promises.
- */
-function promiselessApply(
-  value: Value | PromiseLike<Value>,
-  cb: (val: Value) => Value,
-): Value | PromiseLike<Value> {
-  if ('then' in value) {
-    return value.then(cb)
+ * Defines an executor which is only valid in `evaluateAsync`.
+ *
+ * @deprecated This is a temporary helper. Over time we want everything to be both sync and async.
+ **/
+export function asyncOnlyExecutor<N = ExprNode>(
+  executeAsync: (node: N, scope: Scope) => Promise<Value>,
+): Executor<N> {
+  return {
+    executeSync() {
+      throw new Error('executeSync not supported')
+    },
+    executeAsync,
   }
+}
 
-  return cb(value)
+export function constantExecutor<N = ExprNode>(fn: (node: N, scope: Scope) => Value): Executor<N> {
+  return {
+    executeSync(node, scope) {
+      const value = fn(node, scope)
+      if (value.type === 'stream') throw new Error('Stream encountered in evaluateSync')
+      return value
+    },
+    async executeAsync(node, scope) {
+      return fn(node, scope)
+    },
+  }
+}
+
+export function mappedExecutor<N = ExprNode>(
+  map: (node: N) => ExprNode[],
+  reduce: (node: N, ...values: AnyStaticValue[]) => AnyStaticValue,
+): Executor<N> {
+  return {
+    executeSync(node, scope) {
+      const nodes = map(node)
+      const values = nodes.map((node) => executeSync(node, scope))
+      return reduce(node, ...values)
+    },
+    async executeAsync(node, scope) {
+      const nodes = map(node)
+      const values = await Promise.all(
+        nodes.map((node) => executeAsync(node, scope).then((value) => value.asStatic())),
+      )
+      return reduce(node, ...values)
+    },
+  }
 }
 
 const EXECUTORS: ExecutorMap = {
-  This(_, scope) {
+  This: constantExecutor((_, scope) => {
     return scope.value
-  },
+  }),
 
-  SelectorNested() {
+  SelectorNested: constantExecutor(() => {
     throw new Error('Unexpected node type: SelectorNested')
-  },
+  }),
 
-  SelectorFuncCall() {
+  SelectorFuncCall: constantExecutor(() => {
     throw new Error('Unexpected node type: SelectorFuncCall')
-  },
+  }),
 
-  Everything(_, scope) {
+  Everything: constantExecutor((_, scope) => {
     return scope.source
-  },
+  }),
 
-  Parameter({name}, scope) {
+  Parameter: constantExecutor(({name}, scope) => {
     return fromJS(scope.params[name])
-  },
+  }),
 
-  Context({key}, scope) {
+  Context: constantExecutor(({key}, scope) => {
     if (key === 'before' || key === 'after') {
       const value = scope.context[key]
       return value || NULL_VALUE
     }
     throw new Error(`unknown context key: ${key}`)
-  },
+  }),
 
-  Parent({n}, scope) {
+  Parent: constantExecutor(({n}, scope) => {
     let current = scope
     for (let i = 0; i < n; i++) {
       if (!current.parent) {
@@ -85,44 +122,53 @@ const EXECUTORS: ExecutorMap = {
       current = current.parent
     }
     return current.value
+  }),
+
+  OpCall: {
+    async executeAsync({op, left, right}, scope) {
+      const func = operators[op]
+      if (!func) {
+        throw new Error(`Unknown operator: ${op}`)
+      }
+      const leftValue = await executeAsync(left, scope)
+      const rightValue = await executeAsync(right, scope)
+
+      return func(leftValue, rightValue)
+    },
+    executeSync({op, left, right}, scope) {
+      const func = operators[op]
+      if (!func) {
+        throw new Error(`Unknown operator: ${op}`)
+      }
+      const leftValue = executeSync(left, scope)
+      const rightValue = executeSync(right, scope)
+
+      const result = func(leftValue, rightValue)
+      if ('then' in result || result.type === 'stream')
+        throw new Error(`Operator ${op} not possible in evaluteSync`)
+      return result
+    },
   },
 
-  OpCall({op, left, right}, scope, execute) {
-    const func = operators[op]
-    if (!func) {
-      throw new Error(`Unknown operator: ${op}`)
-    }
-    const leftValue = execute(left, scope)
-    const rightValue = execute(right, scope)
-
-    // Avoid uneccesary promises
-    // This is required for constant evaluation to work correctly.
-    if ('then' in leftValue || 'then' in rightValue) {
-      return (async () => func(await leftValue, await rightValue))()
-    }
-
-    return func(leftValue, rightValue)
-  },
-
-  async Select({alternatives, fallback}, scope, execute) {
+  Select: asyncOnlyExecutor(async ({alternatives, fallback}, scope) => {
     for (const alt of alternatives) {
-      const altCond = await execute(alt.condition, scope)
+      const altCond = await executeAsync(alt.condition, scope)
       if (altCond.type === 'boolean' && altCond.data === true) {
-        return execute(alt.value, scope)
+        return executeAsync(alt.value, scope)
       }
     }
 
     if (fallback) {
-      return execute(fallback, scope)
+      return executeAsync(fallback, scope)
     }
 
     return NULL_VALUE
-  },
+  }),
 
-  async InRange({base, left, right, isInclusive}, scope, execute) {
-    const value = await execute(base, scope)
-    const leftValue = await execute(left, scope)
-    const rightValue = await execute(right, scope)
+  InRange: asyncOnlyExecutor(async ({base, left, right, isInclusive}, scope) => {
+    const value = await executeAsync(base, scope)
+    const leftValue = await executeAsync(left, scope)
+    const rightValue = await executeAsync(right, scope)
 
     const leftCmp = partialCompare(await value.get(), await leftValue.get())
     if (leftCmp === null) {
@@ -138,47 +184,47 @@ const EXECUTORS: ExecutorMap = {
     }
 
     return leftCmp >= 0 && rightCmp < 0 ? TRUE_VALUE : FALSE_VALUE
-  },
+  }),
 
-  async Filter({base, expr}, scope, execute) {
-    const baseValue = await execute(base, scope)
+  Filter: asyncOnlyExecutor(async ({base, expr}, scope) => {
+    const baseValue = await executeAsync(base, scope)
     if (!baseValue.isArray()) {
       return NULL_VALUE
     }
     return new StreamValue(async function* () {
       for await (const elem of baseValue) {
         const newScope = scope.createNested(elem)
-        const exprValue = await execute(expr, newScope)
+        const exprValue = await executeAsync(expr, newScope)
         if (exprValue.type === 'boolean' && exprValue.data === true) {
           yield elem
         }
       }
     })
-  },
+  }),
 
-  async Projection({base, expr}, scope, execute) {
-    const baseValue = await execute(base, scope)
+  Projection: asyncOnlyExecutor(async ({base, expr}, scope) => {
+    const baseValue = await executeAsync(base, scope)
     if (baseValue.type !== 'object') {
       return NULL_VALUE
     }
 
     const newScope = scope.createNested(baseValue)
-    return execute(expr, newScope)
-  },
+    return executeAsync(expr, newScope)
+  }),
 
-  FuncCall({func, args}: FuncCallNode, scope: Scope, execute) {
-    return func(args, scope, execute)
-  },
+  FuncCall: asyncOnlyExecutor(({func, args}: FuncCallNode, scope: Scope) => {
+    return func.executeAsync(args, scope)
+  }),
 
-  async PipeFuncCall({func, base, args}: PipeFuncCallNode, scope: Scope, execute) {
-    const baseValue = await execute(base, scope)
-    return func(baseValue, args, scope, execute)
-  },
+  PipeFuncCall: asyncOnlyExecutor(async ({func, base, args}: PipeFuncCallNode, scope: Scope) => {
+    const baseValue = await executeAsync(base, scope)
+    return func.executeAsync({base: baseValue, args}, scope)
+  }),
 
-  async AccessAttribute({base, name}, scope, execute) {
+  AccessAttribute: asyncOnlyExecutor(async ({base, name}, scope) => {
     let value = scope.value
     if (base) {
-      value = await execute(base, scope)
+      value = await executeAsync(base, scope)
     }
     if (value.type === 'object') {
       if (value.data.hasOwnProperty(name)) {
@@ -187,10 +233,10 @@ const EXECUTORS: ExecutorMap = {
     }
 
     return NULL_VALUE
-  },
+  }),
 
-  async AccessElement({base, index}, scope, execute) {
-    const baseValue = await execute(base, scope)
+  AccessElement: asyncOnlyExecutor(async ({base, index}, scope) => {
+    const baseValue = await executeAsync(base, scope)
     if (!baseValue.isArray()) {
       return NULL_VALUE
     }
@@ -198,10 +244,10 @@ const EXECUTORS: ExecutorMap = {
     const data = await baseValue.get()
     const finalIndex = index < 0 ? index + data.length : index
     return fromJS(data[finalIndex])
-  },
+  }),
 
-  async Slice({base, left, right, isInclusive}, scope, execute) {
-    const baseValue = await execute(base, scope)
+  Slice: asyncOnlyExecutor(async ({base, left, right, isInclusive}, scope) => {
+    const baseValue = await executeAsync(base, scope)
 
     if (!baseValue.isArray()) {
       return NULL_VALUE
@@ -237,10 +283,10 @@ const EXECUTORS: ExecutorMap = {
     // .slice handles this correctly.
 
     return fromJS(array.slice(leftIdx, rightIdx))
-  },
+  }),
 
-  async Deref({base}, scope, execute) {
-    const value = await execute(base, scope)
+  Deref: asyncOnlyExecutor(async ({base}, scope) => {
+    const value = await executeAsync(base, scope)
 
     if (!scope.source.isArray()) {
       return NULL_VALUE
@@ -266,34 +312,39 @@ const EXECUTORS: ExecutorMap = {
     }
 
     return NULL_VALUE
-  },
+  }),
 
-  Value({value}) {
+  Value: constantExecutor(({value}) => {
     return fromJS(value)
+  }),
+
+  Group: {
+    executeSync({base}, scope) {
+      return executeSync(base, scope)
+    },
+    executeAsync({base}, scope) {
+      return executeAsync(base, scope)
+    },
   },
 
-  Group({base}, scope, execute) {
-    return execute(base, scope)
-  },
-
-  async Object({attributes}, scope, execute) {
+  Object: asyncOnlyExecutor(async ({attributes}, scope) => {
     const result: {[key: string]: any} = {}
     for (const attr of attributes) {
       const attrType = attr.type
       switch (attr.type) {
         case 'ObjectAttributeValue': {
-          const value = await execute(attr.value, scope)
+          const value = await executeAsync(attr.value, scope)
           result[attr.name] = await value.get()
           break
         }
 
         case 'ObjectConditionalSplat': {
-          const cond = await execute(attr.condition, scope)
+          const cond = await executeAsync(attr.condition, scope)
           if (cond.type !== 'boolean' || cond.data === false) {
             continue
           }
 
-          const value = await execute(attr.value, scope)
+          const value = await executeAsync(attr.value, scope)
           if (value.type === 'object') {
             Object.assign(result, value.data)
           }
@@ -301,7 +352,7 @@ const EXECUTORS: ExecutorMap = {
         }
 
         case 'ObjectSplat': {
-          const value = await execute(attr.value, scope)
+          const value = await executeAsync(attr.value, scope)
           if (value.type === 'object') {
             Object.assign(result, value.data)
           }
@@ -313,12 +364,12 @@ const EXECUTORS: ExecutorMap = {
       }
     }
     return fromJS(result)
-  },
+  }),
 
-  Array({elements}, scope, execute) {
+  Array: asyncOnlyExecutor(async ({elements}, scope) => {
     return new StreamValue(async function* () {
       for (const element of elements) {
-        const value = await execute(element.value, scope)
+        const value = await executeAsync(element.value, scope)
         if (element.isSplat) {
           if (value.isArray()) {
             for await (const v of value) {
@@ -330,99 +381,98 @@ const EXECUTORS: ExecutorMap = {
         }
       }
     })
-  },
+  }),
 
-  Tuple() {
+  Tuple: constantExecutor(() => {
     throw new Error('tuples can not be evaluated')
-  },
+  }),
 
-  async Or({left, right}, scope, execute) {
-    const leftValue = await execute(left, scope)
-    const rightValue = await execute(right, scope)
-
-    if (leftValue.type === 'boolean') {
-      if (leftValue.data === true) {
-        return TRUE_VALUE
+  Or: mappedExecutor(
+    ({left, right}) => [left, right],
+    (_, leftValue, rightValue) => {
+      if (leftValue.type === 'boolean') {
+        if (leftValue.data === true) {
+          return TRUE_VALUE
+        }
       }
-    }
 
-    if (rightValue.type === 'boolean') {
-      if (rightValue.data === true) {
-        return TRUE_VALUE
+      if (rightValue.type === 'boolean') {
+        if (rightValue.data === true) {
+          return TRUE_VALUE
+        }
       }
-    }
 
-    if (leftValue.type !== 'boolean' || rightValue.type !== 'boolean') {
-      return NULL_VALUE
-    }
-
-    return FALSE_VALUE
-  },
-
-  async And({left, right}, scope, execute) {
-    const leftValue = await execute(left, scope)
-    const rightValue = await execute(right, scope)
-
-    if (leftValue.type === 'boolean') {
-      if (leftValue.data === false) {
-        return FALSE_VALUE
+      if (leftValue.type !== 'boolean' || rightValue.type !== 'boolean') {
+        return NULL_VALUE
       }
-    }
 
-    if (rightValue.type === 'boolean') {
-      if (rightValue.data === false) {
-        return FALSE_VALUE
+      return FALSE_VALUE
+    },
+  ),
+
+  And: mappedExecutor(
+    ({left, right}) => [left, right],
+    (_, leftValue, rightValue) => {
+      if (leftValue.type === 'boolean') {
+        if (leftValue.data === false) {
+          return FALSE_VALUE
+        }
       }
-    }
 
-    if (leftValue.type !== 'boolean' || rightValue.type !== 'boolean') {
-      return NULL_VALUE
-    }
+      if (rightValue.type === 'boolean') {
+        if (rightValue.data === false) {
+          return FALSE_VALUE
+        }
+      }
 
-    return TRUE_VALUE
-  },
+      if (leftValue.type !== 'boolean' || rightValue.type !== 'boolean') {
+        return NULL_VALUE
+      }
 
-  async Not({base}, scope, execute) {
-    const value = await execute(base, scope)
-    if (value.type !== 'boolean') {
-      return NULL_VALUE
-    }
-    return value.data ? FALSE_VALUE : TRUE_VALUE
-  },
+      return TRUE_VALUE
+    },
+  ),
 
-  Neg({base}, scope, execute) {
-    return promiselessApply(execute(base, scope), (value) => {
+  Not: mappedExecutor(
+    ({base}) => [base],
+    (_, value) => {
+      if (value.type !== 'boolean') {
+        return NULL_VALUE
+      }
+      return value.data ? FALSE_VALUE : TRUE_VALUE
+    },
+  ),
+
+  Neg: mappedExecutor(
+    ({base}) => [base],
+    (_, value) => {
       if (value.type !== 'number') {
         return NULL_VALUE
       }
       return fromNumber(-value.data)
-    })
-  },
+    },
+  ),
 
-  Pos({base}, scope, execute) {
-    return promiselessApply(execute(base, scope), (value) => {
+  Pos: mappedExecutor(
+    ({base}) => [base],
+    (_, value) => {
       if (value.type !== 'number') {
         return NULL_VALUE
       }
       return fromNumber(value.data)
-    })
-  },
+    },
+  ),
 
-  Asc() {
-    return NULL_VALUE
-  },
+  Asc: constantExecutor(() => NULL_VALUE),
+  Desc: constantExecutor(() => NULL_VALUE),
 
-  Desc() {
-    return NULL_VALUE
-  },
-
-  async ArrayCoerce({base}, scope, execute) {
-    const value = await execute(base, scope)
+  ArrayCoerce: asyncOnlyExecutor(async ({base}, scope) => {
+    const value = await executeAsync(base, scope)
     return value.isArray() ? value : NULL_VALUE
-  },
+  }),
 
-  async Map({base, expr}, scope, execute) {
-    const value = await execute(base, scope)
+  Map: asyncOnlyExecutor(async ({base, expr}, scope) => {
+    const value = await executeAsync(base, scope)
     if (!value.isArray()) {
       return NULL_VALUE
     }
@@ -430,13 +480,13 @@ const EXECUTORS: ExecutorMap = {
     return new StreamValue(async function* () {
       for await (const elem of value) {
         const newScope = scope.createHidden(elem)
-        yield await execute(expr, newScope)
+        yield await executeAsync(expr, newScope)
       }
     })
-  },
+  }),
 
-  async FlatMap({base, expr}, scope, execute) {
-    const value = await execute(base, scope)
+  FlatMap: asyncOnlyExecutor(async ({base, expr}, scope) => {
+    const value = await executeAsync(base, scope)
     if (!value.isArray()) {
       return NULL_VALUE
     }
@@ -444,7 +494,7 @@ const EXECUTORS: ExecutorMap = {
     return new StreamValue(async function* () {
       for await (const elem of value) {
         const newScope = scope.createHidden(elem)
-        const innerValue = await execute(expr, newScope)
+        const innerValue = await executeAsync(expr, newScope)
         if (innerValue.isArray()) {
           for await (const inner of innerValue) {
             yield inner
@@ -454,7 +504,7 @@ const EXECUTORS: ExecutorMap = {
         }
       }
     })
-  },
+  }),
 }
 
 /**
@@ -465,11 +515,25 @@ export function evaluateQuery(
   tree: ExprNode,
   options: EvaluateOptions = {},
 ): Value | PromiseLike<Value> {
+  return executeAsync(tree, scopeFromOptions(options))
+}
+
+/**
+ * Evaluates a query synchronously.
+ *
+ * This currently only supports a tiny subset of the GROQ language.
+ * @internal
+ */
+export function evaluateQuerySync(tree: ExprNode, options: EvaluateOptions = {}): AnyStaticValue {
+  return executeSync(tree, scopeFromOptions(options))
+}
+
+function scopeFromOptions(options: EvaluateOptions): Scope {
   const root = fromJS(options.root)
   const dataset = fromJS(options.dataset)
   const params: {[key: string]: any} = {...options.params}
 
-  const scope = new Scope(
+  return new Scope(
     params,
     dataset,
     root,
@@ -483,5 +547,4 @@ export function evaluateQuery(
     },
     null,
   )
-  return evaluate(tree, scope)
 }

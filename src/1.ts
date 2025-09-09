@@ -1,4 +1,4 @@
-export {evaluate} from './evaluator'
+export {evaluate, evaluateSync} from './evaluator'
 export type {GroqFunction, GroqFunctionArg, GroqPipeFunction} from './evaluator/functions'
 export type {Scope} from './evaluator/scope'
 export type {

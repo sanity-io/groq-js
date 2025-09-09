@@ -1,9 +1,10 @@
 import type {FunctionSet} from '.'
 import {fromJS, NULL_VALUE} from '../../values'
+import {asyncOnlyExecutor, executeAsync} from '../evaluate'
 
 const math: FunctionSet = {}
-math['min'] = async function (args, scope, execute) {
-  const arr = await execute(args[0], scope)
+math['min'] = asyncOnlyExecutor(async function (args, scope) {
+  const arr = await executeAsync(args[0], scope)
   if (!arr.isArray()) {
     return NULL_VALUE
   }
@@ -19,11 +20,11 @@ math['min'] = async function (args, scope, execute) {
     }
   }
   return fromJS(n)
-}
+})
 math['min'].arity = 1
 
-math['max'] = async function (args, scope, execute) {
-  const arr = await execute(args[0], scope)
+math['max'] = asyncOnlyExecutor(async function (args, scope) {
+  const arr = await executeAsync(args[0], scope)
   if (!arr.isArray()) {
     return NULL_VALUE
   }
@@ -39,11 +40,11 @@ math['max'] = async function (args, scope, execute) {
     }
   }
   return fromJS(n)
-}
+})
 math['max'].arity = 1
 
-math['sum'] = async function (args, scope, execute) {
-  const arr = await execute(args[0], scope)
+math['sum'] = asyncOnlyExecutor(async function (args, scope) {
+  const arr = await executeAsync(args[0], scope)
   if (!arr.isArray()) {
     return NULL_VALUE
   }
@@ -57,11 +58,11 @@ math['sum'] = async function (args, scope, execute) {
     n += elem.data
   }
   return fromJS(n)
-}
+})
 math['sum'].arity = 1
 
-math['avg'] = async function (args, scope, execute) {
-  const arr = await execute(args[0], scope)
+math['avg'] = asyncOnlyExecutor(async function (args, scope) {
+  const arr = await executeAsync(args[0], scope)
   if (!arr.isArray()) {
     return NULL_VALUE
   }
@@ -80,7 +81,7 @@ math['avg'] = async function (args, scope, execute) {
     return NULL_VALUE
   }
   return fromJS(n / c)
-}
+})
 math['avg'].arity = 1
 
 export default math
