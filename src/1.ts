@@ -26,7 +26,7 @@ export type {
   StringValue,
   Value,
 } from './values'
-export {DateTime, Path} from './values'
+export {DateTime, Path, toJS} from './values'
 
 // Type evaluation
 export type * from './typeEvaluator'
