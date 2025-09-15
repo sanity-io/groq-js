@@ -10,7 +10,13 @@ import {
   Path,
   TRUE_VALUE,
 } from '../../values'
-import {asyncOnlyExecutor, constantExecutor, executeAsync} from '../evaluate'
+import {
+  arrayReducerExecutor,
+  asyncOnlyExecutor,
+  constantExecutor,
+  executeAsync,
+  mappedExecutor,
+} from '../evaluate'
 import string from './string'
 
 // underscored to not collide with environments like jest that give variables named `global` special treatment
@@ -34,37 +40,34 @@ _global['coalesce'] = asyncOnlyExecutor(async function coalesce(args, scope) {
   return NULL_VALUE
 })
 
-_global['count'] = asyncOnlyExecutor(async function count(args, scope) {
-  const inner = await executeAsync(args[0], scope)
-  if (!inner.isArray()) {
-    return NULL_VALUE
-  }
-
-  let num = 0
-  // eslint-disable-next-line @typescript-eslint/no-unused-vars
-  for await (const _ of inner) {
-    num++
-  }
-  return fromNumber(num)
-})
+_global['count'] = arrayReducerExecutor(
+  (args) => ({array: args[0]!}),
+  () => 0,
+  (_, count) => count + 1,
+  fromNumber,
+)
 _global['count'].arity = 1
 
-_global['dateTime'] = asyncOnlyExecutor(async function dateTime(args, scope) {
-  const val = await executeAsync(args[0], scope)
-  if (val.type === 'datetime') {
-    return val
-  }
-  if (val.type !== 'string') {
-    return NULL_VALUE
-  }
-  return DateTime.parseToValue(val.data)
-})
+_global['dateTime'] = mappedExecutor(
+  (args) => args,
+  (_, val) => {
+    if (val.type === 'datetime') {
+      return val
+    }
+    if (val.type !== 'string') {
+      return NULL_VALUE
+    }
+    return DateTime.parseToValue(val.data)
+  },
+)
 _global['dateTime'].arity = 1
 
-_global['defined'] = asyncOnlyExecutor(async function defined(args, scope) {
-  const inner = await executeAsync(args[0], scope)
-  return inner.type === 'null' ? FALSE_VALUE : TRUE_VALUE
-})
+_global['defined'] = mappedExecutor(
+  (args) => args,
+  (_, inner) => {
+    return inner.type === 'null' ? FALSE_VALUE : TRUE_VALUE
+  },
+)
 _global['defined'].arity = 1
 
 // eslint-disable-next-line require-await
@@ -93,81 +96,87 @@ _global['length'] = asyncOnlyExecutor(async function length(args, scope) {
 })
 _global['length'].arity = 1
 
-_global['path'] = asyncOnlyExecutor(async function path(args, scope) {
-  const inner = await executeAsync(args[0], scope)
-  if (inner.type !== 'string') {
-    return NULL_VALUE
-  }
+_global['path'] = mappedExecutor(
+  (args) => args,
+  (_, inner) => {
+    if (inner.type !== 'string') {
+      return NULL_VALUE
+    }
 
-  return fromPath(new Path(inner.data))
-})
+    return fromPath(new Path(inner.data))
+  },
+)
 _global['path'].arity = 1
 
-_global['string'] = asyncOnlyExecutor(async function string(args, scope) {
-  const value = await executeAsync(args[0], scope)
-  switch (value.type) {
-    case 'number':
-    case 'string':
-    case 'boolean':
-    case 'datetime':
-      return fromString(`${value.data}`)
-    default:
-      return NULL_VALUE
-  }
-})
+_global['string'] = mappedExecutor(
+  (args) => args,
+  (_, value) => {
+    switch (value.type) {
+      case 'number':
+      case 'string':
+      case 'boolean':
+      case 'datetime':
+        return fromString(`${value.data}`)
+      default:
+        return NULL_VALUE
+    }
+  },
+)
 _global['string'].arity = 1
 
-_global['references'] = asyncOnlyExecutor(async function references(args, scope) {
-  const pathSet = new Set<string>()
-  for (const arg of args) {
-    const path = await executeAsync(arg, scope)
-    if (path.type === 'string') {
-      pathSet.add(path.data)
-    } else if (path.isArray()) {
-      for await (const elem of path) {
-        if (elem.type === 'string') {
-          pathSet.add(elem.data)
+_global['references'] = mappedExecutor(
+  (args) => [{type: 'This'}, ...args],
+  (_, scopeValue, ...args) => {
+    const pathSet = new Set<string>()
+    for (const path of args) {
+      if (path.type === 'string') {
+        pathSet.add(path.data)
+      } else if (path.type === 'array') {
+        for (const elem of path.data) {
+          if (typeof elem === 'string') {
+            pathSet.add(elem)
+          }
         }
       }
     }
-  }
 
-  if (pathSet.size === 0) {
-    return FALSE_VALUE
-  }
+    if (pathSet.size === 0) {
+      return FALSE_VALUE
+    }
 
-  const scopeValue = await scope.value.get()
-  return hasReference(scopeValue, pathSet) ? TRUE_VALUE : FALSE_VALUE
-})
+    return hasReference(scopeValue, pathSet) ? TRUE_VALUE : FALSE_VALUE
+  },
+)
 _global['references'].arity = (c) => c >= 1
 
-_global['round'] = asyncOnlyExecutor(async function round(args, scope) {
-  const value = await executeAsync(args[0], scope)
-  if (value.type !== 'number') {
-    return NULL_VALUE
-  }
-
-  const num = value.data
-  let prec = 0
-
-  if (args.length === 2) {
-    const precValue = await executeAsync(args[1], scope)
-    if (precValue.type !== 'number' || precValue.data < 0 || !Number.isInteger(precValue.data)) {
+_global['round'] = mappedExecutor(
+  (args) => args,
+  (_, value, precValue) => {
+    if (value.type !== 'number') {
       return NULL_VALUE
     }
-    prec = precValue.data
-  }
 
-  if (prec === 0) {
-    if (num < 0) {
-      // JavaScript's round() function will always rounds towards positive infinity (-3.5 -> -3).
-      // The behavior we're interested in is to "round half away from zero".
-      return fromNumber(-Math.round(-num))
+    const num = value.data
+    let prec = 0
+
+    if (precValue) {
+      if (precValue.type !== 'number' || precValue.data < 0 || !Number.isInteger(precValue.data)) {
+        return NULL_VALUE
+      }
+      prec = precValue.data
     }
-    return fromNumber(Math.round(num))
-  }
-  return fromNumber(Number(num.toFixed(prec)))
-})
+
+    if (prec === 0) {
+      if (num < 0) {
+        // JavaScript's round() function will always rounds towards positive infinity (-3.5 -> -3).
+        // The behavior we're interested in is to "round half away from zero".
+        return fromNumber(-Math.round(-num))
+      }
+      return fromNumber(Math.round(num))
+    }
+    return fromNumber(Number(num.toFixed(prec)))
+  },
+)
 _global['round'].arity = (count) => count >= 1 && count <= 2
 
 // eslint-disable-next-line require-await

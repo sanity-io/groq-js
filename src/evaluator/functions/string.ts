@@ -1,65 +1,69 @@
 import type {FunctionSet} from '.'
-import {FALSE_VALUE, fromJS, fromString, NULL_VALUE, TRUE_VALUE} from '../../values'
-import {asyncOnlyExecutor, executeAsync} from '../evaluate'
+import {FALSE_VALUE, fromArray, fromString, NULL_VALUE, TRUE_VALUE} from '../../values'
+import {mappedExecutor} from '../evaluate'
 
 const string: FunctionSet = {}
 
-string['lower'] = asyncOnlyExecutor(async function (args, scope) {
-  const value = await executeAsync(args[0], scope)
+string['lower'] = mappedExecutor(
+  (args) => args,
+  (_, value) => {
+    if (value.type !== 'string') {
+      return NULL_VALUE
+    }
 
-  if (value.type !== 'string') {
-    return NULL_VALUE
-  }
-
-  return fromString(value.data.toLowerCase())
-})
+    return fromString(value.data.toLowerCase())
+  },
+)
 string['lower'].arity = 1
 
-string['upper'] = asyncOnlyExecutor(async function (args, scope) {
-  const value = await executeAsync(args[0], scope)
+string['upper'] = mappedExecutor(
+  (args) => args,
+  (_, value) => {
+    if (value.type !== 'string') {
+      return NULL_VALUE
+    }
 
-  if (value.type !== 'string') {
-    return NULL_VALUE
-  }
-
-  return fromString(value.data.toUpperCase())
-})
+    return fromString(value.data.toUpperCase())
+  },
+)
 string['upper'].arity = 1
 
-string['split'] = asyncOnlyExecutor(async function (args, scope) {
-  const str = await executeAsync(args[0], scope)
-  if (str.type !== 'string') {
-    return NULL_VALUE
-  }
-  const sep = await executeAsync(args[1], scope)
-  if (sep.type !== 'string') {
-    return NULL_VALUE
-  }
+string['split'] = mappedExecutor(
+  (args) => args,
+  (_, str, sep) => {
+    if (str.type !== 'string') {
+      return NULL_VALUE
+    }
+    if (sep.type !== 'string') {
+      return NULL_VALUE
+    }
 
-  if (str.data.length === 0) {
-    return fromJS([])
-  }
-  if (sep.data.length === 0) {
-    // This uses a Unicode codepoint splitting algorithm
-    return fromJS(Array.from(str.data))
-  }
-  return fromJS(str.data.split(sep.data))
-})
+    if (str.data.length === 0) {
+      return fromArray([])
+    }
+    if (sep.data.length === 0) {
+      // This uses a Unicode codepoint splitting algorithm
+      return fromArray(Array.from(str.data))
+    }
+    return fromArray(str.data.split(sep.data))
+  },
+)
 string['split'].arity = 2
 
-string['startsWith'] = asyncOnlyExecutor(async function (args, scope) {
-  const str = await executeAsync(args[0], scope)
-  if (str.type !== 'string') {
-    return NULL_VALUE
-  }
+string['startsWith'] = mappedExecutor(
+  (args) => args,
+  (_, str, prefix) => {
+    if (str.type !== 'string') {
+      return NULL_VALUE
+    }
 
-  const prefix = await executeAsync(args[1], scope)
-  if (prefix.type !== 'string') {
-    return NULL_VALUE
-  }
+    if (prefix.type !== 'string') {
+      return NULL_VALUE
+    }
 
-  return str.data.startsWith(prefix.data) ? TRUE_VALUE : FALSE_VALUE
-})
+    return str.data.startsWith(prefix.data) ? TRUE_VALUE : FALSE_VALUE
+  },
+)
 string['startsWith'].arity = 2
 
 export default string

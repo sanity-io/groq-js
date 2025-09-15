@@ -1,7 +1,17 @@
 import {formatRFC3339, parseRFC3339} from './dateHelpers'
 import {Path} from './Path'
 import {StreamValue} from './StreamValue'
-import type {AnyStaticValue, BooleanValue, GroqType, NullValue, Value} from './types'
+import type {
+  AnyStaticValue,
+  ArrayValue,
+  BooleanValue,
+  DateTimeValue,
+  GroqType,
+  NullValue,
+  PathValue,
+  StringValue,
+  Value,
+} from './types'
 
 export class StaticValue<P, T extends GroqType> {
   data: P
@@ -48,7 +58,7 @@ export class DateTime {
     this.date = date
   }
 
-  static parseToValue(str: string): Value {
+  static parseToValue(str: string): DateTimeValue | NullValue {
     const date = parseRFC3339(str)
     if (date) {
       return new StaticValue(new DateTime(date), 'datetime')
@@ -90,7 +100,7 @@ export function fromNumber(num: number): AnyStaticValue {
   return NULL_VALUE
 }
 
-export function fromString(str: string): Value {
+export function fromString(str: string): StringValue {
   return new StaticValue(str, 'string')
 }
 
@@ -98,12 +108,16 @@ export function fromDateTime(dt: DateTime): Value {
   return new StaticValue(dt, 'datetime')
 }
 
-export function fromPath(path: Path): Value {
+export function fromPath(path: Path): PathValue {
   return new StaticValue(path, 'path')
 }
 
 function isIterator(obj?: Iterator<any>) {
   return obj && typeof obj.next === 'function'
+}
+
+export function fromArray(val: unknown[]): ArrayValue {
+  return new StaticValue(val, 'array')
 }
 
 // eslint-disable-next-line @typescript-eslint/explicit-module-boundary-types
