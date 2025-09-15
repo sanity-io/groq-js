@@ -64,8 +64,8 @@ Object {
                               ],
                               "func": Object {
                                 "arity": 1,
-                                "executeAsync": AsyncFunction path(args, scope),
-                                "executeSync": Function executeSync(),
+                                "executeAsync": AsyncFunction executeAsync(node, scope),
+                                "executeSync": Function executeSync(node, scope),
                               },
                               "name": "path",
                               "namespace": "global",
@@ -118,8 +118,8 @@ Object {
   ],
   "func": Object {
     "arity": 1,
-    "executeAsync": AsyncFunction count(args, scope),
-    "executeSync": Function executeSync(),
+    "executeAsync": AsyncFunction executeAsync(node, scope),
+    "executeSync": Function executeSync(node, scope),
   },
   "name": "count",
   "namespace": "global",

@@ -1,12 +1,14 @@
 import type {ExprNode, FuncCallNode, PipeFuncCallNode} from '../nodeTypes'
 import {
   FALSE_VALUE,
+  fromArray,
   fromJS,
   fromNumber,
   NULL_VALUE,
   StreamValue,
   TRUE_VALUE,
   type AnyStaticValue,
+  type ObjectValue,
   type Value,
 } from '../values'
 import {operators} from './operators'
@@ -83,6 +85,122 @@ export function mappedExecutor<N = ExprNode>(
   }
 }
 
+export const STOP_ITERATOR = Symbol()
+
+/**
+ * An executor for procesing an array into a single value.
+ *
+ * @param map Returns a set of nodes which will be executed.
+ * @param init Called once to produce an internal state.
+ * @param reduce Called per item in the array.
+ * @param wrap Turns the state into a static value.
+ */
+export function arrayReducerExecutor<N = ExprNode, State = unknown>(
+  map: (node: N) => {array: ExprNode; args?: ExprNode[]},
+  init: (node: N, ...args: AnyStaticValue[]) => State,
+  reduce: (
+    node: N,
+    state: State,
+    item: unknown,
+    ...args: AnyStaticValue[]
+  ) => State | typeof STOP_ITERATOR,
+  wrap: (state: State) => AnyStaticValue,
+): Executor<N> {
+  return {
+    executeSync(node, scope) {
+      const {array: arrayNode, args: argNodes = []} = map(node)
+      const arr = executeSync(arrayNode, scope)
+      if (arr.type !== 'array') return NULL_VALUE
+      const args = argNodes.map((node) => executeSync(node, scope))
+      let state = init(node, ...args)
+      for (const item of arr.data) {
+        const result = reduce(node, state, item, ...args)
+        if (result === STOP_ITERATOR) return NULL_VALUE
+        state = result
+      }
+      return wrap(state)
+    },
+    async executeAsync(node, scope) {
+      const {array: arrayNode, args: argNodes = []} = map(node)
+      const arr = await executeAsync(arrayNode, scope)
+      if (arr.type !== 'array' && arr.type !== 'stream') return NULL_VALUE
+
+      const args = await Promise.all(
+        argNodes.map((node) => executeAsync(node, scope).then((v) => v.asStatic())),
+      )
+
+      let state = init(node, ...args)
+
+      if (arr.type === 'stream') {
+        for await (const item of arr) {
+          const result = reduce(node, state, await item.get(), ...args)
+          if (result === STOP_ITERATOR) return NULL_VALUE
+          state = result
+        }
+      } else {
+        for (const item of arr.data) {
+          const result = reduce(node, state, item, ...args)
+          if (result === STOP_ITERATOR) return NULL_VALUE
+          state = result
+        }
+      }
+
+      return wrap(state)
+    },
+  }
+}
+
+/**
+ * An executor which processes an array and returns another array.
+ */
+export function arrayExecutor<N = ExprNode>(
+  map: (node: N) => {array: ExprNode; inner?: ExprNode},
+  reduce: (node: N, item: unknown, inner: unknown) => Iterable<unknown>,
+  {hidden = false}: {hidden?: boolean} = {},
+): Executor<N> {
+  return {
+    executeSync(node, scope) {
+      const mapping = map(node)
+      const arr = executeSync(mapping.array, scope)
+      if (arr.type !== 'array') return NULL_VALUE
+      const result: unknown[] = []
+      for (const item of arr.data) {
+        let inner: unknown
+        if (mapping.inner) {
+          const newScope = hidden
+            ? scope.createHidden(fromJS(item))
+            : scope.createNested(fromJS(item))
+          inner = executeSync(mapping.inner, newScope).data
+        }
+        for (const entry of reduce(node, item, inner)) {
+          result.push(entry)
+        }
+      }
+      return fromArray(result)
+    },
+
+    async executeAsync(node, scope) {
+      const mapping = map(node)
+      const arr = await executeAsync(mapping.array, scope)
+      if (!arr.isArray()) return NULL_VALUE
+
+      return new StreamValue(async function* () {
+        for await (const item of arr) {
+          let inner: unknown
+          if (mapping.inner) {
+            const newScope = hidden ? scope.createHidden(item) : scope.createNested(item)
+            const innerValue = await executeAsync(mapping.inner, newScope)
+            inner = await innerValue.get()
+          }
+          for (const entry of reduce(node, await item.get(), inner)) {
+            yield fromJS(entry)
+          }
+        }
+      })
+    },
+  }
+}
+
 const EXECUTORS: ExecutorMap = {
   This: constantExecutor((_, scope) => {
     return scope.value
@@ -150,20 +268,37 @@ const EXECUTORS: ExecutorMap = {
     },
   },
 
-  Select: asyncOnlyExecutor(async ({alternatives, fallback}, scope) => {
-    for (const alt of alternatives) {
-      const altCond = await executeAsync(alt.condition, scope)
-      if (altCond.type === 'boolean' && altCond.data === true) {
-        return executeAsync(alt.value, scope)
+  Select: {
+    executeSync({alternatives, fallback}, scope) {
+      for (const alt of alternatives) {
+        const altCond = executeSync(alt.condition, scope)
+        if (altCond.type === 'boolean' && altCond.data === true) {
+          return executeSync(alt.value, scope)
+        }
       }
-    }
 
-    if (fallback) {
-      return executeAsync(fallback, scope)
-    }
+      if (fallback) {
+        return executeSync(fallback, scope)
+      }
 
-    return NULL_VALUE
-  }),
+      return NULL_VALUE
+    },
+
+    async executeAsync({alternatives, fallback}, scope) {
+      for (const alt of alternatives) {
+        const altCond = await executeAsync(alt.condition, scope)
+        if (altCond.type === 'boolean' && altCond.data === true) {
+          return executeAsync(alt.value, scope)
+        }
+      }
+
+      if (fallback) {
+        return executeAsync(fallback, scope)
+      }
+
+      return NULL_VALUE
+    },
+  },
 
   InRange: asyncOnlyExecutor(async ({base, left, right, isInclusive}, scope) => {
     const value = await executeAsync(base, scope)
@@ -186,31 +321,35 @@ const EXECUTORS: ExecutorMap = {
     return leftCmp >= 0 && rightCmp < 0 ? TRUE_VALUE : FALSE_VALUE
   }),
 
-  Filter: asyncOnlyExecutor(async ({base, expr}, scope) => {
-    const baseValue = await executeAsync(base, scope)
-    if (!baseValue.isArray()) {
-      return NULL_VALUE
-    }
-    return new StreamValue(async function* () {
-      for await (const elem of baseValue) {
-        const newScope = scope.createNested(elem)
-        const exprValue = await executeAsync(expr, newScope)
-        if (exprValue.type === 'boolean' && exprValue.data === true) {
-          yield elem
-        }
+  Filter: arrayExecutor(
+    ({base, expr}) => ({array: base, inner: expr}),
+    function* (_, elem, inner) {
+      if (inner === true) yield elem
+    },
+  ),
+
+  Projection: {
+    executeSync({base, expr}, scope) {
+      const baseValue = executeSync(base, scope)
+
+      if (baseValue.type !== 'object') {
+        return NULL_VALUE
       }
-    })
-  }),
 
-  Projection: asyncOnlyExecutor(async ({base, expr}, scope) => {
-    const baseValue = await executeAsync(base, scope)
-    if (baseValue.type !== 'object') {
-      return NULL_VALUE
-    }
+      const newScope = scope.createNested(baseValue)
+      return executeSync(expr, newScope)
+    },
 
-    const newScope = scope.createNested(baseValue)
-    return executeAsync(expr, newScope)
-  }),
+    async executeAsync({base, expr}, scope) {
+      const baseValue = await executeAsync(base, scope)
+      if (baseValue.type !== 'object') {
+        return NULL_VALUE
+      }
+
+      const newScope = scope.createNested(baseValue)
+      return executeAsync(expr, newScope)
+    },
+  },
 
   FuncCall: asyncOnlyExecutor(({func, args}: FuncCallNode, scope: Scope) => {
     return func.executeAsync(args, scope)
@@ -221,19 +360,18 @@ const EXECUTORS: ExecutorMap = {
     return func.executeAsync({base: baseValue, args}, scope)
   }),
 
-  AccessAttribute: asyncOnlyExecutor(async ({base, name}, scope) => {
-    let value = scope.value
-    if (base) {
-      value = await executeAsync(base, scope)
-    }
-    if (value.type === 'object') {
-      if (value.data.hasOwnProperty(name)) {
-        return fromJS(value.data[name])
+  AccessAttribute: mappedExecutor(
+    ({base}) => [base || {type: 'This'}],
+    ({name}, value) => {
+      if (value.type === 'object') {
+        if (value.data.hasOwnProperty(name)) {
+          return fromJS(value.data[name]) as ObjectValue
+        }
       }
-    }
 
-    return NULL_VALUE
-  }),
+      return NULL_VALUE
+    },
+  ),
 
   AccessElement: asyncOnlyExecutor(async ({base, index}, scope) => {
     const baseValue = await executeAsync(base, scope)
@@ -246,44 +384,45 @@ const EXECUTORS: ExecutorMap = {
     return fromJS(data[finalIndex])
   }),
 
-  Slice: asyncOnlyExecutor(async ({base, left, right, isInclusive}, scope) => {
-    const baseValue = await executeAsync(base, scope)
+  Slice: mappedExecutor(
+    ({base}) => [base],
+    ({left, right, isInclusive}, baseValue) => {
+      if (baseValue.type !== 'array') {
+        return NULL_VALUE
+      }
 
-    if (!baseValue.isArray()) {
-      return NULL_VALUE
-    }
+      // OPT: Here we can optimize when either indices are >= 0
+      const array = baseValue.data
 
-    // OPT: Here we can optimize when either indices are >= 0
-    const array = (await baseValue.get()) as any[]
+      let leftIdx = left
+      let rightIdx = right
 
-    let leftIdx = left
-    let rightIdx = right
+      // Handle negative index
+      if (leftIdx < 0) {
+        leftIdx = array.length + leftIdx
+      }
+      if (rightIdx < 0) {
+        rightIdx = array.length + rightIdx
+      }
 
-    // Handle negative index
-    if (leftIdx < 0) {
-      leftIdx = array.length + leftIdx
-    }
-    if (rightIdx < 0) {
-      rightIdx = array.length + rightIdx
-    }
+      // Convert from inclusive to exclusive index
+      if (isInclusive) {
+        rightIdx++
+      }
 
-    // Convert from inclusive to exclusive index
-    if (isInclusive) {
-      rightIdx++
-    }
+      if (leftIdx < 0) {
+        leftIdx = 0
+      }
+      if (rightIdx < 0) {
+        rightIdx = 0
+      }
 
-    if (leftIdx < 0) {
-      leftIdx = 0
-    }
-    if (rightIdx < 0) {
-      rightIdx = 0
-    }
+      // Note: At this point the indices might point out-of-bound, but
+      // .slice handles this correctly.
 
-    // Note: At this point the indices might point out-of-bound, but
-    // .slice handles this correctly.
-
-    return fromJS(array.slice(leftIdx, rightIdx))
-  }),
+      return fromArray(array.slice(leftIdx, rightIdx))
+    },
+  ),
 
   Deref: asyncOnlyExecutor(async ({base}, scope) => {
     const value = await executeAsync(base, scope)
@@ -366,22 +505,42 @@ const EXECUTORS: ExecutorMap = {
     return fromJS(result)
   }),
 
-  Array: asyncOnlyExecutor(async ({elements}, scope) => {
-    return new StreamValue(async function* () {
+  Array: {
+    executeSync({elements}, scope) {
+      const result = []
       for (const element of elements) {
-        const value = await executeAsync(element.value, scope)
+        const value = executeSync(element.value, scope)
         if (element.isSplat) {
-          if (value.isArray()) {
-            for await (const v of value) {
-              yield v
+          if (value.type === 'array') {
+            for (const v of value.data) {
+              result.push(v)
             }
           }
         } else {
-          yield value
+          result.push(value.data)
         }
       }
-    })
-  }),
+
+      return fromArray(result)
+    },
+
+    async executeAsync({elements}, scope) {
+      return new StreamValue(async function* () {
+        for (const element of elements) {
+          const value = await executeAsync(element.value, scope)
+          if (element.isSplat) {
+            if (value.isArray()) {
+              for await (const v of value) {
+                yield v
+              }
+            }
+          } else {
+            yield value
+          }
+        }
+      })
+    },
+  },
 
   Tuple: constantExecutor(() => {
     throw new Error('tuples can not be evaluated')
@@ -466,45 +625,39 @@ const EXECUTORS: ExecutorMap = {
   Asc: constantExecutor(() => NULL_VALUE),
   Desc: constantExecutor(() => NULL_VALUE),
 
-  ArrayCoerce: asyncOnlyExecutor(async ({base}, scope) => {
-    const value = await executeAsync(base, scope)
-    return value.isArray() ? value : NULL_VALUE
-  }),
+  ArrayCoerce: {
+    executeSync({base}, scope) {
+      const value = executeSync(base, scope)
+      return value.isArray() ? value : NULL_VALUE
+    },
 
-  Map: asyncOnlyExecutor(async ({base, expr}, scope) => {
-    const value = await executeAsync(base, scope)
-    if (!value.isArray()) {
-      return NULL_VALUE
-    }
+    async executeAsync({base}, scope) {
+      const value = await executeAsync(base, scope)
+      return value.isArray() ? value : NULL_VALUE
+    },
+  },
 
-    return new StreamValue(async function* () {
-      for await (const elem of value) {
-        const newScope = scope.createHidden(elem)
-        yield await executeAsync(expr, newScope)
-      }
-    })
-  }),
+  Map: arrayExecutor(
+    ({base, expr}) => ({array: base, inner: expr}),
+    function* (_, _item, inner) {
+      yield inner
+    },
+    {hidden: true},
+  ),
 
-  FlatMap: asyncOnlyExecutor(async ({base, expr}, scope) => {
-    const value = await executeAsync(base, scope)
-    if (!value.isArray()) {
-      return NULL_VALUE
-    }
-
-    return new StreamValue(async function* () {
-      for await (const elem of value) {
-        const newScope = scope.createHidden(elem)
-        const innerValue = await executeAsync(expr, newScope)
-        if (innerValue.isArray()) {
-          for await (const inner of innerValue) {
-            yield inner
-          }
-        } else {
-          yield innerValue
+  FlatMap: arrayExecutor(
+    ({base, expr}) => ({array: base, inner: expr}),
+    function* (_, _item, inner) {
+      if (Array.isArray(inner)) {
+        for (const innerInner of inner) {
+          yield innerInner
         }
+      } else {
+        yield inner
       }
-    })
-  }),
+    },
+    {hidden: true},
+  ),
 }
 
 /**
