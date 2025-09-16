@@ -1,4 +1,4 @@
-import type {ExprNode, FuncCallNode, PipeFuncCallNode} from '../nodeTypes'
+import type {ExprNode} from '../nodeTypes'
 import {
   FALSE_VALUE,
   fromArray,
@@ -67,13 +67,16 @@ export function constantExecutor<N = ExprNode>(fn: (node: N, scope: Scope) => Va
 
 export function mappedExecutor<N = ExprNode>(
   map: (node: N) => ExprNode[],
-  reduce: (node: N, ...values: AnyStaticValue[]) => AnyStaticValue,
+  reduce: (node: N, ...values: AnyStaticValue[]) => Value,
 ): Executor<N> {
   return {
     executeSync(node, scope) {
       const nodes = map(node)
       const values = nodes.map((node) => executeSync(node, scope))
-      return reduce(node, ...values)
+      const value = reduce(node, ...values)
+      if (value.type === 'stream')
+        throw new Error('Stream/iterator not supported in synchronous mode')
+      return value
     },
     async executeAsync(node, scope) {
       const nodes = map(node)
@@ -153,9 +156,9 @@ export function arrayReducerExecutor<N = ExprNode, State = unknown>(
 /**
  * An executor which processes an array and returns another array.
  */
-export function arrayExecutor<N = ExprNode>(
-  map: (node: N) => {array: ExprNode; inner?: ExprNode},
-  reduce: (node: N, item: unknown, inner: unknown) => Iterable<unknown>,
+export function arrayExecutor<N = ExprNode, S = undefined>(
+  map: (node: N) => {array: ExprNode; inner?: ExprNode; state?: S},
+  reduce: (node: N, item: unknown, inner: unknown, state?: S) => Iterable<unknown>,
   {hidden = false}: {hidden?: boolean} = {},
 ): Executor<N> {
   return {
@@ -172,7 +175,7 @@ export function arrayExecutor<N = ExprNode>(
             : scope.createNested(fromJS(item))
           inner = executeSync(mapping.inner, newScope).data
         }
-        for (const entry of reduce(node, item, inner)) {
+        for (const entry of reduce(node, item, inner, mapping.state)) {
           result.push(entry)
         }
       }
@@ -192,7 +195,7 @@ export function arrayExecutor<N = ExprNode>(
             const innerValue = await executeAsync(mapping.inner, newScope)
             inner = await innerValue.get()
           }
-          for (const entry of reduce(node, await item.get(), inner)) {
+          for (const entry of reduce(node, await item.get(), inner, mapping.state)) {
             yield fromJS(entry)
           }
         }
@@ -300,26 +303,25 @@ const EXECUTORS: ExecutorMap = {
     },
   },
 
-  InRange: asyncOnlyExecutor(async ({base, left, right, isInclusive}, scope) => {
-    const value = await executeAsync(base, scope)
-    const leftValue = await executeAsync(left, scope)
-    const rightValue = await executeAsync(right, scope)
+  InRange: mappedExecutor(
+    ({base, left, right}) => [base, left, right],
+    ({isInclusive}, value, leftValue, rightValue) => {
+      const leftCmp = partialCompare(value.data, leftValue.data)
+      if (leftCmp === null) {
+        return NULL_VALUE
+      }
+      const rightCmp = partialCompare(value.data, rightValue.data)
+      if (rightCmp === null) {
+        return NULL_VALUE
+      }
 
-    const leftCmp = partialCompare(await value.get(), await leftValue.get())
-    if (leftCmp === null) {
-      return NULL_VALUE
-    }
-    const rightCmp = partialCompare(await value.get(), await rightValue.get())
-    if (rightCmp === null) {
-      return NULL_VALUE
-    }
+      if (isInclusive) {
+        return leftCmp >= 0 && rightCmp <= 0 ? TRUE_VALUE : FALSE_VALUE
+      }
 
-    if (isInclusive) {
-      return leftCmp >= 0 && rightCmp <= 0 ? TRUE_VALUE : FALSE_VALUE
-    }
-
-    return leftCmp >= 0 && rightCmp < 0 ? TRUE_VALUE : FALSE_VALUE
-  }),
+      return leftCmp >= 0 && rightCmp < 0 ? TRUE_VALUE : FALSE_VALUE
+    },
+  ),
 
   Filter: arrayExecutor(
     ({base, expr}) => ({array: base, inner: expr}),
@@ -351,14 +353,27 @@ const EXECUTORS: ExecutorMap = {
     },
   },
 
-  FuncCall: asyncOnlyExecutor(({func, args}: FuncCallNode, scope: Scope) => {
-    return func.executeAsync(args, scope)
-  }),
+  FuncCall: {
+    executeAsync({func, args}, scope) {
+      return func.executeAsync(args, scope)
+    },
 
-  PipeFuncCall: asyncOnlyExecutor(async ({func, base, args}: PipeFuncCallNode, scope: Scope) => {
-    const baseValue = await executeAsync(base, scope)
-    return func.executeAsync({base: baseValue, args}, scope)
-  }),
+    executeSync({func, args}, scope) {
+      return func.executeSync(args, scope)
+    },
+  },
+
+  PipeFuncCall: {
+    async executeAsync({func, base, args}, scope) {
+      const baseValue = await executeAsync(base, scope)
+      return func.executeAsync({base: baseValue, args}, scope)
+    },
+
+    executeSync({func, base, args}, scope) {
+      const baseValue = executeSync(base, scope)
+      return func.executeSync({base: baseValue, args}, scope)
+    },
+  },
 
   AccessAttribute: mappedExecutor(
     ({base}) => [base || {type: 'This'}],
@@ -373,16 +388,15 @@ const EXECUTORS: ExecutorMap = {
     },
   ),
 
-  AccessElement: asyncOnlyExecutor(async ({base, index}, scope) => {
-    const baseValue = await executeAsync(base, scope)
-    if (!baseValue.isArray()) {
-      return NULL_VALUE
-    }
-
-    const data = await baseValue.get()
-    const finalIndex = index < 0 ? index + data.length : index
-    return fromJS(data[finalIndex])
-  }),
+  AccessElement: mappedExecutor(
+    ({base}) => [base],
+    ({index}, baseValue) => {
+      if (baseValue.type !== 'array') return NULL_VALUE
+      const data = baseValue.data
+      const finalIndex = index < 0 ? index + data.length : index
+      return fromJS(data[finalIndex])
+    },
+  ),
 
   Slice: mappedExecutor(
     ({base}) => [base],
@@ -424,34 +438,70 @@ const EXECUTORS: ExecutorMap = {
     },
   ),
 
-  Deref: asyncOnlyExecutor(async ({base}, scope) => {
-    const value = await executeAsync(base, scope)
+  Deref: {
+    executeSync({base}, scope) {
+      const value = executeSync(base, scope)
 
-    if (!scope.source.isArray()) {
-      return NULL_VALUE
-    }
-
-    if (value.type !== 'object') {
-      return NULL_VALUE
-    }
-
-    const id = value.data['_ref']
-    if (typeof id !== 'string') {
-      return NULL_VALUE
-    }
-
-    if (scope.context.dereference) {
-      return fromJS(await scope.context.dereference({_ref: id}))
-    }
-
-    for await (const doc of scope.source) {
-      if (doc.type === 'object' && id === doc.data['_id']) {
-        return doc
+      if (value.type !== 'object') {
+        return NULL_VALUE
       }
-    }
 
-    return NULL_VALUE
-  }),
+      const id = value.data['_ref']
+      if (typeof id !== 'string') {
+        return NULL_VALUE
+      }
+
+      if (scope.context.dereference) {
+        const value = scope.context.dereference({_ref: id})
+        if (value && typeof value === 'object' && 'then' in value) {
+          throw new Error('Dereference returned promise in synchronous mode')
+        }
+
+        return fromJS(value) as AnyStaticValue
+      }
+
+      if (scope.source.type !== 'array') {
+        return NULL_VALUE
+      }
+
+      for (const doc of scope.source.data) {
+        if (doc && typeof doc === 'object' && '_id' in doc && id === doc['_id']) {
+          return fromJS(doc) as ObjectValue
+        }
+      }
+
+      return NULL_VALUE
+    },
+
+    async executeAsync({base}, scope) {
+      const value = await executeAsync(base, scope)
+
+      if (!scope.source.isArray()) {
+        return NULL_VALUE
+      }
+
+      if (value.type !== 'object') {
+        return NULL_VALUE
+      }
+
+      const id = value.data['_ref']
+      if (typeof id !== 'string') {
+        return NULL_VALUE
+      }
+
+      if (scope.context.dereference) {
+        return fromJS(await scope.context.dereference({_ref: id}))
+      }
+
+      for await (const doc of scope.source) {
+        if (doc.type === 'object' && id === doc.data['_id']) {
+          return doc
+        }
+      }
+
+      return NULL_VALUE
+    },
+  },
 
   Value: constantExecutor(({value}) => {
     return fromJS(value)
@@ -466,44 +516,85 @@ const EXECUTORS: ExecutorMap = {
     },
   },
 
-  Object: asyncOnlyExecutor(async ({attributes}, scope) => {
-    const result: {[key: string]: any} = {}
-    for (const attr of attributes) {
-      const attrType = attr.type
-      switch (attr.type) {
-        case 'ObjectAttributeValue': {
-          const value = await executeAsync(attr.value, scope)
-          result[attr.name] = await value.get()
-          break
-        }
-
-        case 'ObjectConditionalSplat': {
-          const cond = await executeAsync(attr.condition, scope)
-          if (cond.type !== 'boolean' || cond.data === false) {
-            continue
+  Object: {
+    executeSync({attributes}, scope) {
+      const result: {[key: string]: any} = {}
+      for (const attr of attributes) {
+        const attrType = attr.type
+        switch (attr.type) {
+          case 'ObjectAttributeValue': {
+            const value = executeSync(attr.value, scope)
+            result[attr.name] = value.data
+            break
           }
 
-          const value = await executeAsync(attr.value, scope)
-          if (value.type === 'object') {
-            Object.assign(result, value.data)
-          }
-          break
-        }
+          case 'ObjectConditionalSplat': {
+            const cond = executeSync(attr.condition, scope)
+            if (cond.type !== 'boolean' || cond.data === false) {
+              continue
+            }
 
-        case 'ObjectSplat': {
-          const value = await executeAsync(attr.value, scope)
-          if (value.type === 'object') {
-            Object.assign(result, value.data)
+            const value = executeSync(attr.value, scope)
+            if (value.type === 'object') {
+              Object.assign(result, value.data)
+            }
+            break
           }
-          break
-        }
 
-        default:
-          throw new Error(`Unknown node type: ${attrType}`)
+          case 'ObjectSplat': {
+            const value = executeSync(attr.value, scope)
+            if (value.type === 'object') {
+              Object.assign(result, value.data)
+            }
+            break
+          }
+
+          default:
+            throw new Error(`Unknown node type: ${attrType}`)
+        }
       }
-    }
-    return fromJS(result)
-  }),
+      return fromJS(result) as ObjectValue
+    },
+
+    async executeAsync({attributes}, scope) {
+      const result: {[key: string]: any} = {}
+      for (const attr of attributes) {
+        const attrType = attr.type
+        switch (attr.type) {
+          case 'ObjectAttributeValue': {
+            const value = await executeAsync(attr.value, scope)
+            result[attr.name] = await value.get()
+            break
+          }
+
+          case 'ObjectConditionalSplat': {
+            const cond = await executeAsync(attr.condition, scope)
+            if (cond.type !== 'boolean' || cond.data === false) {
+              continue
+            }
+
+            const value = await executeAsync(attr.value, scope)
+            if (value.type === 'object') {
+              Object.assign(result, value.data)
+            }
+            break
+          }
+
+          case 'ObjectSplat': {
+            const value = await executeAsync(attr.value, scope)
+            if (value.type === 'object') {
+              Object.assign(result, value.data)
+            }
+            break
+          }
+
+          default:
+            throw new Error(`Unknown node type: ${attrType}`)
+        }
+      }
+      return fromJS(result)
+    },
+  },
 
   Array: {
     executeSync({elements}, scope) {

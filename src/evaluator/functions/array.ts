@@ -1,15 +1,7 @@
 import type {FunctionSet} from '.'
-import {
-  FALSE_VALUE,
-  fromJS,
-  fromString,
-  getType,
-  NULL_VALUE,
-  StreamValue,
-  TRUE_VALUE,
-} from '../../values'
+import {FALSE_VALUE, fromJS, fromString, getType, NULL_VALUE, TRUE_VALUE} from '../../values'
 import {isEqual} from '../equality'
-import {arrayExecutor, asyncOnlyExecutor, executeAsync, mappedExecutor} from '../evaluate'
+import {arrayExecutor, mappedExecutor} from '../evaluate'
 
 const array: FunctionSet = {}
 
@@ -53,31 +45,24 @@ array['compact'] = arrayExecutor(
 )
 array['compact'].arity = 1
 
-array['unique'] = asyncOnlyExecutor(async function (args, scope) {
-  const value = await executeAsync(args[0], scope)
-  if (!value.isArray()) {
-    return NULL_VALUE
-  }
-
-  return new StreamValue(async function* () {
-    const added = new Set()
-    for await (const iter of value) {
-      switch (iter.type) {
-        case 'number':
-        case 'string':
-        case 'boolean':
-        case 'datetime':
-          if (!added.has(iter.data)) {
-            added.add(iter.data)
-            yield iter
-          }
-          break
-        default:
+array['unique'] = arrayExecutor(
+  (args) => ({array: args[0]!, state: new Set()}),
+  function* (_node, iter, _inner, added) {
+    switch (getType(iter)) {
+      case 'number':
+      case 'string':
+      case 'boolean':
+      case 'datetime':
+        if (!added!.has(iter)) {
+          added!.add(iter)
           yield iter
-      }
+        }
+        break
+      default:
+        yield iter
     }
-  })
-})
+  },
+)
 array['unique'].arity = 1
 
 array['intersects'] = mappedExecutor(

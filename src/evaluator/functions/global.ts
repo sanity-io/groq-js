@@ -12,9 +12,9 @@ import {
 } from '../../values'
 import {
   arrayReducerExecutor,
-  asyncOnlyExecutor,
   constantExecutor,
   executeAsync,
+  executeSync,
   mappedExecutor,
 } from '../evaluate'
 import string from './string'
@@ -30,15 +30,27 @@ _global['anywhere'] = constantExecutor(() => {
 
 _global['anywhere'].arity = 1
 
-_global['coalesce'] = asyncOnlyExecutor(async function coalesce(args, scope) {
-  for (const arg of args) {
-    const value = await executeAsync(arg, scope)
-    if (value.type !== 'null') {
-      return value
+_global['coalesce'] = {
+  async executeAsync(args, scope) {
+    for (const arg of args) {
+      const value = await executeAsync(arg, scope)
+      if (value.type !== 'null') {
+        return value
+      }
     }
-  }
-  return NULL_VALUE
-})
+    return NULL_VALUE
+  },
+
+  executeSync(args, scope) {
+    for (const arg of args) {
+      const value = executeSync(arg, scope)
+      if (value.type !== 'null') {
+        return value
+      }
+    }
+    return NULL_VALUE
+  },
+}
 
 _global['count'] = arrayReducerExecutor(
   (args) => ({array: args[0]!}),
@@ -76,24 +88,20 @@ _global['identity'] = constantExecutor((_args, scope) => {
 })
 _global['identity'].arity = 0
 
-_global['length'] = asyncOnlyExecutor(async function length(args, scope) {
-  const inner = await executeAsync(args[0], scope)
-
-  if (inner.type === 'string') {
-    return fromNumber(countUTF8(inner.data))
-  }
-
-  if (inner.isArray()) {
-    let num = 0
-    // eslint-disable-next-line @typescript-eslint/no-unused-vars
-    for await (const _ of inner) {
-      num++
+_global['length'] = mappedExecutor(
+  (args) => args,
+  (_, inner) => {
+    if (inner.type === 'string') {
+      return fromNumber(countUTF8(inner.data))
     }
-    return fromNumber(num)
-  }
 
-  return NULL_VALUE
-})
+    if (inner.type === 'array') {
+      return fromNumber(inner.data.length)
+    }
+
+    return NULL_VALUE
+  },
+)
 _global['length'].arity = 1
 
 _global['path'] = mappedExecutor(
