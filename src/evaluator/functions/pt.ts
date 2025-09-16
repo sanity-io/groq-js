@@ -1,19 +1,21 @@
 import type {FunctionSet} from '.'
 import {fromString, NULL_VALUE} from '../../values'
 import {portableTextContent} from '../pt'
-import {asyncOnlyExecutor, executeAsync} from '../evaluate'
+import {mappedExecutor} from '../evaluate'
 
 const pt: FunctionSet = {}
-pt['text'] = asyncOnlyExecutor(async function (args, scope) {
-  const value = await executeAsync(args[0], scope)
-  const text = await portableTextContent(value)
+pt['text'] = mappedExecutor(
+  (args) => args,
+  function (_, value) {
+    const text = portableTextContent(value)
 
-  if (text === null) {
-    return NULL_VALUE
-  }
+    if (text === null) {
+      return NULL_VALUE
+    }
 
-  return fromString(text)
-})
+    return fromString(text)
+  },
+)
 
 pt['text'].arity = 1
 

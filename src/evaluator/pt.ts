@@ -1,10 +1,10 @@
-import type {Value} from '../values'
+import type {AnyStaticValue} from '../values'
 
-export async function portableTextContent(value: Value): Promise<string | null> {
+export function portableTextContent(value: AnyStaticValue): string | null {
   if (value.type === 'object') {
     return blockText(value.data)
-  } else if (value.isArray()) {
-    const texts = await arrayText(value)
+  } else if (value.type === 'array') {
+    const texts = arrayText(value.data)
     if (texts.length > 0) {
       return texts.join('\n\n')
     }
@@ -13,13 +13,13 @@ export async function portableTextContent(value: Value): Promise<string | null> 
   return null
 }
 
-async function arrayText(value: Value, result: string[] = []): Promise<string[]> {
-  for await (const block of value) {
-    if (block.type === 'object') {
-      const text = blockText(block.data)
+function arrayText(value: unknown[], result: string[] = []): string[] {
+  for (const block of value) {
+    if (Array.isArray(block)) {
+      arrayText(block, result)
+    } else if (typeof block === 'object' && block) {
+      const text = blockText(block as Record<string, unknown>)
       if (text !== null) result.push(text)
-    } else if (block.isArray()) {
-      await arrayText(block, result)
     }
   }
 
