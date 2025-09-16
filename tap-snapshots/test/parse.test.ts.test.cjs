@@ -108,8 +108,8 @@ Object {
       ],
       "func": Object {
         "arity": 1,
-        "executeAsync": AsyncFunction (args, scope),
-        "executeSync": Function executeSync(),
+        "executeAsync": AsyncFunction executeAsync(node, scope),
+        "executeSync": Function executeSync(node, scope),
       },
       "name": "unique",
       "namespace": "array",

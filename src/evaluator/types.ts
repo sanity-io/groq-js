@@ -12,7 +12,9 @@ export type Document = {
   _type?: string
   [T: string]: unknown
 }
-export type DereferenceFunction = (obj: {_ref: string}) => PromiseLike<Document | null | undefined>
+export type DereferenceFunction = (obj: {
+  _ref: string
+}) => PromiseLike<Document | null | undefined> | Document | null | undefined
 
 export interface EvaluateOptions {
   // The value that will be available as `@` in GROQ.
