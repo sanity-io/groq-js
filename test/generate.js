@@ -18,6 +18,8 @@ const DISABLED_TESTS = [
   /score\(\) function \/ Illegal use/, // we're missing validation here
 ]
 
+const IS_SYNCHRONOUS = (test) => !/changed(Any|Only)/.test(test.query)
+
 const WHITESPACE_REGEX = /\s+/g
 
 const OUTPUT = process.stdout
@@ -48,7 +50,7 @@ function space() {
 write(`const fs = require('fs')`)
 write(`const ndjson = require('ndjson')`)
 write(`const tap = require('tap')`)
-write(`const {evaluate, parse} = require('../src/1')`)
+write(`const {evaluate, parse, evaluateSync, toJS} = require('../src/1')`)
 space()
 
 write(`tap.setTimeout(0)`)
@@ -233,6 +235,13 @@ process.stdin
         write(`data = JSON.parse(JSON.stringify(data))`)
         write(`replaceScoreWithPos(data)`)
         write(`tt.match(data, result)`)
+        if (IS_SYNCHRONOUS(entry)) {
+          write(`// Sync`)
+          write(`let syncValue = evaluateSync(tree, {dataset, params})`)
+          write(`let syncData = toJS(syncValue)`)
+          write(`replaceScoreWithPos(syncData)`)
+          write(`tt.match(syncData, result)`)
+        }
       } else {
         write(`tt.throws(() => parse(query))`)
       }
