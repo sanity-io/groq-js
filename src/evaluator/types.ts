@@ -2,8 +2,8 @@ import type {ExprNode} from '../nodeTypes'
 import type {AnyStaticValue, Value} from '../values'
 import {Scope} from './scope'
 
-export type Executor<N = ExprNode> = {
-  executeSync(node: N, scope: Scope): AnyStaticValue
+export type Executor<N = ExprNode, Sync = N> = {
+  executeSync(node: Sync, scope: Scope): AnyStaticValue
   executeAsync(node: N, scope: Scope): Promise<Value>
 }
 

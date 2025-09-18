@@ -366,11 +366,13 @@ const EXECUTORS: ExecutorMap = {
   PipeFuncCall: {
     async executeAsync({func, base, args}, scope) {
       const baseValue = await executeAsync(base, scope)
+      if (baseValue.type !== 'stream' && baseValue.type !== 'array') return NULL_VALUE
       return func.executeAsync({base: baseValue, args}, scope)
     },
 
     executeSync({func, base, args}, scope) {
       const baseValue = executeSync(base, scope)
+      if (baseValue.type !== 'array') return NULL_VALUE
       return func.executeSync({base: baseValue, args}, scope)
     },
   },

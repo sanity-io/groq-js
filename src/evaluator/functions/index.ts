@@ -1,5 +1,5 @@
 import {type ExprNode} from '../../nodeTypes'
-import {type Value} from '../../values'
+import {StreamValue, type ArrayValue} from '../../values'
 import type {Executor} from '../types'
 import array from './array'
 import dateTime from './dateTime'
@@ -35,7 +35,10 @@ export type FunctionSet = Record<string, WithOptions<GroqFunction> | undefined>
 
 export type NamespaceSet = Record<string, FunctionSet | undefined>
 
-export type GroqPipeFunction = Executor<{base: Value; args: ExprNode[]}>
+export type GroqPipeFunction = Executor<
+  {base: ArrayValue | StreamValue; args: ExprNode[]},
+  {base: ArrayValue; args: ExprNode[]}
+>
 
 export const namespaces: NamespaceSet = {
   global: _global,
