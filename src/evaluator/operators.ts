@@ -16,6 +16,7 @@ import {
   matchAnalyzePattern,
   matchText,
   matchTokenize,
+  type GatheredText,
   type Pattern,
   type Token,
 } from './matching'
@@ -95,24 +96,25 @@ export const operators: {[key in OpCall]: GroqOperatorFn} = {
     return NULL_VALUE
   },
 
-  'match': async function match(left, right) {
-    let tokens: Token[] = []
-    let patterns: Pattern[] = []
+  'match': function match(left, right) {
+    const tokens = gatherText(left, (part) => matchTokenize(part))
+    const patterns = gatherText(right, (part) => matchAnalyzePattern(part))
 
-    await gatherText(left, (part) => {
-      tokens = tokens.concat(matchTokenize(part))
-    })
+    const process = (tokens: GatheredText<Token>, patterns: GatheredText<Pattern>) => {
+      if (!patterns.success) {
+        return FALSE_VALUE
+      }
 
-    const didSucceed = await gatherText(right, (part) => {
-      patterns = patterns.concat(matchAnalyzePattern(part))
-    })
-    if (!didSucceed) {
-      return FALSE_VALUE
+      const matched = matchText(tokens.parts, patterns.parts)
+
+      return matched ? TRUE_VALUE : FALSE_VALUE
     }
 
-    const matched = matchText(tokens, patterns)
+    if ('then' in tokens || 'then' in patterns) {
+      return (async () => process(await tokens, await patterns))()
+    }
 
-    return matched ? TRUE_VALUE : FALSE_VALUE
+    return process(tokens, patterns)
   },
 
   '+': function plus(left, right) {
