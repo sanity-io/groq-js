@@ -1,28 +1,21 @@
 import type {GroqPipeFunction, WithOptions} from '.'
-import {fromJS, NULL_VALUE} from '../../values'
-import {asyncOnlyExecutor, executeAsync} from '../evaluate'
+import type {ExprNode} from '../../nodeTypes'
+import {fromArray, fromJS, NULL_VALUE} from '../../values'
+import {asyncOnlyExecutor, executeAsync, executeSync} from '../evaluate'
 import {totalCompare} from '../ordering'
 import {evaluateScore} from '../scoring'
 
 type ObjectWithScore = Record<string, unknown> & {_score: number}
 
-const pipeFunctions: {[key: string]: WithOptions<GroqPipeFunction>} = {}
+type Direction = 'asc' | 'desc'
+type AuxItem = [unknown, number, ...unknown[]]
 
-pipeFunctions['order'] = asyncOnlyExecutor(async function order({base, args}, scope) {
-  // eslint-disable-next-line max-len
-  // This is a workaround for https://github.com/rpetrich/babel-plugin-transform-async-to-promises/issues/59
-  await true
-
-  if (!base.isArray()) {
-    return NULL_VALUE
-  }
-
+function extractOrderArgs(args: ExprNode[]): {mappers: ExprNode[]; directions: Direction[]} {
   const mappers = []
-  const directions: string[] = []
-  let n = 0
+  const directions: Direction[] = []
 
   for (let mapper of args) {
-    let direction = 'asc'
+    let direction: Direction = 'asc'
 
     if (mapper.type === 'Desc') {
       direction = 'desc'
@@ -33,25 +26,13 @@ pipeFunctions['order'] = asyncOnlyExecutor(async function order({base, args}, sc
 
     mappers.push(mapper)
     directions.push(direction)
-    n++
   }
+  return {mappers, directions}
+}
 
-  const aux = []
-  let idx = 0
-
-  for await (const value of base) {
-    const newScope = scope.createNested(value)
-    const tuple = [await value.get(), idx]
-    for (let i = 0; i < n; i++) {
-      const result = await executeAsync(mappers[i], newScope)
-      tuple.push(await result.get())
-    }
-    aux.push(tuple)
-    idx++
-  }
-
+function sortArray(aux: AuxItem[], directions: Direction[]): unknown[] {
   aux.sort((aTuple, bTuple) => {
-    for (let i = 0; i < n; i++) {
+    for (let i = 0; i < directions.length; i++) {
       let c = totalCompare(aTuple[i + 2], bTuple[i + 2])
       if (directions[i] === 'desc') {
         c = -c
@@ -64,8 +45,54 @@ pipeFunctions['order'] = asyncOnlyExecutor(async function order({base, args}, sc
     return aTuple[1] - bTuple[1]
   })
 
-  return fromJS(aux.map((v) => v[0]))
-})
+  return aux.map((v) => v[0])
+}
+
+const pipeFunctions: {[key: string]: WithOptions<GroqPipeFunction>} = {}
+
+pipeFunctions['order'] = {
+  executeSync({base, args}, scope) {
+    const {mappers, directions} = extractOrderArgs(args)
+    const aux: AuxItem[] = []
+
+    let idx = 0
+    const n = directions.length
+
+    for (const value of base.data) {
+      const newScope = scope.createNested(fromJS(value))
+      const tuple: AuxItem = [value, idx]
+      for (let i = 0; i < n; i++) {
+        const result = executeSync(mappers[i]!, newScope)
+        tuple.push(result.data)
+      }
+      aux.push(tuple)
+      idx++
+    }
+
+    return fromArray(sortArray(aux, directions))
+  },
+
+  async executeAsync({base, args}, scope) {
+    const {mappers, directions} = extractOrderArgs(args)
+    const aux: AuxItem[] = []
+
+    let idx = 0
+    const n = directions.length
+
+    for await (const value of base) {
+      const newScope = scope.createNested(value)
+      const tuple: AuxItem = [await value.get(), idx]
+      for (let i = 0; i < n; i++) {
+        const result = await executeAsync(mappers[i]!, newScope)
+        tuple.push(await result.get())
+      }
+      aux.push(tuple)
+      idx++
+    }
+
+    return fromArray(sortArray(aux, directions))
+  },
+}
 pipeFunctions['order'].arity = (count) => count >= 1
 
 // eslint-disable-next-line require-await
