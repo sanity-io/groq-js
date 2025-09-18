@@ -1,9 +1,9 @@
 import type {GroqPipeFunction, WithOptions} from '.'
 import type {ExprNode} from '../../nodeTypes'
-import {fromArray, fromJS, NULL_VALUE} from '../../values'
-import {asyncOnlyExecutor, executeAsync, executeSync} from '../evaluate'
+import {fromArray, fromJS, getType} from '../../values'
+import {executeAsync, executeSync} from '../evaluate'
 import {totalCompare} from '../ordering'
-import {evaluateScore} from '../scoring'
+import {evaluateScoreAsync, evaluateScoreSync} from '../scoring'
 
 type ObjectWithScore = Record<string, unknown> & {_score: number}
 
@@ -97,34 +97,60 @@ pipeFunctions['order'].arity = (count) => count >= 1
 
 // eslint-disable-next-line require-await
 // eslint-disable-next-line require-await
-pipeFunctions['score'] = asyncOnlyExecutor(async function order({base, args}, scope) {
-  if (!base.isArray()) return NULL_VALUE
+pipeFunctions['score'] = {
+  async executeAsync({base, args}, scope) {
+    // Anything that isn't an object should be sorted first.
+    const unknown: Array<any> = []
+    const scored: Array<ObjectWithScore> = []
 
-  // Anything that isn't an object should be sorted first.
-  const unknown: Array<any> = []
-  const scored: Array<ObjectWithScore> = []
+    for await (const value of base) {
+      if (value.type !== 'object') {
+        unknown.push(await value.get())
+        continue
+      }
 
-  for await (const value of base) {
-    if (value.type !== 'object') {
-      unknown.push(await value.get())
-      continue
+      const newScope = scope.createNested(value)
+      let valueScore = typeof value.data['_score'] === 'number' ? value.data['_score'] : 0
+
+      for (const arg of args) {
+        valueScore += await evaluateScoreAsync(arg, newScope)
+      }
+
+      const newObject = Object.assign({}, value.data, {_score: valueScore})
+      scored.push(newObject)
     }
 
-    const newScope = scope.createNested(value)
-    let valueScore = typeof value.data['_score'] === 'number' ? value.data['_score'] : 0
+    scored.sort((a, b) => b._score - a._score)
+    return fromJS(scored)
+  },
+  executeSync({base, args}, scope) {
+    // Anything that isn't an object should be sorted first.
+    const unknown: Array<any> = []
+    const scored: Array<ObjectWithScore> = []
 
-    for (const arg of args) {
-      valueScore += await evaluateScore(arg, newScope)
+    for (const value of base.data) {
+      if (getType(value) !== 'object') {
+        unknown.push(value)
+        continue
+      }
+
+      const valueObj = value as Record<string, unknown>
+
+      const newScope = scope.createNested(fromJS(value))
+      let valueScore = typeof valueObj['_score'] === 'number' ? valueObj['_score'] : 0
+
+      for (const arg of args) {
+        valueScore += evaluateScoreSync(arg, newScope)
+      }
+
+      const newObject = Object.assign({}, valueObj, {_score: valueScore})
+      scored.push(newObject)
     }
 
-    const newObject = Object.assign({}, value.data, {_score: valueScore})
-    scored.push(newObject)
-  }
-
-  scored.sort((a, b) => b._score - a._score)
-  return fromJS(scored)
-})
-
+    scored.sort((a, b) => b._score - a._score)
+    return fromArray(scored)
+  },
+}
 pipeFunctions['score'].arity = (count) => count >= 1
 
 export default pipeFunctions
