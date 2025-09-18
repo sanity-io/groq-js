@@ -74,7 +74,7 @@ export const operators: {[key in OpCall]: GroqOperatorFn} = {
   },
 
   // eslint-disable-next-line func-name-matching
-  'in': async function inop(left, right) {
+  'in': function inop(left, right) {
     if (right.type === 'path') {
       if (left.type !== 'string') {
         return NULL_VALUE
@@ -83,14 +83,26 @@ export const operators: {[key in OpCall]: GroqOperatorFn} = {
       return right.data.matches(left.data) ? TRUE_VALUE : FALSE_VALUE
     }
 
-    if (right.isArray()) {
-      for await (const b of right) {
-        if (isEqual(left, b)) {
+    if (right.type === 'array') {
+      for (const b of right.data) {
+        if (isEqual(left, fromJS(b))) {
           return TRUE_VALUE
         }
       }
 
       return FALSE_VALUE
+    }
+
+    if (right.type === 'stream') {
+      return (async () => {
+        for await (const b of right) {
+          if (isEqual(left, b)) {
+            return TRUE_VALUE
+          }
+        }
+
+        return FALSE_VALUE
+      })()
     }
 
     return NULL_VALUE
