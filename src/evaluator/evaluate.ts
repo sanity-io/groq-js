@@ -169,6 +169,9 @@ const EXECUTORS: ExecutorMap = {
   FuncCall({func, args}: FuncCallNode, scope: Scope, execute) {
     return func(args, scope, execute)
   },
+  InlineFuncCall() {
+    throw new Error('Unexpected node type: InlineFuncCall')
+  },
 
   async PipeFuncCall({func, base, args}: PipeFuncCallNode, scope: Scope, execute) {
     const baseValue = await execute(base, scope)
