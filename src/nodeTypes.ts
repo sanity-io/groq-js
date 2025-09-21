@@ -272,6 +272,14 @@ export interface ValueNode<P = any> {
   value: P
 }
 
+export interface FunctionDeclarationNode {
+  type: 'FuncDeclaration'
+  namespace: string
+  name: string
+  params: ParameterNode[]
+  body: ExprNode
+}
+
 export interface FlatMapNode extends BaseNode {
   type: 'FlatMap'
   base: ExprNode

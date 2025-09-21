@@ -1,3 +1,4 @@
+import type {CustomFunctions} from './rawParser'
 import type {ParseOptions} from './types'
 
 export type MarkName =
@@ -20,6 +21,7 @@ export type MarkName =
   | 'float'
   | 'func_args_end'
   | 'func_call'
+  | 'func_decl'
   | 'ident'
   | 'inc_range'
   | 'integer'
@@ -53,19 +55,28 @@ export interface Mark {
   position: number
 }
 
+export type FunctionId = `${string}::${string}`
+
 export type MarkVisitor<T> = Record<string, MarkVisitorFunc<T>>
 export type MarkVisitorFunc<T> = (p: MarkProcessor, mark: Mark) => T
 
 export class MarkProcessor {
-  private string: string
+  private _string: string
   private marks: Mark[]
   private index: number
+  customFunctions: CustomFunctions
   parseOptions: ParseOptions
   allowBoost = false
 
-  constructor(string: string, marks: Mark[], parseOptions: ParseOptions) {
-    this.string = string
+  constructor(
+    string: string,
+    marks: Mark[],
+    customFunctions: CustomFunctions,
+    parseOptions: ParseOptions,
+  ) {
+    this._string = string
     this.marks = marks
+    this.customFunctions = customFunctions
     this.index = 0
     this.parseOptions = parseOptions
   }
@@ -107,5 +118,9 @@ export class MarkProcessor {
   slice(len: number): string {
     const pos = this.marks[this.index].position
     return this.string.slice(pos, pos + len)
+  }
+
+  get string(): string {
+    return this._string
   }
 }
