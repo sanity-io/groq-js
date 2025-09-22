@@ -6,10 +6,13 @@ import {
   type ArrayElementNode,
   type ExprNode,
   type FuncCallNode,
+  type FunctionDeclarationNode,
+  type InlineFuncCallNode,
   isSelectorNested,
   type ObjectAttributeNode,
   type ObjectSplatNode,
   type OpCall,
+  type ParameterNode,
   type ParentNode,
   type SelectNode,
   type SelectorNode,
@@ -50,9 +53,14 @@ class GroqQueryError extends Error {
   public override name = 'GroqQueryError'
 }
 
+type FunctionId = `${string}::${string}`
+type CustomFunctions = Record<FunctionId, FunctionDeclarationNode>
+
 function createExpressionBuilder(): {
   exprBuilder: MarkVisitor<ExprNode>
+  customFunctions: CustomFunctions
 } {
+  const customFunctions: CustomFunctions = {}
   const exprBuilder: MarkVisitor<ExprNode> = {
     group(p) {
       const inner = p.process(exprBuilder)
@@ -522,6 +530,37 @@ function createExpressionBuilder(): {
         name,
       }
     },
+
+    func_decl(p) {
+      const namespace = p.processString()
+      const name = p.processString()
+      const params: ParameterNode[] = []
+      while (p.getMark().name !== 'func_params_end') {
+        const param = p.process(exprBuilder)
+        if (param.type !== 'Parameter') throw new Error('expected parameter')
+        params.push(param)
+      }
+
+      if (params.length !== 1) {
+        throw new GroqQueryError('Custom functions can only have one parameter')
+      }
+
+      p.shift() // func_params_end
+
+      const body = p.process(exprBuilder)
+
+      const decl = {
+        type: 'FuncDeclaration',
+        namespace,
+        name,
+        params,
+        body,
+      } satisfies FunctionDeclarationNode
+
+      customFunctions[`${namespace}::${name}`] = decl
+
+      return p.process(exprBuilder)
+    },
   }
 
   const OBJECT_BUILDER: MarkVisitor<ObjectAttributeNode> = {
@@ -860,7 +899,7 @@ function createExpressionBuilder(): {
     },
   }
 
-  return {exprBuilder}
+  return {exprBuilder, customFunctions}
 }
 
 function extractPropertyKey(node: ExprNode): string {
@@ -899,6 +938,71 @@ function validateArity(name: string, arity: GroqFunctionArity, count: number) {
   }
 }
 
+/**
+ * The function body is one of the forms:
+ * - $param{…}
+ * - $param->{…}
+ * - $param[]{…}
+ * - $param[]->{…}
+ *
+ * https://github.com/sanity-io/go-groq/blob/b7fb57f5aefe080becff9e3522c0b7b52a79ffd0/parser/internal/parserv2/parser.go#L975-L981
+ */
+function resolveFunctionParameter(
+  parameter: ParameterNode,
+  funcDeclaration: FunctionDeclarationNode,
+  funcCall: InlineFuncCallNode,
+) {
+  const index = funcDeclaration.params.findIndex((p) => p.name === parameter.name)
+  if (index === -1) {
+    throw new GroqQueryError(`Missing argument for parameter ${parameter.name} in function call`)
+  }
+  return funcCall.args[index]
+}
+function replaceCustomFunctionBody(
+  funcDeclaration: FunctionDeclarationNode,
+  funcCall: InlineFuncCallNode,
+): ExprNode {
+  const {body} = funcDeclaration
+
+  if (body.type === 'Projection') {
+    if (body.base.type === 'Parameter') {
+      return {
+        type: 'Projection',
+        base: resolveFunctionParameter(body.base, funcDeclaration, funcCall),
+        expr: body.expr,
+      }
+    }
+
+    if (body.base.type === 'Deref') {
+      if (body.base.base.type === 'Parameter') {
+        return {
+          type: 'Projection',
+          base: {
+            type: 'Deref',
+            base: resolveFunctionParameter(body.base.base, funcDeclaration, funcCall),
+          },
+          expr: body.expr,
+        }
+      }
+    }
+  }
+
+  if (body.type === 'Map' && body.base.type === 'ArrayCoerce') {
+    if (body.base.base.type === 'Parameter') {
+      return {
+        type: 'Map',
+        base: {
+          type: 'ArrayCoerce',
+          base: resolveFunctionParameter(body.base.base, funcDeclaration, funcCall),
+        },
+        expr: body.expr,
+      }
+    }
+  }
+
+  throw new GroqQueryError(`Unexpected function body, must be a projection. Got "${body.type}"`)
+}
+
 function argumentShouldBeSelector(namespace: string, functionName: string, argCount: number) {
   const functionsRequiringSelectors = ['changedAny', 'changedOnly']
 
@@ -924,19 +1028,40 @@ export function parse(input: string, options: ParseOptions = {}): ExprNode {
     throw new GroqSyntaxError(result.position, result.message)
   }
   const processor = new MarkProcessor(input, result.marks, options)
-  const {exprBuilder} = createExpressionBuilder()
+  const {exprBuilder, customFunctions} = createExpressionBuilder()
   const procssed = processor.process(exprBuilder)
-  const replaceInlineFuncCalls = createReplaceInlineFuncCalls(options)
-  return walk(procssed, replaceInlineFuncCalls)
+  const replaceInlineFuncCalls = createReplaceInlineFuncCalls(options, customFunctions)
+  return walk(procssed, (node) => replaceInlineFuncCalls(node))
 }
 
-function createReplaceInlineFuncCalls(options: ParseOptions) {
-  const replacer = (node: ExprNode): ExprNode => {
+function createReplaceInlineFuncCalls(
+  options: ParseOptions,
+  customFunctions: Record<string, FunctionDeclarationNode>,
+) {
+  const replacer = (
+    node: ExprNode,
+    recurssion: Set<FunctionId> = new Set<FunctionId>(),
+  ): ExprNode => {
     if (node.type !== 'InlineFuncCall') {
       return node
     }
 
     const {namespace, name} = node
+
+    const functionId: FunctionId = `${namespace}::${name}`
+    if (recurssion.has(functionId)) {
+      throw new GroqQueryError(`Recursion detected in function ${name}`)
+    }
+
+    // Check for custom function first
+    const customFunction = customFunctions[functionId]
+    if (customFunction) {
+      validateArity(name, customFunction.params.length, node.args.length)
+
+      return walk(replaceCustomFunctionBody(customFunction, node), (node) =>
+        replacer(node, new Set([...recurssion, functionId])),
+      )
+    }
 
     const funcs = namespaces[namespace]
     if (!funcs) {

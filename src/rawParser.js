@@ -25,9 +25,22 @@ const PREC_NEG = 8
 function parse(str) {
   let pos = 0
   pos = skipWS(str, pos)
+
+  let fnMarks = []
+
+  // Parse function declarations first
+  while (pos < str.length && str.substring(pos, pos + 2) === 'fn') {
+    let funcResult = parseFunctionDeclaration(str, pos)
+    if (funcResult.type === 'error') return funcResult
+    fnMarks = fnMarks.concat(funcResult.marks)
+    pos = skipWS(str, funcResult.position)
+  }
+
+  // Parse the main query expression
   let result = parseExpr(str, pos, 0)
   if (result.type === 'error') return result
   pos = skipWS(str, result.position)
+
   if (pos !== str.length) {
     if (result.failPosition) {
       pos = result.failPosition - 1
@@ -36,6 +49,7 @@ function parse(str) {
   }
   delete result.position
   delete result.failPosition
+  result.marks = fnMarks.concat(result.marks)
   return result
 }
 
@@ -829,6 +843,111 @@ function parseRegex(str, pos, re) {
 function parseRegexStr(str, pos, re) {
   let m = re.exec(str.slice(pos))
   return m ? m[0] : null
+}
+
+/**
+ * Parses a function declaration: fn namespace::name(params) = body;
+ */
+function parseFunctionDeclaration(str, startPos) {
+  let pos = startPos
+  let marks = []
+
+  // Parse "fn"
+  if (str.substring(pos, pos + 2) !== 'fn') {
+    return {
+      type: 'success',
+      position: pos,
+      marks: marks,
+    }
+  }
+  pos = skipWS(str, pos + 2)
+
+  marks.push({name: 'func_decl', position: startPos})
+
+  let identStart = pos
+  let identResult = parseRegexStr(str, pos, IDENT)
+  if (!identResult) {
+    return {type: 'error', message: 'Expected function name', position: pos}
+  }
+  pos += identResult.length
+  pos = skipWS(str, pos)
+
+  marks.push({name: 'ident', position: identStart}, {name: 'ident_end', position: pos})
+
+  // Check for "::"
+  if (str.substring(pos, pos + 2) !== '::') {
+    return {type: 'error', message: 'Expected "::" after namespace', position: pos}
+  }
+
+  pos = skipWS(str, pos + 2)
+  let nameLen = parseRegex(str, pos, IDENT)
+  if (!nameLen) return {type: 'error', message: 'Expected function name', position: pos}
+  marks.push({name: 'ident', position: pos}, {name: 'ident_end', position: pos + nameLen})
+  pos = skipWS(str, pos + nameLen)
+
+  if (str[pos] !== '(') {
+    return {type: 'error', message: 'Expected "("', position: pos}
+  }
+  pos = skipWS(str, pos + 1)
+
+  // Parse parameters
+  while (pos < str.length && str[pos] !== ')') {
+    // Parse parameter (should start with $)
+    if (str[pos] !== '$') {
+      return {type: 'error', message: 'Parameter should start with "$"', position: pos}
+    }
+    const startPos = pos
+    pos++
+
+    const paramName = parseRegexStr(str, pos, IDENT)
+    if (!paramName) {
+      return {type: 'error', message: 'Expected function name', position: pos}
+    }
+    pos += paramName.length
+    marks.push(
+      {name: 'param', position: startPos},
+      {name: 'ident', position: startPos + 1},
+      {name: 'ident_end', position: pos},
+    )
+    pos = skipWS(str, pos)
+
+    // Check for comma
+    if (str[pos] === ',') {
+      pos = skipWS(str, pos + 1)
+    } else if (str[pos] !== ')') {
+      return {type: 'error', message: 'Expected "," or ")"', position: pos}
+    }
+  }
+
+  if (str[pos] !== ')') {
+    return {type: 'error', message: 'Expected ")"', position: pos}
+  }
+  marks.push({name: 'func_params_end', position: pos})
+  pos = skipWS(str, pos + 1)
+
+  if (str[pos] !== '=') {
+    return {type: 'error', message: 'Expected "="', position: pos}
+  }
+  pos = skipWS(str, pos + 1)
+
+  // Parse function body (expression)
+  // marks.push({name: 'func_body', position: pos})
+  let bodyResult = parseExpr(str, pos, 0)
+  if (bodyResult.type === 'error') return bodyResult
+  marks = marks.concat(bodyResult.marks)
+  pos = skipWS(str, bodyResult.position)
+
+  // Parse ";"
+  if (str[pos] !== ';') {
+    return {type: 'error', message: 'Expected ";" after function declaration', position: pos}
+  }
+  pos++
+
+  return {
+    type: 'success',
+    position: pos,
+    marks: marks,
+  }
 }
 
 export {parse}
