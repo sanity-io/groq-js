@@ -119,9 +119,9 @@ t.test('Expression parsing', async (t) => {
       throwsWithMessage(t, () => parse('boost()'), 'unexpected boost')
     })
 
-    t.test('throws when an undefined namespace is used', async (t) => {
-      throwsWithMessage(t, () => parse('invalid::func()'), 'Undefined namespace: invalid')
-    })
+    // t.test('throws when an undefined namespace is used', async (t) => {
+    //   throwsWithMessage(t, () => parse('invalid::func()'), 'Undefined namespace: invalid')
+    // })
 
     t.test('allows text namespace functions', async (t) => {
       t.doesNotThrow(() => parse('text::query("foo bar")'))
@@ -281,4 +281,27 @@ t.test('Delta-GROQ', async (t) => {
 
 t.test('handles parenthesis inside filters (regression bug)', async (t) => {
   t.doesNotThrow(() => parse('*[(_type == "foo")]'))
+})
+
+t.test('Custom functions', async (t) => {
+  t.test('can parse', async (t) => {
+    const expr = parse(`fn foo::info($person) = $person{name, "names": foo::name(name), age};
+         fn foo::name($names) = $names[]{first, last};
+         *[_type == "person"] {
+           "info": foo::info(@)
+         }
+    `)
+    t.matchSnapshot(expr)
+  })
+
+  t.test('detects recurssion', async (t) => {
+    t.throws(() =>
+      parse(`fn foo::f1($person) = $person{name, "names": foo::f1(name), age};
+         fn foo::f2($names) = $names[]{first, last, "f1": foo::f1(name)};
+         *[_type == "person"] {
+           ...foo::f1(@)
+         }
+    `),
+    )
+  })
 })
