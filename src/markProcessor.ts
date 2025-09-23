@@ -20,6 +20,7 @@ export type MarkName =
   | 'float'
   | 'func_args_end'
   | 'func_call'
+  | 'func_decl'
   | 'ident'
   | 'inc_range'
   | 'integer'
