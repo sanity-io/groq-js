@@ -5,6 +5,19 @@
 All notable changes to this project will be documented in this file. See
 [Conventional Commits](https://conventionalcommits.org) for commit guidelines.
 
+## [1.19.0](https://github.com/sanity-io/groq-js/compare/v1.18.0...v1.19.0) (2025-09-24)
+
+### Features
+
+- add synchronous evaluator for pipe functions ([2cc9134](https://github.com/sanity-io/groq-js/commit/2cc91346f55c6e01df31153c05829217729fc6af))
+- add synchronous evaluator for score() ([143e9e1](https://github.com/sanity-io/groq-js/commit/143e9e19c9d6da8d13d73e05e6b83b5e311e990f))
+- enable pt::text in synchronous mode ([cea0eb3](https://github.com/sanity-io/groq-js/commit/cea0eb3b68c79dd7e6d2e4c82babc69fc9dc0988))
+- implement more sync evaluators ([62f7519](https://github.com/sanity-io/groq-js/commit/62f751909086561abd8dcb5a1e2dd972f1293b10))
+- implement more sync evaluators ([2471091](https://github.com/sanity-io/groq-js/commit/24710915d57cc109a4e199ec2b4d257149faac8c))
+- introduce `toJS` ([0ab8a17](https://github.com/sanity-io/groq-js/commit/0ab8a17778b911aba49d4689ab418af7a2788715))
+- introduce evaluateSync ([af51fac](https://github.com/sanity-io/groq-js/commit/af51facc3b1e11c02e0d5f7b15c3fd7cdbd24388))
+- **typeEvaluator:** support document::get -> unknown/null ([c55e82a](https://github.com/sanity-io/groq-js/commit/c55e82ae469db81021f2c8fba07158a53b06284e))
+
 ## [1.18.0](https://github.com/sanity-io/groq-js/compare/v1.17.3...v1.18.0) (2025-09-08)
 
 ### Features
