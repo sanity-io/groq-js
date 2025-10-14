@@ -1,7 +1,12 @@
 import type {GroqFunction, GroqPipeFunction} from './evaluator/functions'
 
 /** Any sort of node which appears as syntax */
-export type SyntaxNode = ExprNode | ArrayElementNode | ObjectAttributeNode | SelectAlternativeNode
+export type SyntaxNode =
+  | ExprNode
+  | ArrayElementNode
+  | ObjectAttributeNode
+  | SelectAlternativeNode
+  | FunctionDeclarationNode
 
 export type ObjectAttributeNode =
   | ObjectAttributeValueNode
@@ -278,6 +283,14 @@ export interface TupleNode<Base = ExprNode> extends BaseNode {
 export interface ValueNode<P = any> {
   type: 'Value'
   value: P
+}
+
+export interface FunctionDeclarationNode extends BaseNode {
+  type: 'FuncDeclaration'
+  namespace: string
+  name: string
+  params: ParameterNode[]
+  body: ExprNode
 }
 
 export interface FlatMapNode extends BaseNode {
