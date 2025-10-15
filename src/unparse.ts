@@ -44,9 +44,9 @@ export function unparse(node: ExprNode): string {
     case 'Deref':
       return `${unparse(node.base)}->`
     case 'Map':
-      return `${unparse(node.base)}${unparse(node.expr)}`
+      return `${unparse(node.base)}${unparseMapExpr(node.expr)}`
     case 'Projection':
-      return `${unparse(node.base)}${unparse(node.expr)}`
+      return `${unparse(node.base)}${unparseMapExpr(node.expr)}`
     case 'Object':
       return `{${node.attributes
         .map((attr) => {
@@ -91,4 +91,20 @@ export function unparse(node: ExprNode): string {
     default:
       throw new Error(`TODO: ${node.type}`)
   }
+}
+
+function unparseMapExpr(node: ExprNode): string {
+  if (node.type === 'AccessAttribute' && node.base?.type === 'This') {
+    if (IDENT_RE.test(node.name)) {
+      return `.${node.name}`
+    }
+    return `[${JSON.stringify(node.name)}]`
+  }
+  if (node.type === 'Projection' && node.base?.type === 'This') {
+    return unparse(node.expr)
+  }
+  if (node.type === 'Object') {
+    return unparse(node)
+  }
+  return unparse(node)
 }
