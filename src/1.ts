@@ -11,6 +11,8 @@ export type {
 export * from './nodeTypes'
 export {parse} from './parser'
 export type {ParseOptions} from './types'
+// eslint-disable-next-line camelcase
+export {unparse as _experimental_unparse} from './unparse'
 export type {
   AnyStaticValue,
   ArrayValue,

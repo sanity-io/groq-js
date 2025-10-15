@@ -50,7 +50,7 @@ function space() {
 write(`const fs = require('fs')`)
 write(`const ndjson = require('ndjson')`)
 write(`const tap = require('tap')`)
-write(`const {evaluate, parse, evaluateSync, toJS} = require('../src/1')`)
+write(`const {evaluate, parse, _experimental_unparse, evaluateSync, toJS} = require('../src/1')`)
 space()
 
 write(`tap.setTimeout(0)`)
@@ -241,6 +241,17 @@ process.stdin
           write(`let syncData = toJS(syncValue)`)
           write(`replaceScoreWithPos(syncData)`)
           write(`tt.match(syncData, result)`)
+        }
+        write('let unparsed = _experimental_unparse(tree)')
+        write('let parsed = parse(unparsed)')
+        const hasParams = entry.params && Object.keys(entry.params).length > 0
+        if (hasParams) {
+          write('// Skip tree comparison when params are used - parameter resolution is lossy')
+          write('// Once parameters are resolved to Values, unparsing produces literals which')
+          write('// parse to different node types (Array/Object/Value instead of Parameter)')
+          write('// tt.match(parsed, tree)')
+        } else {
+          write('tt.match(parsed, tree)')
         }
       } else {
         write(`tt.throws(() => parse(query))`)
