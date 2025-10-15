@@ -50,7 +50,8 @@ function space() {
 write(`const fs = require('fs')`)
 write(`const ndjson = require('ndjson')`)
 write(`const tap = require('tap')`)
-write(`const {evaluate, parse, _experimental_unparse, evaluateSync, toJS} = require('../src/1')`)
+write(`const {evaluate, parse, evaluateSync, toJS} = require('../src/1')`)
+write(`const {unparse} = require('../src/experimental')`)
 space()
 
 write(`tap.setTimeout(0)`)
@@ -242,7 +243,7 @@ process.stdin
           write(`replaceScoreWithPos(syncData)`)
           write(`tt.match(syncData, result)`)
         }
-        write('let unparsed = _experimental_unparse(tree)')
+        write('let unparsed = unparse(tree)')
         write('let parsed = parse(unparsed)')
         const hasParams = entry.params && Object.keys(entry.params).length > 0
         if (hasParams) {
