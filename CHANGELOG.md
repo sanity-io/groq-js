@@ -5,6 +5,12 @@
 All notable changes to this project will be documented in this file. See
 [Conventional Commits](https://conventionalcommits.org) for commit guidelines.
 
+## [1.20.0](https://github.com/sanity-io/groq-js/compare/v1.19.0...v1.20.0) (2025-10-16)
+
+### Features
+
+- add `unparse()` function ([#310](https://github.com/sanity-io/groq-js/issues/310)) ([ca38b52](https://github.com/sanity-io/groq-js/commit/ca38b527ade9d172c12c6c909e4930151360453d))
+
 ## [1.19.0](https://github.com/sanity-io/groq-js/compare/v1.18.0...v1.19.0) (2025-09-24)
 
 ### Features
