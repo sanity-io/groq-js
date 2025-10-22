@@ -2986,6 +2986,7 @@ t.test('function: documents::*', (t) => {
   const query = `*[_type == "post"] {
     "name": documents::get(name),
     "author": documents::get(author),
+    "refCnt": documents::incomingRefCount(),
   }`
   const ast = parse(query)
   const res = typeEvaluate(ast, schemas)
@@ -3005,6 +3006,12 @@ t.test('function: documents::*', (t) => {
           type: 'objectAttribute',
           value: {
             type: 'unknown',
+          },
+        },
+        refCnt: {
+          type: 'objectAttribute',
+          value: {
+            type: 'number',
           },
         },
       },

@@ -508,6 +508,9 @@ export function handleFuncCallNode(node: FuncCallNode, scope: Scope): TypeNode {
         return {type: 'unknown'}
       })
     }
+    case 'documents.incomingRefCount': {
+      return {type: 'number'}
+    }
     default: {
       return {type: 'unknown'}
     }
