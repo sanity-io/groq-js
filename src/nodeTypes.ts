@@ -26,6 +26,7 @@ export type ExprNode =
   | FilterNode
   | FlatMapNode
   | FuncCallNode
+  | InlineFuncCallNode
   | GroupNode
   | InRangeNode
   | MapNode
@@ -116,6 +117,13 @@ export interface EverythingNode extends BaseNode {
 export interface FuncCallNode extends BaseNode {
   type: 'FuncCall'
   func: GroqFunction
+  namespace: string
+  name: string
+  args: ExprNode[]
+}
+
+export interface InlineFuncCallNode extends BaseNode {
+  type: 'InlineFuncCall'
   namespace: string
   name: string
   args: ExprNode[]
@@ -314,4 +322,214 @@ export interface ProjectionNode extends BaseNode {
   type: 'Projection'
   base: ExprNode
   expr: ExprNode
+}
+
+// eslint-disable-next-line complexity
+export function walk<T extends ExprNode>(node: T, cb: (expr: ExprNode) => T): T {
+  switch (node.type) {
+    case 'And':
+      return cb({
+        ...node,
+        left: walk(node.left, cb),
+        right: walk(node.right, cb),
+      })
+    case 'Array':
+      return cb({
+        ...node,
+        elements: node.elements.map((el) => ({
+          ...el,
+          value: walk(el.value, cb),
+        })),
+      })
+    case 'ArrayCoerce':
+      return cb({
+        ...node,
+        base: walk(node.base, cb),
+      })
+    case 'Asc':
+      return cb({
+        ...node,
+        base: walk(node.base, cb),
+      })
+    case 'Context':
+      return cb(node)
+    case 'Deref':
+      return cb({
+        ...node,
+        base: walk(node.base, cb),
+      })
+    case 'Desc':
+      return cb({
+        ...node,
+        base: walk(node.base, cb),
+      })
+    case 'Everything':
+      return cb(node)
+    case 'FuncCall':
+      return cb({
+        ...node,
+        args: node.args.map((arg) => walk(arg, cb)),
+      })
+    case 'InlineFuncCall':
+      return cb({
+        ...node,
+        args: node.args.map((arg) => walk(arg, cb)),
+      })
+    case 'Group':
+      return cb({
+        ...node,
+        base: walk(node.base, cb),
+      })
+    case 'InRange':
+      return cb({
+        ...node,
+        base: walk(node.base, cb),
+        left: walk(node.left, cb),
+        right: walk(node.right, cb),
+      })
+    case 'Neg':
+      return cb({
+        ...node,
+        base: walk(node.base, cb),
+      })
+    case 'Not':
+      return cb({
+        ...node,
+        base: walk(node.base, cb),
+      })
+    case 'Object':
+      return cb({
+        ...node,
+        attributes: node.attributes.map((attr) => {
+          switch (attr.type) {
+            case 'ObjectAttributeValue':
+              return {
+                ...attr,
+                value: walk(attr.value, cb),
+              }
+            case 'ObjectConditionalSplat':
+              return {
+                ...attr,
+                condition: walk(attr.condition, cb),
+                value: walk(attr.value, cb),
+              }
+            case 'ObjectSplat':
+              return {
+                ...attr,
+                value: walk(attr.value, cb),
+              }
+            default:
+              return attr
+          }
+        }),
+      })
+    case 'OpCall':
+      return cb({
+        ...node,
+        left: walk(node.left, cb),
+        right: walk(node.right, cb),
+      })
+    case 'Or':
+      return cb({
+        ...node,
+        left: walk(node.left, cb),
+        right: walk(node.right, cb),
+      })
+    case 'Parameter':
+      return cb(node)
+    case 'Parent':
+      return cb(node)
+    case 'PipeFuncCall':
+      return cb({
+        ...node,
+        base: walk(node.base, cb),
+        args: node.args.map((arg) => walk(arg, cb)),
+      })
+    case 'Pos':
+      return cb({
+        ...node,
+        base: walk(node.base, cb),
+      })
+    case 'Select': {
+      const alternatives = node.alternatives.map((alt) => ({
+        ...alt,
+        condition: walk(alt.condition, cb),
+        value: walk(alt.value, cb),
+      }))
+      if (node.fallback) {
+        return cb({
+          ...node,
+          alternatives,
+          fallback: walk(node.fallback, cb),
+        })
+      }
+      return cb({
+        ...node,
+        alternatives,
+      })
+    }
+    case 'SelectorNested':
+      return cb(node)
+    case 'SelectorFuncCall':
+      return cb({
+        ...node,
+        arg: walk(node.arg, cb),
+      })
+    case 'This':
+      return cb(node)
+    case 'Tuple':
+      return cb({
+        ...node,
+        members: node.members.map((member) => walk(member, cb)),
+      })
+    case 'Value':
+      return cb(node)
+    case 'FlatMap':
+      return cb({
+        ...node,
+        base: walk(node.base, cb),
+        expr: walk(node.expr, cb),
+      })
+    case 'Map':
+      return cb({
+        ...node,
+        base: walk(node.base, cb),
+        expr: walk(node.expr, cb),
+      })
+    case 'AccessAttribute':
+      if (node.base) {
+        return cb({
+          ...node,
+          base: walk(node.base, cb),
+        })
+      }
+      return cb({
+        ...node,
+      })
+    case 'AccessElement':
+      return cb({
+        ...node,
+        base: walk(node.base, cb),
+      })
+    case 'Slice':
+      return cb({
+        ...node,
+        base: walk(node.base, cb),
+      })
+    case 'Filter':
+      return cb({
+        ...node,
+        base: walk(node.base, cb),
+        expr: walk(node.expr, cb),
+      })
+    case 'Projection':
+      return cb({
+        ...node,
+        base: walk(node.base, cb),
+        expr: walk(node.expr, cb),
+      })
+    default:
+      // @ts-expect-error - we want to ensure we handle all node types
+      throw new Error(`Unknown node type ${node.type}`)
+  }
 }
