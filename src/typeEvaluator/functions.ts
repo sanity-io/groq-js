@@ -511,6 +511,9 @@ export function handleFuncCallNode(node: FuncCallNode, scope: Scope): TypeNode {
     case 'documents.incomingRefCount': {
       return {type: 'number'}
     }
+    case 'documents.incomingGlobalDocumentReferenceCount': {
+      return {type: 'number'}
+    }
     default: {
       return {type: 'unknown'}
     }
