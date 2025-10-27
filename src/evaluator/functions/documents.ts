@@ -8,4 +8,7 @@ documents['get'] = constantExecutor(() => {
 documents['incomingRefCount'] = constantExecutor(() => {
   throw new Error('not implemented')
 })
+documents['incomingGlobalDocumentReferenceCount'] = constantExecutor(() => {
+  throw new Error('not implemented')
+})
 export default documents
