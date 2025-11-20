@@ -3674,6 +3674,29 @@ t.test('deref inline in rest', (t) => {
   t.end()
 })
 
+t.test('splatting array', (t) => {
+  const ast = parse(`[
+    ...[0,1,2],
+    ...[3,4,5],
+    ...{"key": "value"},
+    ...{},
+    ...null
+  ]`)
+  const res = typeEvaluate(ast, [])
+  t.strictSame(res, {
+    type: 'array',
+    of: unionOf(
+      {type: 'number', value: 0},
+      {type: 'number', value: 1},
+      {type: 'number', value: 2},
+      {type: 'number', value: 3},
+      {type: 'number', value: 4},
+      {type: 'number', value: 5},
+    ),
+  })
+  t.end()
+})
+
 function findSchemaType(name: string): TypeNode {
   const type = schemas.find((s) => s.name === name)
   if (!type) {
