@@ -887,7 +887,14 @@ function handleArrayNode(node: ArrayNode, scope: Scope): TypeNode {
   const of: TypeNode[] = []
   for (const el of node.elements) {
     const node = walk({node: el.value, scope})
-    if (node !== null) {
+    if (el.isSplat) {
+      // if we are splatting a non-array, we ignore it since it would result in no values
+      if (node.type !== 'array') {
+        continue
+      }
+
+      of.push(node.of)
+    } else {
       of.push(node)
     }
   }
