@@ -5,6 +5,17 @@
 All notable changes to this project will be documented in this file. See
 [Conventional Commits](https://conventionalcommits.org) for commit guidelines.
 
+## [1.21.0](https://github.com/sanity-io/groq-js/compare/v1.20.0...v1.21.0) (2025-11-21)
+
+### Features
+
+- **gdr:** add unimplemented documents::incomingGlobalDocRefCount() ([718b4ba](https://github.com/sanity-io/groq-js/commit/718b4badcfc17820d2e989526662fe60861ad628))
+- **gdr:** add unimplemented documents::incomingRefCount() ([40f299c](https://github.com/sanity-io/groq-js/commit/40f299cb05f8a5fa32b478d3e402e3b56c8730d8))
+
+### Bug Fixes
+
+- **typeEvaluator:** handle splatting arrays ([26c5ae8](https://github.com/sanity-io/groq-js/commit/26c5ae8670478f808bb04b162e98782ae0e25919))
+
 ## [1.20.0](https://github.com/sanity-io/groq-js/compare/v1.19.0...v1.20.0) (2025-10-16)
 
 ### Features
