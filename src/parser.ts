@@ -3,10 +3,10 @@ import {tryConstantEvaluate} from './evaluator'
 import {type GroqFunctionArity, namespaces, pipeFunctions} from './evaluator/functions'
 import {MarkProcessor, type MarkVisitor} from './markProcessor'
 import {
-  isSelectorNested,
   type ArrayElementNode,
   type ExprNode,
   type FuncCallNode,
+  isSelectorNested,
   type ObjectAttributeNode,
   type ObjectSplatNode,
   type OpCall,
@@ -48,825 +48,850 @@ function expandHex(str: string): string {
 class GroqQueryError extends Error {
   public override name = 'GroqQueryError'
 }
-
-const EXPR_BUILDER: MarkVisitor<ExprNode> = {
-  group(p) {
-    const inner = p.process(EXPR_BUILDER)
-    return {
-      type: 'Group',
-      base: inner,
-    }
-  },
-
-  everything() {
-    return {type: 'Everything'}
-  },
-
-  this() {
-    return {type: 'This'}
-  },
-
-  parent() {
-    return {
-      type: 'Parent',
-      n: 1,
-    }
-  },
-
-  dblparent(p) {
-    const next = p.process(EXPR_BUILDER) as ParentNode
-    return {
-      type: 'Parent',
-      n: next.n + 1,
-    }
-  },
-
-  traverse(p) {
-    const base = p.process(EXPR_BUILDER)
-    const traversalList: Array<TraverseFunc> = []
-    while (p.getMark().name !== 'traversal_end') {
-      traversalList.push(p.process(TRAVERSE_BUILDER))
-    }
-    p.shift()
-    let traversal: TraversalResult | null = null
-    for (let i = traversalList.length - 1; i >= 0; i--) {
-      traversal = traversalList[i](traversal)
-    }
-    if (base.type === 'Everything' || base.type === 'Array' || base.type === 'PipeFuncCall') {
-      traversal = traverseArray((val) => val, traversal)
-    }
-    if (traversal === null) throw new Error('BUG: unexpected empty traversal')
-    return traversal.build(base)
-  },
-
-  this_attr(p) {
-    const name = p.processString()
-
-    if (name === 'null') {
-      return {type: 'Value', value: null}
-    }
-    if (name === 'true') {
-      return {type: 'Value', value: true}
-    }
-    if (name === 'false') {
-      return {type: 'Value', value: false}
-    }
-
-    return {
-      type: 'AccessAttribute',
-      name,
-    }
-  },
-
-  neg(p) {
-    const base = p.process(EXPR_BUILDER)
-
-    return {
-      type: 'Neg',
-      base,
-    }
-  },
-
-  pos(p) {
-    const base = p.process(EXPR_BUILDER)
-
-    return {
-      type: 'Pos',
-      base,
-    }
-  },
-
-  add(p) {
-    const left = p.process(EXPR_BUILDER)
-    const right = p.process(EXPR_BUILDER)
-    return {
-      type: 'OpCall',
-      op: '+',
-      left,
-      right,
-    }
-  },
-
-  sub(p) {
-    const left = p.process(EXPR_BUILDER)
-    const right = p.process(EXPR_BUILDER)
-    return {
-      type: 'OpCall',
-      op: '-',
-      left,
-      right,
-    }
-  },
-
-  mul(p) {
-    const left = p.process(EXPR_BUILDER)
-    const right = p.process(EXPR_BUILDER)
-    return {
-      type: 'OpCall',
-      op: '*',
-      left,
-      right,
-    }
-  },
-
-  div(p) {
-    const left = p.process(EXPR_BUILDER)
-    const right = p.process(EXPR_BUILDER)
-    return {
-      type: 'OpCall',
-      op: '/',
-      left,
-      right,
-    }
-  },
-
-  mod(p) {
-    const left = p.process(EXPR_BUILDER)
-    const right = p.process(EXPR_BUILDER)
-    return {
-      type: 'OpCall',
-      op: '%',
-      left,
-      right,
-    }
-  },
-
-  pow(p) {
-    const left = p.process(EXPR_BUILDER)
-    const right = p.process(EXPR_BUILDER)
-    return {
-      type: 'OpCall',
-      op: '**',
-      left,
-      right,
-    }
-  },
-
-  comp(p) {
-    const left = p.process(EXPR_BUILDER)
-    const op = p.processString() as OpCall
-    const right = p.process(EXPR_BUILDER)
-    return {
-      type: 'OpCall',
-      op: op,
-      left: left,
-      right: right,
-    }
-  },
-
-  in_range(p) {
-    const base = p.process(EXPR_BUILDER)
-    const isInclusive = p.getMark().name === 'inc_range'
-    p.shift()
-    const left = p.process(EXPR_BUILDER)
-    const right = p.process(EXPR_BUILDER)
-    return {
-      type: 'InRange',
-      base,
-      left,
-      right,
-      isInclusive,
-    }
-  },
-
-  str(p) {
-    let value = ''
-    // eslint-disable-next-line no-labels
-    loop: while (p.hasMark()) {
-      const mark = p.getMark()
-      switch (mark.name) {
-        case 'str_end':
-          value += p.processStringEnd()
-          // eslint-disable-next-line no-labels
-          break loop
-        case 'str_pause':
-          value += p.processStringEnd()
-          break
-        case 'str_start':
-          p.shift()
-          break
-        case 'single_escape': {
-          const char = p.slice(1)
-          p.shift()
-          value += ESCAPE_SEQUENCE[char as EscapeSequences]
-          break
-        }
-        case 'unicode_hex':
-          p.shift()
-          value += expandHex(p.processStringEnd())
-          break
-        default:
-          throw new Error(`unexpected mark: ${mark.name}`)
+function createThrowingFunction(namespace: string, name: string): FuncCallNode {
+  return {
+    type: 'FuncCall',
+    func() {
+      throw new GroqQueryError(`Undefined namespace/function`)
+    },
+    namespace,
+    name,
+    args: [],
+  }
+}
+function createExpressionBuilder({allowUnknownFunctions}: {allowUnknownFunctions: boolean}) {
+  const EXPR_BUILDER: MarkVisitor<ExprNode> = {
+    group(p) {
+      const inner = p.process(EXPR_BUILDER)
+      return {
+        type: 'Group',
+        base: inner,
       }
-    }
-    return {type: 'Value', value}
-  },
+    },
 
-  integer(p) {
-    const strValue = p.processStringEnd()
-    return {
-      type: 'Value',
-      value: Number(strValue),
-    }
-  },
+    everything() {
+      return {type: 'Everything'}
+    },
 
-  float(p) {
-    const strValue = p.processStringEnd()
-    return {
-      type: 'Value',
-      value: Number(strValue),
-    }
-  },
+    this() {
+      return {type: 'This'}
+    },
 
-  sci(p) {
-    const strValue = p.processStringEnd()
-    return {
-      type: 'Value',
-      value: Number(strValue),
-    }
-  },
-
-  object(p) {
-    const attributes: ObjectAttributeNode[] = []
-    while (p.getMark().name !== 'object_end') {
-      attributes.push(p.process(OBJECT_BUILDER))
-    }
-    p.shift()
-
-    return {
-      type: 'Object',
-      attributes,
-    }
-  },
-
-  array(p) {
-    const elements: ArrayElementNode[] = []
-    while (p.getMark().name !== 'array_end') {
-      let isSplat = false
-      if (p.getMark().name === 'array_splat') {
-        isSplat = true
-        p.shift()
+    parent() {
+      return {
+        type: 'Parent',
+        n: 1,
       }
-      const value = p.process(EXPR_BUILDER)
-      elements.push({
-        type: 'ArrayElement',
-        value,
-        isSplat,
-      })
-    }
-    p.shift()
-    return {
-      type: 'Array',
-      elements: elements,
-    }
-  },
+    },
 
-  tuple(p) {
-    const members: ExprNode[] = []
-    while (p.getMark().name !== 'tuple_end') {
-      members.push(p.process(EXPR_BUILDER))
-    }
-    p.shift()
-    return {
-      type: 'Tuple',
-      members,
-    }
-  },
-
-  func_call(p) {
-    let namespace = 'global'
-    if (p.getMark().name === 'namespace') {
-      p.shift()
-      namespace = p.processString()
-    }
-
-    const name = p.processString()
-    if (namespace === 'global' && name === 'select') {
-      const result: SelectNode = {
-        type: 'Select',
-        alternatives: [],
+    dblparent(p) {
+      const next = p.process(EXPR_BUILDER) as ParentNode
+      return {
+        type: 'Parent',
+        n: next.n + 1,
       }
+    },
 
-      while (p.getMark().name !== 'func_args_end') {
-        if (p.getMark().name === 'pair') {
-          if (result.fallback) throw new GroqQueryError(`unexpected argument to select()`)
-          p.shift()
-          const condition = p.process(EXPR_BUILDER)
-          const value = p.process(EXPR_BUILDER)
-          result.alternatives.push({
-            type: 'SelectAlternative',
-            condition,
-            value,
-          })
-        } else {
-          if (result.fallback) throw new GroqQueryError(`unexpected argument to select()`)
-          const value = p.process(EXPR_BUILDER)
-          result.fallback = value
-        }
+    traverse(p) {
+      const base = p.process(EXPR_BUILDER)
+      const traversalList: Array<TraverseFunc> = []
+      while (p.getMark().name !== 'traversal_end') {
+        traversalList.push(p.process(TRAVERSE_BUILDER))
       }
       p.shift()
-      return result
-    }
-
-    const args: ExprNode[] = []
-
-    while (p.getMark().name !== 'func_args_end') {
-      if (argumentShouldBeSelector(namespace, name, args.length)) {
-        args.push(p.process(SELECTOR_BUILDER))
-      } else {
-        args.push(p.process(EXPR_BUILDER))
+      let traversal: TraversalResult | null = null
+      for (let i = traversalList.length - 1; i >= 0; i--) {
+        traversal = traversalList[i](traversal)
       }
-    }
-
-    p.shift()
-
-    if (namespace === 'global' && (name === 'before' || name === 'after')) {
-      if (p.parseOptions.mode === 'delta') {
-        return {
-          type: 'Context',
-          key: name,
-        }
+      if (base.type === 'Everything' || base.type === 'Array' || base.type === 'PipeFuncCall') {
+        traversal = traverseArray((val) => val, traversal)
       }
-    }
+      if (traversal === null) throw new Error('BUG: unexpected empty traversal')
+      return traversal.build(base)
+    },
 
-    if (namespace === 'global' && name === 'boost' && !p.allowBoost)
-      throw new GroqQueryError('unexpected boost')
+    this_attr(p) {
+      const name = p.processString()
 
-    const funcs = namespaces[namespace]
-    if (!funcs) {
-      throw new GroqQueryError(`Undefined namespace: ${namespace}`)
-    }
+      if (name === 'null') {
+        return {type: 'Value', value: null}
+      }
+      if (name === 'true') {
+        return {type: 'Value', value: true}
+      }
+      if (name === 'false') {
+        return {type: 'Value', value: false}
+      }
 
-    const func = funcs[name]
-    if (!func) {
-      throw new GroqQueryError(`Undefined function: ${name}`)
-    }
-    if (func.arity !== undefined) {
-      validateArity(name, func.arity, args.length)
-    }
+      return {
+        type: 'AccessAttribute',
+        name,
+      }
+    },
 
-    if (func.mode !== undefined && func.mode !== p.parseOptions.mode) {
-      throw new GroqQueryError(`Undefined function: ${name}`)
-    }
+    neg(p) {
+      const base = p.process(EXPR_BUILDER)
 
-    return {
-      type: 'FuncCall',
-      func,
-      namespace,
-      name,
-      args,
-    }
-  },
+      return {
+        type: 'Neg',
+        base,
+      }
+    },
 
-  pipecall(p) {
-    const base = p.process(EXPR_BUILDER)
-    p.shift() // Remove the func_call
+    pos(p) {
+      const base = p.process(EXPR_BUILDER)
 
-    let namespace = 'global'
-    if (p.getMark().name === 'namespace') {
+      return {
+        type: 'Pos',
+        base,
+      }
+    },
+
+    add(p) {
+      const left = p.process(EXPR_BUILDER)
+      const right = p.process(EXPR_BUILDER)
+      return {
+        type: 'OpCall',
+        op: '+',
+        left,
+        right,
+      }
+    },
+
+    sub(p) {
+      const left = p.process(EXPR_BUILDER)
+      const right = p.process(EXPR_BUILDER)
+      return {
+        type: 'OpCall',
+        op: '-',
+        left,
+        right,
+      }
+    },
+
+    mul(p) {
+      const left = p.process(EXPR_BUILDER)
+      const right = p.process(EXPR_BUILDER)
+      return {
+        type: 'OpCall',
+        op: '*',
+        left,
+        right,
+      }
+    },
+
+    div(p) {
+      const left = p.process(EXPR_BUILDER)
+      const right = p.process(EXPR_BUILDER)
+      return {
+        type: 'OpCall',
+        op: '/',
+        left,
+        right,
+      }
+    },
+
+    mod(p) {
+      const left = p.process(EXPR_BUILDER)
+      const right = p.process(EXPR_BUILDER)
+      return {
+        type: 'OpCall',
+        op: '%',
+        left,
+        right,
+      }
+    },
+
+    pow(p) {
+      const left = p.process(EXPR_BUILDER)
+      const right = p.process(EXPR_BUILDER)
+      return {
+        type: 'OpCall',
+        op: '**',
+        left,
+        right,
+      }
+    },
+
+    comp(p) {
+      const left = p.process(EXPR_BUILDER)
+      const op = p.processString() as OpCall
+      const right = p.process(EXPR_BUILDER)
+      return {
+        type: 'OpCall',
+        op: op,
+        left: left,
+        right: right,
+      }
+    },
+
+    in_range(p) {
+      const base = p.process(EXPR_BUILDER)
+      const isInclusive = p.getMark().name === 'inc_range'
       p.shift()
-      namespace = p.processString()
-    }
-    if (namespace !== 'global') {
-      throw new GroqQueryError(`Undefined namespace: ${namespace}`)
-    }
-
-    const name = p.processString()
-    const args: ExprNode[] = []
-
-    const oldAllowBoost = p.allowBoost
-    if (name === 'score') {
-      // Only allow boost inside a score expression
-      p.allowBoost = true
-    }
-
-    for (;;) {
-      const markName = p.getMark().name
-      if (markName === 'func_args_end') {
-        break
+      const left = p.process(EXPR_BUILDER)
+      const right = p.process(EXPR_BUILDER)
+      return {
+        type: 'InRange',
+        base,
+        left,
+        right,
+        isInclusive,
       }
+    },
 
-      if (name === 'order') {
-        if (markName === 'asc') {
-          p.shift()
-          args.push({type: 'Asc', base: p.process(EXPR_BUILDER)})
-          continue
-        } else if (markName === 'desc') {
-          p.shift()
-          args.push({type: 'Desc', base: p.process(EXPR_BUILDER)})
-          continue
+    str(p) {
+      let value = ''
+      // eslint-disable-next-line no-labels
+      loop: while (p.hasMark()) {
+        const mark = p.getMark()
+        switch (mark.name) {
+          case 'str_end':
+            value += p.processStringEnd()
+            // eslint-disable-next-line no-labels
+            break loop
+          case 'str_pause':
+            value += p.processStringEnd()
+            break
+          case 'str_start':
+            p.shift()
+            break
+          case 'single_escape': {
+            const char = p.slice(1)
+            p.shift()
+            value += ESCAPE_SEQUENCE[char as EscapeSequences]
+            break
+          }
+          case 'unicode_hex':
+            p.shift()
+            value += expandHex(p.processStringEnd())
+            break
+          default:
+            throw new Error(`unexpected mark: ${mark.name}`)
         }
       }
+      return {type: 'Value', value}
+    },
 
-      args.push(p.process(EXPR_BUILDER))
-    }
-    p.shift()
-
-    p.allowBoost = oldAllowBoost
-
-    const func = pipeFunctions[name]
-    if (!func) {
-      throw new GroqQueryError(`Undefined pipe function: ${name}`)
-    }
-    if (func.arity) {
-      validateArity(name, func.arity, args.length)
-    }
-
-    return {
-      type: 'PipeFuncCall',
-      func,
-      base,
-      name,
-      args,
-    }
-  },
-
-  pair() {
-    throw new GroqQueryError(`unexpected =>`)
-  },
-
-  and(p) {
-    const left = p.process(EXPR_BUILDER)
-    const right = p.process(EXPR_BUILDER)
-    return {
-      type: 'And',
-      left,
-      right,
-    }
-  },
-
-  or(p) {
-    const left = p.process(EXPR_BUILDER)
-    const right = p.process(EXPR_BUILDER)
-    return {
-      type: 'Or',
-      left,
-      right,
-    }
-  },
-
-  not(p) {
-    const base = p.process(EXPR_BUILDER)
-    return {
-      type: 'Not',
-      base,
-    }
-  },
-
-  asc() {
-    throw new GroqQueryError('unexpected asc')
-  },
-
-  desc() {
-    throw new GroqQueryError('unexpected desc')
-  },
-
-  param(p) {
-    const name = p.processString()
-
-    if (p.parseOptions.params && p.parseOptions.params.hasOwnProperty(name)) {
+    integer(p) {
+      const strValue = p.processStringEnd()
       return {
         type: 'Value',
-        value: p.parseOptions.params[name],
+        value: Number(strValue),
       }
-    }
+    },
 
-    return {
-      type: 'Parameter',
-      name,
-    }
-  },
-}
+    float(p) {
+      const strValue = p.processStringEnd()
+      return {
+        type: 'Value',
+        value: Number(strValue),
+      }
+    },
 
-const OBJECT_BUILDER: MarkVisitor<ObjectAttributeNode> = {
-  object_expr(p) {
-    if (p.getMark().name === 'pair') {
+    sci(p) {
+      const strValue = p.processStringEnd()
+      return {
+        type: 'Value',
+        value: Number(strValue),
+      }
+    },
+
+    object(p) {
+      const attributes: ObjectAttributeNode[] = []
+      while (p.getMark().name !== 'object_end') {
+        attributes.push(p.process(OBJECT_BUILDER))
+      }
       p.shift()
-      const condition = p.process(EXPR_BUILDER)
+
+      return {
+        type: 'Object',
+        attributes,
+      }
+    },
+
+    array(p) {
+      const elements: ArrayElementNode[] = []
+      while (p.getMark().name !== 'array_end') {
+        let isSplat = false
+        if (p.getMark().name === 'array_splat') {
+          isSplat = true
+          p.shift()
+        }
+        const value = p.process(EXPR_BUILDER)
+        elements.push({
+          type: 'ArrayElement',
+          value,
+          isSplat,
+        })
+      }
+      p.shift()
+      return {
+        type: 'Array',
+        elements: elements,
+      }
+    },
+
+    tuple(p) {
+      const members: ExprNode[] = []
+      while (p.getMark().name !== 'tuple_end') {
+        members.push(p.process(EXPR_BUILDER))
+      }
+      p.shift()
+      return {
+        type: 'Tuple',
+        members,
+      }
+    },
+
+    func_call(p) {
+      let namespace = 'global'
+      if (p.getMark().name === 'namespace') {
+        p.shift()
+        namespace = p.processString()
+      }
+
+      const name = p.processString()
+      if (namespace === 'global' && name === 'select') {
+        const result: SelectNode = {
+          type: 'Select',
+          alternatives: [],
+        }
+
+        while (p.getMark().name !== 'func_args_end') {
+          if (p.getMark().name === 'pair') {
+            if (result.fallback) throw new GroqQueryError(`unexpected argument to select()`)
+            p.shift()
+            const condition = p.process(EXPR_BUILDER)
+            const value = p.process(EXPR_BUILDER)
+            result.alternatives.push({
+              type: 'SelectAlternative',
+              condition,
+              value,
+            })
+          } else {
+            if (result.fallback) throw new GroqQueryError(`unexpected argument to select()`)
+            const value = p.process(EXPR_BUILDER)
+            result.fallback = value
+          }
+        }
+        p.shift()
+        return result
+      }
+
+      const args: ExprNode[] = []
+
+      while (p.getMark().name !== 'func_args_end') {
+        if (argumentShouldBeSelector(namespace, name, args.length)) {
+          args.push(p.process(SELECTOR_BUILDER))
+        } else {
+          args.push(p.process(EXPR_BUILDER))
+        }
+      }
+
+      p.shift()
+
+      if (namespace === 'global' && (name === 'before' || name === 'after')) {
+        if (p.parseOptions.mode === 'delta') {
+          return {
+            type: 'Context',
+            key: name,
+          }
+        }
+      }
+
+      if (namespace === 'global' && name === 'boost' && !p.allowBoost)
+        throw new GroqQueryError('unexpected boost')
+
+      const funcs = namespaces[namespace]
+      if (!funcs) {
+        if (allowUnknownFunctions) {
+          return createThrowingFunction(namespace, name)
+        }
+        throw new GroqQueryError(`Undefined namespace: ${namespace}`)
+      }
+
+      const func = funcs[name]
+      if (!func) {
+        if (allowUnknownFunctions) {
+          return createThrowingFunction(namespace, name)
+        }
+        throw new GroqQueryError(`Undefined function: ${name}`)
+      }
+      if (func.arity !== undefined) {
+        validateArity(name, func.arity, args.length)
+      }
+
+      if (func.mode !== undefined && func.mode !== p.parseOptions.mode) {
+        throw new GroqQueryError(`Undefined function: ${name}`)
+      }
+
+      return {
+        type: 'FuncCall',
+        func,
+        namespace,
+        name,
+        args,
+      }
+    },
+
+    pipecall(p) {
+      const base = p.process(EXPR_BUILDER)
+      p.shift() // Remove the func_call
+
+      let namespace = 'global'
+      if (p.getMark().name === 'namespace') {
+        p.shift()
+        namespace = p.processString()
+      }
+      if (namespace !== 'global') {
+        throw new GroqQueryError(`Undefined namespace: ${namespace}`)
+      }
+
+      const name = p.processString()
+      const args: ExprNode[] = []
+
+      const oldAllowBoost = p.allowBoost
+      if (name === 'score') {
+        // Only allow boost inside a score expression
+        p.allowBoost = true
+      }
+
+      for (;;) {
+        const markName = p.getMark().name
+        if (markName === 'func_args_end') {
+          break
+        }
+
+        if (name === 'order') {
+          if (markName === 'asc') {
+            p.shift()
+            args.push({type: 'Asc', base: p.process(EXPR_BUILDER)})
+            continue
+          } else if (markName === 'desc') {
+            p.shift()
+            args.push({type: 'Desc', base: p.process(EXPR_BUILDER)})
+            continue
+          }
+        }
+
+        args.push(p.process(EXPR_BUILDER))
+      }
+      p.shift()
+
+      p.allowBoost = oldAllowBoost
+
+      const func = pipeFunctions[name]
+      if (!func) {
+        throw new GroqQueryError(`Undefined pipe function: ${name}`)
+      }
+      if (func.arity) {
+        validateArity(name, func.arity, args.length)
+      }
+
+      return {
+        type: 'PipeFuncCall',
+        func,
+        base,
+        name,
+        args,
+      }
+    },
+
+    pair() {
+      throw new GroqQueryError(`unexpected =>`)
+    },
+
+    and(p) {
+      const left = p.process(EXPR_BUILDER)
+      const right = p.process(EXPR_BUILDER)
+      return {
+        type: 'And',
+        left,
+        right,
+      }
+    },
+
+    or(p) {
+      const left = p.process(EXPR_BUILDER)
+      const right = p.process(EXPR_BUILDER)
+      return {
+        type: 'Or',
+        left,
+        right,
+      }
+    },
+
+    not(p) {
+      const base = p.process(EXPR_BUILDER)
+      return {
+        type: 'Not',
+        base,
+      }
+    },
+
+    asc() {
+      throw new GroqQueryError('unexpected asc')
+    },
+
+    desc() {
+      throw new GroqQueryError('unexpected desc')
+    },
+
+    param(p) {
+      const name = p.processString()
+
+      if (p.parseOptions.params && p.parseOptions.params.hasOwnProperty(name)) {
+        return {
+          type: 'Value',
+          value: p.parseOptions.params[name],
+        }
+      }
+
+      return {
+        type: 'Parameter',
+        name,
+      }
+    },
+  }
+
+  const OBJECT_BUILDER: MarkVisitor<ObjectAttributeNode> = {
+    object_expr(p) {
+      if (p.getMark().name === 'pair') {
+        p.shift()
+        const condition = p.process(EXPR_BUILDER)
+        const value = p.process(EXPR_BUILDER)
+
+        return {
+          type: 'ObjectConditionalSplat',
+          condition,
+          value,
+        }
+      }
+
       const value = p.process(EXPR_BUILDER)
 
       return {
-        type: 'ObjectConditionalSplat',
-        condition,
+        type: 'ObjectAttributeValue',
+        name: extractPropertyKey(value),
         value,
       }
-    }
+    },
 
-    const value = p.process(EXPR_BUILDER)
+    object_pair(p) {
+      const name = p.process(EXPR_BUILDER)
+      if (name.type !== 'Value') throw new Error('name must be string')
 
-    return {
-      type: 'ObjectAttributeValue',
-      name: extractPropertyKey(value),
-      value,
-    }
-  },
-
-  object_pair(p) {
-    const name = p.process(EXPR_BUILDER)
-    if (name.type !== 'Value') throw new Error('name must be string')
-
-    const value = p.process(EXPR_BUILDER)
-    return {
-      type: 'ObjectAttributeValue',
-      name: name.value,
-      value: value,
-    }
-  },
-
-  object_splat(p): ObjectSplatNode {
-    const value = p.process(EXPR_BUILDER)
-
-    return {
-      type: 'ObjectSplat',
-      value,
-    }
-  },
-
-  object_splat_this(): ObjectSplatNode {
-    return {
-      type: 'ObjectSplat',
-      value: {type: 'This'},
-    }
-  },
-}
-
-const TRAVERSE_BUILDER: MarkVisitor<TraverseFunc> = {
-  square_bracket(p) {
-    const expr = p.process(EXPR_BUILDER)
-
-    const value = tryConstantEvaluate(expr)
-    if (value && value.type === 'number') {
-      return (right) =>
-        traverseElement((base) => ({type: 'AccessElement', base, index: value.data}), right)
-    }
-
-    if (value && value.type === 'string') {
-      return (right) =>
-        traversePlain((base) => ({type: 'AccessAttribute', base, name: value.data}), right)
-    }
-
-    return (right) =>
-      traverseArray(
-        (base) => ({
-          type: 'Filter',
-          base,
-          expr,
-        }),
-        right,
-      )
-  },
-
-  slice(p) {
-    const isInclusive = p.getMark().name === 'inc_range'
-    p.shift()
-
-    const left = p.process(EXPR_BUILDER)
-    const right = p.process(EXPR_BUILDER)
-
-    const leftValue = tryConstantEvaluate(left)
-    const rightValue = tryConstantEvaluate(right)
-
-    if (!leftValue || !rightValue || leftValue.type !== 'number' || rightValue.type !== 'number') {
-      throw new GroqQueryError('slicing must use constant numbers')
-    }
-
-    return (rhs) =>
-      traverseArray(
-        (base) => ({
-          type: 'Slice',
-          base,
-          left: leftValue.data,
-          right: rightValue.data,
-          isInclusive,
-        }),
-        rhs,
-      )
-  },
-
-  projection(p) {
-    const obj = p.process(EXPR_BUILDER)
-    return (right) =>
-      traverseProjection((base) => ({type: 'Projection', base: base, expr: obj}), right)
-  },
-
-  attr_access(p) {
-    const name = p.processString()
-
-    return (right) => traversePlain((base) => ({type: 'AccessAttribute', base, name}), right)
-  },
-
-  deref(p) {
-    let attr: string | null = null
-
-    if (p.getMark().name === 'deref_attr') {
-      p.shift()
-      attr = p.processString()
-    }
-
-    const wrap = (base: ExprNode): ExprNode =>
-      attr ? {type: 'AccessAttribute', base, name: attr} : base
-
-    return (right) =>
-      traversePlain(
-        (base) =>
-          wrap({
-            type: 'Deref',
-            base,
-          }),
-        right,
-      )
-  },
-
-  array_postfix() {
-    return (right) => traverseArray((base) => ({type: 'ArrayCoerce', base}), right)
-  },
-}
-
-const SELECTOR_BUILDER: MarkVisitor<SelectorNode> = {
-  group(p) {
-    return p.process(SELECTOR_BUILDER)
-  },
-
-  everything() {
-    throw new Error('Invalid selector syntax')
-  },
-
-  this() {
-    throw new Error('Invalid selector syntax')
-  },
-
-  parent() {
-    throw new Error('Invalid selector syntax')
-  },
-
-  dblparent() {
-    throw new Error('Invalid selector syntax')
-  },
-
-  traverse(p) {
-    let node: SelectorNode = p.process(SELECTOR_BUILDER)
-    while (p.getMark().name !== 'traversal_end') {
-      if (p.getMark().name === 'array_postfix') {
-        p.shift()
-
-        node = {type: 'ArrayCoerce', base: node}
-      } else if (p.getMark().name === 'square_bracket') {
-        p.shift()
-
-        const expr = p.process(EXPR_BUILDER)
-
-        const value = tryConstantEvaluate(expr)
-        if (value && value.type === 'number') {
-          throw new Error('Invalid array access expression')
-        } else if (value && value.type === 'string') {
-          node = {type: 'AccessAttribute', base: node, name: value.data}
-        } else {
-          node = {type: 'Filter', base: node, expr}
-        }
-      } else if (p.getMark().name === 'attr_access') {
-        p.shift()
-        const name = p.processString()
-        node = {type: 'AccessAttribute', base: node, name}
-      } else if (p.getMark().name === 'tuple' || p.getMark().name === 'group') {
-        const selector = p.process(SELECTOR_BUILDER)
-        if (!isSelectorNested(selector))
-          throw new Error(`Unexpected result parsing nested selector: ${selector.type}`)
-        node = {type: 'SelectorNested', base: node, nested: selector}
-      } else {
-        throw new Error('Invalid selector syntax')
-      }
-    }
-    p.shift()
-    return node
-  },
-
-  this_attr(p) {
-    const name = p.processString()
-    return {type: 'AccessAttribute', name}
-  },
-
-  attr_access() {
-    throw new Error('Invalid selector syntax')
-  },
-
-  neg() {
-    throw new Error('Invalid selector syntax')
-  },
-
-  pos() {
-    throw new Error('Invalid selector syntax')
-  },
-
-  add() {
-    throw new Error('Invalid selector syntax')
-  },
-
-  sub() {
-    throw new Error('Invalid selector syntax')
-  },
-
-  mul() {
-    throw new Error('Invalid selector syntax')
-  },
-
-  div() {
-    throw new Error('Invalid selector syntax')
-  },
-
-  mod() {
-    throw new Error('Invalid selector syntax')
-  },
-
-  pow() {
-    throw new Error('Invalid selector syntax')
-  },
-
-  comp() {
-    throw new Error('Invalid selector syntax')
-  },
-
-  in_range() {
-    throw new Error('Invalid selector syntax')
-  },
-
-  str() {
-    throw new Error('Invalid selector syntax')
-  },
-
-  integer() {
-    throw new Error('Invalid selector syntax')
-  },
-
-  float() {
-    throw new Error('Invalid selector syntax')
-  },
-
-  sci() {
-    throw new Error('Invalid selector syntax')
-  },
-
-  object() {
-    throw new Error('Invalid selector syntax')
-  },
-
-  array() {
-    throw new Error('Invalid selector syntax')
-  },
-
-  tuple(p) {
-    const selectors: Array<SelectorNode> = []
-    while (p.getMark().name !== 'tuple_end') {
-      selectors.push(p.process(SELECTOR_BUILDER))
-    }
-    p.shift()
-
-    return {type: 'Tuple', members: selectors}
-  },
-
-  func_call(p, mark) {
-    const func = EXPR_BUILDER['func_call'](p, mark) as FuncCallNode
-    if (func.name === 'anywhere' && func.args.length === 1) {
+      const value = p.process(EXPR_BUILDER)
       return {
-        type: 'SelectorFuncCall',
-        name: 'anywhere',
-        arg: func.args[0],
+        type: 'ObjectAttributeValue',
+        name: name.value,
+        value: value,
       }
-    }
+    },
 
-    throw new Error('Invalid selector syntax')
-  },
+    object_splat(p): ObjectSplatNode {
+      const value = p.process(EXPR_BUILDER)
 
-  pipecall() {
-    throw new Error('Invalid selector syntax')
-  },
+      return {
+        type: 'ObjectSplat',
+        value,
+      }
+    },
 
-  pair() {
-    throw new Error('Invalid selector syntax')
-  },
+    object_splat_this(): ObjectSplatNode {
+      return {
+        type: 'ObjectSplat',
+        value: {type: 'This'},
+      }
+    },
+  }
 
-  and() {
-    throw new Error('Invalid selector syntax')
-  },
+  const TRAVERSE_BUILDER: MarkVisitor<TraverseFunc> = {
+    square_bracket(p) {
+      const expr = p.process(EXPR_BUILDER)
 
-  or() {
-    throw new Error('Invalid selector syntax')
-  },
+      const value = tryConstantEvaluate(expr)
+      if (value && value.type === 'number') {
+        return (right) =>
+          traverseElement((base) => ({type: 'AccessElement', base, index: value.data}), right)
+      }
 
-  not() {
-    throw new Error('Invalid selector syntax')
-  },
+      if (value && value.type === 'string') {
+        return (right) =>
+          traversePlain((base) => ({type: 'AccessAttribute', base, name: value.data}), right)
+      }
 
-  asc() {
-    throw new Error('Invalid selector syntax')
-  },
+      return (right) =>
+        traverseArray(
+          (base) => ({
+            type: 'Filter',
+            base,
+            expr,
+          }),
+          right,
+        )
+    },
 
-  desc() {
-    throw new Error('Invalid selector syntax')
-  },
+    slice(p) {
+      const isInclusive = p.getMark().name === 'inc_range'
+      p.shift()
 
-  param() {
-    throw new Error('Invalid selector syntax')
-  },
+      const left = p.process(EXPR_BUILDER)
+      const right = p.process(EXPR_BUILDER)
+
+      const leftValue = tryConstantEvaluate(left)
+      const rightValue = tryConstantEvaluate(right)
+
+      if (
+        !leftValue ||
+        !rightValue ||
+        leftValue.type !== 'number' ||
+        rightValue.type !== 'number'
+      ) {
+        throw new GroqQueryError('slicing must use constant numbers')
+      }
+
+      return (rhs) =>
+        traverseArray(
+          (base) => ({
+            type: 'Slice',
+            base,
+            left: leftValue.data,
+            right: rightValue.data,
+            isInclusive,
+          }),
+          rhs,
+        )
+    },
+
+    projection(p) {
+      const obj = p.process(EXPR_BUILDER)
+      return (right) =>
+        traverseProjection((base) => ({type: 'Projection', base: base, expr: obj}), right)
+    },
+
+    attr_access(p) {
+      const name = p.processString()
+
+      return (right) => traversePlain((base) => ({type: 'AccessAttribute', base, name}), right)
+    },
+
+    deref(p) {
+      let attr: string | null = null
+
+      if (p.getMark().name === 'deref_attr') {
+        p.shift()
+        attr = p.processString()
+      }
+
+      const wrap = (base: ExprNode): ExprNode =>
+        attr ? {type: 'AccessAttribute', base, name: attr} : base
+
+      return (right) =>
+        traversePlain(
+          (base) =>
+            wrap({
+              type: 'Deref',
+              base,
+            }),
+          right,
+        )
+    },
+
+    array_postfix() {
+      return (right) => traverseArray((base) => ({type: 'ArrayCoerce', base}), right)
+    },
+  }
+
+  const SELECTOR_BUILDER: MarkVisitor<SelectorNode> = {
+    group(p) {
+      return p.process(SELECTOR_BUILDER)
+    },
+
+    everything() {
+      throw new Error('Invalid selector syntax')
+    },
+
+    this() {
+      throw new Error('Invalid selector syntax')
+    },
+
+    parent() {
+      throw new Error('Invalid selector syntax')
+    },
+
+    dblparent() {
+      throw new Error('Invalid selector syntax')
+    },
+
+    traverse(p) {
+      let node: SelectorNode = p.process(SELECTOR_BUILDER)
+      while (p.getMark().name !== 'traversal_end') {
+        if (p.getMark().name === 'array_postfix') {
+          p.shift()
+
+          node = {type: 'ArrayCoerce', base: node}
+        } else if (p.getMark().name === 'square_bracket') {
+          p.shift()
+
+          const expr = p.process(EXPR_BUILDER)
+
+          const value = tryConstantEvaluate(expr)
+          if (value && value.type === 'number') {
+            throw new Error('Invalid array access expression')
+          } else if (value && value.type === 'string') {
+            node = {type: 'AccessAttribute', base: node, name: value.data}
+          } else {
+            node = {type: 'Filter', base: node, expr}
+          }
+        } else if (p.getMark().name === 'attr_access') {
+          p.shift()
+          const name = p.processString()
+          node = {type: 'AccessAttribute', base: node, name}
+        } else if (p.getMark().name === 'tuple' || p.getMark().name === 'group') {
+          const selector = p.process(SELECTOR_BUILDER)
+          if (!isSelectorNested(selector))
+            throw new Error(`Unexpected result parsing nested selector: ${selector.type}`)
+          node = {type: 'SelectorNested', base: node, nested: selector}
+        } else {
+          throw new Error('Invalid selector syntax')
+        }
+      }
+      p.shift()
+      return node
+    },
+
+    this_attr(p) {
+      const name = p.processString()
+      return {type: 'AccessAttribute', name}
+    },
+
+    attr_access() {
+      throw new Error('Invalid selector syntax')
+    },
+
+    neg() {
+      throw new Error('Invalid selector syntax')
+    },
+
+    pos() {
+      throw new Error('Invalid selector syntax')
+    },
+
+    add() {
+      throw new Error('Invalid selector syntax')
+    },
+
+    sub() {
+      throw new Error('Invalid selector syntax')
+    },
+
+    mul() {
+      throw new Error('Invalid selector syntax')
+    },
+
+    div() {
+      throw new Error('Invalid selector syntax')
+    },
+
+    mod() {
+      throw new Error('Invalid selector syntax')
+    },
+
+    pow() {
+      throw new Error('Invalid selector syntax')
+    },
+
+    comp() {
+      throw new Error('Invalid selector syntax')
+    },
+
+    in_range() {
+      throw new Error('Invalid selector syntax')
+    },
+
+    str() {
+      throw new Error('Invalid selector syntax')
+    },
+
+    integer() {
+      throw new Error('Invalid selector syntax')
+    },
+
+    float() {
+      throw new Error('Invalid selector syntax')
+    },
+
+    sci() {
+      throw new Error('Invalid selector syntax')
+    },
+
+    object() {
+      throw new Error('Invalid selector syntax')
+    },
+
+    array() {
+      throw new Error('Invalid selector syntax')
+    },
+
+    tuple(p) {
+      const selectors: Array<SelectorNode> = []
+      while (p.getMark().name !== 'tuple_end') {
+        selectors.push(p.process(SELECTOR_BUILDER))
+      }
+      p.shift()
+
+      return {type: 'Tuple', members: selectors}
+    },
+
+    func_call(p, mark) {
+      const func = EXPR_BUILDER['func_call'](p, mark) as FuncCallNode
+      if (func.name === 'anywhere' && func.args.length === 1) {
+        return {
+          type: 'SelectorFuncCall',
+          name: 'anywhere',
+          arg: func.args[0],
+        }
+      }
+
+      throw new Error('Invalid selector syntax')
+    },
+
+    pipecall() {
+      throw new Error('Invalid selector syntax')
+    },
+
+    pair() {
+      throw new Error('Invalid selector syntax')
+    },
+
+    and() {
+      throw new Error('Invalid selector syntax')
+    },
+
+    or() {
+      throw new Error('Invalid selector syntax')
+    },
+
+    not() {
+      throw new Error('Invalid selector syntax')
+    },
+
+    asc() {
+      throw new Error('Invalid selector syntax')
+    },
+
+    desc() {
+      throw new Error('Invalid selector syntax')
+    },
+
+    param() {
+      throw new Error('Invalid selector syntax')
+    },
+  }
+
+  return EXPR_BUILDER
 }
 
 function extractPropertyKey(node: ExprNode): string {
@@ -916,7 +941,7 @@ class GroqSyntaxError extends Error {
   public override name = 'GroqSyntaxError'
 
   constructor(position: number, detail: string) {
-    super(`Syntax error in GROQ query at position ${position}${detail ? ': ' + detail : ''}`)
+    super(`Syntax error in GROQ query at position ${position}${detail ? `: ${detail}` : ''}`)
     this.position = position
   }
 }
@@ -930,5 +955,7 @@ export function parse(input: string, options: ParseOptions = {}): ExprNode {
     throw new GroqSyntaxError(result.position, result.message)
   }
   const processor = new MarkProcessor(input, result.marks, options)
-  return processor.process(EXPR_BUILDER)
+  return processor.process(
+    createExpressionBuilder({allowUnknownFunctions: options.allowUnknownFunctions === true}),
+  )
 }
