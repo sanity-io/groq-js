@@ -1,5 +1,5 @@
 import {type ExprNode} from '../../nodeTypes'
-import {StreamValue, type ArrayValue} from '../../values'
+import {type ArrayValue, StreamValue} from '../../values'
 import type {Executor} from '../types'
 import array from './array'
 import dateTime from './dateTime'
@@ -9,6 +9,7 @@ import documents from './documents'
 import geo from './geo'
 import _global from './global'
 import math from './math'
+import media from './media'
 import pt from './pt'
 import releases from './releases'
 import sanity from './sanity'
@@ -47,6 +48,7 @@ export const namespaces: NamespaceSet = {
   pt,
   delta,
   diff,
+  media,
   sanity,
   math,
   dateTime,
