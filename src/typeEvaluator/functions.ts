@@ -514,6 +514,21 @@ export function handleFuncCallNode(node: FuncCallNode, scope: Scope): TypeNode {
     case 'documents.incomingGlobalDocumentReferenceCount': {
       return {type: 'number'}
     }
+    case 'media.aspect': {
+      return mapNode(walk({node: node.args[0], scope}), scope, (fieldNode) => {
+        if (fieldNode.type === 'null') {
+          return {type: 'null'}
+        }
+
+        return mapNode(walk({node: node.args[1], scope}), scope, (aspectNode) => {
+          if (aspectNode.type !== 'string') {
+            return {type: 'null'}
+          }
+
+          return {type: 'unknown'}
+        })
+      })
+    }
     default: {
       return {type: 'unknown'}
     }

@@ -3027,6 +3027,44 @@ t.test('function: documents::*', (t) => {
   t.end()
 })
 
+t.test('function: media::*', (t) => {
+  const query = `*[_type == "post"] {
+    "missing":  media::aspect(missing, "license"),
+    "number":   media::aspect(author, 1234),
+    "aspect":   media::aspect(author, "license"),
+  }`
+  const ast = parse(query)
+  const res = typeEvaluate(ast, schemas)
+
+  t.strictSame(res, {
+    type: 'array',
+    of: {
+      type: 'object',
+      attributes: {
+        missing: {
+          type: 'objectAttribute',
+          value: {
+            type: 'null',
+          },
+        },
+        number: {
+          type: 'objectAttribute',
+          value: {
+            type: 'null',
+          },
+        },
+        aspect: {
+          type: 'objectAttribute',
+          value: {
+            type: 'unknown',
+          },
+        },
+      },
+    },
+  })
+  t.end()
+})
+
 t.test('scoping', (t) => {
   const ast = parse(`*[_type == "mainDocument" && _id == $id]{
     _id,
