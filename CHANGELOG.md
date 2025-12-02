@@ -5,6 +5,12 @@
 All notable changes to this project will be documented in this file. See
 [Conventional Commits](https://conventionalcommits.org) for commit guidelines.
 
+## [1.22.0](https://github.com/sanity-io/groq-js/compare/v1.21.0...v1.22.0) (2025-12-02)
+
+### Features
+
+- **typeEvaluator:** add support for parsing and type evaluating media::aspect ([5d5d120](https://github.com/sanity-io/groq-js/commit/5d5d1206cfbd74e209001fce864f0bd1e57afb46))
+
 ## [1.21.0](https://github.com/sanity-io/groq-js/compare/v1.20.0...v1.21.0) (2025-11-21)
 
 ### Features
