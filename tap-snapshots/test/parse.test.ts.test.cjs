@@ -224,6 +224,113 @@ Object {
 }
 `
 
+exports[`test/parse.test.ts TAP Custom functions can parse > must match snapshot 1`] = `
+Object {
+  "base": Object {
+    "base": Object {
+      "type": "Everything",
+    },
+    "expr": Object {
+      "left": Object {
+        "name": "_type",
+        "type": "AccessAttribute",
+      },
+      "op": "==",
+      "right": Object {
+        "type": "Value",
+        "value": "person",
+      },
+      "type": "OpCall",
+    },
+    "type": "Filter",
+  },
+  "expr": Object {
+    "base": Object {
+      "type": "This",
+    },
+    "expr": Object {
+      "attributes": Array [
+        Object {
+          "name": "info",
+          "type": "ObjectAttributeValue",
+          "value": Object {
+            "base": Object {
+              "type": "This",
+            },
+            "expr": Object {
+              "attributes": Array [
+                Object {
+                  "name": "name",
+                  "type": "ObjectAttributeValue",
+                  "value": Object {
+                    "name": "name",
+                    "type": "AccessAttribute",
+                  },
+                },
+                Object {
+                  "name": "names",
+                  "type": "ObjectAttributeValue",
+                  "value": Object {
+                    "base": Object {
+                      "base": Object {
+                        "name": "name",
+                        "type": "AccessAttribute",
+                      },
+                      "type": "ArrayCoerce",
+                    },
+                    "expr": Object {
+                      "base": Object {
+                        "type": "This",
+                      },
+                      "expr": Object {
+                        "attributes": Array [
+                          Object {
+                            "name": "first",
+                            "type": "ObjectAttributeValue",
+                            "value": Object {
+                              "name": "first",
+                              "type": "AccessAttribute",
+                            },
+                          },
+                          Object {
+                            "name": "last",
+                            "type": "ObjectAttributeValue",
+                            "value": Object {
+                              "name": "last",
+                              "type": "AccessAttribute",
+                            },
+                          },
+                        ],
+                        "type": "Object",
+                      },
+                      "type": "Projection",
+                    },
+                    "type": "Map",
+                  },
+                },
+                Object {
+                  "name": "age",
+                  "type": "ObjectAttributeValue",
+                  "value": Object {
+                    "name": "age",
+                    "type": "AccessAttribute",
+                  },
+                },
+              ],
+              "type": "Object",
+            },
+            "type": "Projection",
+          },
+        },
+      ],
+      "type": "Object",
+    },
+    "type": "Projection",
+  },
+  "type": "Map",
+}
+`
+
 exports[`test/parse.test.ts TAP Expression parsing when extracting property keys can extract from group > must match snapshot 1`] = `
 Object {
   "base": Object {
