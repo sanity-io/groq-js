@@ -3746,6 +3746,17 @@ t.test('dateTime with numerical operation', (t) => {
   t.end()
 })
 
+t.test('number + dateTime', (t) => {
+  const query = `(60 + global::dateTime("2025-03-01T00:00:00Z")) > global::dateTime("2024-03-01T00:00:00Z")`
+  const ast = parse(query)
+  const res = typeEvaluate(ast, schemas)
+  t.same(res, {
+    type: 'union',
+    of: [{type: 'boolean', value: undefined}, {type: 'null'}],
+  })
+  t.end()
+})
+
 function findSchemaType(name: string): TypeNode {
   const type = schemas.find((s) => s.name === name)
   if (!type) {

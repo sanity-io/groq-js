@@ -34,7 +34,6 @@ import {optimizeUnions} from './optimizations'
 import {Context, Scope} from './scope'
 import {isFuncCall, mapNode, nullUnion, resolveInline} from './typeHelpers'
 import {
-  STRING_TYPE_DATETIME,
   type ArrayTypeNode,
   type BooleanTypeNode,
   type Document,
@@ -44,6 +43,7 @@ import {
   type ObjectTypeNode,
   type PrimitiveTypeNode,
   type Schema,
+  STRING_TYPE_DATETIME,
   type StringTypeNode,
   type TypeNode,
   type UnionTypeNode,
@@ -619,6 +619,10 @@ function handleOpCallNode(node: OpCallNode, scope: Scope): TypeNode {
           }
           // datetime + number -> datetime (datetimes are represented as strings with STRING_TYPE_DATETIME marker)
           if (left.type === 'string' && left[STRING_TYPE_DATETIME] && right.type === 'number') {
+            return {type: 'string', [STRING_TYPE_DATETIME]: true}
+          }
+          // number + datetime -> datetime (commutative)
+          if (left.type === 'number' && right.type === 'string' && right[STRING_TYPE_DATETIME]) {
             return {type: 'string', [STRING_TYPE_DATETIME]: true}
           }
 
