@@ -21,12 +21,17 @@ export interface TypeDeclaration {
 /** A schema consisting of a list of Document or TypeDeclaration items, allowing for complex type definitions. */
 export type Schema = (Document | TypeDeclaration)[]
 
+/** Symbol to mark a string type as a datetime */
+export const STRING_TYPE_DATETIME = Symbol('groq-js.type.string_datetime')
+
 /** Describes a type node for string values, optionally including a value. If a value is provided it will always be the given string value. */
 export interface StringTypeNode {
   /** can be used to identify the type of the node, in this case it's always 'string' */
   type: 'string'
   /** an optional value of the string, if provided it will always be the given string value */
   value?: string
+  /** marks this string as a datetime type for arithmetic operations */
+  [STRING_TYPE_DATETIME]?: true
 }
 
 /** Describes a type node for number values, optionally including a value. If a value is provided it will always be the given numeric value.*/

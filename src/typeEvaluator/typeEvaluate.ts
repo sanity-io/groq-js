@@ -33,20 +33,21 @@ import {match} from './matching'
 import {optimizeUnions} from './optimizations'
 import {Context, Scope} from './scope'
 import {isFuncCall, mapNode, nullUnion, resolveInline} from './typeHelpers'
-import type {
-  ArrayTypeNode,
-  BooleanTypeNode,
-  Document,
-  NullTypeNode,
-  NumberTypeNode,
-  ObjectAttribute,
-  ObjectTypeNode,
-  PrimitiveTypeNode,
-  Schema,
-  StringTypeNode,
-  TypeNode,
-  UnionTypeNode,
-  UnknownTypeNode,
+import {
+  STRING_TYPE_DATETIME,
+  type ArrayTypeNode,
+  type BooleanTypeNode,
+  type Document,
+  type NullTypeNode,
+  type NumberTypeNode,
+  type ObjectAttribute,
+  type ObjectTypeNode,
+  type PrimitiveTypeNode,
+  type Schema,
+  type StringTypeNode,
+  type TypeNode,
+  type UnionTypeNode,
+  type UnknownTypeNode,
 } from './types'
 
 const $trace = debug('typeEvaluator:evaluate:trace')
@@ -616,6 +617,10 @@ function handleOpCallNode(node: OpCallNode, scope: Scope): TypeNode {
                   : undefined,
             }
           }
+          // datetime + number -> datetime (datetimes are represented as strings with STRING_TYPE_DATETIME marker)
+          if (left.type === 'string' && left[STRING_TYPE_DATETIME] && right.type === 'number') {
+            return {type: 'string', [STRING_TYPE_DATETIME]: true}
+          }
 
           if (left.type === 'number' && right.type === 'number') {
             return {
@@ -646,6 +651,10 @@ function handleOpCallNode(node: OpCallNode, scope: Scope): TypeNode {
         case '-': {
           if (left.type === 'unknown' || right.type === 'unknown') {
             return nullUnion({type: 'number'})
+          }
+          // datetime - number -> datetime (datetimes are represented as strings with STRING_TYPE_DATETIME marker)
+          if (left.type === 'string' && left[STRING_TYPE_DATETIME] && right.type === 'number') {
+            return {type: 'string', [STRING_TYPE_DATETIME]: true}
           }
           if (left.type === 'number' && right.type === 'number') {
             return {

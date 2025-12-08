@@ -4,7 +4,7 @@ import {optimizeUnions} from './optimizations'
 import type {Scope} from './scope'
 import {walk} from './typeEvaluate'
 import {createGeoJson, mapNode, nullUnion} from './typeHelpers'
-import type {NullTypeNode, TypeNode} from './types'
+import {STRING_TYPE_DATETIME, type NullTypeNode, type TypeNode} from './types'
 
 function unionWithoutNull(unionTypeNode: TypeNode): TypeNode {
   if (unionTypeNode.type === 'union') {
@@ -140,10 +140,10 @@ export function handleFuncCallNode(node: FuncCallNode, scope: Scope): TypeNode {
       })
     }
     case 'dateTime.now': {
-      return {type: 'string'}
+      return {type: 'string', [STRING_TYPE_DATETIME]: true}
     }
     case 'global.now': {
-      return {type: 'string'}
+      return {type: 'string', [STRING_TYPE_DATETIME]: true}
     }
     case 'global.defined': {
       const arg = walk({node: node.args[0], scope})
@@ -233,11 +233,12 @@ export function handleFuncCallNode(node: FuncCallNode, scope: Scope): TypeNode {
 
       return mapNode(arg, scope, (arg) => {
         if (arg.type === 'unknown') {
-          return nullUnion({type: 'string'})
+          return nullUnion({type: 'string', [STRING_TYPE_DATETIME]: true})
         }
 
         if (arg.type === 'string') {
-          return nullUnion({type: 'string'}) // we don't know wether the string is a valid date or not, so we return a [null, string]-union
+          // we don't know whether the string is a valid date or not, so we return a [null, string]-union
+          return nullUnion({type: 'string', [STRING_TYPE_DATETIME]: true})
         }
 
         return {type: 'null'} satisfies NullTypeNode
