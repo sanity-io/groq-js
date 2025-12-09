@@ -3496,6 +3496,30 @@ t.test('function: sanity::partOfRelease', (t) => {
   t.end()
 })
 
+t.test('function: undefined function', (t) => {
+  const query = `*[]{
+    "something": something::custom()
+  }`
+  const ast = parse(query, {allowUnknownFunctions: true})
+  const res = typeEvaluate(ast, schemas)
+
+  t.strictSame(res, {
+    type: 'array',
+    of: {
+      type: 'object',
+      attributes: {
+        something: {
+          type: 'objectAttribute',
+          value: {
+            type: 'unknown',
+          },
+        },
+      },
+    },
+  })
+  t.end()
+})
+
 t.test('deref inline', (t) => {
   const query = `*[_type == "test"] { field-> { _type } }`
   const ast = parse(query)
