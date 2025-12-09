@@ -5,6 +5,16 @@
 All notable changes to this project will be documented in this file. See
 [Conventional Commits](https://conventionalcommits.org) for commit guidelines.
 
+## [1.23.0](https://github.com/sanity-io/groq-js/compare/v1.22.0...v1.23.0) (2025-12-09)
+
+### Features
+
+- **typeEvaluator:** add support for number + datetime operation ([#317](https://github.com/sanity-io/groq-js/issues/317)) ([ef560a3](https://github.com/sanity-io/groq-js/commit/ef560a3425e336a47a402f8ad0ea52a184b6f55d))
+
+### Bug Fixes
+
+- **evaluator:** handle numerical addition/subtraction from datetime ([#316](https://github.com/sanity-io/groq-js/issues/316)) ([93e4335](https://github.com/sanity-io/groq-js/commit/93e43358882e52127d6bd65e07fbc54d61bf446a)), closes [sanity-io/sanity#8255](https://github.com/sanity-io/sanity/issues/8255)
+
 ## [1.22.0](https://github.com/sanity-io/groq-js/compare/v1.21.0...v1.22.0) (2025-12-02)
 
 ### Features
