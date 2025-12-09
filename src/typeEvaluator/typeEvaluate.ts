@@ -1214,6 +1214,7 @@ export function walk({node, scope}: {node: ExprNode; scope: Scope}): TypeNode {
     case 'Tuple':
     case 'SelectorFuncCall':
     case 'SelectorNested':
+    case 'InlineFuncCall': // inline functions are handled during parsing, so we should never see them here, but just in case we return unknown
     case 'InRange': {
       return {type: 'unknown'}
     }

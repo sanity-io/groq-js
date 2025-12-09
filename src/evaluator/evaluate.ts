@@ -363,6 +363,16 @@ const EXECUTORS: ExecutorMap = {
     },
   },
 
+  InlineFuncCall: {
+    async executeAsync() {
+      throw new Error('Unexpected node type: InlineFuncCall')
+    },
+
+    executeSync() {
+      throw new Error('Unexpected node type: InlineFuncCall')
+    },
+  },
+
   PipeFuncCall: {
     async executeAsync({func, base, args}, scope) {
       const baseValue = await executeAsync(base, scope)
