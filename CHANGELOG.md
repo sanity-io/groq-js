@@ -5,6 +5,12 @@
 All notable changes to this project will be documented in this file. See
 [Conventional Commits](https://conventionalcommits.org) for commit guidelines.
 
+## [1.24.0](https://github.com/sanity-io/groq-js/compare/v1.23.0...v1.24.0) (2025-12-15)
+
+### Features
+
+- **parser:** add support for parsing custom functions ([47a7ebd](https://github.com/sanity-io/groq-js/commit/47a7ebdef1978c1ed51f18fdc6f53482cf9b0852))
+
 ## [1.23.0](https://github.com/sanity-io/groq-js/compare/v1.22.0...v1.23.0) (2025-12-09)
 
 ### Features
