@@ -47,7 +47,11 @@ export function handleFuncCallNode(node: FuncCallNode, scope: Scope): TypeNode {
           if (arrayArg.type === 'unknown' || sepArg.type === 'unknown') {
             return nullUnion({type: 'string'})
           }
-          if (arrayArg.type !== 'array' || sepArg.type !== 'string') {
+          if (
+            arrayArg.type !== 'array' ||
+            sepArg.type !== 'string' ||
+            sepArg[STRING_TYPE_DATETIME]
+          ) {
             return {type: 'null'}
           }
 
@@ -107,8 +111,7 @@ export function handleFuncCallNode(node: FuncCallNode, scope: Scope): TypeNode {
         if (arg.type === 'unknown') {
           return nullUnion({type: 'string'})
         }
-
-        if (arg.type !== 'string') {
+        if (arg.type !== 'string' || arg[STRING_TYPE_DATETIME]) {
           return {type: 'null'}
         }
         if (arg.value !== undefined) {
@@ -127,7 +130,7 @@ export function handleFuncCallNode(node: FuncCallNode, scope: Scope): TypeNode {
         if (arg.type === 'unknown') {
           return nullUnion({type: 'string'})
         }
-        if (arg.type !== 'string') {
+        if (arg.type !== 'string' || arg[STRING_TYPE_DATETIME]) {
           return {type: 'null'}
         }
         if (arg.value !== undefined) {
@@ -252,7 +255,10 @@ export function handleFuncCallNode(node: FuncCallNode, scope: Scope): TypeNode {
         if (arg.type === 'unknown') {
           return nullUnion({type: 'number'})
         }
-        if (arg.type === 'array' || arg.type === 'string') {
+        if (arg.type === 'array') {
+          return {type: 'number'}
+        }
+        if (arg.type === 'string' && !arg[STRING_TYPE_DATETIME]) {
           return {type: 'number'}
         }
 
