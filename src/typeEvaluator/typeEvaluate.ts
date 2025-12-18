@@ -532,6 +532,11 @@ function handleOpCallNode(node: OpCallNode, scope: Scope): TypeNode {
           if (left.type !== right.type) {
             return {type: 'null'} satisfies NullTypeNode
           }
+          if (left.type === 'string' && right.type === 'string') {
+            if (left[STRING_TYPE_DATETIME] !== right[STRING_TYPE_DATETIME]) {
+              return {type: 'null'} satisfies NullTypeNode
+            }
+          }
           if (!isPrimitiveTypeNode(left) || !isPrimitiveTypeNode(right)) {
             return {type: 'null'} satisfies NullTypeNode
           }
