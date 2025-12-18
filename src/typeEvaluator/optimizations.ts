@@ -1,4 +1,4 @@
-import type {TypeNode} from './types'
+import {STRING_TYPE_DATETIME, type TypeNode} from './types'
 
 const {compare} = new Intl.Collator('en')
 function typeNodesSorter(a: TypeNode, b: TypeNode): number {
@@ -21,7 +21,6 @@ export function hashField(field: TypeNode): string {
 
 function calculateFieldHash(field: TypeNode): string {
   switch (field.type) {
-    case 'string':
     case 'number':
     case 'boolean': {
       if (field.value !== undefined) {
@@ -30,6 +29,21 @@ function calculateFieldHash(field: TypeNode): string {
 
       return `${field.type}`
     }
+
+    case 'string':
+      if (field[STRING_TYPE_DATETIME] && field.value !== undefined) {
+        return `${field.type}(${field.value}):datetime`
+      }
+
+      if (field[STRING_TYPE_DATETIME]) {
+        return `${field.type}:datetime`
+      }
+
+      if (field.value !== undefined) {
+        return `${field.type}(${field.value})`
+      }
+
+      return `${field.type}`
 
     case 'null':
     case 'unknown': {
