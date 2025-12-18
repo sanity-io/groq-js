@@ -614,6 +614,9 @@ function handleOpCallNode(node: OpCallNode, scope: Scope): TypeNode {
             return {type: 'unknown'}
           }
           if (left.type === 'string' && right.type === 'string') {
+            if (left[STRING_TYPE_DATETIME] || right[STRING_TYPE_DATETIME]) {
+              return {type: 'null'} satisfies NullTypeNode
+            }
             return {
               type: 'string',
               value:
@@ -658,12 +661,35 @@ function handleOpCallNode(node: OpCallNode, scope: Scope): TypeNode {
           return {type: 'null'}
         }
         case '-': {
-          if (left.type === 'unknown' || right.type === 'unknown') {
-            return nullUnion({type: 'number'})
+          // datetime - datetime -> number
+          if (
+            left.type === 'string' &&
+            left[STRING_TYPE_DATETIME] &&
+            right.type === 'string' &&
+            right[STRING_TYPE_DATETIME]
+          ) {
+            return {type: 'number'}
+          }
+          // datetime - unknown could be datetime (if unknown is number) or number (if unknown is datetime)
+          if (left.type === 'string' && left[STRING_TYPE_DATETIME] && right.type === 'unknown') {
+            return nullUnion({
+              type: 'union',
+              of: [{type: 'number'}, {type: 'string', [STRING_TYPE_DATETIME]: true}],
+            })
           }
           // datetime - number -> datetime (datetimes are represented as strings with STRING_TYPE_DATETIME marker)
           if (left.type === 'string' && left[STRING_TYPE_DATETIME] && right.type === 'number') {
             return {type: 'string', [STRING_TYPE_DATETIME]: true}
+          }
+          // unknown - unknown could be number (if both are datetime or number) or datetime (if datetime - number)
+          if (left.type === 'unknown') {
+            return nullUnion({
+              type: 'union',
+              of: [{type: 'number'}, {type: 'string', [STRING_TYPE_DATETIME]: true}],
+            })
+          }
+          if (right.type === 'unknown') {
+            return nullUnion({type: 'number'})
           }
           if (left.type === 'number' && right.type === 'number') {
             return {
