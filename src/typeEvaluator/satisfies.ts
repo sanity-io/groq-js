@@ -1,4 +1,5 @@
-import type {TypeNode} from './types'
+import {DateTime} from '../values'
+import {STRING_TYPE_DATETIME, type TypeNode} from './types'
 
 /**
  * `satifies` takes in a type and a JavaScript value and checks if the value is satisfied by the type.
@@ -17,6 +18,9 @@ export function satisfies(type: TypeNode, value: unknown): boolean {
     }
     case 'string': {
       if (type.value !== undefined) return value === type.value
+      if (type[STRING_TYPE_DATETIME]) {
+        return value instanceof DateTime
+      }
       return typeof value === 'string'
     }
     case 'array':
