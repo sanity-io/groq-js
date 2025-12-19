@@ -1,3 +1,5 @@
+import {DateTime} from '../values'
+import {isDateTime} from './typeHelpers'
 import type {TypeNode} from './types'
 
 /**
@@ -17,6 +19,9 @@ export function satisfies(type: TypeNode, value: unknown): boolean {
     }
     case 'string': {
       if (type.value !== undefined) return value === type.value
+      if (isDateTime(type)) {
+        return value instanceof DateTime
+      }
       return typeof value === 'string'
     }
     case 'array':
