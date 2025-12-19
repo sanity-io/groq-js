@@ -32,7 +32,15 @@ import {handleFuncCallNode} from './functions'
 import {match} from './matching'
 import {optimizeUnions} from './optimizations'
 import {Context, Scope} from './scope'
-import {isFuncCall, mapNode, nullUnion, resolveInline} from './typeHelpers'
+import {
+  dateTimeString,
+  isDateTime,
+  isFuncCall,
+  isString,
+  mapNode,
+  nullUnion,
+  resolveInline,
+} from './typeHelpers'
 import {
   type ArrayTypeNode,
   type BooleanTypeNode,
@@ -43,7 +51,6 @@ import {
   type ObjectTypeNode,
   type PrimitiveTypeNode,
   type Schema,
-  STRING_TYPE_DATETIME,
   type StringTypeNode,
   type TypeNode,
   type UnionTypeNode,
@@ -532,8 +539,9 @@ function handleOpCallNode(node: OpCallNode, scope: Scope): TypeNode {
           if (left.type !== right.type) {
             return {type: 'null'} satisfies NullTypeNode
           }
+          // we represent datetimes as the string type, but can only compare them if both/none are the datetime subtype
           if (left.type === 'string' && right.type === 'string') {
-            if (left[STRING_TYPE_DATETIME] !== right[STRING_TYPE_DATETIME]) {
+            if (isDateTime(left) !== isDateTime(right)) {
               return {type: 'null'} satisfies NullTypeNode
             }
           }
@@ -613,10 +621,13 @@ function handleOpCallNode(node: OpCallNode, scope: Scope): TypeNode {
             // + is ambiguous without the concrete types of the operands, so we return unknown and leave the excersise to the caller
             return {type: 'unknown'}
           }
-          if (left.type === 'string' && right.type === 'string') {
-            if (left[STRING_TYPE_DATETIME] || right[STRING_TYPE_DATETIME]) {
-              return {type: 'null'} satisfies NullTypeNode
-            }
+          if (isDateTime(left) && right.type === 'number') {
+            return dateTimeString()
+          }
+          if (left.type === 'number' && isDateTime(right)) {
+            return dateTimeString()
+          }
+          if (isString(left) && isString(right)) {
             return {
               type: 'string',
               value:
@@ -625,15 +636,6 @@ function handleOpCallNode(node: OpCallNode, scope: Scope): TypeNode {
                   : undefined,
             }
           }
-          // datetime + number -> datetime (datetimes are represented as strings with STRING_TYPE_DATETIME marker)
-          if (left.type === 'string' && left[STRING_TYPE_DATETIME] && right.type === 'number') {
-            return {type: 'string', [STRING_TYPE_DATETIME]: true}
-          }
-          // number + datetime -> datetime (commutative)
-          if (left.type === 'number' && right.type === 'string' && right[STRING_TYPE_DATETIME]) {
-            return {type: 'string', [STRING_TYPE_DATETIME]: true}
-          }
-
           if (left.type === 'number' && right.type === 'number') {
             return {
               type: 'number',
@@ -661,31 +663,25 @@ function handleOpCallNode(node: OpCallNode, scope: Scope): TypeNode {
           return {type: 'null'}
         }
         case '-': {
-          // datetime - datetime -> number
-          if (
-            left.type === 'string' &&
-            left[STRING_TYPE_DATETIME] &&
-            right.type === 'string' &&
-            right[STRING_TYPE_DATETIME]
-          ) {
+          if (isDateTime(left) && isDateTime(right)) {
             return {type: 'number'}
           }
           // datetime - unknown could be datetime (if unknown is number) or number (if unknown is datetime)
-          if (left.type === 'string' && left[STRING_TYPE_DATETIME] && right.type === 'unknown') {
+          if (isDateTime(left) && right.type === 'unknown') {
             return nullUnion({
               type: 'union',
-              of: [{type: 'number'}, {type: 'string', [STRING_TYPE_DATETIME]: true}],
+              of: [{type: 'number'}, dateTimeString()],
             })
           }
-          // datetime - number -> datetime (datetimes are represented as strings with STRING_TYPE_DATETIME marker)
-          if (left.type === 'string' && left[STRING_TYPE_DATETIME] && right.type === 'number') {
-            return {type: 'string', [STRING_TYPE_DATETIME]: true}
+          // datetime - number -> datetime
+          if (isDateTime(left) && right.type === 'number') {
+            return dateTimeString()
           }
           // unknown - unknown could be number (if both are datetime or number) or datetime (if datetime - number)
           if (left.type === 'unknown') {
             return nullUnion({
               type: 'union',
-              of: [{type: 'number'}, {type: 'string', [STRING_TYPE_DATETIME]: true}],
+              of: [{type: 'number'}, dateTimeString()],
             })
           }
           if (right.type === 'unknown') {

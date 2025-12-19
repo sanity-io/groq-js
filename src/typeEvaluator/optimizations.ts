@@ -1,4 +1,5 @@
-import {STRING_TYPE_DATETIME, type TypeNode} from './types'
+import {isDateTime} from './typeHelpers'
+import type {TypeNode} from './types'
 
 const {compare} = new Intl.Collator('en')
 function typeNodesSorter(a: TypeNode, b: TypeNode): number {
@@ -31,11 +32,11 @@ function calculateFieldHash(field: TypeNode): string {
     }
 
     case 'string':
-      if (field[STRING_TYPE_DATETIME] && field.value !== undefined) {
+      if (isDateTime(field) && field.value !== undefined) {
         return `${field.type}(${field.value}):datetime`
       }
 
-      if (field[STRING_TYPE_DATETIME]) {
+      if (isDateTime(field)) {
         return `${field.type}:datetime`
       }
 
