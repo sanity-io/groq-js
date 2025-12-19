@@ -1,18 +1,19 @@
 import type {ExprNode} from '../nodeTypes'
 import {optimizeUnions} from './optimizations'
 import type {Scope} from './scope'
-import type {
-  ArrayTypeNode,
-  BooleanTypeNode,
-  InlineTypeNode,
-  NullTypeNode,
-  NumberTypeNode,
-  ObjectAttribute,
-  ObjectTypeNode,
-  StringTypeNode,
-  TypeNode,
-  UnionTypeNode,
-  UnknownTypeNode,
+import {
+  type ArrayTypeNode,
+  type BooleanTypeNode,
+  type InlineTypeNode,
+  type NullTypeNode,
+  type NumberTypeNode,
+  type ObjectAttribute,
+  type ObjectTypeNode,
+  STRING_TYPE_DATETIME,
+  type StringTypeNode,
+  type TypeNode,
+  type UnionTypeNode,
+  type UnknownTypeNode,
 } from './types'
 
 /**
@@ -78,6 +79,13 @@ export function unionOf(...nodes: TypeNode[]): UnionTypeNode {
   } satisfies UnionTypeNode
 }
 
+export function dateTimeString(): StringTypeNode {
+  return {
+    type: 'string',
+    [STRING_TYPE_DATETIME]: true,
+  }
+}
+
 export type ConcreteTypeNode =
   | BooleanTypeNode
   | NullTypeNode
@@ -135,6 +143,20 @@ export function isFuncCall(node: ExprNode, name: string): boolean {
   }
 
   return node.type === 'FuncCall' && `${node.namespace}::${node.name}` === name
+}
+
+export function isString(
+  node: TypeNode,
+): node is StringTypeNode & {[STRING_TYPE_DATETIME]?: undefined} {
+  if (node.type === 'string' && !node[STRING_TYPE_DATETIME]) return true
+  return false
+}
+
+export function isDateTime(
+  node: TypeNode,
+): node is StringTypeNode & {[STRING_TYPE_DATETIME]: true} {
+  if (node.type === 'string' && node[STRING_TYPE_DATETIME]) return true
+  return false
 }
 
 export function createGeoJson(type: 'Point' | 'LineString' | 'Polygon' = 'Point'): ObjectTypeNode {

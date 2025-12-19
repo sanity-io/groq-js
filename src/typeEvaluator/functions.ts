@@ -3,8 +3,8 @@ import type {FuncCallNode} from '../nodeTypes'
 import {optimizeUnions} from './optimizations'
 import type {Scope} from './scope'
 import {walk} from './typeEvaluate'
-import {createGeoJson, mapNode, nullUnion} from './typeHelpers'
-import {STRING_TYPE_DATETIME, type NullTypeNode, type TypeNode} from './types'
+import {createGeoJson, dateTimeString, isString, mapNode, nullUnion} from './typeHelpers'
+import {type NullTypeNode, type TypeNode} from './types'
 
 function unionWithoutNull(unionTypeNode: TypeNode): TypeNode {
   if (unionTypeNode.type === 'union') {
@@ -47,11 +47,7 @@ export function handleFuncCallNode(node: FuncCallNode, scope: Scope): TypeNode {
           if (arrayArg.type === 'unknown' || sepArg.type === 'unknown') {
             return nullUnion({type: 'string'})
           }
-          if (
-            arrayArg.type !== 'array' ||
-            sepArg.type !== 'string' ||
-            sepArg[STRING_TYPE_DATETIME]
-          ) {
+          if (arrayArg.type !== 'array' || !isString(sepArg)) {
             return {type: 'null'}
           }
 
@@ -111,7 +107,7 @@ export function handleFuncCallNode(node: FuncCallNode, scope: Scope): TypeNode {
         if (arg.type === 'unknown') {
           return nullUnion({type: 'string'})
         }
-        if (arg.type !== 'string' || arg[STRING_TYPE_DATETIME]) {
+        if (!isString(arg)) {
           return {type: 'null'}
         }
         if (arg.value !== undefined) {
@@ -130,7 +126,7 @@ export function handleFuncCallNode(node: FuncCallNode, scope: Scope): TypeNode {
         if (arg.type === 'unknown') {
           return nullUnion({type: 'string'})
         }
-        if (arg.type !== 'string' || arg[STRING_TYPE_DATETIME]) {
+        if (!isString(arg)) {
           return {type: 'null'}
         }
         if (arg.value !== undefined) {
@@ -143,10 +139,10 @@ export function handleFuncCallNode(node: FuncCallNode, scope: Scope): TypeNode {
       })
     }
     case 'dateTime.now': {
-      return {type: 'string', [STRING_TYPE_DATETIME]: true}
+      return dateTimeString()
     }
     case 'global.now': {
-      return {type: 'string', [STRING_TYPE_DATETIME]: true}
+      return dateTimeString()
     }
     case 'global.defined': {
       const arg = walk({node: node.args[0], scope})
@@ -236,12 +232,12 @@ export function handleFuncCallNode(node: FuncCallNode, scope: Scope): TypeNode {
 
       return mapNode(arg, scope, (arg) => {
         if (arg.type === 'unknown') {
-          return nullUnion({type: 'string', [STRING_TYPE_DATETIME]: true})
+          return nullUnion(dateTimeString())
         }
 
         if (arg.type === 'string') {
           // we don't know whether the string is a valid date or not, so we return a [null, string]-union
-          return nullUnion({type: 'string', [STRING_TYPE_DATETIME]: true})
+          return nullUnion(dateTimeString())
         }
 
         return {type: 'null'} satisfies NullTypeNode
@@ -255,10 +251,7 @@ export function handleFuncCallNode(node: FuncCallNode, scope: Scope): TypeNode {
         if (arg.type === 'unknown') {
           return nullUnion({type: 'number'})
         }
-        if (arg.type === 'array') {
-          return {type: 'number'}
-        }
-        if (arg.type === 'string' && !arg[STRING_TYPE_DATETIME]) {
+        if (arg.type === 'array' || isString(arg)) {
           return {type: 'number'}
         }
 
