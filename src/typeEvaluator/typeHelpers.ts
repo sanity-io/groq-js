@@ -63,7 +63,34 @@ export function createReferenceTypeNode(name: string, inArray: boolean = false):
   } satisfies ObjectTypeNode
 }
 
-export function nullUnion(node: TypeNode): UnionTypeNode {
+export function createObject(
+  attributes: Record<string, ObjectAttribute<TypeNode>>,
+): ObjectTypeNode {
+  return {
+    type: 'object',
+    attributes,
+  } satisfies ObjectTypeNode
+}
+
+export function createObjectAttribute(
+  value: TypeNode,
+  optional?: boolean,
+): ObjectAttribute<TypeNode> {
+  if (optional === undefined) {
+    return {
+      type: 'objectAttribute',
+      value,
+    } satisfies ObjectAttribute<TypeNode>
+  }
+
+  return {
+    type: 'objectAttribute',
+    value,
+    optional,
+  } satisfies ObjectAttribute<TypeNode>
+}
+
+export function nullUnion(node: TypeNode): TypeNode {
   if (node.type === 'union') {
     return unionOf(...node.of, {type: 'null'})
   }
@@ -71,7 +98,10 @@ export function nullUnion(node: TypeNode): UnionTypeNode {
   return unionOf(node, {type: 'null'})
 }
 
-export function unionOf(...nodes: TypeNode[]): UnionTypeNode {
+export function unionOf(...nodes: TypeNode[]): TypeNode {
+  if (nodes.length === 1) {
+    return nodes[0]
+  }
   return {
     type: 'union',
     of: nodes,

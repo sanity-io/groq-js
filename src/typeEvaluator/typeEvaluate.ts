@@ -30,6 +30,7 @@ import type {
 import {booleanAnd, booleanInterpretationToTypeNode, booleanOr, booleanValue} from './booleans'
 import {handleFuncCallNode} from './functions'
 import {match} from './matching'
+import {narrowNode, extractNarrowingAssertions} from './narrowing'
 import {optimizeUnions} from './optimizations'
 import {Context, Scope} from './scope'
 import {isFuncCall, mapNode, nullUnion, resolveInline} from './typeHelpers'
@@ -1262,13 +1263,45 @@ function evaluateComparison(
 // eslint-disable-next-line complexity, max-statements
 function resolveFilter(expr: ExprNode, scope: Scope): UnionTypeNode {
   $trace('resolveFilter.expr %O', expr)
-  const filtered = scope.value.of.filter((node) => {
-    // create a new scope with the current scopes parent as the parent. It's only a temporary scope since we only want to resolve the condition
+  const filtered: TypeNode[] = []
+
+  // Extract narrowing assertions from the filter expression
+  const assertions = extractNarrowingAssertions(expr)
+
+  for (const node of scope.value.of) {
+    // Create a new scope with the current scopes parent as the parent.
+    // It's only a temporary scope since we only want to resolve the condition
     // and check if the result can be true.
     const subScope = scope.createHidden([node])
     const cond = walk({node: expr, scope: subScope})
-    return booleanValue(cond, subScope).canBeTrue
-  })
+    const boolResult = booleanValue(cond, subScope)
+
+    if (!boolResult.canBeTrue) {
+      // Condition is definitely false for this type, filter it out
+      continue
+    }
+
+    if (boolResult.canBeFalse && assertions.length > 0) {
+      // Condition is uncertain (can be both true and false).
+      // Apply the extracted assertions to narrow the type.
+      const narrowedNode = narrowNode(node, assertions)
+      const narrowedScope = scope.createHidden([narrowedNode])
+      const narrowedCond = walk({node: expr, scope: narrowedScope})
+      const narrowedBoolResult = booleanValue(narrowedCond, narrowedScope)
+
+      if (narrowedBoolResult.canBeTrue && !narrowedBoolResult.canBeFalse) {
+        // Narrowing makes the condition definitely true, use the narrowed type
+        filtered.push(narrowedNode)
+      } else {
+        // Narrowing doesn't help or makes it false, keep original type
+        filtered.push(node)
+      }
+    } else {
+      // Condition is definitely true for this type, or no assertions to apply, keep it as-is
+      filtered.push(node)
+    }
+  }
+
   $trace(
     `resolveFilter ${expr.type === 'OpCall' ? `${expr.type}/${expr.op}` : expr.type} %O`,
     filtered,
