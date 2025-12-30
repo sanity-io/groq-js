@@ -915,6 +915,7 @@ Object {
         "type": "objectAttribute",
         "value": Object {
           "type": "string",
+          "value": "123",
         },
       },
       "_type": Object {
@@ -1310,6 +1311,189 @@ Object {
         "type": "objectAttribute",
         "value": Object {
           "type": "string",
+        },
+      },
+    },
+    "type": "object",
+  },
+  "type": "array",
+}
+`
+
+exports[`test/typeEvaluate.test.ts TAP pipe func call > must match snapshot 1`] = `
+Object {
+  "of": Object {
+    "attributes": Object {
+      "_createdAt": Object {
+        "type": "objectAttribute",
+        "value": Object {
+          "type": "string",
+        },
+      },
+      "_id": Object {
+        "type": "objectAttribute",
+        "value": Object {
+          "type": "string",
+        },
+      },
+      "_type": Object {
+        "type": "objectAttribute",
+        "value": Object {
+          "type": "string",
+          "value": "author",
+        },
+      },
+      "age": Object {
+        "type": "objectAttribute",
+        "value": Object {
+          "type": "number",
+        },
+      },
+      "ages": Object {
+        "optional": true,
+        "type": "objectAttribute",
+        "value": Object {
+          "of": Object {
+            "type": "number",
+          },
+          "type": "array",
+        },
+      },
+      "area": Object {
+        "optional": true,
+        "type": "objectAttribute",
+        "value": Object {
+          "attributes": Object {
+            "coordinates": Object {
+              "type": "objectAttribute",
+              "value": Object {
+                "of": Object {
+                  "of": Object {
+                    "of": Object {
+                      "type": "number",
+                    },
+                    "type": "array",
+                  },
+                  "type": "array",
+                },
+                "type": "array",
+              },
+            },
+            "type": Object {
+              "type": "objectAttribute",
+              "value": Object {
+                "type": "string",
+                "value": "Polygon",
+              },
+            },
+          },
+          "type": "object",
+        },
+      },
+      "firstname": Object {
+        "type": "objectAttribute",
+        "value": Object {
+          "type": "string",
+        },
+      },
+      "lastname": Object {
+        "type": "objectAttribute",
+        "value": Object {
+          "type": "string",
+        },
+      },
+      "line": Object {
+        "optional": true,
+        "type": "objectAttribute",
+        "value": Object {
+          "attributes": Object {
+            "coordinates": Object {
+              "type": "objectAttribute",
+              "value": Object {
+                "of": Object {
+                  "of": Object {
+                    "type": "number",
+                  },
+                  "type": "array",
+                },
+                "type": "array",
+              },
+            },
+            "type": Object {
+              "type": "objectAttribute",
+              "value": Object {
+                "type": "string",
+                "value": "LineString",
+              },
+            },
+          },
+          "type": "object",
+        },
+      },
+      "name": Object {
+        "type": "objectAttribute",
+        "value": Object {
+          "type": "string",
+        },
+      },
+      "object": Object {
+        "type": "objectAttribute",
+        "value": Object {
+          "attributes": Object {
+            "subfield": Object {
+              "type": "objectAttribute",
+              "value": Object {
+                "type": "string",
+              },
+            },
+          },
+          "type": "object",
+        },
+      },
+      "optionalAge": Object {
+        "optional": true,
+        "type": "objectAttribute",
+        "value": Object {
+          "type": "number",
+        },
+      },
+      "optionalObject": Object {
+        "type": "objectAttribute",
+        "value": Object {
+          "attributes": Object {
+            "subfield": Object {
+              "type": "objectAttribute",
+              "value": Object {
+                "type": "string",
+              },
+            },
+          },
+          "type": "object",
+        },
+      },
+      "position": Object {
+        "optional": true,
+        "type": "objectAttribute",
+        "value": Object {
+          "attributes": Object {
+            "coordinates": Object {
+              "type": "objectAttribute",
+              "value": Object {
+                "of": Object {
+                  "type": "number",
+                },
+                "type": "array",
+              },
+            },
+            "type": Object {
+              "type": "objectAttribute",
+              "value": Object {
+                "type": "string",
+                "value": "Point",
+              },
+            },
+          },
+          "type": "object",
         },
       },
     },

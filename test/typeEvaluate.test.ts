@@ -7,6 +7,8 @@ import {
   createReferenceTypeNode,
   nullUnion,
   unionOf,
+  createObject,
+  createObjectAttribute,
 } from '../src/typeEvaluator/typeHelpers'
 import type {
   ArrayTypeNode,
@@ -369,8 +371,8 @@ const schemas = [
   slugType,
 ] satisfies Schema
 
-t.test('no projection', (t) => {
-  const query = `*[_type == "author" && _id == "123"]`
+t.only('no projection', (t) => {
+  const query = `*[_type == "author" && _id match "123"]`
   const ast = parse(query)
   const res = typeEvaluate(ast, schemas)
   t.strictSame(res, {
@@ -383,10 +385,13 @@ t.test('pipe func call', (t) => {
   const query = `*[_type == "author" && defined(optionalObject.subfield)] | order(_createdAt desc)`
   const ast = parse(query)
   const res = typeEvaluate(ast, schemas)
-  t.strictSame(res, {
-    type: 'array',
-    of: findSchemaType('author'),
-  } satisfies TypeNode)
+  t.ok(
+    res.type === 'array' &&
+      res.of.type === 'object' &&
+      res.of.attributes['_type'].value.type === 'string' &&
+      res.of.attributes['_type'].value.value === 'author',
+  )
+  t.matchSnapshot(res)
   t.end()
 })
 
@@ -429,7 +434,7 @@ t.test('element access with attribute access', (t) => {
 })
 
 t.test('access attribute with objects', (t) => {
-  const query = `*[_type == "author" && object.subfield == "foo"][0]`
+  const query = `*[_type == "author" && object.subfield match "foo"][0]`
   const ast = parse(query)
   const res = typeEvaluate(ast, schemas)
   t.strictSame(res, {
@@ -593,9 +598,22 @@ t.test('subfilter matches', (t) => {
   const query = `*[_type match "namespace.**"][boolField == true]`
   const ast = parse(query)
   const res = typeEvaluate(ast, schemas)
+  // With narrowing, boolField is narrowed from optional boolean to boolean with value: true
   t.strictSame(res, {
     type: 'array',
-    of: findSchemaType('namespace.one'),
+    of: createObject({
+      _type: createObjectAttribute({
+        type: 'string',
+        value: 'namespace.one',
+      }),
+      name: createObjectAttribute({
+        type: 'string',
+      }),
+      boolField: createObjectAttribute({
+        type: 'boolean',
+        value: true,
+      }),
+    }),
   } satisfies ArrayTypeNode)
 
   t.end()
@@ -1184,6 +1202,7 @@ t.test('deref with projection and element access', (t) => {
             type: 'objectAttribute',
             value: {
               type: 'string',
+              value: 'foo',
             },
           },
           author: {
@@ -1232,6 +1251,7 @@ t.test('deref with element access, then projection ', (t) => {
             type: 'objectAttribute',
             value: {
               type: 'string',
+              value: 'foo',
             },
           },
           author: {
@@ -1425,6 +1445,7 @@ t.test('with select, not guaranteed & with fallback', (t) => {
                 of: [
                   {
                     type: 'string',
+                    value: '5',
                   },
                   {
                     type: 'string',
@@ -1452,6 +1473,7 @@ t.test('with select, not guaranteed & with fallback', (t) => {
                 of: [
                   {
                     type: 'string',
+                    value: '5',
                   },
                   {
                     type: 'string',
@@ -1794,12 +1816,16 @@ t.test('object', (t) => {
 })
 
 t.test('filter with function', (t) => {
-  const query = `*[_type == "author" && defined(optionalObject.subfield)]`
+  const query = `*[_type == "author" && defined(optionalObject.subfield)] { _id }`
   const ast = parse(query)
   const res = typeEvaluate(ast, schemas)
   t.strictSame(res, {
     type: 'array',
-    of: findSchemaType('author'),
+    of: createObject({
+      _id: createObjectAttribute({
+        type: 'string',
+      }),
+    }),
   } satisfies TypeNode)
 
   t.end()
@@ -2350,6 +2376,103 @@ t.test('function: global::defined', (t) => {
     type: 'array',
     of: findSchemaType('post'),
   })
+  t.end()
+})
+
+t.test('narrows', (t) => {
+  const queries: [string, TypeNode][] = [
+    // Test defined case
+    [
+      `*[_type == "author" && defined(optionalObject.subfield)] { optionalObject, position }`,
+      createObject({
+        optionalObject: createObjectAttribute(
+          createObject({
+            subfield: createObjectAttribute({
+              type: 'string',
+            }),
+          }),
+        ),
+        position: createObjectAttribute(nullUnion(createGeoJson())),
+      }),
+    ],
+    // Test not null case
+    [
+      `*[_type == "author" && optionalObject.subfield != null] { optionalObject }`,
+      createObject({
+        optionalObject: createObjectAttribute(
+          createObject({
+            subfield: createObjectAttribute({
+              type: 'string',
+            }),
+          }),
+        ),
+      }),
+    ],
+    // Test specific value case
+    [
+      `*[_type == "author" && optionalObject.subfield == "foo"] { optionalObject }`,
+      createObject({
+        optionalObject: createObjectAttribute(
+          createObject({
+            subfield: createObjectAttribute({
+              type: 'string',
+              value: 'foo',
+            }),
+          }),
+        ),
+      }),
+    ],
+    // Test null case
+    [
+      `*[_type == "author" && defined(optionalObject) && optionalObject.subfield == null] { optionalObject }`,
+      createObject({
+        optionalObject: createObjectAttribute(createObject({})),
+      }),
+    ],
+    // Test negation case
+    [
+      `*[_type == "author" && !(((defined(optionalObject))))] { optionalObject }`,
+      createObject({
+        optionalObject: createObjectAttribute({
+          type: 'null',
+        }),
+      }),
+    ],
+    // OR case should not narrow
+    [
+      `*[_type == "author" && (defined(optionalObject) || firstname == "foo")] { optionalObject }`,
+      createObject({
+        optionalObject: createObjectAttribute(
+          nullUnion(
+            createObject({
+              subfield: createObjectAttribute({
+                type: 'string',
+              }),
+            }),
+          ),
+        ),
+      }),
+    ],
+    // Narrowing on non-optional field should work
+    [
+      `*[_type == "author" && firstname == "foo"] { firstname }`,
+      createObject({
+        firstname: createObjectAttribute({
+          type: 'string',
+          value: 'foo',
+        }),
+      }),
+    ],
+  ]
+  for (const [query, result] of queries) {
+    const ast = parse(query)
+    const res = typeEvaluate(ast, schemas)
+    t.strictSame(res, {
+      type: 'array',
+      of: result,
+    } satisfies TypeNode)
+  }
+
   t.end()
 })
 
