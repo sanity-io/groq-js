@@ -6,8 +6,10 @@ import {type GroqFunction, namespaces} from '../src/evaluator/functions'
 import {operators} from '../src/evaluator/operators'
 import type {ExprNode, OpCall} from '../src/nodeTypes'
 import type {TypeNode} from '../src/typeEvaluator'
+import {DateTime} from '../src/typeEvaluator'
 import {satisfies} from '../src/typeEvaluator/satisfies'
 import {overrideTypeForNode, typeEvaluate} from '../src/typeEvaluator/typeEvaluate'
+import {STRING_TYPE_DATETIME} from '../src/typeEvaluator/types'
 
 /**
  * The following tests uses the following strategy:
@@ -105,6 +107,11 @@ const primitives: AnnotatedValue[] = [
       {desc: 'boolean(false)', type: {type: 'boolean', value: false}},
       {desc: 'boolean(undefined)', type: {type: 'boolean'}},
     ],
+  },
+  {
+    key: 'datetime',
+    value: new DateTime(new Date('2024-01-01T00:00:00.000Z')),
+    types: [{desc: 'dateTime', type: {type: 'string', [STRING_TYPE_DATETIME]: true}}],
   },
 ]
 

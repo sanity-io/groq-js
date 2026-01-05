@@ -1,3 +1,4 @@
+import {isDateTime} from './typeHelpers'
 import type {TypeNode} from './types'
 
 const {compare} = new Intl.Collator('en')
@@ -21,7 +22,6 @@ export function hashField(field: TypeNode): string {
 
 function calculateFieldHash(field: TypeNode): string {
   switch (field.type) {
-    case 'string':
     case 'number':
     case 'boolean': {
       if (field.value !== undefined) {
@@ -30,6 +30,21 @@ function calculateFieldHash(field: TypeNode): string {
 
       return `${field.type}`
     }
+
+    case 'string':
+      if (isDateTime(field) && field.value !== undefined) {
+        return `${field.type}(${field.value}):datetime`
+      }
+
+      if (isDateTime(field)) {
+        return `${field.type}:datetime`
+      }
+
+      if (field.value !== undefined) {
+        return `${field.type}(${field.value})`
+      }
+
+      return `${field.type}`
 
     case 'null':
     case 'unknown': {
