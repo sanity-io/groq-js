@@ -5,6 +5,13 @@
 All notable changes to this project will be documented in this file. See
 [Conventional Commits](https://conventionalcommits.org) for commit guidelines.
 
+## [1.24.1](https://github.com/sanity-io/groq-js/compare/v1.24.0...v1.24.1) (2026-01-05)
+
+### Bug Fixes
+
+- **evaluator:** addition with datetimes ([#320](https://github.com/sanity-io/groq-js/issues/320)) ([31e70ee](https://github.com/sanity-io/groq-js/commit/31e70ee4a1181be8b19b5ad56002ade68ad6d500))
+- **typeEvaluator:** handle datetime type in string functions and operations ([#321](https://github.com/sanity-io/groq-js/issues/321)) ([3292a2e](https://github.com/sanity-io/groq-js/commit/3292a2eb523017f6bdec640a11a9678bf2f44b4a))
+
 ## [1.24.0](https://github.com/sanity-io/groq-js/compare/v1.23.0...v1.24.0) (2025-12-15)
 
 ### Features
