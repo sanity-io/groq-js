@@ -12,11 +12,11 @@ import {
 } from '../values'
 import {isEqual} from './equality'
 import {
+  type GatheredText,
   gatherText,
   matchAnalyzePattern,
   matchText,
   matchTokenize,
-  type GatheredText,
   type Pattern,
   type Token,
 } from './matching'
@@ -132,6 +132,10 @@ export const operators: {[key in OpCall]: GroqOperatorFn} = {
   '+': function plus(left, right) {
     if (left.type === 'datetime' && right.type === 'number') {
       return fromDateTime(left.data.add(right.data))
+    }
+
+    if (left.type === 'number' && right.type === 'datetime') {
+      return fromDateTime(right.data.add(left.data))
     }
 
     if (left.type === 'number' && right.type === 'number') {
