@@ -5,6 +5,12 @@
 All notable changes to this project will be documented in this file. See
 [Conventional Commits](https://conventionalcommits.org) for commit guidelines.
 
+## [1.25.0](https://github.com/sanity-io/groq-js/compare/v1.24.1...v1.25.0) (2026-01-06)
+
+### Features
+
+- **typeEvaluator:** narrow node values based on filters ([1b0365c](https://github.com/sanity-io/groq-js/commit/1b0365c9fbf4d1a6a5d2ded67f65a7675f0d7296))
+
 ## [1.24.1](https://github.com/sanity-io/groq-js/compare/v1.24.0...v1.24.1) (2026-01-05)
 
 ### Bug Fixes
