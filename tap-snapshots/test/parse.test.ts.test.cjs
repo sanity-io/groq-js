@@ -5,6 +5,90 @@
  * Make sure to inspect the output below.  Do not ignore changes!
  */
 'use strict'
+exports[`test/parse.test.ts TAP Basic parsing Can parse text::embedding > must match snapshot 1`] = `
+Object {
+  "base": Object {
+    "base": Object {
+      "args": Array [
+        Object {
+          "args": Array [
+            Object {
+              "type": "Value",
+              "value": "monster",
+            },
+          ],
+          "func": Object {
+            "arity": 1,
+            "executeAsync": AsyncFunction executeAsync(node, scope),
+            "executeSync": Function executeSync(node, scope),
+          },
+          "name": "embedding",
+          "namespace": "text",
+          "type": "FuncCall",
+        },
+      ],
+      "base": Object {
+        "base": Object {
+          "type": "Everything",
+        },
+        "expr": Object {
+          "left": Object {
+            "name": "_type",
+            "type": "AccessAttribute",
+          },
+          "op": "==",
+          "right": Object {
+            "type": "Value",
+            "value": "book",
+          },
+          "type": "OpCall",
+        },
+        "type": "Filter",
+      },
+      "func": Object {
+        "arity": Function (count),
+        "executeAsync": AsyncFunction executeAsync(),
+        "executeSync": Function executeSync(),
+      },
+      "name": "score",
+      "type": "PipeFuncCall",
+    },
+    "isInclusive": true,
+    "left": 0,
+    "right": 4,
+    "type": "Slice",
+  },
+  "expr": Object {
+    "base": Object {
+      "type": "This",
+    },
+    "expr": Object {
+      "attributes": Array [
+        Object {
+          "name": "_id",
+          "type": "ObjectAttributeValue",
+          "value": Object {
+            "name": "_id",
+            "type": "AccessAttribute",
+          },
+        },
+        Object {
+          "name": "_score",
+          "type": "ObjectAttributeValue",
+          "value": Object {
+            "name": "_score",
+            "type": "AccessAttribute",
+          },
+        },
+      ],
+      "type": "Object",
+    },
+    "type": "Projection",
+  },
+  "type": "Map",
+}
+`
+
 exports[`test/parse.test.ts TAP Basic parsing Comment with no text > must match snapshot 1`] = `
 Object {
   "type": "Value",
