@@ -5,6 +5,12 @@
 All notable changes to this project will be documented in this file. See
 [Conventional Commits](https://conventionalcommits.org) for commit guidelines.
 
+## [1.26.0](https://github.com/sanity-io/groq-js/compare/v1.25.0...v1.26.0) (2026-01-27)
+
+### Features
+
+- **parser:** add support for parsing text::embedding ([003d81a](https://github.com/sanity-io/groq-js/commit/003d81a8a87fd9e5b77b38e6566d6616559ddff8))
+
 ## [1.25.0](https://github.com/sanity-io/groq-js/compare/v1.24.1...v1.25.0) (2026-01-06)
 
 ### Features
