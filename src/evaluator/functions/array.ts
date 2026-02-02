@@ -1,7 +1,7 @@
-import type {FunctionSet} from '.'
 import {FALSE_VALUE, fromJS, fromString, getType, NULL_VALUE, TRUE_VALUE} from '../../values'
 import {isEqual} from '../equality'
 import {arrayExecutor, mappedExecutor} from '../evaluate'
+import type {FunctionSet} from '.'
 
 const array: FunctionSet = {}
 

@@ -1,5 +1,5 @@
-import type {FunctionSet} from '.'
 import {arrayExecutor} from '../evaluate'
+import type {FunctionSet} from '.'
 
 const releases: FunctionSet = {}
 

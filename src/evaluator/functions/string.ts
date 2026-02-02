@@ -1,6 +1,6 @@
-import type {FunctionSet} from '.'
 import {FALSE_VALUE, fromArray, fromString, NULL_VALUE, TRUE_VALUE} from '../../values'
 import {mappedExecutor} from '../evaluate'
+import type {FunctionSet} from '.'
 
 const string: FunctionSet = {}
 

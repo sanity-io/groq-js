@@ -1,6 +1,6 @@
-import type {FunctionSet} from '.'
 import {fromNumber, NULL_VALUE} from '../../values'
 import {arrayReducerExecutor, STOP_ITERATOR} from '../evaluate'
+import type {FunctionSet} from '.'
 
 const math: FunctionSet = {}
 math['min'] = arrayReducerExecutor(

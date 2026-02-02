@@ -1,7 +1,7 @@
-import type {FunctionSet} from '.'
 import {isSelectorNode} from '../../nodeTypes'
 import {fromString, NULL_VALUE} from '../../values'
 import {asyncOnlyExecutor, constantExecutor} from '../evaluate'
+import type {FunctionSet} from '.'
 import {changedAny, changedOnly} from './diff'
 
 const delta: FunctionSet = {}

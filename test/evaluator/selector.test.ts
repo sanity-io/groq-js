@@ -1,8 +1,8 @@
 import t from 'tap'
-import {evaluateSelector} from '../../src/evaluator/selector'
+
 import {Scope} from '../../src/evaluator/scope'
+import {evaluateSelector} from '../../src/evaluator/selector'
 import {type Context} from '../../src/evaluator/types'
-import {fromJS} from '../../src/values'
 import type {
   AccessAttributeNode,
   ArrayCoerceNode,
@@ -13,6 +13,7 @@ import type {
   SelectorNode,
   TupleNode,
 } from '../../src/nodeTypes'
+import {fromJS} from '../../src/values'
 
 const dataset = {
   _type: 'foo',

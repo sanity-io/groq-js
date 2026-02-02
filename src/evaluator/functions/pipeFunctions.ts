@@ -1,9 +1,9 @@
-import type {GroqPipeFunction, WithOptions} from '.'
 import type {ExprNode} from '../../nodeTypes'
 import {fromArray, fromJS, getType} from '../../values'
 import {executeAsync, executeSync} from '../evaluate'
 import {totalCompare} from '../ordering'
 import {evaluateScoreAsync, evaluateScoreSync} from '../scoring'
+import type {GroqPipeFunction, WithOptions} from '.'
 
 type ObjectWithScore = Record<string, unknown> & {_score: number}
 

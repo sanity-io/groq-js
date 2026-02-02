@@ -1,4 +1,5 @@
 import t from 'tap'
+
 import {deepEqual} from '../../src/evaluator/equality'
 
 t.test('deepEqual', async (t) => {

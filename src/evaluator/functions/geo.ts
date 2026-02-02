@@ -1,5 +1,5 @@
-import type {FunctionSet} from '.'
 import {constantExecutor} from '../evaluate'
+import type {FunctionSet} from '.'
 
 const geo: FunctionSet = {}
 geo['latLng'] = constantExecutor(() => {

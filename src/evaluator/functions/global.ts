@@ -1,4 +1,3 @@
-import type {FunctionSet} from '.'
 import {
   DateTime,
   FALSE_VALUE,
@@ -17,6 +16,7 @@ import {
   executeSync,
   mappedExecutor,
 } from '../evaluate'
+import type {FunctionSet} from '.'
 import string from './string'
 
 // underscored to not collide with environments like jest that give variables named `global` special treatment
