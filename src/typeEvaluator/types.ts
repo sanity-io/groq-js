@@ -22,7 +22,7 @@ export interface TypeDeclaration {
 export type Schema = (Document | TypeDeclaration)[]
 
 /** Symbol to mark a string type as a datetime */
-export const STRING_TYPE_DATETIME = Symbol('groq-js.type.string_datetime')
+export const STRING_TYPE_DATETIME = Symbol.for('groq-js.type.string-datetime')
 
 /** Describes a type node for string values, optionally including a value. If a value is provided it will always be the given string value. */
 export interface StringTypeNode {

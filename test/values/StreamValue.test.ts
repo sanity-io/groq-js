@@ -1,9 +1,11 @@
 import t from 'tap'
-import {StreamValue} from '../../src/values/StreamValue'
+
 import {fromJS} from '../../src/values'
+import {StreamValue} from '../../src/values/StreamValue'
 
 t.test('StreamValue', async (t) => {
   t.test('handles exceptions during fetch', async (t) => {
+    // eslint-disable-next-line require-yield
     const value = new StreamValue(async function* () {
       throw new Error('test')
     })

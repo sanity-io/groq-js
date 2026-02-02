@@ -17,13 +17,11 @@ export function isEqual(a: Value, b: Value): boolean {
   return false
 }
 
-export function deepEqual(a: any, b: any): boolean {
+export function deepEqual(a: unknown, b: unknown): boolean {
   if (a === null || b === null) return a === b
-  const typeOfA = typeof a
-  const typeOfB = typeof b
-  if (typeOfA === 'undefined' && typeOfB === 'undefined') return true
-  if (typeOfA === 'function' && typeOfB === 'function') return a === b
-  if (typeOfA === 'object' && typeOfB === 'object') {
+  if (typeof a === 'undefined' && typeof b === 'undefined') return true
+  if (typeof a === 'function' && typeof b === 'function') return a === b
+  if (isRecord(a) && isRecord(b)) {
     const keysOfA = Object.keys(a)
     const keysOfB = Object.keys(b)
     if (keysOfA.length !== keysOfB.length) return false
@@ -33,4 +31,8 @@ export function deepEqual(a: any, b: any): boolean {
     return true
   }
   return a === b
+}
+
+function isRecord(value: unknown): value is Record<string, unknown> {
+  return typeof value === 'object' && value !== null && !Array.isArray(value)
 }

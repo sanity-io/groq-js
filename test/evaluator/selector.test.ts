@@ -1,8 +1,8 @@
 import t from 'tap'
-import {evaluateSelector} from '../../src/evaluator/selector'
+
 import {Scope} from '../../src/evaluator/scope'
+import {evaluateSelector} from '../../src/evaluator/selector'
 import {type Context} from '../../src/evaluator/types'
-import {fromJS} from '../../src/values'
 import type {
   AccessAttributeNode,
   ArrayCoerceNode,
@@ -13,13 +13,14 @@ import type {
   SelectorNode,
   TupleNode,
 } from '../../src/nodeTypes'
+import {fromJS} from '../../src/values'
 
 const dataset = {
   _type: 'foo',
   bar: {_type: 'bar', baz: 1},
   foo: {_type: 'bar', baz: 1, data: {_type: 'bar', baz: 2}},
-  dot_attr: 1,
-  array_attr: [{expr: 0}, {expr: 1}, {expr: 2}],
+  dotAttr: 1,
+  arrayAttr: [{expr: 0}, {expr: 1}, {expr: 2}],
   base: {
     nested: [{expr: 0}, {expr: 1}, {expr: 2}],
   },
@@ -86,27 +87,27 @@ t.test('evaluateSelector', async (t) => {
 
     t.match(result, [[]])
   })
-  t.test('attr.dot_attr', async (t) => {
+  t.test('attr.dotAttr', async (t) => {
     const node: AccessAttributeNode<SelectorNode> = {
       type: 'AccessAttribute',
       base: {type: 'AccessAttribute', name: 'attr'},
-      name: 'dot_attr',
+      name: 'dotAttr',
     }
     const result = await evaluateSelector(node, scope.value, scope)
 
-    t.match(result, [['attr', 'dot_attr']])
+    t.match(result, [['attr', 'dotAttr']])
   })
-  t.test('(attr_in_group).dot_attr', async (t) => {
+  t.test('(attr_in_group).dotAttr', async (t) => {
     const node: AccessAttributeNode<SelectorNode> = {
       type: 'AccessAttribute',
       base: {type: 'Group', base: {type: 'AccessAttribute', name: 'attr_in_group'}},
-      name: 'dot_attr',
+      name: 'dotAttr',
     }
     const result = await evaluateSelector(node, scope.value, scope)
 
-    t.match(result, [['attr_in_group', 'dot_attr']])
+    t.match(result, [['attr_in_group', 'dotAttr']])
   })
-  t.test('(tuple1, tuple2).dot_attr', async (t) => {
+  t.test('(tuple1, tuple2).dotAttr', async (t) => {
     const node: AccessAttributeNode<SelectorNode> = {
       type: 'AccessAttribute',
       base: {
@@ -116,19 +117,19 @@ t.test('evaluateSelector', async (t) => {
           {type: 'AccessAttribute', name: 'tuple2'},
         ],
       },
-      name: 'dot_attr',
+      name: 'dotAttr',
     }
     const result = await evaluateSelector(node, scope.value, scope)
 
     t.match(result, [
-      ['tuple1', 'dot_attr'],
-      ['tuple2', 'dot_attr'],
+      ['tuple1', 'dotAttr'],
+      ['tuple2', 'dotAttr'],
     ])
   })
-  t.test('anywhere(_type == "foo").dot_attr', async (t) => {
+  t.test('anywhere(_type == "foo").dotAttr', async (t) => {
     const node: AccessAttributeNode<SelectorNode> = {
       type: 'AccessAttribute',
-      name: 'dot_attr',
+      name: 'dotAttr',
       base: {
         type: 'SelectorFuncCall',
         name: 'anywhere',
@@ -142,7 +143,7 @@ t.test('evaluateSelector', async (t) => {
     }
     const result = await evaluateSelector(node, scope.value, scope)
 
-    t.match(result, [['dot_attr']])
+    t.match(result, [['dotAttr']])
   })
   t.test('(attr_in_group).(attr_in_dot_group)', async (t) => {
     const node: SelectorNestedNode = {
@@ -173,36 +174,36 @@ t.test('evaluateSelector', async (t) => {
       ['tuple2', 'attr_in_dot_group'],
     ])
   })
-  t.test('array_attr[]', async (t) => {
+  t.test('arrayAttr[]', async (t) => {
     const node: ArrayCoerceNode<SelectorNode> = {
       type: 'ArrayCoerce',
-      base: {type: 'AccessAttribute', name: 'array_attr'},
+      base: {type: 'AccessAttribute', name: 'arrayAttr'},
     }
     const result = await evaluateSelector(node, scope.value, scope)
 
     t.match(result, [
-      ['array_attr', 0],
-      ['array_attr', 1],
-      ['array_attr', 2],
+      ['arrayAttr', 0],
+      ['arrayAttr', 1],
+      ['arrayAttr', 2],
     ])
   })
-  t.test('(array_attr)[]', async (t) => {
+  t.test('(arrayAttr)[]', async (t) => {
     const node: ArrayCoerceNode<SelectorNode> = {
       type: 'ArrayCoerce',
-      base: {type: 'Group', base: {type: 'AccessAttribute', name: 'array_attr'}},
+      base: {type: 'Group', base: {type: 'AccessAttribute', name: 'arrayAttr'}},
     }
     const result = await evaluateSelector(node, scope.value, scope)
 
     t.match(result, [
-      ['array_attr', 0],
-      ['array_attr', 1],
-      ['array_attr', 2],
+      ['arrayAttr', 0],
+      ['arrayAttr', 1],
+      ['arrayAttr', 2],
     ])
   })
-  t.test('array_attr[expr == 1]', async (t) => {
+  t.test('arrayAttr[expr == 1]', async (t) => {
     const node: FilterNode<SelectorNode> = {
       type: 'Filter',
-      base: {type: 'AccessAttribute', name: 'array_attr'},
+      base: {type: 'AccessAttribute', name: 'arrayAttr'},
       expr: {
         type: 'OpCall',
         left: {type: 'AccessAttribute', name: 'expr'},
@@ -212,20 +213,20 @@ t.test('evaluateSelector', async (t) => {
     }
     const result = await evaluateSelector(node, scope.value, scope)
 
-    t.match(result, [['array_attr', 1]])
+    t.match(result, [['arrayAttr', 1]])
   })
-  t.test('(attr.dot_attr)', async (t) => {
+  t.test('(attr.dotAttr)', async (t) => {
     const node: GroupNode<SelectorNode> = {
       type: 'Group',
       base: {
         type: 'AccessAttribute',
         base: {type: 'AccessAttribute', name: 'attr'},
-        name: 'dot_attr',
+        name: 'dotAttr',
       },
     }
     const result = await evaluateSelector(node, scope.value, scope)
 
-    t.match(result, [['attr', 'dot_attr']])
+    t.match(result, [['attr', 'dotAttr']])
   })
   t.test('((tuple1, tuple2).(dot_tuple1, dot_tuple2))', async (t) => {
     const node: GroupNode<SelectorNode> = {

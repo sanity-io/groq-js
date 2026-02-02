@@ -106,7 +106,12 @@ export function extractNarrowingAssertions(
 
     case 'FuncCall': {
       // Handle defined() function
-      if (expr.namespace === 'global' && expr.name === 'defined' && expr.args.length === 1) {
+      if (
+        expr.namespace === 'global' &&
+        expr.name === 'defined' &&
+        expr.args.length === 1 &&
+        typeof expr.args[0] !== 'undefined'
+      ) {
         const path = extractAttributePath(expr.args[0])
         if (path) {
           return [

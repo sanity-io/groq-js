@@ -170,7 +170,7 @@ t.test('Basic parsing', async (t) => {
     t.test('throw errors when the node type is unknown', async (t) => {
       const tree: ExprNode = {
         type: 'Object',
-        // @ts-ignore (we want an invalid type for testing purposes)
+        // @ts-expect-error (we want an invalid type for testing purposes)
         attributes: [{type: 'AccessAttribute', name: 'b'}],
       }
 
@@ -182,7 +182,7 @@ t.test('Basic parsing', async (t) => {
     t.test('throws when an invalid operator function is used', async (t) => {
       const tree: ExprNode = {
         type: 'OpCall',
-        // @ts-ignore (we want an invalid operator for testing purposes)
+        // @ts-expect-error (we want an invalid operator for testing purposes)
         op: '^',
         left: {type: 'AccessAttribute', name: 'a'},
         right: {type: 'AccessAttribute', name: 'b'},

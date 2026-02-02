@@ -2,7 +2,7 @@ import type {ArrayValue, Value} from './types'
 import {StaticValue} from './utils'
 
 export class StreamValue {
-  type: 'stream' = 'stream'
+  type = 'stream' as const
   private generator: () => AsyncGenerator<Value, void, unknown>
   private ticker: Promise<void> | null
   private isDone: boolean
@@ -53,7 +53,7 @@ export class StreamValue {
     }
 
     let currentResolver: (value?: void | PromiseLike<void> | undefined) => void
-    let currentRejector: (reason?: any) => void
+    let currentRejector: (reason?: unknown) => void
     const setupTicker = () => {
       this.ticker = new Promise((resolve, reject) => {
         currentResolver = resolve

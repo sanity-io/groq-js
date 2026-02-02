@@ -1,5 +1,5 @@
 import type {ExprNode} from '../nodeTypes'
-import {NULL_VALUE, type AnyStaticValue} from '../values'
+import {type AnyStaticValue, NULL_VALUE} from '../values'
 import {executeSync} from './evaluate'
 import {Scope} from './scope'
 

@@ -1,4 +1,5 @@
 import t from 'tap'
+
 import {deepEqual} from '../../src/evaluator/equality'
 
 t.test('deepEqual', async (t) => {
@@ -27,8 +28,8 @@ t.test('deepEqual', async (t) => {
     t.equal(deepEqual(undefined, {}), false, 'undefined')
     t.equal(
       deepEqual(
-        () => {},
-        () => {},
+        () => 1,
+        () => 2,
       ),
       false,
       'functions',

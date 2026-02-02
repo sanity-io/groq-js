@@ -1,8 +1,9 @@
 import t from 'tap'
+
 import {diffKeyPaths, startsWith, valueAtPath} from '../../src/evaluator/keyPath'
 import {DateTime, fromJS, StreamValue} from '../../src/values'
 
-const obj: any = {left: {a: 1}, right: [{foo: 2}, [{bar: 3}]]}
+const obj = {left: {a: 1}, right: [{foo: 2}, [{bar: 3}]]} as const
 
 t.test('valueAtPath', async (tt) => {
   await tt.test('no parts', async (ttt) => {

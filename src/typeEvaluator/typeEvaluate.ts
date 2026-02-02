@@ -30,7 +30,7 @@ import type {
 import {booleanAnd, booleanInterpretationToTypeNode, booleanOr, booleanValue} from './booleans'
 import {handleFuncCallNode} from './functions'
 import {match} from './matching'
-import {narrowNode, extractNarrowingAssertions} from './narrowing'
+import {extractNarrowingAssertions, narrowNode} from './narrowing'
 import {optimizeUnions} from './optimizations'
 import {Context, Scope} from './scope'
 import {
@@ -1114,7 +1114,7 @@ function handleOrNode(node: OrNode, scope: Scope): TypeNode {
   )
 }
 
-const OVERRIDE_TYPE_SYMBOL = Symbol('groq-js.type')
+const OVERRIDE_TYPE_SYMBOL = Symbol.for('groq-js.type')
 
 /**
  * `overrideTypeForNode` overrides the inferred type for a specific node: The

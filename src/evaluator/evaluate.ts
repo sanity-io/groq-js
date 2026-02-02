@@ -1,14 +1,14 @@
 import type {ExprNode} from '../nodeTypes'
 import {
+  type AnyStaticValue,
   FALSE_VALUE,
   fromArray,
   fromJS,
   fromNumber,
   NULL_VALUE,
+  type ObjectValue,
   StreamValue,
   TRUE_VALUE,
-  type AnyStaticValue,
-  type ObjectValue,
   type Value,
 } from '../values'
 import {operators} from './operators'
@@ -22,12 +22,12 @@ export function evaluate(node: ExprNode, scope: Scope): Value | PromiseLike<Valu
 
 export function executeSync(node: ExprNode, scope: Scope): AnyStaticValue {
   const exec = EXECUTORS[node.type]
-  return exec.executeSync(node as any, scope)
+  return exec.executeSync(node, scope)
 }
 
 export function executeAsync(node: ExprNode, scope: Scope): Promise<Value> {
   const exec = EXECUTORS[node.type]
-  return exec.executeAsync(node as any, scope)
+  return exec.executeAsync(node, scope)
 }
 
 type NarrowNode<T, N> = T extends {type: N} ? T : never
@@ -88,7 +88,7 @@ export function mappedExecutor<N = ExprNode>(
   }
 }
 
-export const STOP_ITERATOR = Symbol()
+export const STOP_ITERATOR = Symbol.for('groq-js.stop-iterator')
 
 /**
  * An executor for procesing an array into a single value.
@@ -520,7 +520,7 @@ const EXECUTORS: ExecutorMap = {
 
   Object: {
     executeSync({attributes}, scope) {
-      const result: {[key: string]: any} = {}
+      const result: {[key: string]: unknown} = {}
       for (const attr of attributes) {
         const attrType = attr.type
         switch (attr.type) {
@@ -559,7 +559,7 @@ const EXECUTORS: ExecutorMap = {
     },
 
     async executeAsync({attributes}, scope) {
-      const result: {[key: string]: any} = {}
+      const result: {[key: string]: unknown} = {}
       for (const attr of attributes) {
         const attrType = attr.type
         switch (attr.type) {
@@ -777,7 +777,7 @@ export function evaluateQuerySync(tree: ExprNode, options: EvaluateOptions = {})
 function scopeFromOptions(options: EvaluateOptions): Scope {
   const root = fromJS(options.root)
   const dataset = fromJS(options.dataset)
-  const params: {[key: string]: any} = {...options.params}
+  const params = {...options.params}
 
   return new Scope(
     params,

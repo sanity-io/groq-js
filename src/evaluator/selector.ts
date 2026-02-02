@@ -13,13 +13,14 @@ export async function evaluateSelector(
   switch (node.type) {
     case 'Group':
       return await evaluateSelector(node.base, value, scope)
-    case 'Tuple':
+    case 'Tuple': {
       const tuplePaths: Array<KeyPath> = []
       for (const member of node.members) {
         const memberPaths = await evaluateSelector(member, value, scope)
         tuplePaths.push(...memberPaths)
       }
       return tuplePaths
+    }
     case 'AccessAttribute':
       if (node.base) {
         const accessPaths = await evaluateSelector(node.base, value, scope)
@@ -82,31 +83,39 @@ export async function evaluateSelector(
         switch (expr.type) {
           case 'AccessAttribute':
           case 'ArrayCoerce':
-          case 'Filter':
+          case 'Filter': {
             const accessPaths = await evaluateSelector(expr, fromJS(innerValue), scope)
             for (let i = 0; i < accessPaths.length; i++) {
               nestedPaths.push([...keyPath, ...accessPaths[i]])
             }
             break
-
-          case 'Group':
+          }
+          case 'Group': {
             const innerResult = await evaluateSelector(expr.base, fromJS(innerValue), scope)
             for (const innerKeyPath of innerResult) {
               nestedPaths.push([...keyPath, ...innerKeyPath])
             }
             break
-
-          case 'Tuple':
+          }
+          case 'Tuple': {
             for (const inner of expr.members) {
               const innerResult = await evaluateSelector(inner, fromJS(innerValue), scope)
               for (const innerKeyPath of innerResult) {
                 nestedPaths.push([...keyPath, ...innerKeyPath])
               }
             }
+            break
+          }
+
+          default:
+            throw new Error(`Unsupported nested selector type: ${expr}`)
         }
       }
       return nestedPaths
     }
+
+    default:
+      throw new Error(`Unsupported selector type: ${node}`)
   }
 }
 
@@ -115,7 +124,7 @@ async function anywhere(expr: ExprNode, scope: Scope, base: KeyPath = []): Promi
 
   const pathList: KeyPath[] = []
   if (value.isArray()) {
-    const arr: any[] = await value.get()
+    const arr = await value.get()
     for (let i = 0; i < arr.length; i++) {
       const subPaths = await anywhere(expr, scope.createHidden(fromJS(arr[i])), [...base, i])
       pathList.push(...subPaths)

@@ -1000,7 +1000,10 @@ function argumentShouldBeSelector(namespace: string, functionName: string, argCo
   return namespace == 'diff' && argCount == 2 && functionsRequiringSelectors.includes(functionName)
 }
 
-class GroqSyntaxError extends Error {
+/**
+ * @internal
+ */
+export class GroqSyntaxError extends Error {
   public position: number
   public override name = 'GroqSyntaxError'
 

@@ -1,11 +1,11 @@
-import type {FunctionSet} from '.'
 import {isSelectorNode, type SelectorNode} from '../../nodeTypes'
-import {FALSE_VALUE, TRUE_VALUE, type BooleanValue, type Value} from '../../values'
+import {type BooleanValue, FALSE_VALUE, TRUE_VALUE, type Value} from '../../values'
 import {deepEqual} from '../equality'
 import {asyncOnlyExecutor, executeAsync} from '../evaluate'
 import {diffKeyPaths, startsWith, valueAtPath} from '../keyPath'
 import type {Scope} from '../scope'
 import {evaluateSelector} from '../selector'
+import type {FunctionSet} from '.'
 
 export async function changedAny(
   before: Value,
