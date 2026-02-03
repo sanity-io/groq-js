@@ -4,11 +4,11 @@ import {parse} from '../src/parser'
 import {typeEvaluate} from '../src/typeEvaluator/typeEvaluate'
 import {
   createGeoJson,
+  createObject,
+  createObjectAttribute,
   createReferenceTypeNode,
   nullUnion,
   unionOf,
-  createObject,
-  createObjectAttribute,
 } from '../src/typeEvaluator/typeHelpers'
 import type {
   ArrayTypeNode,

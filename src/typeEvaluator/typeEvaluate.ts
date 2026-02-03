@@ -30,7 +30,7 @@ import type {
 import {booleanAnd, booleanInterpretationToTypeNode, booleanOr, booleanValue} from './booleans'
 import {handleFuncCallNode} from './functions'
 import {match} from './matching'
-import {narrowNode, extractNarrowingAssertions} from './narrowing'
+import {extractNarrowingAssertions, narrowNode} from './narrowing'
 import {optimizeUnions} from './optimizations'
 import {Context, Scope} from './scope'
 import {

@@ -1,14 +1,14 @@
 import type {ExprNode} from '../nodeTypes'
 import {
+  type AnyStaticValue,
   FALSE_VALUE,
   fromArray,
   fromJS,
   fromNumber,
   NULL_VALUE,
+  type ObjectValue,
   StreamValue,
   TRUE_VALUE,
-  type AnyStaticValue,
-  type ObjectValue,
   type Value,
 } from '../values'
 import {operators} from './operators'

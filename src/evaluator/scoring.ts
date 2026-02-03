@@ -2,10 +2,10 @@ import type {ExprNode} from '../nodeTypes'
 import type {Value} from '../values'
 import {executeAsync, executeSync} from './evaluate'
 import {
+  type GatheredText,
   gatherText,
   matchPatternRegex,
   matchTokenize,
-  type GatheredText,
   type Token,
 } from './matching'
 import {Scope} from './scope'

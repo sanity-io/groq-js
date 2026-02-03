@@ -1,6 +1,6 @@
-import type {FunctionSet} from '.'
 import {FALSE_VALUE, fromString, NULL_VALUE, TRUE_VALUE} from '../../values'
 import {constantExecutor, mappedExecutor} from '../evaluate'
+import type {FunctionSet} from '.'
 
 const sanity: FunctionSet = {}
 sanity['projectId'] = constantExecutor((_, scope) => {

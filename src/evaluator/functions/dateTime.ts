@@ -1,6 +1,6 @@
-import type {FunctionSet} from '.'
 import {DateTime, fromDateTime} from '../../values'
 import {constantExecutor} from '../evaluate'
+import type {FunctionSet} from '.'
 
 const dateTime: FunctionSet = {}
 dateTime['now'] = constantExecutor((_, scope) =>

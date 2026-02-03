@@ -1,4 +1,5 @@
 import t from 'tap'
+
 import {diffKeyPaths, startsWith, valueAtPath} from '../../src/evaluator/keyPath'
 import {DateTime, fromJS, StreamValue} from '../../src/values'
 

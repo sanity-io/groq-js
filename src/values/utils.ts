@@ -150,7 +150,7 @@ export function toJS(val: AnyStaticValue): unknown {
  * custom values and the data is already normalized.
  */
 function maybeNormalize(data: unknown): unknown | undefined {
-  if (data === null || typeof data === 'undefined') return
+  if (data === null || typeof data === 'undefined') return undefined
 
   if (Array.isArray(data)) {
     let result: undefined | unknown[]
@@ -195,7 +195,7 @@ function maybeNormalize(data: unknown): unknown | undefined {
     return result
   }
 
-  return
+  return undefined
 }
 
 /**

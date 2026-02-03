@@ -1,12 +1,12 @@
-import type {FunctionSet} from '.'
 import {fromString, NULL_VALUE} from '../../values'
-import {portableTextContent} from '../pt'
 import {mappedExecutor} from '../evaluate'
+import {portableTextContent} from '../pt'
+import type {FunctionSet} from '.'
 
 const pt: FunctionSet = {}
 pt['text'] = mappedExecutor(
   (args) => args,
-  function (_, value) {
+  (_, value) => {
     const text = portableTextContent(value)
 
     if (text === null) {

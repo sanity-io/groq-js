@@ -78,7 +78,7 @@
   },
   "devDependencies": {
     "@sanity/pkg-utils": "^7.2.2",
-    "@sanity/prettier-config": "^1.0.3",
+    "@sanity/prettier-config": "^3.0.0",
     "@sanity/semantic-release-preset": "^5.0.0",
     "@types/debug": "^4.1.12",
     "@types/tap": "^15.0.12",
@@ -90,7 +90,7 @@
     "eslint-plugin-prettier": "^5.2.1",
     "eslint-plugin-simple-import-sort": "^12.1.1",
     "ndjson": "^2.0.0",
-    "prettier": "^3.4.2",
+    "prettier": "^3.8.1",
     "rimraf": "^5.0.0",
     "semantic-release": "^24.2.0",
     "semver": "^7.5.4",
