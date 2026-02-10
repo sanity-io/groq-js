@@ -529,6 +529,9 @@ export function handleFuncCallNode(node: FuncCallNode, scope: Scope): TypeNode {
         })
       })
     }
+    case 'user.attributes': {
+      return {type: 'unknown'}
+    }
     default: {
       return {type: 'unknown'}
     }

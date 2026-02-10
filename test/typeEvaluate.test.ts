@@ -3188,6 +3188,37 @@ t.test('function: media::*', (t) => {
   t.end()
 })
 
+t.test('function: user::*', (t) => {
+  const query = `*[_type == "post"] {
+    "attrs": user::attributes(),
+    "userName": user::attributes().name,
+  }`
+  const ast = parse(query)
+  const res = typeEvaluate(ast, schemas)
+
+  t.strictSame(res, {
+    type: 'array',
+    of: {
+      type: 'object',
+      attributes: {
+        attrs: {
+          type: 'objectAttribute',
+          value: {
+            type: 'unknown',
+          },
+        },
+        userName: {
+          type: 'objectAttribute',
+          value: {
+            type: 'unknown',
+          },
+        },
+      },
+    },
+  })
+  t.end()
+})
+
 t.test('scoping', (t) => {
   const ast = parse(`*[_type == "mainDocument" && _id == $id]{
     _id,
