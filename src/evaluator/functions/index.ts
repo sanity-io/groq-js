@@ -15,6 +15,7 @@ import releases from './releases'
 import sanity from './sanity'
 import string from './string'
 import text from './text'
+import user from './user'
 
 export {default as pipeFunctions} from './pipeFunctions'
 
@@ -56,4 +57,5 @@ export const namespaces: NamespaceSet = {
   text,
   geo,
   documents,
+  user,
 }
