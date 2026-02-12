@@ -5,6 +5,12 @@
 All notable changes to this project will be documented in this file. See
 [Conventional Commits](https://conventionalcommits.org) for commit guidelines.
 
+## [1.27.0](https://github.com/sanity-io/groq-js/compare/v1.26.0...v1.27.0) (2026-02-12)
+
+### Features
+
+- **typeEvaluator:** add support for user::attributes() ([c791ab8](https://github.com/sanity-io/groq-js/commit/c791ab832b58731220ac29bae4b487b0453dd3f0))
+
 ## [1.26.0](https://github.com/sanity-io/groq-js/compare/v1.25.0...v1.26.0) (2026-01-27)
 
 ### Features
