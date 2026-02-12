@@ -33,6 +33,14 @@ export class Context {
           return val.value
         }
       }
+      if (val.type === 'document') {
+        if (val.name === alias.name) {
+          return {
+            type: 'object',
+            attributes: val.attributes,
+          }
+        }
+      }
     }
     return {type: 'null'} satisfies NullTypeNode
   }

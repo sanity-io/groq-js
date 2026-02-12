@@ -295,6 +295,46 @@ const namespaceTwoDocument = {
     } satisfies ObjectAttribute,
   },
 } satisfies Document
+const docUsingDocTypeAsFieldType = {
+  name: 'antiPattern',
+  type: 'document',
+  attributes: {
+    _type: {
+      type: 'objectAttribute',
+      value: {
+        type: 'string',
+        value: 'antiPattern',
+      },
+    },
+    /**
+     * Authors defined as an array of the author _document_ type
+     * This is something we support in the schema, even though it's an
+     * anti pattern
+     */
+    authors: {
+      type: 'objectAttribute',
+      value: {
+        type: 'array',
+        of: {
+          type: 'object',
+          attributes: {
+            _key: {
+              type: 'objectAttribute',
+              value: {
+                type: 'string',
+              },
+            },
+          },
+          rest: {
+            type: 'inline',
+            name: authorDocument.name,
+          },
+        },
+      },
+      optional: true,
+    },
+  },
+} satisfies Document
 const conceptType = {
   type: 'type',
   name: 'concept',
@@ -370,6 +410,8 @@ const schemas = [
   conceptType,
   slugType,
 ] satisfies Schema
+
+const schemasIncludingAntiPattern: Schema = [...schemas, docUsingDocTypeAsFieldType]
 
 t.only('no projection', (t) => {
   const query = `*[_type == "author" && _id match "123"]`
@@ -3908,6 +3950,21 @@ t.test('number + dateTime', (t) => {
     type: 'union',
     of: [{type: 'boolean', value: undefined}, {type: 'null'}],
   })
+  t.end()
+})
+
+t.test('doc type as field type', (t) => {
+  const ast = parse(`*[_type == "antiPattern"][0].authors[].name`)
+  const res = typeEvaluate(ast, schemasIncludingAntiPattern)
+
+  t.same(
+    res,
+    nullUnion({
+      type: 'array',
+      of: {type: 'string'},
+    }),
+  )
+
   t.end()
 })
 
