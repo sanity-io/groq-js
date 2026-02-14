@@ -18,6 +18,7 @@ export type {
   Value,
 } from '../values'
 export {DateTime, Path} from '../values'
+export {hashTypeNode} from './optimizations'
 export {typeEvaluate} from './typeEvaluate'
 export {createReferenceTypeNode} from './typeHelpers'
 export type {

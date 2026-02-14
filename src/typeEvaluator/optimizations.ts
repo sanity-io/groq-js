@@ -6,12 +6,19 @@ function typeNodesSorter(a: TypeNode, b: TypeNode): number {
   if (a.type === 'null') {
     return 1
   }
-  return compare(hashField(a), hashField(b))
+  return compare(hashTypeNode(a), hashTypeNode(b))
 }
 
 const hashCache = new WeakMap<TypeNode, string>()
 
-export function hashField(field: TypeNode): string {
+/**
+ * Computes a canonical string hash for a TypeNode. Structurally identical
+ * nodes produce identical hashes. Results are cached by object identity.
+ *
+ * @param field - The TypeNode to hash.
+ * @returns A deterministic string representation of the node's structure.
+ */
+export function hashTypeNode(field: TypeNode): string {
   if (hashCache.has(field)) {
     return hashCache.get(field)!
   }
@@ -52,7 +59,7 @@ function calculateFieldHash(field: TypeNode): string {
     }
 
     case 'array': {
-      return `${field.type}(${hashField(field.of)})`
+      return `${field.type}(${hashTypeNode(field.of)})`
     }
 
     case 'object': {
@@ -61,15 +68,17 @@ function calculateFieldHash(field: TypeNode): string {
       return `${field.type}:(${attributes
         .map(
           ([key, value]) =>
-            `${key}:${hashField(value.value)}(${value.optional ? 'optional' : 'non-optional'})`,
+            `${key}:${hashTypeNode(value.value)}(${value.optional ? 'optional' : 'non-optional'})`,
         )
-        .join(',')}):ref-${field.dereferencesTo}:${field.rest ? hashField(field.rest) : 'no-rest'}`
+        .join(
+          ',',
+        )}):ref-${field.dereferencesTo}:${field.rest ? hashTypeNode(field.rest) : 'no-rest'}`
     }
 
     case 'union': {
       const sorted = [...field.of]
       sorted.sort(typeNodesSorter)
-      return `${field.type}(${sorted.map(hashField).join(',')})`
+      return `${field.type}(${sorted.map(hashTypeNode).join(',')})`
     }
 
     case 'inline': {
@@ -91,7 +100,7 @@ export function removeDuplicateTypeNodes(typeNodes: TypeNode[]): TypeNode[] {
   sortedTypeNodes.sort(typeNodesSorter)
 
   for (const typeNode of sortedTypeNodes) {
-    const hash = hashField(typeNode)
+    const hash = hashTypeNode(typeNode)
     if (hash === null) {
       newTypeNodes.push(typeNode)
       continue
@@ -135,7 +144,7 @@ export function optimizeUnions(field: TypeNode): TypeNode {
       if (a.type === 'null') {
         return 1
       }
-      return compare(hashField(a), hashField(b))
+      return compare(hashTypeNode(a), hashTypeNode(b))
     })
 
     return field
