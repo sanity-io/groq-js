@@ -1,4 +1,5 @@
-import {getType, type GroqType} from '../values'
+import {DateTime, getType, type GroqType} from '../values'
+import {parseRFC3339} from '../values/dateHelpers'
 
 const TYPE_ORDER: {[key in GroqType]?: number} = {
   datetime: 1,
@@ -13,6 +14,9 @@ export function partialCompare(a: any, b: any): null | number {
   const bType = getType(b)
 
   if (aType !== bType) {
+    if (aType === 'datetime' || bType === 'datetime') {
+      return compareMixedDateTime(a, b)
+    }
     return null
   }
 
@@ -31,6 +35,29 @@ export function partialCompare(a: any, b: any): null | number {
   }
 }
 
+function compareMixedDateTime(a: any, b: any): null | number {
+  const aType = getType(a)
+  const bType = getType(b)
+
+  if (aType === 'datetime' && bType === 'string') {
+    const bDate = parseRFC3339(b.toString())
+    if (bDate === null) {
+      return null
+    }
+    return a.compareTo(new DateTime(bDate))
+  }
+
+  if (aType === 'string' && bType === 'datetime') {
+    const aDate = parseRFC3339(a.toString())
+    if (aDate === null) {
+      return null
+    }
+    return new DateTime(aDate).compareTo(b)
+  }
+
+  return null
+}
+
 // eslint-disable-next-line @typescript-eslint/explicit-module-boundary-types
 export function totalCompare(a: any, b: any): number {
   const aType = getType(a)
@@ -40,7 +67,12 @@ export function totalCompare(a: any, b: any): number {
   const bTypeOrder = TYPE_ORDER[bType] || 100
 
   if (aTypeOrder !== bTypeOrder) {
-    return aTypeOrder - bTypeOrder
+    if (
+      !(aType === 'string' && bType === 'datetime') &&
+      !(aType === 'datetime' && bType === 'string')
+    ) {
+      return aTypeOrder - bTypeOrder
+    }
   }
 
   let result = partialCompare(a, b)

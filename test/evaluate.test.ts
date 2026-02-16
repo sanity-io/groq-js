@@ -267,6 +267,26 @@ t.test('Basic parsing', async (t) => {
     t.same(data, {me: '2021-05-06T12:14:15.000Z', nested: 'yes'})
   })
 
+  t.test('Can compare string and dateTime', async (t) => {
+    const dataset = [
+      {_id: 'yes', time: '2021-05-06T12:14:15Z'},
+      {_id: 'no', time: '2020-05-06T12:14:15Z'},
+    ]
+    const query = `{
+      "string-dt": count(*[time > dateTime(now())]),
+      "dt-string": count(*[dateTime(time) == '2021-05-06T12:14:15Z']),
+      "string-string": count(*[time >= '2021-05-06T12:14:15Z'])
+    }`
+    const tree = parse(query)
+    const value = await evaluate(tree, {dataset, timestamp: new Date('2021-05-05T12:14:15Z')})
+    const data = await value.get()
+    t.same(data, {
+      'string-dt': 1,
+      'dt-string': 1,
+      'string-string': 1,
+    })
+  })
+
   t.test('sanity-functions default', async (t) => {
     const query = `sanity::dataset() + sanity::projectId()`
     const tree = parse(query)

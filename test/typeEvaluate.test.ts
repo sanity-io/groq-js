@@ -3858,6 +3858,14 @@ t.test('splatting array', (t) => {
   t.end()
 })
 
+t.test('dateTime compared with string', (t) => {
+  const query = `dateTime::now() > "2024-03-01T00:00:00Z"`
+  const ast = parse(query)
+  const res = typeEvaluate(ast, schemas)
+  t.same(res, {type: 'boolean', value: undefined})
+  t.end()
+})
+
 t.test('dateTime with numerical operation', (t) => {
   const query = `(global::dateTime("2025-03-01T00:00:00Z") + 60) > global::dateTime("2024-03-01T00:00:00Z")`
   const ast = parse(query)
@@ -3866,6 +3874,38 @@ t.test('dateTime with numerical operation', (t) => {
     type: 'union',
     of: [{type: 'boolean', value: undefined}, {type: 'null'}],
   })
+  t.end()
+})
+
+t.test('dateTime match always returns false', (t) => {
+  const query = `dateTime::now() match "2024*"`
+  const ast = parse(query)
+  const res = typeEvaluate(ast, schemas)
+  t.same(res, {type: 'boolean', value: false})
+  t.end()
+})
+
+t.test('array containing dateTime match returns false', (t) => {
+  const query = `[dateTime::now()] match ["2024*"]`
+  const ast = parse(query)
+  const res = typeEvaluate(ast, schemas)
+  t.same(res, {type: 'boolean', value: false})
+  t.end()
+})
+
+t.test('array containing dateTime match returns false', (t) => {
+  const query = `[dateTime::now()] match ["2024*"]`
+  const ast = parse(query)
+  const res = typeEvaluate(ast, schemas)
+  t.same(res, {type: 'boolean', value: false})
+  t.end()
+})
+
+t.test('match with dateTime in patterns array returns false', (t) => {
+  const query = `"hello" match [dateTime::now(), "hello"]`
+  const ast = parse(query)
+  const res = typeEvaluate(ast, schemas)
+  t.same(res, {type: 'boolean', value: false})
   t.end()
 })
 

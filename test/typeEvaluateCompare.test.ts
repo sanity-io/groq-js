@@ -110,8 +110,17 @@ const primitives: AnnotatedValue[] = [
   },
   {
     key: 'datetime',
-    value: new DateTime(new Date('2024-01-01T00:00:00.000Z')),
-    types: [{desc: 'dateTime', type: {type: 'string', [STRING_TYPE_DATETIME]: true}}],
+    value: new DateTime(new Date('2024-01-01T00:00:00Z')),
+    types: [
+      {
+        desc: 'dateTime(undefined)',
+        type: {type: 'string', [STRING_TYPE_DATETIME]: true},
+      },
+      {
+        desc: 'dateTime(defined)',
+        type: {type: 'string', value: '2024-01-01T00:00:00Z', [STRING_TYPE_DATETIME]: true},
+      },
+    ],
   },
 ]
 

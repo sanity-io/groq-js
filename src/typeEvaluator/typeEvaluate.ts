@@ -34,6 +34,7 @@ import {narrowNode, extractNarrowingAssertions} from './narrowing'
 import {optimizeUnions} from './optimizations'
 import {Context, Scope} from './scope'
 import {
+  containsDateTime,
   dateTimeString,
   isDateTime,
   isFuncCall,
@@ -57,6 +58,7 @@ import {
   type UnionTypeNode,
   type UnknownTypeNode,
 } from './types'
+import {parseRFC3339} from '../values/dateHelpers'
 
 const $trace = debug('typeEvaluator:evaluate:trace')
 $trace.log = console.log.bind(console) // eslint-disable-line no-console
@@ -543,7 +545,27 @@ function handleOpCallNode(node: OpCallNode, scope: Scope): TypeNode {
           // we represent datetimes as the string type, but can only compare them if both/none are the datetime subtype
           if (left.type === 'string' && right.type === 'string') {
             if (isDateTime(left) !== isDateTime(right)) {
-              return {type: 'null'} satisfies NullTypeNode
+              // One is datetime, one is plain string
+              // Check if the plain string side can be parsed as a valid RFC3339 date
+              if (isDateTime(left)) {
+                // left is datetime, right is plain string
+                if (right.value === undefined) {
+                  // Unknown string value - could be valid date or not
+                  return nullUnion({type: 'boolean'})
+                }
+                if (parseRFC3339(right.value) === null) {
+                  return {type: 'null'} satisfies NullTypeNode
+                }
+              } else {
+                // right is datetime, left is plain string
+                if (left.value === undefined) {
+                  // Unknown string value - could be valid date or not
+                  return nullUnion({type: 'boolean'})
+                }
+                if (parseRFC3339(left.value) === null) {
+                  return {type: 'null'} satisfies NullTypeNode
+                }
+              }
             }
           }
           if (!isPrimitiveTypeNode(left) || !isPrimitiveTypeNode(right)) {
@@ -611,6 +633,12 @@ function handleOpCallNode(node: OpCallNode, scope: Scope): TypeNode {
           if (left.type === 'unknown' || right.type === 'unknown') {
             // match always returns a boolean, no matter the compared types.
             return {type: 'boolean'}
+          }
+          // datetime values are not handled by gatherText in the evaluator,
+          // so match always returns false for datetime operands
+          // This includes arrays containing datetime values
+          if (containsDateTime(left) || containsDateTime(right)) {
+            return {type: 'boolean', value: false} satisfies BooleanTypeNode
           }
           return {
             type: 'boolean',

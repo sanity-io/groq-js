@@ -1,4 +1,5 @@
-import type {Value} from '../values'
+import {DateTime, type Value} from '../values'
+import {parseRFC3339} from '../values/dateHelpers'
 
 export function isEqual(a: Value, b: Value): boolean {
   if (
@@ -12,6 +13,20 @@ export function isEqual(a: Value, b: Value): boolean {
 
   if (a.type === 'datetime' && b.type === 'datetime') {
     return a.data.equals(b.data)
+  }
+
+  if (a.type === 'datetime' && b.type === 'string') {
+    const parsed = parseRFC3339(b.data)
+    if (parsed !== null) {
+      return a.data.equals(new DateTime(parsed))
+    }
+  }
+
+  if (a.type === 'string' && b.type === 'datetime') {
+    const parsed = parseRFC3339(a.data)
+    if (parsed !== null) {
+      return b.data.equals(new DateTime(parsed))
+    }
   }
 
   return false
