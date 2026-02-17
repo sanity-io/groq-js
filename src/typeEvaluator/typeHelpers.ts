@@ -189,6 +189,17 @@ export function isDateTime(
   return false
 }
 
+export function containsDateTime(node: TypeNode): boolean {
+  if (isDateTime(node)) return true
+  if (node.type === 'array') {
+    if (isDateTime(node.of)) return true
+    if (node.of.type === 'union') {
+      return node.of.of.some((member) => isDateTime(member))
+    }
+  }
+  return false
+}
+
 export function createGeoJson(type: 'Point' | 'LineString' | 'Polygon' = 'Point'): ObjectTypeNode {
   let coordinateAttribute: ArrayTypeNode = {
     type: 'array',

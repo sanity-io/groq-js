@@ -3914,6 +3914,38 @@ t.test('number + dateTime', (t) => {
   t.end()
 })
 
+t.test('dateTime match always returns false', (t) => {
+  const query = `dateTime::now() match "2024*"`
+  const ast = parse(query)
+  const res = typeEvaluate(ast, schemas)
+  t.same(res, {type: 'boolean', value: false})
+  t.end()
+})
+
+t.test('array containing dateTime match returns false', (t) => {
+  const query = `[dateTime::now()] match ["2024*"]`
+  const ast = parse(query)
+  const res = typeEvaluate(ast, schemas)
+  t.same(res, {type: 'boolean', value: false})
+  t.end()
+})
+
+t.test('array containing dateTime match returns false', (t) => {
+  const query = `[dateTime::now()] match ["2024*"]`
+  const ast = parse(query)
+  const res = typeEvaluate(ast, schemas)
+  t.same(res, {type: 'boolean', value: false})
+  t.end()
+})
+
+t.test('match with dateTime in patterns array returns false', (t) => {
+  const query = `"hello" match [dateTime::now(), "hello"]`
+  const ast = parse(query)
+  const res = typeEvaluate(ast, schemas)
+  t.same(res, {type: 'boolean', value: false})
+  t.end()
+})
+
 function findSchemaType(name: string): TypeNode {
   const type = schemas.find((s) => s.name === name)
   if (!type) {
