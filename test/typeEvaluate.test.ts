@@ -7,6 +7,7 @@ import {
   createObject,
   createObjectAttribute,
   createReferenceTypeNode,
+  dateTimeString,
   nullUnion,
   unionOf,
 } from '../src/typeEvaluator/typeHelpers'
@@ -2338,9 +2339,8 @@ t.test('function: global::round', (t) => {
   t.end()
 })
 
-t.test('function: global::now', (t) => {
+t.test('function: dateTime::now', (t) => {
   const query = `*[_type == "post"] {
-    "now": now(),
     "dateTimeNow": dateTime::now()
   }`
   const ast = parse(query)
@@ -2350,20 +2350,23 @@ t.test('function: global::now', (t) => {
     of: {
       type: 'object',
       attributes: {
-        now: {
-          type: 'objectAttribute',
-          value: {
-            type: 'string',
-          },
-        },
         dateTimeNow: {
           type: 'objectAttribute',
-          value: {
-            type: 'string',
-          },
+          value: dateTimeString(),
         },
       },
     },
+  })
+  t.end()
+})
+
+t.test('function: global::now in filter', (t) => {
+  const query = `*[_type == "post" && publishedAt < now()]`
+  const ast = parse(query)
+  const res = typeEvaluate(ast, schemas)
+  t.strictSame(res, {
+    type: 'array',
+    of: findSchemaType('post'),
   })
   t.end()
 })

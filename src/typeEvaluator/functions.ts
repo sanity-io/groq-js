@@ -142,7 +142,7 @@ export function handleFuncCallNode(node: FuncCallNode, scope: Scope): TypeNode {
       return dateTimeString()
     }
     case 'global.now': {
-      return dateTimeString()
+      return {type: 'string'}
     }
     case 'global.defined': {
       const arg = walk({node: node.args[0], scope})
