@@ -18,9 +18,10 @@ export function satisfies(type: TypeNode, value: unknown): boolean {
       return typeof value === 'number'
     }
     case 'string': {
-      if (type.value !== undefined) return value === type.value
       if (isDateTime(type)) {
-        return value instanceof DateTime
+        if (!(value instanceof DateTime)) return false
+        if (type.value !== undefined) return value.toString() === type.value
+        return true
       }
       return typeof value === 'string'
     }

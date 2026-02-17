@@ -34,6 +34,7 @@ import {extractNarrowingAssertions, narrowNode} from './narrowing'
 import {optimizeUnions} from './optimizations'
 import {Context, Scope} from './scope'
 import {
+  containsDateTime,
   dateTimeString,
   isDateTime,
   isFuncCall,
@@ -611,6 +612,12 @@ function handleOpCallNode(node: OpCallNode, scope: Scope): TypeNode {
           if (left.type === 'unknown' || right.type === 'unknown') {
             // match always returns a boolean, no matter the compared types.
             return {type: 'boolean'}
+          }
+          // datetime values are not handled by gatherText in the evaluator,
+          // so match always returns false for datetime operands
+          // This includes arrays containing datetime values
+          if (containsDateTime(left) || containsDateTime(right)) {
+            return {type: 'boolean', value: false} satisfies BooleanTypeNode
           }
           return {
             type: 'boolean',
