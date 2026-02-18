@@ -5,6 +5,13 @@
 All notable changes to this project will be documented in this file. See
 [Conventional Commits](https://conventionalcommits.org) for commit guidelines.
 
+## [1.27.1](https://github.com/sanity-io/groq-js/compare/v1.27.0...v1.27.1) (2026-02-18)
+
+### Bug Fixes
+
+- **typeEvaluator:** global::now() should return string ([47865dc](https://github.com/sanity-io/groq-js/commit/47865dcc9e76cb0805cb6694455c32abf1b34c2c))
+- **typeEvaluator:** match should return false for dateTimes ([9080a9a](https://github.com/sanity-io/groq-js/commit/9080a9a9310e17d69e060eaa025bd629d4befaf7))
+
 ## [1.27.0](https://github.com/sanity-io/groq-js/compare/v1.26.0...v1.27.0) (2026-02-12)
 
 ### Features
