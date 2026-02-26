@@ -66,10 +66,12 @@ export function createReferenceTypeNode(name: string, inArray: boolean = false):
 
 export function createObject(
   attributes: Record<string, ObjectAttribute<TypeNode>>,
+  extra?: {dereferencesTo?: string; rest?: ObjectTypeNode},
 ): ObjectTypeNode {
   return {
     type: 'object',
     attributes,
+    ...extra,
   } satisfies ObjectTypeNode
 }
 
@@ -109,11 +111,39 @@ export function unionOf(...nodes: TypeNode[]): TypeNode {
   } satisfies UnionTypeNode
 }
 
+export function arrayOf(of: TypeNode): TypeNode {
+  return {of, type: 'array'}
+}
+
 export function dateTimeString(): StringTypeNode {
   return {
     type: 'string',
     [STRING_TYPE_DATETIME]: true,
   }
+}
+
+export function stringNode(value?: string): TypeNode {
+  return value === undefined ? {type: 'string'} : {type: 'string', value}
+}
+
+export function numberNode(value?: number): TypeNode {
+  return value === undefined ? {type: 'number'} : {type: 'number', value}
+}
+
+export function booleanNode(value?: boolean): TypeNode {
+  return value === undefined ? {type: 'boolean'} : {type: 'boolean', value}
+}
+
+export function nullNode(): TypeNode {
+  return {type: 'null'}
+}
+
+export function unknownNode(): TypeNode {
+  return {type: 'unknown'}
+}
+
+export function inlineNode(name: string): TypeNode {
+  return {name, type: 'inline'}
 }
 
 export type ConcreteTypeNode =

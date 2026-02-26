@@ -1,54 +1,18 @@
 import t from 'tap'
 
 import {hashTypeNode} from '../src/typeEvaluator/optimizations'
-import type {ObjectTypeNode, TypeNode} from '../src/typeEvaluator/types'
-
-// helpers for building TypeNode trees
-function str(value?: string): TypeNode {
-  return value === undefined ? {type: 'string'} : {type: 'string', value}
-}
-
-function num(value?: number): TypeNode {
-  return value === undefined ? {type: 'number'} : {type: 'number', value}
-}
-
-function bool(value?: boolean): TypeNode {
-  return value === undefined ? {type: 'boolean'} : {type: 'boolean', value}
-}
-
-function nullNode(): TypeNode {
-  return {type: 'null'}
-}
-
-function unknown(): TypeNode {
-  return {type: 'unknown'}
-}
-
-function inline(name: string): TypeNode {
-  return {name, type: 'inline'}
-}
-
-function arr(of: TypeNode): TypeNode {
-  return {of, type: 'array'}
-}
-
-function union(...of: TypeNode[]): TypeNode {
-  return {of, type: 'union'}
-}
-
-function attr(
-  value: TypeNode,
-  optional?: boolean,
-): {optional?: boolean; type: 'objectAttribute'; value: TypeNode} {
-  return optional ? {optional, type: 'objectAttribute', value} : {type: 'objectAttribute', value}
-}
-
-function obj(
-  attributes: Record<string, {optional?: boolean; type: 'objectAttribute'; value: TypeNode}>,
-  extra?: {dereferencesTo?: string; rest?: ObjectTypeNode},
-): ObjectTypeNode {
-  return {attributes, type: 'object', ...extra}
-}
+import {
+  arrayOf as arr,
+  booleanNode as bool,
+  createObject as obj,
+  createObjectAttribute as attr,
+  inlineNode as inline,
+  nullNode,
+  numberNode as num,
+  stringNode as str,
+  unionOf as union,
+  unknownNode as unknown,
+} from '../src/typeEvaluator/typeHelpers'
 
 t.test('hashTypeNode', async (t) => {
   t.test('primitives without values', async (t) => {
