@@ -3,15 +3,25 @@ import type {FuncCallNode} from '../nodeTypes'
 import {optimizeUnions} from './optimizations'
 import type {Scope} from './scope'
 import {walk} from './typeEvaluate'
-import {createGeoJson, dateTimeString, isString, mapNode, nullUnion} from './typeHelpers'
-import {type NullTypeNode, type TypeNode} from './types'
+import {
+  arrayOf,
+  booleanNode,
+  createGeoJson,
+  dateTimeStringNode,
+  isString,
+  mapNode,
+  nullNode,
+  nullUnion,
+  numberNode,
+  stringNode,
+  unionOf,
+  unknownNode,
+} from './typeHelpers'
+import {type TypeNode} from './types'
 
 function unionWithoutNull(unionTypeNode: TypeNode): TypeNode {
   if (unionTypeNode.type === 'union') {
-    return {
-      type: 'union',
-      of: unionTypeNode.of.filter((type) => type.type !== 'null'),
-    }
+    return unionOf(...unionTypeNode.of.filter((type) => type.type !== 'null'))
   }
   return unionTypeNode
 }
@@ -24,17 +34,14 @@ export function handleFuncCallNode(node: FuncCallNode, scope: Scope): TypeNode {
 
       return mapNode(arg, scope, (arg) => {
         if (arg.type === 'unknown') {
-          return nullUnion({type: 'array', of: {type: 'unknown'}})
+          return nullUnion(arrayOf(unknownNode()))
         }
         if (arg.type !== 'array') {
-          return {type: 'null'}
+          return nullNode()
         }
 
         const of = mapNode(arg.of, scope, (of) => of)
-        return {
-          type: 'array',
-          of: unionWithoutNull(of),
-        }
+        return arrayOf(unionWithoutNull(of))
       })
     }
 
@@ -45,22 +52,22 @@ export function handleFuncCallNode(node: FuncCallNode, scope: Scope): TypeNode {
       return mapNode(arrayArg, scope, (arrayArg) =>
         mapNode(sepArg, scope, (sepArg) => {
           if (arrayArg.type === 'unknown' || sepArg.type === 'unknown') {
-            return nullUnion({type: 'string'})
+            return nullUnion(stringNode())
           }
           if (arrayArg.type !== 'array' || !isString(sepArg)) {
-            return {type: 'null'}
+            return nullNode()
           }
 
           return mapNode(arrayArg.of, scope, (of) => {
             if (of.type === 'unknown') {
-              return nullUnion({type: 'string'})
+              return nullUnion(stringNode())
             }
             // we can only join strings, numbers, and booleans
             if (of.type !== 'string' && of.type !== 'number' && of.type !== 'boolean') {
-              return {type: 'null'}
+              return nullNode()
             }
 
-            return {type: 'string'}
+            return stringNode()
           })
         }),
       )
@@ -71,10 +78,10 @@ export function handleFuncCallNode(node: FuncCallNode, scope: Scope): TypeNode {
 
       return mapNode(arg, scope, (arg) => {
         if (arg.type === 'unknown') {
-          return nullUnion({type: 'array', of: {type: 'unknown'}})
+          return nullUnion(arrayOf(unknownNode()))
         }
         if (arg.type !== 'array') {
-          return {type: 'null'}
+          return nullNode()
         }
 
         return arg
@@ -88,14 +95,14 @@ export function handleFuncCallNode(node: FuncCallNode, scope: Scope): TypeNode {
       return mapNode(arg1, scope, (arg1) =>
         mapNode(arg2, scope, (arg2) => {
           if (arg1.type !== 'array') {
-            return {type: 'null'}
+            return nullNode()
           }
 
           if (arg2.type !== 'array') {
-            return {type: 'null'}
+            return nullNode()
           }
 
-          return {type: 'boolean'}
+          return booleanNode()
         }),
       )
     }
@@ -105,18 +112,15 @@ export function handleFuncCallNode(node: FuncCallNode, scope: Scope): TypeNode {
 
       return mapNode(arg, scope, (arg) => {
         if (arg.type === 'unknown') {
-          return nullUnion({type: 'string'})
+          return nullUnion(stringNode())
         }
         if (!isString(arg)) {
-          return {type: 'null'}
+          return nullNode()
         }
         if (arg.value !== undefined) {
-          return {
-            type: 'string',
-            value: arg.value.toLowerCase(),
-          }
+          return stringNode(arg.value.toLowerCase())
         }
-        return {type: 'string'}
+        return stringNode()
       })
     }
     case 'global.upper': {
@@ -124,53 +128,50 @@ export function handleFuncCallNode(node: FuncCallNode, scope: Scope): TypeNode {
 
       return mapNode(arg, scope, (arg) => {
         if (arg.type === 'unknown') {
-          return nullUnion({type: 'string'})
+          return nullUnion(stringNode())
         }
         if (!isString(arg)) {
-          return {type: 'null'}
+          return nullNode()
         }
         if (arg.value !== undefined) {
-          return {
-            type: 'string',
-            value: arg.value.toUpperCase(),
-          }
+          return stringNode(arg.value.toUpperCase())
         }
-        return {type: 'string'}
+        return stringNode()
       })
     }
     case 'dateTime.now': {
-      return dateTimeString()
+      return dateTimeStringNode()
     }
     case 'global.now': {
-      return {type: 'string'}
+      return stringNode()
     }
     case 'global.defined': {
       const arg = walk({node: node.args[0], scope})
       return mapNode(arg, scope, (node) => {
         if (node.type === 'unknown') {
-          return {type: 'boolean'}
+          return booleanNode()
         }
 
-        return {type: 'boolean', value: node.type !== 'null'}
+        return booleanNode(node.type !== 'null')
       })
     }
     case 'global.path': {
       const arg = walk({node: node.args[0], scope})
       return mapNode(arg, scope, (arg) => {
         if (arg.type === 'unknown') {
-          return nullUnion({type: 'string'})
+          return nullUnion(stringNode())
         }
 
         if (arg.type === 'string') {
-          return {type: 'string'}
+          return stringNode()
         }
 
-        return {type: 'null'}
+        return nullNode()
       })
     }
     case 'global.coalesce': {
       if (node.args.length === 0) {
-        return {type: 'null'} satisfies NullTypeNode
+        return nullNode()
       }
       const typeNodes: TypeNode[] = []
       let canBeNull = true
@@ -202,13 +203,10 @@ export function handleFuncCallNode(node: FuncCallNode, scope: Scope): TypeNode {
 
       // If the last argument can be null, we add null to the union
       if (canBeNull) {
-        typeNodes.push({type: 'null'} satisfies NullTypeNode)
+        typeNodes.push(nullNode())
       }
 
-      return {
-        type: 'union',
-        of: typeNodes,
-      }
+      return unionOf(...typeNodes)
     }
 
     case 'global.count': {
@@ -216,14 +214,14 @@ export function handleFuncCallNode(node: FuncCallNode, scope: Scope): TypeNode {
 
       return mapNode(arg, scope, (arg) => {
         if (arg.type === 'unknown') {
-          return nullUnion({type: 'string'})
+          return nullUnion(stringNode())
         }
 
         if (arg.type === 'array') {
-          return {type: 'number'}
+          return numberNode()
         }
 
-        return {type: 'null'} satisfies NullTypeNode
+        return nullNode()
       })
     }
 
@@ -232,15 +230,15 @@ export function handleFuncCallNode(node: FuncCallNode, scope: Scope): TypeNode {
 
       return mapNode(arg, scope, (arg) => {
         if (arg.type === 'unknown') {
-          return nullUnion(dateTimeString())
+          return nullUnion(dateTimeStringNode())
         }
 
         if (arg.type === 'string') {
           // we don't know whether the string is a valid date or not, so we return a [null, string]-union
-          return nullUnion(dateTimeString())
+          return nullUnion(dateTimeStringNode())
         }
 
-        return {type: 'null'} satisfies NullTypeNode
+        return nullNode()
       })
     }
 
@@ -249,18 +247,18 @@ export function handleFuncCallNode(node: FuncCallNode, scope: Scope): TypeNode {
 
       return mapNode(arg, scope, (arg) => {
         if (arg.type === 'unknown') {
-          return nullUnion({type: 'number'})
+          return nullUnion(numberNode())
         }
         if (arg.type === 'array' || isString(arg)) {
-          return {type: 'number'}
+          return numberNode()
         }
 
-        return {type: 'null'}
+        return nullNode()
       })
     }
 
     case 'global.references': {
-      return {type: 'boolean'}
+      return booleanNode()
     }
 
     case 'global.round': {
@@ -268,28 +266,28 @@ export function handleFuncCallNode(node: FuncCallNode, scope: Scope): TypeNode {
 
       return mapNode(numNode, scope, (num) => {
         if (num.type === 'unknown') {
-          return nullUnion({type: 'number'})
+          return nullUnion(numberNode())
         }
 
         if (num.type !== 'number') {
-          return {type: 'null'}
+          return nullNode()
         }
         if (node.args.length === 2) {
           const precisionNode = walk({node: node.args[1], scope})
           return mapNode(precisionNode, scope, (precision) => {
             if (precision.type === 'unknown') {
-              return nullUnion({type: 'number'})
+              return nullUnion(numberNode())
             }
 
             if (precision.type !== 'number') {
-              return {type: 'null'}
+              return nullNode()
             }
 
-            return {type: 'number'}
+            return numberNode()
           })
         }
 
-        return {type: 'number'}
+        return numberNode()
       })
     }
 
@@ -297,23 +295,18 @@ export function handleFuncCallNode(node: FuncCallNode, scope: Scope): TypeNode {
       const arg = walk({node: node.args[0], scope})
       return mapNode(arg, scope, (node) => {
         if (node.type === 'unknown') {
-          return nullUnion({type: 'string'})
+          return nullUnion(stringNode())
         }
 
         if (node.type === 'string' || node.type === 'number' || node.type === 'boolean') {
           if (node.value) {
-            return {
-              type: 'string',
-              value: node.value.toString(),
-            }
+            return stringNode(node.value.toString())
           }
 
-          return {
-            type: 'string',
-          }
+          return stringNode()
         }
 
-        return {type: 'null'}
+        return nullNode()
       })
     }
 
@@ -322,25 +315,25 @@ export function handleFuncCallNode(node: FuncCallNode, scope: Scope): TypeNode {
       // use mapNode to get concrete resolved value, it will also handle cases where the value is a union
       return mapNode(values, scope, (node) => {
         if (node.type === 'unknown') {
-          return nullUnion({type: 'number'})
+          return nullUnion(numberNode())
         }
 
         // Aggregate functions can only be applied to arrays
         if (node.type !== 'array') {
-          return {type: 'null'}
+          return nullNode()
         }
 
         // Resolve the concrete type of the array elements
         return mapNode(node.of, scope, (node) => {
           if (node.type === 'unknown') {
-            return nullUnion({type: 'number'})
+            return nullUnion(numberNode())
           }
 
           // Math functions can only be applied to numbers, but we should also ignore nulls
           if (node.type === 'number' || node.type === 'null') {
-            return {type: 'number'}
+            return numberNode()
           }
-          return {type: 'null'}
+          return nullNode()
         })
       })
     }
@@ -350,24 +343,24 @@ export function handleFuncCallNode(node: FuncCallNode, scope: Scope): TypeNode {
       // use mapNode to get concrete resolved value, it will also handle cases where the value is a union
       return mapNode(values, scope, (node) => {
         if (node.type === 'unknown') {
-          return nullUnion({type: 'number'})
+          return nullUnion(numberNode())
         }
 
         // Aggregate functions can only be applied to arrays
         if (node.type !== 'array') {
-          return {type: 'null'}
+          return nullNode()
         }
         // Resolve the concrete type of the array elements
         return mapNode(node.of, scope, (node) => {
           if (node.type === 'unknown') {
-            return nullUnion({type: 'number'})
+            return nullUnion(numberNode())
           }
 
           // Math functions can only be applied to numbers
           if (node.type === 'number') {
-            return {type: 'number'}
+            return numberNode()
           }
-          return {type: 'null'}
+          return nullNode()
         })
       })
     }
@@ -378,36 +371,34 @@ export function handleFuncCallNode(node: FuncCallNode, scope: Scope): TypeNode {
       // use mapNode to get concrete resolved value, it will also handle cases where the value is a union
       return mapNode(values, scope, (node) => {
         if (node.type === 'unknown') {
-          return nullUnion({type: 'number'})
+          return nullUnion(numberNode())
         }
 
         // Aggregate functions can only be applied to arrays
         if (node.type !== 'array') {
-          return {type: 'null'}
+          return nullNode()
         }
 
         // Resolve the concrete type of the array elements
         return mapNode(node.of, scope, (node) => {
           if (node.type === 'unknown') {
-            return nullUnion({type: 'number'})
+            return nullUnion(numberNode())
           }
 
           // Math functions can only be applied to numbers
           if (node.type === 'number') {
             return node
           }
-          return {type: 'null'}
+          return nullNode()
         })
       })
     }
 
     case 'pt.text': {
       if (node.args.length === 0) {
-        return {type: 'null'} satisfies NullTypeNode
+        return nullNode()
       }
-      return {
-        type: 'string',
-      }
+      return stringNode()
     }
 
     case 'string.startsWith': {
@@ -416,14 +407,14 @@ export function handleFuncCallNode(node: FuncCallNode, scope: Scope): TypeNode {
       return mapNode(strTypeNode, scope, (strNode) => {
         return mapNode(prefixTypeNode, scope, (prefixNode) => {
           if (strNode.type === 'unknown' || prefixNode.type === 'unknown') {
-            return nullUnion({type: 'boolean'})
+            return nullUnion(booleanNode())
           }
 
           if (strNode.type !== 'string' || prefixNode.type !== 'string') {
-            return {type: 'null'}
+            return nullNode()
           }
 
-          return {type: 'boolean'}
+          return booleanNode()
         })
       })
     }
@@ -433,14 +424,14 @@ export function handleFuncCallNode(node: FuncCallNode, scope: Scope): TypeNode {
       return mapNode(strTypeNode, scope, (strNode) => {
         return mapNode(sepTypeNode, scope, (sepNode) => {
           if (strNode.type === 'unknown' || sepNode.type === 'unknown') {
-            return nullUnion({type: 'array', of: {type: 'string'}})
+            return nullUnion(arrayOf(stringNode()))
           }
 
           if (strNode.type !== 'string' || sepNode.type !== 'string') {
-            return {type: 'null'}
+            return nullNode()
           }
 
-          return {type: 'array', of: {type: 'string'}}
+          return arrayOf(stringNode())
         })
       })
     }
@@ -453,7 +444,7 @@ export function handleFuncCallNode(node: FuncCallNode, scope: Scope): TypeNode {
             return nullUnion(createGeoJson())
           }
           if (latNode.type !== 'number' || lngNode.type !== 'number') {
-            return {type: 'null'}
+            return nullNode()
           }
 
           return nullUnion(createGeoJson())
@@ -461,37 +452,37 @@ export function handleFuncCallNode(node: FuncCallNode, scope: Scope): TypeNode {
       })
     }
     case 'geo.contains': {
-      return nullUnion({type: 'boolean'})
+      return nullUnion(booleanNode())
     }
     case 'geo.intersects': {
-      return nullUnion({type: 'boolean'})
+      return nullUnion(booleanNode())
     }
     case 'geo.distance': {
-      return nullUnion({type: 'number'})
+      return nullUnion(numberNode())
     }
     case 'sanity.versionOf': {
       const typeNode = walk({node: node.args[0], scope})
       return mapNode(typeNode, scope, (typeNode) => {
         if (typeNode.type === 'unknown') {
-          return nullUnion({type: 'boolean'})
+          return nullUnion(booleanNode())
         }
         if (typeNode.type !== 'string') {
-          return {type: 'null'}
+          return nullNode()
         }
-        return {type: 'boolean'}
+        return booleanNode()
       })
     }
     case 'sanity.partOfRelease': {
       const typeNode = walk({node: node.args[0], scope})
       return mapNode(typeNode, scope, (typeNode) => {
         if (typeNode.type === 'unknown') {
-          return nullUnion({type: 'boolean'})
+          return nullUnion(booleanNode())
         }
 
         if (typeNode.type !== 'string') {
-          return {type: 'null'}
+          return nullNode()
         }
-        return {type: 'boolean'}
+        return booleanNode()
       })
     }
     case 'documents.get': {
@@ -502,38 +493,38 @@ export function handleFuncCallNode(node: FuncCallNode, scope: Scope): TypeNode {
         }
 
         if (typeNode.type !== 'object') {
-          return {type: 'null'}
+          return nullNode()
         }
 
-        return {type: 'unknown'}
+        return unknownNode()
       })
     }
     case 'documents.incomingRefCount': {
-      return {type: 'number'}
+      return numberNode()
     }
     case 'documents.incomingGlobalDocumentReferenceCount': {
-      return {type: 'number'}
+      return numberNode()
     }
     case 'media.aspect': {
       return mapNode(walk({node: node.args[0], scope}), scope, (fieldNode) => {
         if (fieldNode.type === 'null') {
-          return {type: 'null'}
+          return nullNode()
         }
 
         return mapNode(walk({node: node.args[1], scope}), scope, (aspectNode) => {
           if (aspectNode.type !== 'string') {
-            return {type: 'null'}
+            return nullNode()
           }
 
-          return {type: 'unknown'}
+          return unknownNode()
         })
       })
     }
     case 'user.attributes': {
-      return {type: 'unknown'}
+      return unknownNode()
     }
     default: {
-      return {type: 'unknown'}
+      return unknownNode()
     }
   }
 }
