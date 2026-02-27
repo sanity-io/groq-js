@@ -3,11 +3,12 @@ import t from 'tap'
 import {parse} from '../src/parser'
 import {typeEvaluate} from '../src/typeEvaluator/typeEvaluate'
 import {
+  booleanNode,
   createGeoJson,
   createObject,
   createObjectAttribute,
   createReferenceTypeNode,
-  dateTimeString,
+  dateTimeStringNode,
   nullUnion,
   unionOf,
 } from '../src/typeEvaluator/typeHelpers'
@@ -859,7 +860,6 @@ t.test('values in projection', (t) => {
           type: 'objectAttribute',
           value: {
             type: 'number',
-            value: undefined,
           },
         },
         minus: {
@@ -1307,10 +1307,7 @@ t.test('subquery', (t) => {
               attributes: {
                 publishedAfterAuthor: {
                   type: 'objectAttribute',
-                  value: nullUnion({
-                    type: 'boolean',
-                    value: undefined,
-                  }),
+                  value: nullUnion(booleanNode()),
                 },
               },
             },
@@ -1346,7 +1343,6 @@ t.test('string concetnation', (t) => {
           type: 'objectAttribute',
           value: {
             type: 'string',
-            value: undefined,
           },
         },
       },
@@ -2352,7 +2348,7 @@ t.test('function: dateTime::now', (t) => {
       attributes: {
         dateTimeNow: {
           type: 'objectAttribute',
-          value: dateTimeString(),
+          value: dateTimeStringNode(),
         },
       },
     },
@@ -3898,7 +3894,7 @@ t.test('dateTime with numerical operation', (t) => {
   const res = typeEvaluate(ast, schemas)
   t.same(res, {
     type: 'union',
-    of: [{type: 'boolean', value: undefined}, {type: 'null'}],
+    of: [{type: 'boolean'}, {type: 'null'}],
   })
   t.end()
 })
@@ -3909,7 +3905,7 @@ t.test('number + dateTime', (t) => {
   const res = typeEvaluate(ast, schemas)
   t.same(res, {
     type: 'union',
-    of: [{type: 'boolean', value: undefined}, {type: 'null'}],
+    of: [{type: 'boolean'}, {type: 'null'}],
   })
   t.end()
 })

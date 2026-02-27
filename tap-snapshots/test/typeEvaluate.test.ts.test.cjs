@@ -4,7 +4,7 @@
  * Re-generate by setting TAP_SNAPSHOT=1 and running tests.
  * Make sure to inspect the output below.  Do not ignore changes!
  */
-'use strict'
+
 exports[`test/typeEvaluate.test.ts TAP InRange > must match snapshot 1`] = `
 Object {
   "of": Object {
@@ -322,7 +322,6 @@ Object {
         "type": "objectAttribute",
         "value": Object {
           "type": "string",
-          "value": undefined,
         },
       },
       "collaborators": Object {
