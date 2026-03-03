@@ -97,28 +97,12 @@ Object {
         Object {
           "args": Array [
             Object {
-              "name": "embedding",
-              "type": "AccessAttribute",
-            },
-            Object {
-              "args": Array [
-                Object {
-                  "type": "Value",
-                  "value": "monster",
-                },
-              ],
-              "func": Object {
-                "arity": 1,
-                "executeAsync": AsyncFunction executeAsync(node, scope),
-                "executeSync": Function executeSync(node, scope),
-              },
-              "name": "embedding",
-              "namespace": "text",
-              "type": "FuncCall",
+              "type": "Value",
+              "value": "monster",
             },
           ],
           "func": Object {
-            "arity": 2,
+            "arity": 1,
             "executeAsync": AsyncFunction executeAsync(node, scope),
             "executeSync": Function executeSync(node, scope),
           },
