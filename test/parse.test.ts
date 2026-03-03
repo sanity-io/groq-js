@@ -55,6 +55,12 @@ t.test('Basic parsing', async (t) => {
     const tree = parse(query)
     t.matchSnapshot(tree)
   })
+
+  t.test('Can parse text::semanticSimilarity', async (t) => {
+    const query = `*[_type == "book"] | score(text::semanticSimilarity(embedding, text::embedding("monster")))[0..4] { _id, _score }`
+    const tree = parse(query)
+    t.matchSnapshot(tree)
+  })
 })
 
 t.test('Error reporting', async (t) => {

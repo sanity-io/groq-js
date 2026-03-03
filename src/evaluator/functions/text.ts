@@ -18,4 +18,9 @@ text['embedding'] = constantExecutor(() => {
 })
 text['embedding'].arity = 1
 
+text['semanticSimilarity'] = constantExecutor(() => {
+  throw new Error('not implemented')
+})
+text['semanticSimilarity'].arity = 2
+
 export default text
