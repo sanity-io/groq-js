@@ -11,6 +11,7 @@ export type {
 export * from './nodeTypes'
 export {parse} from './parser'
 export type {ParseOptions} from './types'
+export {unparse} from './unparse'
 export type {
   AnyStaticValue,
   ArrayValue,
