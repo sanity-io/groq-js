@@ -5,6 +5,12 @@
 All notable changes to this project will be documented in this file. See
 [Conventional Commits](https://conventionalcommits.org) for commit guidelines.
 
+## [1.28.0](https://github.com/sanity-io/groq-js/compare/v1.27.1...v1.28.0) (2026-03-04)
+
+### Features
+
+- **parser:** add support for parsing text::semanticSimilarity ([#335](https://github.com/sanity-io/groq-js/issues/335)) ([ccf4df9](https://github.com/sanity-io/groq-js/commit/ccf4df9bfd7717e3d3b94f0334ebc11b82be8a53))
+
 ## [1.27.1](https://github.com/sanity-io/groq-js/compare/v1.27.0...v1.27.1) (2026-02-18)
 
 ### Bug Fixes
