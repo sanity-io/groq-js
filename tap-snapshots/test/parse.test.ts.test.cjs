@@ -5,7 +5,7 @@
  * Make sure to inspect the output below.  Do not ignore changes!
  */
 'use strict'
-exports[`test/parse.test.ts TAP Basic parsing Can parse text::embedding > must match snapshot 1`] = `
+exports[`test/parse.test.ts TAP Basic parsing Can parse text::semanticSimilarity > must match snapshot 1`] = `
 Object {
   "base": Object {
     "base": Object {
@@ -22,7 +22,7 @@ Object {
             "executeAsync": AsyncFunction executeAsync(node, scope),
             "executeSync": Function executeSync(node, scope),
           },
-          "name": "embedding",
+          "name": "semanticSimilarity",
           "namespace": "text",
           "type": "FuncCall",
         },

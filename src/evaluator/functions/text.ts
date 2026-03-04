@@ -13,9 +13,9 @@ text['query'] = constantExecutor(() => {
 })
 text['query'].arity = 1
 
-text['embedding'] = constantExecutor(() => {
+text['semanticSimilarity'] = constantExecutor(() => {
   throw new Error('not implemented')
 })
-text['embedding'].arity = 1
+text['semanticSimilarity'].arity = 1
 
 export default text
