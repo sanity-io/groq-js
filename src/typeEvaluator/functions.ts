@@ -469,6 +469,10 @@ export function handleFuncCallNode(node: FuncCallNode, scope: Scope): TypeNode {
     case 'geo.distance': {
       return nullUnion({type: 'number'})
     }
+    case 'sanity.projectId':
+    case 'sanity.dataset': {
+      return nullUnion({type: 'string'})
+    }
     case 'sanity.versionOf': {
       const typeNode = walk({node: node.args[0], scope})
       return mapNode(typeNode, scope, (typeNode) => {
