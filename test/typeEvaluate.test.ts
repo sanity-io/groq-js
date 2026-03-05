@@ -3605,6 +3605,30 @@ t.test('splat on optional object', (t) => {
   t.end()
 })
 
+t.test('function: sanity::projectId', (t) => {
+  const query = `sanity::projectId()`
+  const ast = parse(query)
+  const res = typeEvaluate(ast, schemas)
+
+  t.strictSame(res, {
+    type: 'union',
+    of: [{type: 'string'}, {type: 'null'}],
+  })
+  t.end()
+})
+
+t.test('function: sanity::dataset', (t) => {
+  const query = `sanity::dataset()`
+  const ast = parse(query)
+  const res = typeEvaluate(ast, schemas)
+
+  t.strictSame(res, {
+    type: 'union',
+    of: [{type: 'string'}, {type: 'null'}],
+  })
+  t.end()
+})
+
 t.test('function: sanity::versionOf', (t) => {
   const query = `{
     "versions": *[_type == "author" && sanity::versionOf("foo")]._id
