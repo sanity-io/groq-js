@@ -5,6 +5,12 @@
 All notable changes to this project will be documented in this file. See
 [Conventional Commits](https://conventionalcommits.org) for commit guidelines.
 
+## [1.29.0](https://github.com/sanity-io/groq-js/compare/v1.28.0...v1.29.0) (2026-03-06)
+
+### Features
+
+- **typeEvaluator:** add support for `sanity::projectId()` and `sanity::dataset()` ([#339](https://github.com/sanity-io/groq-js/issues/339)) ([ceadaa6](https://github.com/sanity-io/groq-js/commit/ceadaa69c6723eba632fefdaa9922991a49f70d1))
+
 ## [1.28.0](https://github.com/sanity-io/groq-js/compare/v1.27.1...v1.28.0) (2026-03-04)
 
 ### Features
