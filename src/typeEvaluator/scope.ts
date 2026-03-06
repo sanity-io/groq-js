@@ -1,6 +1,7 @@
 import debug from 'debug'
 
-import type {InlineTypeNode, NullTypeNode, Schema, TypeNode, UnionTypeNode} from './types'
+import {createObject as objectNode, nullNode} from './typeHelpers'
+import type {InlineTypeNode, Schema, TypeNode, UnionTypeNode} from './types'
 
 const $trace = debug('typeEvaluator:scope:trace')
 $trace.log = console.log.bind(console) // eslint-disable-line no-console
@@ -16,14 +17,11 @@ export class Context {
     for (const val of this.schema) {
       if (val.type === 'document') {
         if (val.name === refTo) {
-          return {
-            type: 'object',
-            attributes: val.attributes,
-          }
+          return objectNode(val.attributes)
         }
       }
     }
-    return {type: 'null'} satisfies NullTypeNode
+    return nullNode()
   }
 
   lookupTypeDeclaration(alias: InlineTypeNode): TypeNode {
@@ -34,7 +32,7 @@ export class Context {
         }
       }
     }
-    return {type: 'null'} satisfies NullTypeNode
+    return nullNode()
   }
 }
 
