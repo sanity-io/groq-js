@@ -81,7 +81,7 @@
     "@sanity/prettier-config": "^3.0.0",
     "@sanity/semantic-release-preset": "^5.0.0",
     "@types/debug": "^4.1.12",
-    "@types/tap": "^15.0.12",
+    "@types/tap": "^18.0.0",
     "@typescript-eslint/eslint-plugin": "^7.18.0",
     "@typescript-eslint/parser": "^7.18.0",
     "eslint": "^8.57.1",
@@ -94,7 +94,7 @@
     "rimraf": "^5.0.0",
     "semantic-release": "^24.2.0",
     "semver": "^7.5.4",
-    "tap": "^16.3.10",
+    "tap": "^18.8.0",
     "tsx": "^4.19.2",
     "typescript": "5.8.3"
   },
