@@ -1,3 +1,4 @@
+import {type GroqFunctionArity} from '../../functionRegistry'
 import {type ExprNode} from '../../nodeTypes'
 import {type ArrayValue, StreamValue} from '../../values'
 import type {Executor} from '../types'
@@ -28,7 +29,7 @@ export type WithOptions<T> = T & {
   mode?: 'normal' | 'delta'
 }
 
-export type GroqFunctionArity = number | ((count: number) => boolean)
+export type {GroqFunctionArity}
 
 /** @public */
 export type GroqFunction = Executor<GroqFunctionArg[]>
