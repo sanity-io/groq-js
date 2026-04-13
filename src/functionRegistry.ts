@@ -1,15 +1,3 @@
-/**
- * Lightweight function metadata registry for GROQ functions.
- *
- * This file contains only metadata (name, arity, mode) - no function
- * implementations. It exists so the parser can validate function calls
- * without importing the evaluator.
- *
- * IMPORTANT: This file must have ZERO imports from ./evaluator/ or
- * any other module. It is pure data and types.
- */
-
-/** @public */
 export type GroqFunctionArity = number | ((count: number) => boolean)
 
 export interface FunctionRegistryEntry {

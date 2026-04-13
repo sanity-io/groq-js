@@ -16,24 +16,20 @@ export default defineConfig({
         const relative = id.split('/src/').pop()
         if (!relative || relative === id) return undefined
 
-        // Evaluator modules also used by non-evaluator code (type evaluator,
-        // parser) must stay in the shared chunk to avoid circular deps.
-        const evaluatorShared = [
-          'evaluator/types',
-          'evaluator/matching',
-          'evaluator/operators',
-          'evaluator/ordering',
-          'evaluator/equality',
-        ]
+        // evaluator/matching is also used by the type evaluator, so it
+        // must be in the shared chunk to avoid a circular dependency.
+        if (relative.startsWith('evaluator/matching')) {
+          return 'shared'
+        }
 
         if (
           relative.startsWith('evaluator/') &&
-          !evaluatorShared.some((prefix) => relative.startsWith(prefix))
+          !relative.startsWith('evaluator/types')
         ) {
           return 'evaluator'
         }
+
         if (
-          evaluatorShared.some((prefix) => relative.startsWith(prefix)) ||
           relative.startsWith('values') ||
           relative === 'nodeTypes.ts' ||
           relative === 'functionRegistry.ts' ||
