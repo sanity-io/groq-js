@@ -1,5 +1,3 @@
-import type {GroqFunction, GroqPipeFunction} from './evaluator/functions'
-
 /** Any sort of node which appears as syntax */
 export type SyntaxNode = ExprNode | ArrayElementNode | ObjectAttributeNode | SelectAlternativeNode
 
@@ -115,7 +113,6 @@ export interface EverythingNode extends BaseNode {
 
 export interface FuncCallNode extends BaseNode {
   type: 'FuncCall'
-  func: GroqFunction
   namespace: string
   name: string
   args: ExprNode[]
@@ -191,7 +188,6 @@ export interface ParentNode extends BaseNode {
 
 export interface PipeFuncCallNode extends BaseNode {
   type: 'PipeFuncCall'
-  func: GroqPipeFunction
   base: ExprNode
   name: string
   args: ExprNode[]
