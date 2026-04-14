@@ -14,7 +14,6 @@ math['min'] = arrayReducerExecutor(
   },
   (n) => (n === undefined ? NULL_VALUE : fromNumber(n)),
 )
-math['min'].arity = 1
 
 math['max'] = arrayReducerExecutor(
   (args) => ({array: args[0]!}),
@@ -27,7 +26,6 @@ math['max'] = arrayReducerExecutor(
   },
   (n) => (n === undefined ? NULL_VALUE : fromNumber(n)),
 )
-math['max'].arity = 1
 
 math['sum'] = arrayReducerExecutor(
   (args) => ({array: args[0]!}),
@@ -39,7 +37,6 @@ math['sum'] = arrayReducerExecutor(
   },
   fromNumber,
 )
-math['sum'].arity = 1
 
 math['avg'] = arrayReducerExecutor(
   (args) => ({array: args[0]!}),
@@ -51,6 +48,5 @@ math['avg'] = arrayReducerExecutor(
   },
   ({count, sum}) => (count === 0 ? NULL_VALUE : fromNumber(sum / count)),
 )
-math['avg'].arity = 1
 
 export default math

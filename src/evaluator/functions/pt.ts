@@ -17,6 +17,4 @@ pt['text'] = mappedExecutor(
   },
 )
 
-pt['text'].arity = 1
-
 export default pt

@@ -90,6 +90,15 @@ Semantic release will only release on configured branches, so it is safe to run 
 Note: commits with `chore:` will be ignored. If you want updated dependencies to trigger
 a new version, use `fix(deps):` instead.
 
+## Adding a new GROQ function
+
+To add a new function (e.g. `string::trim`):
+
+1. **Register metadata** in `src/functionRegistry.ts` - add an entry to the appropriate namespace with its arity and mode. This is what the parser uses to validate function calls.
+2. **Add the implementation** in `src/evaluator/functions/<namespace>.ts` - implement `executeSync` and `executeAsync`.
+3. **Add tests** - test both parsing and evaluation. Run `npm test` to verify.
+4. For **pipe functions** (used with `|`), add to `pipeFunctionRegistry` in the registry and implement in `src/evaluator/functions/pipeFunctions.ts`.
+
 ## License
 
 MIT © [Sanity.io](https://www.sanity.io/)
