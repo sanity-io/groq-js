@@ -9,7 +9,7 @@ export type {
   Executor,
 } from './evaluator/types'
 export * from './nodeTypes'
-export {parse} from './parser'
+export {GroqSyntaxError, parse} from './parser'
 export type {ParseOptions} from './types'
 export {unparse} from './unparse'
 export type {
