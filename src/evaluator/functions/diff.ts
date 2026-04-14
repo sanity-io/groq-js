@@ -96,7 +96,6 @@ diff['changedAny'] = asyncOnlyExecutor(async (args, scope) => {
 
   return changedAny(before, after, selector, scope)
 })
-diff['changedAny'].arity = 3
 
 diff['changedOnly'] = asyncOnlyExecutor(async (args, scope) => {
   const lhs = args[0]
@@ -109,6 +108,5 @@ diff['changedOnly'] = asyncOnlyExecutor(async (args, scope) => {
 
   return changedOnly(before, after, selector, scope)
 })
-diff['changedOnly'].arity = 3
 
 export default diff

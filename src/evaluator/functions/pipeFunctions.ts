@@ -3,7 +3,7 @@ import {fromArray, fromJS, getType} from '../../values'
 import {executeAsync, executeSync} from '../evaluate'
 import {totalCompare} from '../ordering'
 import {evaluateScoreAsync, evaluateScoreSync} from '../scoring'
-import type {GroqPipeFunction, WithOptions} from '.'
+import type {GroqPipeFunction} from '.'
 
 type ObjectWithScore = Record<string, unknown> & {_score: number}
 
@@ -48,7 +48,7 @@ function sortArray(aux: AuxItem[], directions: Direction[]): unknown[] {
   return aux.map((v) => v[0])
 }
 
-const pipeFunctions: {[key: string]: WithOptions<GroqPipeFunction>} = {}
+const pipeFunctions: {[key: string]: GroqPipeFunction} = {}
 
 pipeFunctions['order'] = {
   executeSync({base, args}, scope) {
@@ -93,7 +93,6 @@ pipeFunctions['order'] = {
     return fromArray(sortArray(aux, directions))
   },
 }
-pipeFunctions['order'].arity = (count) => count >= 1
 
 // eslint-disable-next-line require-await
 // eslint-disable-next-line require-await
@@ -151,6 +150,5 @@ pipeFunctions['score'] = {
     return fromArray(scored)
   },
 }
-pipeFunctions['score'].arity = (count) => count >= 1
 
 export default pipeFunctions

@@ -1,14 +1,30 @@
+/**
+ * The arity constraint for a GROQ function. Either a fixed argument count,
+ * or a predicate that validates the argument count (for variadic functions).
+ */
 export type GroqFunctionArity = number | ((count: number) => boolean)
 
+/**
+ * Metadata for a single GROQ function, used by the parser for validation.
+ * Does not contain the function implementation itself.
+ */
 export interface FunctionRegistryEntry {
+  /** Expected argument count, or a predicate for variadic functions. Omit for unconstrained arity. */
   arity?: GroqFunctionArity
+  /** Restricts function availability to a specific evaluation mode. */
   mode?: 'normal' | 'delta'
 }
 
+/** A set of function metadata entries keyed by function name. */
 export type FunctionRegistry = Record<string, FunctionRegistryEntry | undefined>
 
+/** A set of namespaces, each containing function metadata entries. */
 export type NamespaceRegistry = Record<string, FunctionRegistry | undefined>
 
+/**
+ * Registry of all built-in GROQ functions and their metadata, organized by namespace.
+ * The parser uses this to validate function calls without importing the evaluator.
+ */
 export const namespaceRegistry: NamespaceRegistry = {
   global: {
     anywhere: {arity: 1},
@@ -106,6 +122,9 @@ export const namespaceRegistry: NamespaceRegistry = {
   },
 }
 
+/**
+ * Registry of built-in GROQ pipe functions (used with `|` operator) and their metadata.
+ */
 export const pipeFunctionRegistry: FunctionRegistry = {
   order: {arity: (count) => count >= 1},
   score: {arity: (count) => count >= 1},
