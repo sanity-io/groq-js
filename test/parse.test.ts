@@ -1,6 +1,6 @@
 import t from 'tap'
 
-import {parse} from '../src/1'
+import {GroqSyntaxError, parse} from '../src/1'
 import {throwsWithMessage} from './testUtils'
 
 t.test('Basic parsing', async (t) => {
@@ -59,14 +59,31 @@ t.test('Basic parsing', async (t) => {
 
 t.test('Error reporting', async (t) => {
   t.test('when querying with a syntax error', async (t) => {
-    t.plan(3)
+    t.plan(5)
     const query = `*[_type == "]`
     try {
       parse(query)
-    } catch (error: any) {
+    } catch (error: unknown) {
+      if (!(error instanceof GroqSyntaxError)) throw error
       t.same(error.name, 'GroqSyntaxError')
       t.same(error.position, 13)
+      t.same(error.line, 1)
+      t.same(error.column, 14)
       t.same(error.message, 'Syntax error in GROQ query at position 13: Unexpected end of query')
+    }
+  })
+
+  t.test('reports correct line and column for multiline queries', async (t) => {
+    t.plan(4)
+    const query = `*[\n  _type ==\n  "]`
+    try {
+      parse(query)
+    } catch (error: unknown) {
+      if (!(error instanceof GroqSyntaxError)) throw error
+      t.same(error.position, 18)
+      t.same(error.line, 3)
+      t.same(error.column, 5)
+      t.same(error.message, 'Syntax error in GROQ query at position 18: Unexpected end of query')
     }
   })
 })

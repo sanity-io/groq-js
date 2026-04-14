@@ -1000,13 +1000,46 @@ function argumentShouldBeSelector(namespace: string, functionName: string, argCo
   return namespace == 'diff' && argCount == 2 && functionsRequiringSelectors.includes(functionName)
 }
 
-class GroqSyntaxError extends Error {
+/**
+ * Error thrown when a GROQ query contains a syntax error.
+ *
+ * Provides the position of the error as both a string offset and
+ * a line/column pair. All values use UTF-16 code unit offsets,
+ * matching JavaScript string indexing and the LSP default encoding.
+ */
+export class GroqSyntaxError extends Error {
+  /**
+   * 0-based UTF-16 code unit offset from the start of the query string.
+   */
   public position: number
+
+  /**
+   * 1-based line number where the error occurred.
+   */
+  public line: number
+
+  /**
+   * 1-based column number within the line, in UTF-16 code units.
+   */
+  public column: number
+
   public override name = 'GroqSyntaxError'
 
-  constructor(position: number, detail: string) {
+  constructor(position: number, query: string, detail: string) {
     super(`Syntax error in GROQ query at position ${position}${detail ? `: ${detail}` : ''}`)
     this.position = position
+
+    let line = 1
+    let lineStart = 0
+    for (let i = 0; i < position && i < query.length; i++) {
+      if (query[i] === '\n') {
+        line++
+        lineStart = i + 1
+      }
+    }
+
+    this.line = line
+    this.column = position - lineStart + 1
   }
 }
 
@@ -1016,7 +1049,7 @@ class GroqSyntaxError extends Error {
 export function parse(input: string, options: ParseOptions = {}): ExprNode {
   const result = rawParse(input)
   if (result.type === 'error') {
-    throw new GroqSyntaxError(result.position, result.message)
+    throw new GroqSyntaxError(result.position, input, result.message)
   }
   validateCustomFunctions(input, result.customFunctions)
 
