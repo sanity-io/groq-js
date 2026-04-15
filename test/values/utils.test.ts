@@ -1,6 +1,6 @@
 import t from 'tap'
 
-import {type AnyStaticValue, DateTime, fromJS, Path, toJS} from '../../src/values'
+import {type AnyStaticValue, DateTime, fromJS, Path, toJS} from '../../src/shared/values'
 
 t.test('toJSON', async (t) => {
   t.test('equivalent', async (t) => {

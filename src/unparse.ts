@@ -1,4 +1,4 @@
-import type {ExprNode} from './nodeTypes'
+import type {ExprNode} from './shared/nodeTypes'
 
 const IDENT_RE = /^[a-zA-Z_][a-zA-Z_0-9]*/
 const isIdent = (s: string) => IDENT_RE.test(s)

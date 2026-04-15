@@ -1,5 +1,5 @@
-import type {ExprNode, FilterNode, SelectorNode} from '../nodeTypes'
-import {fromJS, type Value} from '../values'
+import type {ExprNode, FilterNode, SelectorNode} from '../shared/nodeTypes'
+import {fromJS, type Value} from '../shared/values'
 import {evaluate} from './evaluate'
 import {valueAtPath} from './keyPath'
 import type {Scope} from './scope'

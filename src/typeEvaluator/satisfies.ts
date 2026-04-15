@@ -1,4 +1,4 @@
-import {DateTime} from '../values'
+import {DateTime} from '../shared/values'
 import {isDateTime} from './typeHelpers'
 import type {TypeNode} from './types'
 

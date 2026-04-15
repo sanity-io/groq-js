@@ -1,4 +1,4 @@
-import {fromJS, type Value} from '../values'
+import {fromJS, type Value} from '../shared/values'
 import {deepEqual} from './equality'
 import type {KeyPath} from './types'
 

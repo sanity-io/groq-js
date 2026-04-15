@@ -1,4 +1,4 @@
-import {FALSE_VALUE, fromString, NULL_VALUE, TRUE_VALUE} from '../../values'
+import {FALSE_VALUE, fromString, NULL_VALUE, TRUE_VALUE} from '../../shared/values'
 import {constantExecutor, mappedExecutor} from '../evaluate'
 import type {FunctionSet} from '.'
 

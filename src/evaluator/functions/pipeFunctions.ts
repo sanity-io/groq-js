@@ -1,5 +1,5 @@
-import type {ExprNode} from '../../nodeTypes'
-import {fromArray, fromJS, getType} from '../../values'
+import type {ExprNode} from '../../shared/nodeTypes'
+import {fromArray, fromJS, getType} from '../../shared/values'
 import {executeAsync, executeSync} from '../evaluate'
 import {totalCompare} from '../ordering'
 import {evaluateScoreAsync, evaluateScoreSync} from '../scoring'

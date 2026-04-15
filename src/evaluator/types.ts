@@ -1,5 +1,5 @@
-import type {ExprNode} from '../nodeTypes'
-import type {AnyStaticValue, Value} from '../values'
+import type {ExprNode} from '../shared/nodeTypes'
+import type {AnyStaticValue, Value} from '../shared/values'
 import {Scope} from './scope'
 
 export type Executor<N = ExprNode, Sync = N> = {

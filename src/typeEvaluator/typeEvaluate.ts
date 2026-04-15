@@ -26,7 +26,7 @@ import type {
   SelectNode,
   SliceNode,
   ValueNode,
-} from '../nodeTypes'
+} from '../shared/nodeTypes'
 import {booleanAnd, booleanInterpretationToTypeNode, booleanOr, booleanValue} from './booleans'
 import {handleFuncCallNode} from './functions'
 import {match} from './matching'

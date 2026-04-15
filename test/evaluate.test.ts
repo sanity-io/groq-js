@@ -1,7 +1,7 @@
 import t from 'tap'
 
 import {evaluate, evaluateSync, parse, toJS} from '../src/1'
-import type {ExprNode} from '../src/nodeTypes'
+import type {ExprNode} from '../src/shared/nodeTypes'
 import {throwsWithMessage} from './testUtils'
 
 t.test('Basic parsing', async (t) => {

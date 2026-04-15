@@ -2,7 +2,7 @@ import assert from 'node:assert'
 
 import t from 'tap'
 
-import type {ObjectAttributeNode} from '../src/nodeTypes'
+import type {ObjectAttributeNode} from '../src/shared/nodeTypes'
 import {optimizeUnions} from '../src/typeEvaluator/optimizations'
 import {overrideTypeForNode, typeEvaluate} from '../src/typeEvaluator/typeEvaluate'
 import {unionOf} from '../src/typeEvaluator/typeHelpers'

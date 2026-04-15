@@ -1,4 +1,4 @@
-import {type ExprNode, type SelectorNode} from './nodeTypes'
+import {type ExprNode, type SelectorNode} from './shared/nodeTypes'
 
 // eslint-disable-next-line complexity
 export function walkValidateCustomFunction<T extends ExprNode | SelectorNode>(

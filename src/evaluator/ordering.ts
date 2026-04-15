@@ -1,4 +1,4 @@
-import {getType, type GroqType} from '../values'
+import {getType, type GroqType} from '../shared/values'
 
 const TYPE_ORDER: {[key in GroqType]?: number} = {
   datetime: 1,

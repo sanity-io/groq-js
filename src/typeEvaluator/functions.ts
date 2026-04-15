@@ -1,5 +1,5 @@
 /* eslint-disable max-statements */
-import type {FuncCallNode} from '../nodeTypes'
+import type {FuncCallNode} from '../shared/nodeTypes'
 import {optimizeUnions} from './optimizations'
 import type {Scope} from './scope'
 import {walk} from './typeEvaluate'

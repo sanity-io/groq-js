@@ -1,4 +1,4 @@
-import type {Value} from '../values'
+import type {Value} from '../shared/values'
 import type {Context} from './types'
 
 export class Scope {

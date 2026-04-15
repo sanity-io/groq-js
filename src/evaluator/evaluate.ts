@@ -1,4 +1,4 @@
-import type {ExprNode} from '../nodeTypes'
+import type {ExprNode} from '../shared/nodeTypes'
 import {
   type AnyStaticValue,
   FALSE_VALUE,
@@ -10,7 +10,7 @@ import {
   StreamValue,
   TRUE_VALUE,
   type Value,
-} from '../values'
+} from '../shared/values'
 import {namespaces, pipeFunctions} from './functions'
 import {operators} from './operators'
 import {partialCompare} from './ordering'

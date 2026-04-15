@@ -8,10 +8,8 @@ export type {
   EvaluateOptions,
   Executor,
 } from './evaluator/types'
-export * from './nodeTypes'
 export {GroqSyntaxError, parse} from './parser'
-export type {ParseOptions} from './types'
-export {unparse} from './unparse'
+export * from './shared/nodeTypes'
 export type {
   AnyStaticValue,
   ArrayValue,
@@ -26,8 +24,10 @@ export type {
   StreamValue,
   StringValue,
   Value,
-} from './values'
-export {DateTime, Path, toJS} from './values'
+} from './shared/values'
+export {DateTime, Path, toJS} from './shared/values'
+export type {ParseOptions} from './types'
+export {unparse} from './unparse'
 
 // Type evaluation
 export type * from './typeEvaluator'

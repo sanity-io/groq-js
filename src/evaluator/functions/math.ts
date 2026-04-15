@@ -1,4 +1,4 @@
-import {fromNumber, NULL_VALUE} from '../../values'
+import {fromNumber, NULL_VALUE} from '../../shared/values'
 import {arrayReducerExecutor, STOP_ITERATOR} from '../evaluate'
 import type {FunctionSet} from '.'
 

@@ -8,7 +8,7 @@ import {
   NULL_VALUE,
   Path,
   TRUE_VALUE,
-} from '../../values'
+} from '../../shared/values'
 import {
   arrayReducerExecutor,
   constantExecutor,

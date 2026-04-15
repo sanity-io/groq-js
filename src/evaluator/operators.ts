@@ -1,4 +1,4 @@
-import type {OpCall} from '../nodeTypes'
+import type {OpCall} from '../shared/nodeTypes'
 import {
   FALSE_VALUE,
   fromDateTime,
@@ -9,7 +9,7 @@ import {
   StreamValue,
   TRUE_VALUE,
   type Value,
-} from '../values'
+} from '../shared/values'
 import {isEqual} from './equality'
 import {
   type GatheredText,
@@ -19,7 +19,7 @@ import {
   matchTokenize,
   type Pattern,
   type Token,
-} from './matching'
+} from '../shared/matching'
 import {partialCompare} from './ordering'
 
 type GroqOperatorFn = (left: Value, right: Value) => Value | PromiseLike<Value>

@@ -1,5 +1,5 @@
-import {isSelectorNode} from '../../nodeTypes'
-import {fromString, NULL_VALUE} from '../../values'
+import {isSelectorNode} from '../../shared/nodeTypes'
+import {fromString, NULL_VALUE} from '../../shared/values'
 import {asyncOnlyExecutor, constantExecutor} from '../evaluate'
 import type {FunctionSet} from '.'
 import {changedAny, changedOnly} from './diff'

@@ -1,5 +1,5 @@
-import {isSelectorNode, type SelectorNode} from '../../nodeTypes'
-import {type BooleanValue, FALSE_VALUE, TRUE_VALUE, type Value} from '../../values'
+import {isSelectorNode, type SelectorNode} from '../../shared/nodeTypes'
+import {type BooleanValue, FALSE_VALUE, TRUE_VALUE, type Value} from '../../shared/values'
 import {deepEqual} from '../equality'
 import {asyncOnlyExecutor, executeAsync} from '../evaluate'
 import {diffKeyPaths, startsWith, valueAtPath} from '../keyPath'

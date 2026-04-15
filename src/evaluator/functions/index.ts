@@ -1,5 +1,5 @@
-import {type ExprNode} from '../../nodeTypes'
-import {type ArrayValue, StreamValue} from '../../values'
+import {type ExprNode} from '../../shared/nodeTypes'
+import {type ArrayValue, StreamValue} from '../../shared/values'
 import type {Executor} from '../types'
 import array from './array'
 import dateTime from './dateTime'
