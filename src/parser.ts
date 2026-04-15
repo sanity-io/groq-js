@@ -1,6 +1,10 @@
 /* eslint-disable camelcase */
 import {tryConstantEvaluate} from './shared/constantEvaluate'
-import {type GroqFunctionArity, namespaceRegistry, pipeFunctionRegistry} from './shared/functionRegistry'
+import {
+  type GroqFunctionArity,
+  namespaceRegistry,
+  pipeFunctionRegistry,
+} from './shared/functionRegistry'
 import {MarkProcessor, type MarkVisitor} from './markProcessor'
 import {
   type ArrayElementNode,

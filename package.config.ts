@@ -1,4 +1,5 @@
 import path from 'node:path'
+
 import {defineConfig} from '@sanity/pkg-utils'
 
 const src = path.resolve(__dirname, 'src')
