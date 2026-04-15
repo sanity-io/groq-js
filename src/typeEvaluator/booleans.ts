@@ -1,5 +1,5 @@
 import type {Scope} from './scope'
-import {nullUnion, resolveInline} from './typeHelpers'
+import {booleanNode, nullNode, nullUnion, resolveInline} from './typeHelpers'
 import type {TypeNode} from './types'
 
 type BooleanInterpretation = {
@@ -111,21 +111,21 @@ export function booleanInterpretationToTypeNode(bool: BooleanInterpretation): Ty
   if (bool.canBeTrue) {
     if (bool.canBeFalse) {
       if (bool.canBeNull) {
-        return nullUnion({type: 'boolean'})
+        return nullUnion(booleanNode())
       }
-      return {type: 'boolean'}
+      return booleanNode()
     }
     if (bool.canBeNull) {
-      return nullUnion({type: 'boolean', value: true})
+      return nullUnion(booleanNode(true))
     }
-    return {type: 'boolean', value: true}
+    return booleanNode(true)
   }
 
   if (bool.canBeFalse) {
     if (bool.canBeNull) {
-      return nullUnion({type: 'boolean', value: false})
+      return nullUnion(booleanNode(false))
     }
-    return {type: 'boolean', value: false}
+    return booleanNode(false)
   }
-  return {type: 'null'}
+  return nullNode()
 }

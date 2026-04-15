@@ -31,4 +31,4 @@ export {DateTime, Path, toJS} from './values'
 
 // Type evaluation
 export type * from './typeEvaluator'
-export {createReferenceTypeNode, typeEvaluate} from './typeEvaluator'
+export {createReferenceTypeNode, hashTypeNode, typeEvaluate} from './typeEvaluator'

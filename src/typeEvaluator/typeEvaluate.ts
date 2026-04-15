@@ -34,29 +34,32 @@ import {extractNarrowingAssertions, narrowNode} from './narrowing'
 import {optimizeUnions} from './optimizations'
 import {Context, Scope} from './scope'
 import {
+  arrayOf,
+  booleanNode,
   containsDateTime,
-  dateTimeString,
+  createObject as objectNode,
+  dateTimeStringNode,
   isDateTime,
   isFuncCall,
   isString,
   mapNode,
+  nullNode,
   nullUnion,
+  numberNode,
   resolveInline,
+  stringNode,
+  unionOf,
+  unknownNode,
 } from './typeHelpers'
 import {
   type ArrayTypeNode,
-  type BooleanTypeNode,
   type Document,
-  type NullTypeNode,
-  type NumberTypeNode,
   type ObjectAttribute,
   type ObjectTypeNode,
   type PrimitiveTypeNode,
   type Schema,
-  type StringTypeNode,
   type TypeNode,
   type UnionTypeNode,
-  type UnknownTypeNode,
 } from './types'
 
 const $trace = debug('typeEvaluator:evaluate:trace')
@@ -93,10 +96,7 @@ export function typeEvaluate(ast: ExprNode, schema: Schema): TypeNode {
 function mapDeref(node: TypeNode, scope: Scope): TypeNode {
   return mapNode(node, scope, (base) => {
     if (base.type === 'array') {
-      return {
-        type: 'array',
-        of: mapDeref(base.of, scope),
-      }
+      return arrayOf(mapDeref(base.of, scope))
     }
 
     if (base.type === 'object') {
@@ -109,7 +109,7 @@ function mapDeref(node: TypeNode, scope: Scope): TypeNode {
       }
     }
 
-    return {type: 'null'}
+    return nullNode()
   })
 }
 
@@ -130,11 +130,11 @@ function handleObjectSplatNode(
   return mapNode(value, scope, (node) => {
     // splatting over unknown is unknown, we can't know what the attributes are
     if (node.type === 'unknown') {
-      return {type: 'unknown'}
+      return unknownNode()
     }
     // splatting over a non-object is a no-op
     if (node.type !== 'object') {
-      return {type: 'object', attributes: {}}
+      return objectNode({})
     }
 
     const attributes: Record<string, ObjectAttribute> = {}
@@ -151,10 +151,10 @@ function handleObjectSplatNode(
 
       // if the rest is unknown the entire object is unknown
       if (resolvedRest.type === 'unknown') {
-        return {type: 'unknown'}
+        return unknownNode()
       }
       if (resolvedRest.type !== 'object') {
-        return {type: 'null'}
+        return nullNode()
       }
       for (const name in resolvedRest.attributes) {
         // eslint-disable-next-line
@@ -164,7 +164,7 @@ function handleObjectSplatNode(
         attributes[name] = resolvedRest.attributes[name]
       }
     }
-    return {type: 'object', attributes}
+    return objectNode(attributes)
   })
 }
 
@@ -173,10 +173,7 @@ function handleObjectNode(node: ObjectNode, scope: Scope): TypeNode {
   $trace('object.node %O', node)
 
   if (node.attributes.length === 0) {
-    return {
-      type: 'object',
-      attributes: {},
-    } satisfies ObjectTypeNode
+    return objectNode({})
   }
 
   // let attributes we a entry of [name, value] or null. We need to keep track of nulls to handle conditional splats
@@ -223,7 +220,7 @@ function handleObjectNode(node: ObjectNode, scope: Scope): TypeNode {
           continue
         }
         default: {
-          return {type: 'unknown'}
+          return unknownNode()
         }
       }
     }
@@ -250,14 +247,14 @@ function handleObjectNode(node: ObjectNode, scope: Scope): TypeNode {
             for (const node of attributeNode.of) {
               // eslint-disable-next-line max-depth
               if (node.type !== 'object') {
-                return {type: 'unknown'}
+                return unknownNode()
               }
             }
             splatVariants.push([idx, attributeNode as UnionTypeNode<ObjectTypeNode>])
             continue
           }
           default: {
-            return {type: 'unknown'}
+            return unknownNode()
           }
         }
       }
@@ -265,13 +262,10 @@ function handleObjectNode(node: ObjectNode, scope: Scope): TypeNode {
       const variant = mapNode(attributeNode, scope, (attributeNode) => {
         $trace('object.conditional.splat.result.concrete %O', attributeNode)
         if (attributeNode.type !== 'object') {
-          return {type: 'unknown'}
+          return unknownNode()
         }
 
-        return {
-          type: 'object',
-          attributes: attributeNode.attributes,
-        } satisfies ObjectTypeNode
+        return objectNode(attributeNode.attributes)
       })
 
       if (variant.type === 'union') {
@@ -279,23 +273,23 @@ function handleObjectNode(node: ObjectNode, scope: Scope): TypeNode {
           // We can only splat objects, so we bail out if we encounter a non-object node.
           // eslint-disable-next-line max-depth
           if (node.type !== 'object') {
-            return {type: 'unknown'}
+            return unknownNode()
           }
         }
-        variant.of.push({type: 'object', attributes: {}} as ObjectTypeNode) // add an empty object to the union, since it's conditional
+        variant.of.push(objectNode({})) // add an empty object to the union, since it's conditional
         conditionalVariants.push([idx, variant as UnionTypeNode<ObjectTypeNode>])
         continue
       }
       // If the variant is not an object or a union of objects, we bail out early.
       if (variant.type !== 'object') {
-        return {type: 'unknown'}
+        return unknownNode()
       }
 
       conditionalVariants.push([
         idx,
         {
           type: 'union',
-          of: [{type: 'object', attributes: {}}, variant],
+          of: [objectNode({}), variant],
         },
       ])
       continue
@@ -330,12 +324,9 @@ function handleObjectNode(node: ObjectNode, scope: Scope): TypeNode {
 
   // If we have no conditional variants, we can just return the object with the guaranteed attributes.
   if (conditionalVariants.length === 0) {
-    return {
-      type: 'object',
-      attributes: Object.fromEntries(
-        guaranteedAttributes.map(([, name, attribute]) => [name, attribute]),
-      ),
-    } satisfies ObjectTypeNode
+    return objectNode(
+      Object.fromEntries(guaranteedAttributes.map(([, name, attribute]) => [name, attribute])),
+    )
   }
 
   // matrix should be a result of if given we have variants [a,b,c] this would lead to a union of [a, a|b, a|c, a|b|c, b|c, c, {EMPTY}]
@@ -370,9 +361,8 @@ function handleObjectNode(node: ObjectNode, scope: Scope): TypeNode {
 
     /* eslint-disable max-depth */
     for (const node of union.of) {
-      matrix.push({
-        type: 'object',
-        attributes: {
+      matrix.push(
+        objectNode({
           ...Object.fromEntries(
             unionGuaranteedBefore.map(([, name, attribute]) => [name, attribute]),
           ),
@@ -380,8 +370,8 @@ function handleObjectNode(node: ObjectNode, scope: Scope): TypeNode {
           ...Object.fromEntries(
             unionGuaranteedAfter.map(([, name, attribute]) => [name, attribute]),
           ),
-        },
-      } satisfies ObjectTypeNode)
+        }),
+      )
 
       for (const [outerIdx, outerAttributes] of allVariantsAttributes) {
         for (const outer of outerAttributes) {
@@ -439,14 +429,13 @@ function handleObjectNode(node: ObjectNode, scope: Scope): TypeNode {
                 _after.map(([, name, attribute]) => [name, attribute]),
               )
 
-              matrix.push({
-                type: 'object',
-                attributes: {
+              matrix.push(
+                objectNode({
                   ...before,
                   ...node.attributes,
                   ...after,
-                },
-              })
+                }),
+              )
             }
           }
         }
@@ -455,10 +444,7 @@ function handleObjectNode(node: ObjectNode, scope: Scope): TypeNode {
     /* eslint-disable max-depth */
   }
 
-  return optimizeUnions({
-    type: 'union',
-    of: matrix,
-  })
+  return optimizeUnions(unionOf(...matrix))
 }
 
 // eslint-disable-next-line max-statements
@@ -475,304 +461,233 @@ function handleOpCallNode(node: OpCallNode, scope: Scope): TypeNode {
         case '==': {
           // == always returns a boolean, no matter the compared types.
           if (left.type === 'unknown' || right.type === 'unknown') {
-            return {type: 'boolean'}
+            return booleanNode()
           }
           if (left.type !== right.type) {
-            return {
-              type: 'boolean',
-              value: false,
-            } satisfies BooleanTypeNode
+            return booleanNode(false)
           }
           if (left.type === 'null') {
-            return {
-              type: 'boolean',
-              value: true,
-            } satisfies BooleanTypeNode
+            return booleanNode(true)
           }
           if (!isPrimitiveTypeNode(left) || !isPrimitiveTypeNode(right)) {
-            return {
-              type: 'boolean',
-              value: false,
-            } satisfies BooleanTypeNode
+            return booleanNode(false)
           }
-          return {
-            type: 'boolean',
-            value: evaluateComparison(node.op, left, right),
-          } satisfies BooleanTypeNode
+          return booleanNode(evaluateComparison(node.op, left, right))
         }
         case '!=': {
           // != always returns a boolean, no matter the compared types.
           if (left.type === 'unknown' || right.type === 'unknown') {
-            return {type: 'boolean'}
+            return booleanNode()
           }
           if (left.type !== right.type) {
-            return {
-              type: 'boolean',
-              value: true,
-            } satisfies BooleanTypeNode
+            return booleanNode(true)
           }
           if (left.type === 'null') {
-            return {
-              type: 'boolean',
-              value: false,
-            } satisfies BooleanTypeNode
+            return booleanNode(false)
           }
           if (!isPrimitiveTypeNode(left) || !isPrimitiveTypeNode(right)) {
-            return {
-              type: 'boolean',
-              value: true,
-            } satisfies BooleanTypeNode
+            return booleanNode(true)
           }
 
           let value = evaluateComparison('==', left, right)
           if (value !== undefined) value = !value
-          return {
-            type: 'boolean',
-            value,
-          } satisfies BooleanTypeNode
+          return booleanNode(value)
         }
         case '>':
         case '>=':
         case '<':
         case '<=': {
           if (left.type === 'unknown' || right.type === 'unknown') {
-            return nullUnion({type: 'boolean'})
+            return nullUnion(booleanNode())
           }
           if (left.type !== right.type) {
-            return {type: 'null'} satisfies NullTypeNode
+            return nullNode()
           }
           // we represent datetimes as the string type, but can only compare them if both/none are the datetime subtype
           if (left.type === 'string' && right.type === 'string') {
             if (isDateTime(left) !== isDateTime(right)) {
-              return {type: 'null'} satisfies NullTypeNode
+              return nullNode()
             }
           }
           if (!isPrimitiveTypeNode(left) || !isPrimitiveTypeNode(right)) {
-            return {type: 'null'} satisfies NullTypeNode
+            return nullNode()
           }
-          return {
-            type: 'boolean',
-            value: evaluateComparison(node.op, left, right),
-          } satisfies BooleanTypeNode
+          return booleanNode(evaluateComparison(node.op, left, right))
         }
         case 'in': {
           if (left.type === 'unknown' || right.type === 'unknown') {
-            return nullUnion({type: 'boolean'})
+            return nullUnion(booleanNode())
           }
           if (right.type !== 'array') {
             // Special case for global::path, since it can be used with in operator, but the type returned otherwise is a string
             if (isFuncCall(node.right, 'global::path')) {
-              return {type: 'boolean'}
+              return booleanNode()
             }
-            return {type: 'null'}
+            return nullNode()
           }
           if (!isPrimitiveTypeNode(left) && left.type !== 'null') {
-            return {
-              type: 'boolean',
-              value: false,
-            } satisfies BooleanTypeNode
+            return booleanNode(false)
           }
           return mapNode(right.of, scope, (arrayTypeNode) => {
             if (arrayTypeNode.type === 'unknown') {
-              return nullUnion({type: 'boolean'})
+              return nullUnion(booleanNode())
             }
 
             if (left.type === 'null') {
-              return {
-                type: 'boolean',
-                value: arrayTypeNode.type === 'null',
-              } satisfies BooleanTypeNode
+              return booleanNode(arrayTypeNode.type === 'null')
             }
 
             if (left.value === undefined) {
-              return {
-                type: 'boolean',
-              } satisfies BooleanTypeNode
+              return booleanNode()
             }
             if (isPrimitiveTypeNode(arrayTypeNode)) {
               if (arrayTypeNode.value === undefined) {
-                return {
-                  type: 'boolean',
-                } satisfies BooleanTypeNode
+                return booleanNode()
               }
 
-              return {
-                type: 'boolean',
-                value: left.value === arrayTypeNode.value,
-              } satisfies BooleanTypeNode
+              return booleanNode(left.value === arrayTypeNode.value)
             }
 
-            return {
-              type: 'boolean',
-              value: false,
-            } satisfies BooleanTypeNode
+            return booleanNode(false)
           })
         }
         case 'match': {
           if (left.type === 'unknown' || right.type === 'unknown') {
             // match always returns a boolean, no matter the compared types.
-            return {type: 'boolean'}
+            return booleanNode()
           }
           // datetime values are not handled by gatherText in the evaluator,
           // so match always returns false for datetime operands
           // This includes arrays containing datetime values
           if (containsDateTime(left) || containsDateTime(right)) {
-            return {type: 'boolean', value: false} satisfies BooleanTypeNode
+            return booleanNode(false)
           }
-          return {
-            type: 'boolean',
-            value: match(left, right),
-          } satisfies BooleanTypeNode
+          return booleanNode(match(left, right))
         }
         case '+': {
           if (left.type === 'unknown' || right.type === 'unknown') {
             // + is ambiguous without the concrete types of the operands, so we return unknown and leave the excersise to the caller
-            return {type: 'unknown'}
+            return unknownNode()
           }
           if (isDateTime(left) && right.type === 'number') {
-            return dateTimeString()
+            return dateTimeStringNode()
           }
           if (left.type === 'number' && isDateTime(right)) {
-            return dateTimeString()
+            return dateTimeStringNode()
           }
           if (isString(left) && isString(right)) {
-            return {
-              type: 'string',
-              value:
-                left.value !== undefined && right.value !== undefined
-                  ? left.value + right.value
-                  : undefined,
-            }
+            return stringNode(
+              left.value !== undefined && right.value !== undefined
+                ? left.value + right.value
+                : undefined,
+            )
           }
           if (left.type === 'number' && right.type === 'number') {
-            return {
-              type: 'number',
-              value:
-                left.value !== undefined && right.value !== undefined
-                  ? left.value + right.value
-                  : undefined,
-            }
+            return numberNode(
+              left.value !== undefined && right.value !== undefined
+                ? left.value + right.value
+                : undefined,
+            )
           }
           if (left.type === 'array' && right.type === 'array') {
-            return {
-              type: 'array',
-              of: {
-                type: 'union',
-                of: [left.of, right.of],
-              },
-            } satisfies ArrayTypeNode
+            return arrayOf(unionOf(left.of, right.of))
           }
           if (left.type === 'object' && right.type === 'object') {
-            return {
-              type: 'object',
-              attributes: {...left.attributes, ...right.attributes},
-            } satisfies ObjectTypeNode
+            return objectNode({...left.attributes, ...right.attributes})
           }
-          return {type: 'null'}
+          return nullNode()
         }
         case '-': {
           if (isDateTime(left) && isDateTime(right)) {
-            return {type: 'number'}
+            return numberNode()
           }
           // datetime - unknown could be datetime (if unknown is number) or number (if unknown is datetime)
           if (isDateTime(left) && right.type === 'unknown') {
             return nullUnion({
               type: 'union',
-              of: [{type: 'number'}, dateTimeString()],
+              of: [numberNode(), dateTimeStringNode()],
             })
           }
           // datetime - number -> datetime
           if (isDateTime(left) && right.type === 'number') {
-            return dateTimeString()
+            return dateTimeStringNode()
           }
           // unknown - unknown could be number (if both are datetime or number) or datetime (if datetime - number)
           if (left.type === 'unknown') {
             return nullUnion({
               type: 'union',
-              of: [{type: 'number'}, dateTimeString()],
+              of: [numberNode(), dateTimeStringNode()],
             })
           }
           if (right.type === 'unknown') {
-            return nullUnion({type: 'number'})
+            return nullUnion(numberNode())
           }
           if (left.type === 'number' && right.type === 'number') {
-            return {
-              type: 'number',
-              value:
-                left.value !== undefined && right.value !== undefined
-                  ? left.value - right.value
-                  : undefined,
-            }
+            return numberNode(
+              left.value !== undefined && right.value !== undefined
+                ? left.value - right.value
+                : undefined,
+            )
           }
-          return {type: 'null'}
+          return nullNode()
         }
         case '*': {
           if (left.type === 'unknown' || right.type === 'unknown') {
-            return nullUnion({type: 'number'})
+            return nullUnion(numberNode())
           }
           if (left.type === 'number' && right.type === 'number') {
-            return {
-              type: 'number',
-              value:
-                left.value !== undefined && right.value !== undefined
-                  ? left.value * right.value
-                  : undefined,
-            }
+            return numberNode(
+              left.value !== undefined && right.value !== undefined
+                ? left.value * right.value
+                : undefined,
+            )
           }
-          return {type: 'null'}
+          return nullNode()
         }
         case '/': {
           if (left.type === 'unknown' || right.type === 'unknown') {
-            return nullUnion({type: 'number'})
+            return nullUnion(numberNode())
           }
           if (left.type === 'number' && right.type === 'number') {
-            return {
-              type: 'number',
-              value:
-                left.value !== undefined && right.value !== undefined
-                  ? left.value / right.value
-                  : undefined,
-            }
+            return numberNode(
+              left.value !== undefined && right.value !== undefined
+                ? left.value / right.value
+                : undefined,
+            )
           }
-          return {type: 'null'}
+          return nullNode()
         }
         case '**': {
           if (left.type === 'unknown' || right.type === 'unknown') {
-            return nullUnion({type: 'number'})
+            return nullUnion(numberNode())
           }
           if (left.type === 'number' && right.type === 'number') {
-            return {
-              type: 'number',
-              value:
-                left.value !== undefined && right.value !== undefined
-                  ? left.value ** right.value
-                  : undefined,
-            }
+            return numberNode(
+              left.value !== undefined && right.value !== undefined
+                ? left.value ** right.value
+                : undefined,
+            )
           }
-          return {type: 'null'}
+          return nullNode()
         }
         case '%': {
           if (left.type === 'unknown' || right.type === 'unknown') {
-            return nullUnion({type: 'number'})
+            return nullUnion(numberNode())
           }
           if (left.type === 'number' && right.type === 'number') {
-            return {
-              type: 'number',
-              value:
-                left.value !== undefined && right.value !== undefined
-                  ? left.value % right.value
-                  : undefined,
-            }
+            return numberNode(
+              left.value !== undefined && right.value !== undefined
+                ? left.value % right.value
+                : undefined,
+            )
           }
-          return {type: 'null'}
+          return nullNode()
         }
         default: {
           // TS only: make sure we handle all cases
           node.op satisfies never
 
-          return {
-            type: 'unknown',
-          } satisfies UnknownTypeNode
+          return unknownNode()
         }
       }
     }),
@@ -796,13 +711,10 @@ function handleSelectNode(node: SelectNode, scope: Scope): TypeNode {
     values.push(walk({node: node.fallback, scope}))
   }
   if (values.length === 0) {
-    return {type: 'null'} satisfies NullTypeNode
+    return nullNode()
   }
 
-  return {
-    type: 'union',
-    of: values,
-  } satisfies UnionTypeNode
+  return unionOf(...values)
 }
 
 function handleArrayCoerceNode(node: ArrayCoerceNode, scope: Scope): TypeNode {
@@ -823,21 +735,18 @@ function handleFlatMap(node: FlatMapNode, scope: Scope): TypeNode {
           return inner
         }
 
-        return {type: 'array', of: inner}
+        return arrayOf(inner)
       },
       (nodes) => {
         const inner: TypeNode[] = []
         for (const node of nodes) {
           // Bail out early if we've detected an unknown.
-          if (node.type === 'unknown') return {type: 'array', of: node}
+          if (node.type === 'unknown') return arrayOf(node)
           // The mapper above ensures that all types returned are arrays.
           if (node.type !== 'array') throw new Error(`Unexpected type: ${node.type}`)
           inner.push(node.of)
         }
-        return {
-          type: 'array',
-          of: optimizeUnions({type: 'union', of: inner}),
-        }
+        return arrayOf(optimizeUnions(unionOf(...inner)))
       },
     )
   })
@@ -847,10 +756,7 @@ function handleMap(node: MapNode, scope: Scope): TypeNode {
   $trace('map.base %O', base)
 
   return mapArray(base, scope, (base) => {
-    return {
-      type: 'array',
-      of: walk({node: node.expr, scope: scope.createHidden([base.of])}),
-    }
+    return arrayOf(walk({node: node.expr, scope: scope.createHidden([base.of])}))
   })
 }
 
@@ -886,10 +792,7 @@ function handleFilterNode(node: FilterNode, scope: Scope): TypeNode {
     const resolved = resolveFilter(node.expr, createFilterScope(base, scope))
     $trace('filter.resolved %O', resolved)
 
-    return {
-      type: 'array',
-      of: resolved,
-    }
+    return arrayOf(resolved)
   })
 }
 
@@ -921,7 +824,7 @@ function handleAccessAttributeBase(base: TypeNode, name: string, scope: Scope): 
       return handleAccessAttributeBase(base.rest, name, scope)
     }
     $warn(`attribute "${name}" not found in object`)
-    return {type: 'null'}
+    return nullNode()
   })
 }
 
@@ -946,51 +849,31 @@ function handleArrayNode(node: ArrayNode, scope: Scope): TypeNode {
       of.push(node)
     }
   }
-  return {
-    type: 'array',
-    of: {
-      type: 'union',
-      of,
-    } satisfies UnionTypeNode,
-  } satisfies ArrayTypeNode
+  return arrayOf(unionOf(...of))
 }
 
 function handleValueNode(node: ValueNode, scope: Scope): TypeNode {
   if (node.value === null) {
-    return {type: 'null'} satisfies NullTypeNode
+    return nullNode()
   }
   switch (typeof node.value) {
     case 'string':
-      return {
-        type: 'string',
-        value: node.value,
-      } satisfies StringTypeNode
+      return stringNode(node.value)
     case 'number':
-      return {
-        type: 'number',
-        value: node.value,
-      } satisfies NumberTypeNode
+      return numberNode(node.value)
     case 'boolean':
-      return {
-        type: 'boolean',
-        value: node.value,
-      } satisfies BooleanTypeNode
+      return booleanNode(node.value)
     case 'object':
       if (node.value === null) {
-        return {type: 'null'} satisfies NullTypeNode
+        return nullNode()
       }
       if (Array.isArray(node.value)) {
-        return {
-          type: 'array',
-          of: {
-            type: 'union',
-            of: node.value.map((value) => walk({node: {type: 'Value', value}, scope})),
-          },
-        } satisfies ArrayTypeNode
+        return arrayOf(
+          unionOf(...node.value.map((value) => walk({node: {type: 'Value', value}, scope}))),
+        )
       }
-      return {
-        type: 'object',
-        attributes: Object.fromEntries(
+      return objectNode(
+        Object.fromEntries(
           Object.entries(node.value).map(([key, value]) => [
             key,
             {
@@ -999,9 +882,9 @@ function handleValueNode(node: ValueNode, scope: Scope): TypeNode {
             },
           ]),
         ),
-      } satisfies ObjectTypeNode
+      )
     default:
-      return {type: 'unknown'} satisfies UnknownTypeNode
+      return unknownNode()
   }
 }
 
@@ -1025,11 +908,11 @@ function handleParentNode({n}: ParentNode, scope: Scope): TypeNode {
   $trace('handle.parent.newScope %d %O', n, current)
 
   if (!current) {
-    return {type: 'null'} satisfies NullTypeNode
+    return nullNode()
   }
 
   if (current.value.of.length === 0) {
-    return {type: 'null'} satisfies NullTypeNode
+    return nullNode()
   }
 
   return current.value
@@ -1039,17 +922,17 @@ function handleNotNode(node: NotNode, scope: Scope): TypeNode {
   const base = walk({node: node.base, scope})
   return mapNode(base, scope, (base) => {
     if (base.type === 'unknown') {
-      return nullUnion({type: 'boolean'})
+      return nullUnion(booleanNode())
     }
 
     if (base.type === 'boolean') {
       if (base.value !== undefined) {
-        return {type: 'boolean', value: base.value === false}
+        return booleanNode(base.value === false)
       }
-      return {type: 'boolean'}
+      return booleanNode()
     }
 
-    return {type: 'null'}
+    return nullNode()
   })
 }
 
@@ -1057,14 +940,14 @@ function handleNegNode(node: NegNode, scope: Scope): TypeNode {
   const base = walk({node: node.base, scope})
   return mapNode(base, scope, (base) => {
     if (base.type === 'unknown') {
-      return nullUnion({type: 'number'})
+      return nullUnion(numberNode())
     }
 
     if (base.type !== 'number') {
-      return {type: 'null'}
+      return nullNode()
     }
     if (base.value !== undefined) {
-      return {type: 'number', value: -base.value}
+      return numberNode(-base.value)
     }
     return base
   })
@@ -1073,28 +956,22 @@ function handlePosNode(node: PosNode, scope: Scope): TypeNode {
   const base = walk({node: node.base, scope})
   return mapNode(base, scope, (base) => {
     if (base.type === 'unknown') {
-      return nullUnion({type: 'number'})
+      return nullUnion(numberNode())
     }
     if (base.type !== 'number') {
-      return {type: 'null'}
+      return nullNode()
     }
     return base
   })
 }
 
 function handleEverythingNode(_: EverythingNode, scope: Scope): TypeNode {
-  return {
-    type: 'array',
-    of: {
-      type: 'union',
-      of: scope.context.schema
-        .filter((obj): obj is Document => obj.type === 'document')
-        .map((doc) => ({
-          type: 'object',
-          attributes: doc.attributes,
-        })),
-    },
-  } satisfies ArrayTypeNode<UnionTypeNode<ObjectTypeNode>>
+  return arrayOf({
+    type: 'union',
+    of: scope.context.schema
+      .filter((obj): obj is Document => obj.type === 'document')
+      .map((doc) => objectNode(doc.attributes)),
+  })
 }
 
 function handleAndNode(node: AndNode, scope: Scope): TypeNode {
@@ -1250,7 +1127,7 @@ export function walk({node, scope}: {node: ExprNode; scope: Scope}): TypeNode {
     case 'SelectorFuncCall':
     case 'SelectorNested':
     case 'InRange': {
-      return {type: 'unknown'}
+      return unknownNode()
     }
 
     default: {
@@ -1355,7 +1232,7 @@ function mapArray(
     if (base.type === 'array') {
       return mapper(base)
     }
-    return {type: 'null'}
+    return nullNode()
   })
 }
 
@@ -1371,6 +1248,6 @@ function mapObject(
     if (base.type === 'object') {
       return mapper(base)
     }
-    return {type: 'null'}
+    return nullNode()
   })
 }

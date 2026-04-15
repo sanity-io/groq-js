@@ -1,5 +1,12 @@
 import type {ExprNode} from '../nodeTypes'
-import {createObjectAttribute, unionOf} from './typeHelpers'
+import {
+  booleanNode,
+  createObjectAttribute,
+  nullNode,
+  numberNode,
+  stringNode,
+  unionOf,
+} from './typeHelpers'
 import type {NullTypeNode, ObjectAttribute, ObjectTypeNode, TypeNode} from './types'
 
 /**
@@ -50,16 +57,16 @@ function extractAttributePath(node: ExprNode): string[] | null {
 function extractLiteralType(node: ExprNode): TypeNode | null {
   if (node.type === 'Value') {
     if (typeof node.value === 'string') {
-      return {type: 'string', value: node.value}
+      return stringNode(node.value)
     }
     if (typeof node.value === 'number') {
-      return {type: 'number', value: node.value}
+      return numberNode(node.value)
     }
     if (typeof node.value === 'boolean') {
-      return {type: 'boolean', value: node.value}
+      return booleanNode(node.value)
     }
     if (node.value === null) {
-      return {type: 'null'}
+      return nullNode()
     }
   }
   return null
@@ -235,7 +242,7 @@ function applyAssertionsToObject(
             // Note: we check attr.optional, not thisPathIsOptional, because a required field
             // inside an optional parent still can't be null when the parent exists
             if (attr.optional === true) {
-              newAttr = createObjectAttribute({type: 'null'})
+              newAttr = createObjectAttribute(nullNode())
               hasChanges = true
             } else {
               // Required field can't be null - remove it from the type

@@ -57,19 +57,17 @@ export function createReferenceTypeNode(name: string, inArray: boolean = false):
     } satisfies ObjectAttribute
   }
 
-  return {
-    type: 'object',
-    attributes,
-    dereferencesTo: name,
-  } satisfies ObjectTypeNode
+  return createObject(attributes, {dereferencesTo: name})
 }
 
 export function createObject(
   attributes: Record<string, ObjectAttribute<TypeNode>>,
+  extra?: {dereferencesTo?: string; rest?: ObjectTypeNode},
 ): ObjectTypeNode {
   return {
     type: 'object',
     attributes,
+    ...extra,
   } satisfies ObjectTypeNode
 }
 
@@ -109,11 +107,39 @@ export function unionOf(...nodes: TypeNode[]): TypeNode {
   } satisfies UnionTypeNode
 }
 
-export function dateTimeString(): StringTypeNode {
+export function arrayOf(of: TypeNode): ArrayTypeNode {
+  return {of, type: 'array'}
+}
+
+export function dateTimeStringNode(): StringTypeNode {
   return {
     type: 'string',
     [STRING_TYPE_DATETIME]: true,
   }
+}
+
+export function stringNode(value?: string): StringTypeNode {
+  return value === undefined ? {type: 'string'} : {type: 'string', value}
+}
+
+export function numberNode(value?: number): NumberTypeNode {
+  return value === undefined ? {type: 'number'} : {type: 'number', value}
+}
+
+export function booleanNode(value?: boolean): BooleanTypeNode {
+  return value === undefined ? {type: 'boolean'} : {type: 'boolean', value}
+}
+
+export function nullNode(): NullTypeNode {
+  return {type: 'null'}
+}
+
+export function unknownNode(): UnknownTypeNode {
+  return {type: 'unknown'}
+}
+
+export function inlineNode(name: string): InlineTypeNode {
+  return {name, type: 'inline'}
 }
 
 export type ConcreteTypeNode =
@@ -201,51 +227,24 @@ export function containsDateTime(node: TypeNode): boolean {
 }
 
 export function createGeoJson(type: 'Point' | 'LineString' | 'Polygon' = 'Point'): ObjectTypeNode {
-  let coordinateAttribute: ArrayTypeNode = {
-    type: 'array',
-    of: {
-      type: 'number',
-    },
-  }
+  let coordinateAttribute: ArrayTypeNode = arrayOf(numberNode())
   if (type === 'LineString') {
-    coordinateAttribute = {
-      type: 'array',
-      of: {
-        type: 'array',
-        of: {
-          type: 'number',
-        },
-      },
-    } satisfies ArrayTypeNode
+    coordinateAttribute = arrayOf(arrayOf(numberNode()))
   }
   if (type === 'Polygon') {
-    coordinateAttribute = {
-      type: 'array',
-      of: {
-        type: 'array',
-        of: {
-          type: 'array',
-          of: {
-            type: 'number',
-          },
-        },
-      },
-    }
+    coordinateAttribute = arrayOf(arrayOf(arrayOf(numberNode())))
   }
-  return {
-    type: 'object',
-    attributes: {
-      type: {
-        type: 'objectAttribute',
-        value: {
-          type: 'string',
-          value: type,
-        },
-      },
-      coordinates: {
-        type: 'objectAttribute',
-        value: coordinateAttribute,
+  return createObject({
+    type: {
+      type: 'objectAttribute',
+      value: {
+        type: 'string',
+        value: type,
       },
     },
-  } satisfies ObjectTypeNode
+    coordinates: {
+      type: 'objectAttribute',
+      value: coordinateAttribute,
+    },
+  })
 }
