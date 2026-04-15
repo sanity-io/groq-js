@@ -1,11 +1,12 @@
 /* eslint-disable camelcase */
+import {MarkProcessor, type MarkVisitor} from './markProcessor'
+import {type CustomFunctions, parse as rawParse} from './rawParser'
 import {tryConstantEvaluate} from './shared/constantEvaluate'
 import {
   type GroqFunctionArity,
   namespaceRegistry,
   pipeFunctionRegistry,
 } from './shared/functionRegistry'
-import {MarkProcessor, type MarkVisitor} from './markProcessor'
 import {
   type ArrayElementNode,
   type ExprNode,
@@ -20,7 +21,6 @@ import {
   type SelectNode,
   type SelectorNode,
 } from './shared/nodeTypes'
-import {type CustomFunctions, parse as rawParse} from './rawParser'
 import {
   type TraversalResult,
   traverseArray,

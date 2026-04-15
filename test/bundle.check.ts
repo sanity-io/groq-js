@@ -2,6 +2,7 @@ import assert from 'node:assert/strict'
 import {existsSync} from 'node:fs'
 import {dirname, join} from 'node:path'
 import {fileURLToPath} from 'node:url'
+
 import {buildSync} from 'esbuild'
 
 const __dirname = dirname(fileURLToPath(import.meta.url))
@@ -38,7 +39,11 @@ const bundle = Buffer.from(result.outputFiles[0].contents).toString('utf-8')
 const evaluatorIdentifiers = ['executeAsync', 'executeSync', 'evaluateQuery', 'createScope']
 
 for (const id of evaluatorIdentifiers) {
-  assert.equal(new RegExp(`\\b${id}\\b`).test(bundle), false, `parse-only bundle should not contain "${id}"`)
+  assert.equal(
+    new RegExp(`\\b${id}\\b`).test(bundle),
+    false,
+    `parse-only bundle should not contain "${id}"`,
+  )
 }
 
 // Sanity check: the bundle should contain parse-related code
