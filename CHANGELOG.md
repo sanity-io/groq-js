@@ -5,6 +5,12 @@
 All notable changes to this project will be documented in this file. See
 [Conventional Commits](https://conventionalcommits.org) for commit guidelines.
 
+## [1.30.0](https://github.com/sanity-io/groq-js/compare/v1.29.0...v1.30.0) (2026-04-16)
+
+### Features
+
+- include line/column info on groq syntax errors ([#343](https://github.com/sanity-io/groq-js/issues/343)) ([d9c4770](https://github.com/sanity-io/groq-js/commit/d9c4770721a07c11eb56881aab6878d5ba948064))
+
 ## [1.29.0](https://github.com/sanity-io/groq-js/compare/v1.28.0...v1.29.0) (2026-03-06)
 
 ### Features
