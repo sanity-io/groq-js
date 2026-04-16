@@ -1,4 +1,4 @@
-import type {AnyStaticValue} from '../values'
+import type {AnyStaticValue} from '../shared/values'
 
 export function portableTextContent(value: AnyStaticValue): string | null {
   if (value.type === 'object') {

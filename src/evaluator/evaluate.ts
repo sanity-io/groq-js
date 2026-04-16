@@ -1,4 +1,4 @@
-import type {ExprNode} from '../nodeTypes'
+import type {ExprNode} from '../shared/nodeTypes'
 import {
   type AnyStaticValue,
   FALSE_VALUE,
@@ -10,7 +10,8 @@ import {
   StreamValue,
   TRUE_VALUE,
   type Value,
-} from '../values'
+} from '../shared/values'
+import {namespaces, pipeFunctions} from './functions'
 import {operators} from './operators'
 import {partialCompare} from './ordering'
 import {Scope} from './scope'
@@ -354,23 +355,31 @@ const EXECUTORS: ExecutorMap = {
   },
 
   FuncCall: {
-    executeAsync({func, args}, scope) {
+    executeAsync({namespace, name, args}, scope) {
+      const func = namespaces[namespace]?.[name]
+      if (!func) throw new Error(`Unknown function: ${namespace}::${name}`)
       return func.executeAsync(args, scope)
     },
 
-    executeSync({func, args}, scope) {
+    executeSync({namespace, name, args}, scope) {
+      const func = namespaces[namespace]?.[name]
+      if (!func) throw new Error(`Unknown function: ${namespace}::${name}`)
       return func.executeSync(args, scope)
     },
   },
 
   PipeFuncCall: {
-    async executeAsync({func, base, args}, scope) {
+    async executeAsync({name, base, args}, scope) {
+      const func = pipeFunctions[name]
+      if (!func) throw new Error(`Unknown pipe function: ${name}`)
       const baseValue = await executeAsync(base, scope)
       if (baseValue.type !== 'stream' && baseValue.type !== 'array') return NULL_VALUE
       return func.executeAsync({base: baseValue, args}, scope)
     },
 
-    executeSync({func, base, args}, scope) {
+    executeSync({name, base, args}, scope) {
+      const func = pipeFunctions[name]
+      if (!func) throw new Error(`Unknown pipe function: ${name}`)
       const baseValue = executeSync(base, scope)
       if (baseValue.type !== 'array') return NULL_VALUE
       return func.executeSync({base: baseValue, args}, scope)

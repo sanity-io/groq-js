@@ -1,7 +1,12 @@
 /* eslint-disable camelcase */
-import {tryConstantEvaluate} from './evaluator'
-import {type GroqFunctionArity, namespaces, pipeFunctions} from './evaluator/functions'
 import {MarkProcessor, type MarkVisitor} from './markProcessor'
+import {type CustomFunctions, parse as rawParse} from './rawParser'
+import {tryConstantEvaluate} from './shared/constantEvaluate'
+import {
+  type GroqFunctionArity,
+  namespaceRegistry,
+  pipeFunctionRegistry,
+} from './shared/functionRegistry'
 import {
   type ArrayElementNode,
   type ExprNode,
@@ -15,8 +20,7 @@ import {
   type ParentNode,
   type SelectNode,
   type SelectorNode,
-} from './nodeTypes'
-import {type CustomFunctions, parse as rawParse} from './rawParser'
+} from './shared/nodeTypes'
 import {
   type TraversalResult,
   traverseArray,
@@ -410,20 +414,20 @@ function createExpressionBuilder(recursion: Set<string> = new Set()): MarkVisito
         )
       }
 
-      const funcs = namespaces[namespace]
+      const funcs = namespaceRegistry[namespace]
       if (!funcs) {
         throw new GroqQueryError(`Undefined namespace: ${namespace}`)
       }
 
-      const func = funcs[name]
-      if (!func) {
+      const funcEntry = funcs[name]
+      if (!funcEntry) {
         throw new GroqQueryError(`Undefined function: ${name}`)
       }
-      if (func.arity !== undefined) {
-        validateArity(name, func.arity, args.length)
+      if (funcEntry.arity !== undefined) {
+        validateArity(name, funcEntry.arity, args.length)
       }
 
-      if (func.mode !== undefined && func.mode !== p.parseOptions.mode) {
+      if (funcEntry.mode !== undefined && funcEntry.mode !== p.parseOptions.mode) {
         throw new GroqQueryError(`Undefined function: ${name}`)
       }
 
@@ -432,7 +436,6 @@ function createExpressionBuilder(recursion: Set<string> = new Set()): MarkVisito
         namespace,
         name,
         args,
-        func,
       }
     },
 
@@ -482,17 +485,16 @@ function createExpressionBuilder(recursion: Set<string> = new Set()): MarkVisito
 
       p.allowBoost = oldAllowBoost
 
-      const func = pipeFunctions[name]
-      if (!func) {
+      const funcEntry = pipeFunctionRegistry[name]
+      if (!funcEntry) {
         throw new GroqQueryError(`Undefined pipe function: ${name}`)
       }
-      if (func.arity) {
-        validateArity(name, func.arity, args.length)
+      if (funcEntry.arity) {
+        validateArity(name, funcEntry.arity, args.length)
       }
 
       return {
         type: 'PipeFuncCall',
-        func,
         base,
         name,
         args,

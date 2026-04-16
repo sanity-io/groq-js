@@ -1,4 +1,4 @@
-import type {ExprNode} from '../nodeTypes'
+import type {ExprNode} from '../shared/nodeTypes'
 import {optimizeUnions} from './optimizations'
 import type {Scope} from './scope'
 import {

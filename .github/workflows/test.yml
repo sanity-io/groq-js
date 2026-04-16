@@ -50,6 +50,7 @@ jobs:
         env:
           CI: true
       - run: npm run build
+      - run: npm run test:bundle
 
   release:
     permissions:

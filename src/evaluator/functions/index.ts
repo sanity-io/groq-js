@@ -1,5 +1,5 @@
-import {type ExprNode} from '../../nodeTypes'
-import {type ArrayValue, StreamValue} from '../../values'
+import {type ExprNode} from '../../shared/nodeTypes'
+import {type ArrayValue, StreamValue} from '../../shared/values'
 import type {Executor} from '../types'
 import array from './array'
 import dateTime from './dateTime'
@@ -22,18 +22,10 @@ export {default as pipeFunctions} from './pipeFunctions'
 /** @public */
 export type GroqFunctionArg = ExprNode
 
-/** @internal */
-export type WithOptions<T> = T & {
-  arity?: GroqFunctionArity
-  mode?: 'normal' | 'delta'
-}
-
-export type GroqFunctionArity = number | ((count: number) => boolean)
-
 /** @public */
 export type GroqFunction = Executor<GroqFunctionArg[]>
 
-export type FunctionSet = Record<string, WithOptions<GroqFunction> | undefined>
+export type FunctionSet = Record<string, GroqFunction | undefined>
 
 export type NamespaceSet = Record<string, FunctionSet | undefined>
 

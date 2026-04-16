@@ -1,6 +1,6 @@
 import t from 'tap'
 
-import type {ExprNode} from '../src/nodeTypes'
+import type {ExprNode} from '../src/shared/nodeTypes'
 import {
   type TraversalResult,
   traverseArray,

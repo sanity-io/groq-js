@@ -17,6 +17,5 @@ releases['all'] = arrayExecutor(
     }
   },
 )
-releases['all'].arity = 0
 
 export default releases

@@ -11,11 +11,9 @@ const text: FunctionSet = {}
 text['query'] = constantExecutor(() => {
   throw new Error('not implemented')
 })
-text['query'].arity = 1
 
 text['semanticSimilarity'] = constantExecutor(() => {
   throw new Error('not implemented')
 })
-text['semanticSimilarity'].arity = 1
 
 export default text

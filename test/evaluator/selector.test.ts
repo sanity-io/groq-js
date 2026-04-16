@@ -12,8 +12,8 @@ import type {
   SelectorNestedNode,
   SelectorNode,
   TupleNode,
-} from '../../src/nodeTypes'
-import {fromJS} from '../../src/values'
+} from '../../src/shared/nodeTypes'
+import {fromJS} from '../../src/shared/values'
 
 const dataset = {
   _type: 'foo',

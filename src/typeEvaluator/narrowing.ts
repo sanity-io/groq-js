@@ -1,4 +1,4 @@
-import type {ExprNode} from '../nodeTypes'
+import type {ExprNode} from '../shared/nodeTypes'
 import {createObjectAttribute, unionOf} from './typeHelpers'
 import type {NullTypeNode, ObjectAttribute, ObjectTypeNode, TypeNode} from './types'
 

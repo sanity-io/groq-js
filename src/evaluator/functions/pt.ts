@@ -1,4 +1,4 @@
-import {fromString, NULL_VALUE} from '../../values'
+import {fromString, NULL_VALUE} from '../../shared/values'
 import {mappedExecutor} from '../evaluate'
 import {portableTextContent} from '../pt'
 import type {FunctionSet} from '.'
@@ -16,7 +16,5 @@ pt['text'] = mappedExecutor(
     return fromString(text)
   },
 )
-
-pt['text'].arity = 1
 
 export default pt

@@ -8,7 +8,7 @@ import {
   NULL_VALUE,
   Path,
   TRUE_VALUE,
-} from '../../values'
+} from '../../shared/values'
 import {
   arrayReducerExecutor,
   constantExecutor,
@@ -27,8 +27,6 @@ const _global: FunctionSet = {}
 _global['anywhere'] = constantExecutor(() => {
   throw new Error('not implemented')
 })
-
-_global['anywhere'].arity = 1
 
 _global['coalesce'] = {
   async executeAsync(args, scope) {
@@ -58,7 +56,6 @@ _global['count'] = arrayReducerExecutor(
   (_, count) => count + 1,
   fromNumber,
 )
-_global['count'].arity = 1
 
 _global['dateTime'] = mappedExecutor(
   (args) => args,
@@ -72,7 +69,6 @@ _global['dateTime'] = mappedExecutor(
     return DateTime.parseToValue(val.data)
   },
 )
-_global['dateTime'].arity = 1
 
 _global['defined'] = mappedExecutor(
   (args) => args,
@@ -80,13 +76,11 @@ _global['defined'] = mappedExecutor(
     return inner.type === 'null' ? FALSE_VALUE : TRUE_VALUE
   },
 )
-_global['defined'].arity = 1
 
 // eslint-disable-next-line require-await
 _global['identity'] = constantExecutor((_args, scope) => {
   return fromString(scope.context.identity)
 })
-_global['identity'].arity = 0
 
 _global['length'] = mappedExecutor(
   (args) => args,
@@ -102,7 +96,6 @@ _global['length'] = mappedExecutor(
     return NULL_VALUE
   },
 )
-_global['length'].arity = 1
 
 _global['path'] = mappedExecutor(
   (args) => args,
@@ -114,7 +107,6 @@ _global['path'] = mappedExecutor(
     return fromPath(new Path(inner.data))
   },
 )
-_global['path'].arity = 1
 
 _global['string'] = mappedExecutor(
   (args) => args,
@@ -130,7 +122,6 @@ _global['string'] = mappedExecutor(
     }
   },
 )
-_global['string'].arity = 1
 
 _global['references'] = mappedExecutor(
   (args) => [{type: 'This'}, ...args],
@@ -155,7 +146,6 @@ _global['references'] = mappedExecutor(
     return hasReference(scopeValue, pathSet) ? TRUE_VALUE : FALSE_VALUE
   },
 )
-_global['references'].arity = (c) => c >= 1
 
 _global['round'] = mappedExecutor(
   (args) => args,
@@ -185,21 +175,17 @@ _global['round'] = mappedExecutor(
     return fromNumber(Number(num.toFixed(prec)))
   },
 )
-_global['round'].arity = (count) => count >= 1 && count <= 2
 
 // eslint-disable-next-line require-await
 _global['now'] = constantExecutor((_args, scope) => {
   return fromString(scope.context.timestamp.toISOString())
 })
-_global['now'].arity = 0
 
 // eslint-disable-next-line require-await
 _global['boost'] = constantExecutor(() => {
   // This should be handled by the scoring function.
   throw new Error('unexpected boost call')
 })
-
-_global['boost'].arity = 2
 
 _global['lower'] = string['lower']
 _global['upper'] = string['upper']

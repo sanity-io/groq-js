@@ -1,4 +1,4 @@
-import {FALSE_VALUE, fromString, NULL_VALUE, TRUE_VALUE} from '../../values'
+import {FALSE_VALUE, fromString, NULL_VALUE, TRUE_VALUE} from '../../shared/values'
 import {constantExecutor, mappedExecutor} from '../evaluate'
 import type {FunctionSet} from '.'
 
@@ -54,7 +54,6 @@ sanity['versionOf'] = mappedExecutor(
     return FALSE_VALUE
   },
 )
-sanity['versionOf'].arity = 1
 
 // eslint-disable-next-line require-await
 sanity['partOfRelease'] = mappedExecutor(
@@ -75,6 +74,5 @@ sanity['partOfRelease'] = mappedExecutor(
     return FALSE_VALUE
   },
 )
-sanity['partOfRelease'].arity = 1
 
 export default sanity

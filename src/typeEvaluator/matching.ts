@@ -4,7 +4,7 @@ import {
   matchTokenize,
   type Pattern,
   type Token,
-} from '../evaluator/matching'
+} from '../shared/matching'
 import type {ConcreteTypeNode} from './typeHelpers'
 
 export function match(left: ConcreteTypeNode, right: ConcreteTypeNode): boolean | undefined {

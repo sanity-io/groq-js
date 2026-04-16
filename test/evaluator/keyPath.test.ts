@@ -1,7 +1,7 @@
 import t from 'tap'
 
 import {diffKeyPaths, startsWith, valueAtPath} from '../../src/evaluator/keyPath'
-import {DateTime, fromJS, StreamValue} from '../../src/values'
+import {DateTime, fromJS, StreamValue} from '../../src/shared/values'
 
 const obj: any = {left: {a: 1}, right: [{foo: 2}, [{bar: 3}]]}
 

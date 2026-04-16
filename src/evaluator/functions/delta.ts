@@ -1,5 +1,5 @@
-import {isSelectorNode} from '../../nodeTypes'
-import {fromString, NULL_VALUE} from '../../values'
+import {isSelectorNode} from '../../shared/nodeTypes'
+import {fromString, NULL_VALUE} from '../../shared/values'
 import {asyncOnlyExecutor, constantExecutor} from '../evaluate'
 import type {FunctionSet} from '.'
 import {changedAny, changedOnly} from './diff'
@@ -33,8 +33,6 @@ delta['changedAny'] = asyncOnlyExecutor(async (args, scope) => {
 
   return changedAny(before, after, selector, scope)
 })
-delta['changedAny'].arity = 1
-delta['changedAny'].mode = 'delta'
 
 delta['changedOnly'] = asyncOnlyExecutor(async (args, scope) => {
   const before = scope.context.before || NULL_VALUE
@@ -44,7 +42,5 @@ delta['changedOnly'] = asyncOnlyExecutor(async (args, scope) => {
 
   return changedOnly(before, after, selector, scope)
 })
-delta['changedOnly'].arity = 1
-delta['changedOnly'].mode = 'delta'
 
 export default delta

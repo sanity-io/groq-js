@@ -1,4 +1,4 @@
-import {FALSE_VALUE, fromJS, fromString, getType, NULL_VALUE, TRUE_VALUE} from '../../values'
+import {FALSE_VALUE, fromJS, fromString, getType, NULL_VALUE, TRUE_VALUE} from '../../shared/values'
 import {isEqual} from '../equality'
 import {arrayExecutor, mappedExecutor} from '../evaluate'
 import type {FunctionSet} from '.'
@@ -35,7 +35,6 @@ array['join'] = mappedExecutor(
     return fromString(buf)
   },
 )
-array['join'].arity = 2
 
 array['compact'] = arrayExecutor(
   ([array]) => ({array: array!}),
@@ -43,7 +42,6 @@ array['compact'] = arrayExecutor(
     if (item !== null) yield item
   },
 )
-array['compact'].arity = 1
 
 array['unique'] = arrayExecutor(
   (args) => ({array: args[0]!, state: new Set()}),
@@ -63,7 +61,6 @@ array['unique'] = arrayExecutor(
     }
   },
 )
-array['unique'].arity = 1
 
 array['intersects'] = mappedExecutor(
   (args) => args,
@@ -85,6 +82,5 @@ array['intersects'] = mappedExecutor(
     return FALSE_VALUE
   },
 )
-array['intersects'].arity = 2
 
 export default array

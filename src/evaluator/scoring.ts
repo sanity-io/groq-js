@@ -1,13 +1,13 @@
-import type {ExprNode} from '../nodeTypes'
-import type {Value} from '../values'
-import {executeAsync, executeSync} from './evaluate'
 import {
   type GatheredText,
   gatherText,
   matchPatternRegex,
   matchTokenize,
   type Token,
-} from './matching'
+} from '../shared/matching'
+import type {ExprNode} from '../shared/nodeTypes'
+import type {Value} from '../shared/values'
+import {executeAsync, executeSync} from './evaluate'
 import {Scope} from './scope'
 
 // BM25 similarity constants

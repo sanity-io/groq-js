@@ -1,7 +1,7 @@
 export type {GroqFunction, GroqFunctionArg, GroqPipeFunction} from '../evaluator/functions'
 export type {Scope} from '../evaluator/scope'
 export type {Context, DereferenceFunction, Document, Executor} from '../evaluator/types'
-export * from '../nodeTypes'
+export * from '../shared/nodeTypes'
 export type {
   AnyStaticValue,
   ArrayValue,
@@ -16,8 +16,8 @@ export type {
   StreamValue,
   StringValue,
   Value,
-} from '../values'
-export {DateTime, Path} from '../values'
+} from '../shared/values'
+export {DateTime, Path} from '../shared/values'
 export {typeEvaluate} from './typeEvaluate'
 export {createReferenceTypeNode} from './typeHelpers'
 export type {

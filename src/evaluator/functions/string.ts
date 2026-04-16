@@ -1,4 +1,4 @@
-import {FALSE_VALUE, fromArray, fromString, NULL_VALUE, TRUE_VALUE} from '../../values'
+import {FALSE_VALUE, fromArray, fromString, NULL_VALUE, TRUE_VALUE} from '../../shared/values'
 import {mappedExecutor} from '../evaluate'
 import type {FunctionSet} from '.'
 
@@ -14,7 +14,6 @@ string['lower'] = mappedExecutor(
     return fromString(value.data.toLowerCase())
   },
 )
-string['lower'].arity = 1
 
 string['upper'] = mappedExecutor(
   (args) => args,
@@ -26,7 +25,6 @@ string['upper'] = mappedExecutor(
     return fromString(value.data.toUpperCase())
   },
 )
-string['upper'].arity = 1
 
 string['split'] = mappedExecutor(
   (args) => args,
@@ -48,7 +46,6 @@ string['split'] = mappedExecutor(
     return fromArray(str.data.split(sep.data))
   },
 )
-string['split'].arity = 2
 
 string['startsWith'] = mappedExecutor(
   (args) => args,
@@ -64,6 +61,5 @@ string['startsWith'] = mappedExecutor(
     return str.data.startsWith(prefix.data) ? TRUE_VALUE : FALSE_VALUE
   },
 )
-string['startsWith'].arity = 2
 
 export default string
