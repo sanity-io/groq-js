@@ -282,6 +282,11 @@ function unparseFlatMapExpr(node: ExprNode): string {
     return `${unparseFlatMapExpr(node.base)}[]`
   }
 
+  if (node.type === 'Slice') {
+    const base = unparseFlatMapExpr(node.base)
+    return `${base}[${node.left}${node.isInclusive ? '..' : '...'}${node.right}]`
+  }
+
   if (node.type === 'Map') {
     const base = unparseFlatMapExpr(node.base)
     const expr = unparseMapExpr(node.expr)
@@ -298,6 +303,9 @@ function unparseFlatMapExpr(node: ExprNode): string {
     if (node.base?.type === 'This') return unparse(node.expr)
     if (node.base?.type === 'Deref' && node.base.base?.type === 'This') {
       return `->${unparse(node.expr)}`
+    }
+    if (node.base?.type === 'Map') {
+      return `${unparseFlatMapExpr(node.base)}${unparse(node.expr)}`
     }
   }
 

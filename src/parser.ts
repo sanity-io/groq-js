@@ -906,6 +906,7 @@ function extractPropertyKey(node: ExprNode): string {
     node.type === 'PipeFuncCall' ||
     node.type === 'Deref' ||
     node.type === 'Map' ||
+    node.type === 'FlatMap' ||
     node.type === 'Projection' ||
     node.type === 'Slice' ||
     node.type === 'Filter' ||
