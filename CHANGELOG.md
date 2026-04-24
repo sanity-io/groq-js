@@ -5,6 +5,12 @@
 All notable changes to this project will be documented in this file. See
 [Conventional Commits](https://conventionalcommits.org) for commit guidelines.
 
+## [1.30.1](https://github.com/sanity-io/groq-js/compare/v1.30.0...v1.30.1) (2026-04-24)
+
+### Bug Fixes
+
+- handle sliced dereference projections in unparse ([#345](https://github.com/sanity-io/groq-js/issues/345)) ([92c1296](https://github.com/sanity-io/groq-js/commit/92c12961df6925cbb24d70294330f69dd6d6fd48))
+
 ## [1.30.0](https://github.com/sanity-io/groq-js/compare/v1.29.0...v1.30.0) (2026-04-16)
 
 ### Features
