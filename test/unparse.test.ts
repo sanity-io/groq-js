@@ -16,6 +16,10 @@ t.test('unparse', async () => {
     '*._id',
     'select(1 => 2, foo)',
     'select(1 => 2)',
+    // Sliced dereference projections
+    '*[_type == "product"]{faqs[]->{question, answer}[0...3]}',
+    '*[_type == "collection"][0]{"products": products[]->{title}[0...10]}',
+    '*{faqs[]->{q}[0..3]}',
   ]
 
   for (const query of queries) {
