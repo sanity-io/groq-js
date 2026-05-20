@@ -28,6 +28,7 @@ export function walkValidateCustomFunction<T extends ExprNode | SelectorNode>(
       }
       return node
     }
+
     case 'Parameter': {
       throw new Error(
         `Function parameters are not allowed outside function declarations: ${node.name}`,
@@ -164,6 +165,7 @@ export function walkValidateCustomFunction<T extends ExprNode | SelectorNode>(
         right: walkValidateCustomFunction(node.right, level),
       }
 
+    case 'Parameter':
     case 'Everything':
     case 'This':
     case 'Value':

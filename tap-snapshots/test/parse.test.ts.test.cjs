@@ -375,6 +375,14 @@ Object {
                     "type": "AccessAttribute",
                   },
                 },
+                Object {
+                  "name": "myparam",
+                  "type": "ObjectAttributeValue",
+                  "value": Object {
+                    "type": "Value",
+                    "value": "hello",
+                  },
+                },
               ],
               "type": "Object",
             },

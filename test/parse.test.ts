@@ -308,13 +308,28 @@ t.test('handles parenthesis inside filters (regression bug)', async (t) => {
 
 t.test('Custom functions', async (t) => {
   await t.test('can parse', async (t) => {
-    const expr = parse(`fn foo::info($person) = $person{name, "names": foo::name(name), age};
+    const expr = parse(
+      `fn foo::info($person) = $person{name, "names": foo::name(name), age, "myparam": $myparam};
          fn foo::name($names) = $names[]{first, last};
          *[_type == "person"] {
            "info": foo::info(@)
          }
-    `)
+    `,
+      {params: {myparam: 'hello'}},
+    )
     t.matchSnapshot(expr)
+  })
+
+  await t.test('can only use param once', async (t) => {
+    t.throws(() =>
+      parse(
+        `fn foo::info($person) = $person{name, "names": foo::name(name), age, "person": $person};
+         fn foo::name($names) = $names[]{first, last};
+         *[_type == "person"] {
+           "info": foo::info(@)
+         }`,
+      ),
+    )
   })
 
   await t.test('detects recursion', async (t) => {
