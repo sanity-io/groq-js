@@ -56,7 +56,10 @@ class GroqQueryError extends Error {
   public override name = 'GroqQueryError'
 }
 
-function createExpressionBuilder(recursion: Set<string> = new Set()): MarkVisitor<ExprNode> {
+function createExpressionBuilder(
+  parseOptions: ParseOptions,
+  recursion: Set<string> = new Set(),
+): MarkVisitor<ExprNode> {
   const exprBuilder: MarkVisitor<ExprNode> = {
     group(p) {
       const inner = p.process(exprBuilder)
@@ -402,9 +405,14 @@ function createExpressionBuilder(recursion: Set<string> = new Set()): MarkVisito
 
       const customFunction = p.customFunctions[`${namespace}::${name}`]
       if (customFunction !== undefined) {
-        const FUNCTION_DECL_BUILDER = createFunctionDeclarationBuilder(recursion)
+        const FUNCTION_DECL_BUILDER = createFunctionDeclarationBuilder(parseOptions, recursion)
 
-        const processor = new MarkProcessor(p.string, customFunction.marks, p.customFunctions, {})
+        const processor = new MarkProcessor(
+          p.string,
+          customFunction.marks,
+          p.customFunctions,
+          parseOptions,
+        )
         const funcDecl = processor.process(FUNCTION_DECL_BUILDER)
         validateArity(name, funcDecl.params.length, args.length)
         return mapCustomFunction(
@@ -1054,14 +1062,15 @@ export function parse(input: string, options: ParseOptions = {}): ExprNode {
   if (result.type === 'error') {
     throw new GroqSyntaxError(result.position, input, result.message)
   }
-  validateCustomFunctions(input, result.customFunctions)
+  validateCustomFunctions(input, result.customFunctions, options)
 
   const processor = new MarkProcessor(input, result.marks, result.customFunctions, options)
-  const exprBuilder = createExpressionBuilder()
+  const exprBuilder = createExpressionBuilder(options)
   return processor.process(exprBuilder)
 }
 
 function createFunctionDeclarationBuilder(
+  parseOptions: ParseOptions,
   recursion: Set<string> = new Set(),
 ): MarkVisitor<FunctionDeclarationNode> {
   return {
@@ -1073,7 +1082,7 @@ function createFunctionDeclarationBuilder(
         throw new GroqQueryError(`Recursive function definition detected for ${functionId}`)
       }
 
-      const exprBuilder = createExpressionBuilder(new Set([...recursion, functionId]))
+      const exprBuilder = createExpressionBuilder(parseOptions, new Set([...recursion, functionId]))
 
       const params: ParameterNode[] = []
       while (p.getMark().name !== 'func_params_end') {
@@ -1100,13 +1109,17 @@ function createFunctionDeclarationBuilder(
     },
   } satisfies MarkVisitor<FunctionDeclarationNode>
 }
-function validateCustomFunctions(query: string, customFunctions: CustomFunctions) {
+function validateCustomFunctions(
+  query: string,
+  customFunctions: CustomFunctions,
+  parseOptions: ParseOptions,
+) {
   for (const functionId in customFunctions) {
     if (!customFunctions.hasOwnProperty(functionId)) continue
     const customFunction = customFunctions[functionId]
-    const processor = new MarkProcessor(query, customFunction.marks, customFunctions, {})
+    const processor = new MarkProcessor(query, customFunction.marks, customFunctions, parseOptions)
 
-    const FUNCTION_DECL_BUILDER = createFunctionDeclarationBuilder()
+    const FUNCTION_DECL_BUILDER = createFunctionDeclarationBuilder(parseOptions)
     const funcDecl = processor.process(FUNCTION_DECL_BUILDER)
     mapCustomFunction(funcDecl.body, (body) => walkValidateCustomFunction(body))
   }
