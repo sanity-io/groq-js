@@ -5,6 +5,12 @@
 All notable changes to this project will be documented in this file. See
 [Conventional Commits](https://conventionalcommits.org) for commit guidelines.
 
+## [1.30.2](https://github.com/sanity-io/groq-js/compare/v1.30.1...v1.30.2) (2026-05-26)
+
+### Bug Fixes
+
+- **parse:** resolve global params in custom functions ([803f3de](https://github.com/sanity-io/groq-js/commit/803f3de67f889403fd37f817cf78dc84c4a12f0a))
+
 ## [1.30.1](https://github.com/sanity-io/groq-js/compare/v1.30.0...v1.30.1) (2026-04-24)
 
 ### Bug Fixes
