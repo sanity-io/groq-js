@@ -101,6 +101,8 @@ export interface UnionTypeNode<T extends TypeNode = TypeNode> {
   type: 'union'
   /** a collection of types */
   of: T[]
+  /** an optional name identifying the union */
+  name?: string
 }
 
 /** Describes a type node for array values. */
