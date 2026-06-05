@@ -42,11 +42,13 @@ import {
   mapNode,
   nullUnion,
   resolveInline,
+  unionOf,
 } from './typeHelpers'
 import {
   type ArrayTypeNode,
   type BooleanTypeNode,
   type Document,
+  type InlineTypeNode,
   type NullTypeNode,
   type NumberTypeNode,
   type ObjectAttribute,
@@ -91,6 +93,18 @@ export function typeEvaluate(ast: ExprNode, schema: Schema): TypeNode {
 }
 
 function mapDeref(node: TypeNode, scope: Scope): TypeNode {
+  if (node.type === 'union') {
+    const declaredTo = getNestedDeclaredTo(node)
+    if (declaredTo !== undefined) {
+      return mapDeclaredUnionReference(node, declaredTo, scope)
+    }
+  }
+
+  const declaredTo = getDeclaredTo(node)
+  if (declaredTo !== undefined) {
+    return mapDeclaredReferences(declaredTo, scope)
+  }
+
   return mapNode(node, scope, (base) => {
     if (base.type === 'array') {
       return {
@@ -100,6 +114,11 @@ function mapDeref(node: TypeNode, scope: Scope): TypeNode {
     }
 
     if (base.type === 'object') {
+      const baseDeclaredTo = getDeclaredTo(base)
+      if (baseDeclaredTo !== undefined) {
+        return mapDeclaredReferences(baseDeclaredTo, scope)
+      }
+
       if (base.dereferencesTo !== undefined) {
         return scope.context.lookupRef(base.dereferencesTo)
       }
@@ -107,6 +126,112 @@ function mapDeref(node: TypeNode, scope: Scope): TypeNode {
       if (base.rest !== undefined) {
         return mapDeref(resolveInline(base.rest, scope), scope)
       }
+    }
+
+    return {type: 'null'}
+  })
+}
+
+function mapDeclaredUnionReference(
+  node: UnionTypeNode,
+  declaredTo: InlineTypeNode[],
+  scope: Scope,
+): TypeNode {
+  return optimizeUnions(
+    unionOf(
+      [
+        mapDeclaredReferences(declaredTo, scope),
+        ...node.of.map((member) => mapDeref(member, scope)),
+      ],
+      {
+        declaredOf: declaredTo,
+      },
+    ),
+  )
+}
+
+function getDeclaredTo(node: TypeNode): InlineTypeNode[] | undefined {
+  if (node.type !== 'inline' && node.type !== 'object' && node.type !== 'union') {
+    return undefined
+  }
+
+  return node.declaredTo && node.declaredTo.length > 0 ? node.declaredTo : undefined
+}
+
+function getNestedDeclaredTo(node: TypeNode): InlineTypeNode[] | undefined {
+  const declaredTo = getDeclaredTo(node)
+  if (node.type !== 'union') {
+    return declaredTo
+  }
+
+  return node.of.reduce(
+    (acc, member) => mergeDeclaredTo(acc, getNestedDeclaredTo(member)),
+    declaredTo,
+  )
+}
+
+function mergeDeclaredTo(
+  target: InlineTypeNode[] | undefined,
+  source: InlineTypeNode[] | undefined,
+): InlineTypeNode[] | undefined {
+  if (source === undefined) {
+    return target
+  }
+
+  if (target === undefined) {
+    return source
+  }
+
+  const seen = new Set(target.map((node) => node.name))
+  const merged = [...target]
+
+  for (const sourceNode of source) {
+    if (seen.has(sourceNode.name)) {
+      continue
+    }
+
+    seen.add(sourceNode.name)
+    merged.push(sourceNode)
+  }
+
+  return merged
+}
+
+function mapDeclaredReferences(declaredTo: InlineTypeNode[], scope: Scope): TypeNode {
+  return optimizeUnions(
+    unionOf(
+      declaredTo.map((target) => mapDeclaredReferenceTarget(target, scope)),
+      {declaredOf: declaredTo},
+    ),
+  )
+}
+
+function mapDeclaredReferenceTarget(target: InlineTypeNode, scope: Scope): TypeNode {
+  const resolvedTarget = resolveInline(target, scope)
+
+  return mapNode(resolvedTarget, scope, (base) => {
+    if (base.type === 'array') {
+      return {
+        type: 'array',
+        of: mapDeref(base.of, scope),
+      }
+    }
+
+    if (base.type === 'object') {
+      const declaredTo = getDeclaredTo(base)
+      if (declaredTo !== undefined) {
+        return mapDeclaredReferences(declaredTo, scope)
+      }
+
+      if (base.dereferencesTo !== undefined) {
+        return scope.context.lookupRef(base.dereferencesTo)
+      }
+
+      if (base.rest !== undefined) {
+        return mapDeref(resolveInline(base.rest, scope), scope)
+      }
+
+      return base
     }
 
     return {type: 'null'}
