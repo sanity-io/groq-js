@@ -309,10 +309,11 @@ t.test('handles parenthesis inside filters (regression bug)', async (t) => {
 t.test('Custom functions', async (t) => {
   await t.test('can parse', async (t) => {
     const expr = parse(
-      `fn foo::info($person) = $person{name, "names": foo::name(name), age, "myparam": $myparam};
+      `fn foo::info($person) = $person{name, "names": foo::name(name), age, "myparam": $myparam, "undefinedParam": $undefinedParam};
          fn foo::name($names) = $names[]{first, last};
          *[_type == "person"] {
-           "info": foo::info(@)
+           "info": foo::info(@),
+           "undefinedParam": $undefinedParam
          }
     `,
       {params: {myparam: 'hello'}},
