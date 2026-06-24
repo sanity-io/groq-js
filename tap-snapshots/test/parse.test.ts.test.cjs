@@ -383,10 +383,26 @@ Object {
                     "value": "hello",
                   },
                 },
+                Object {
+                  "name": "undefinedParam",
+                  "type": "ObjectAttributeValue",
+                  "value": Object {
+                    "name": "undefinedParam",
+                    "type": "Parameter",
+                  },
+                },
               ],
               "type": "Object",
             },
             "type": "Projection",
+          },
+        },
+        Object {
+          "name": "undefinedParam",
+          "type": "ObjectAttributeValue",
+          "value": Object {
+            "name": "undefinedParam",
+            "type": "Parameter",
           },
         },
       ],

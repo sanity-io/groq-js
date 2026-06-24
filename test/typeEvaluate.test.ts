@@ -3970,6 +3970,54 @@ t.test('match with dateTime in patterns array returns false', (t) => {
   t.end()
 })
 
+t.test('custom functions', (t) => {
+  const ast = parse(
+    `
+    fn foo::info($person) = $person{name, "names": name, "myparam": $myparam};
+    *[_type == "author"] {
+      "info": foo::info(@)
+    }
+  `,
+    {params: {}},
+  )
+  const res = typeEvaluate(ast, schemas)
+  t.same(res, {
+    type: 'array',
+    of: {
+      type: 'object',
+      attributes: {
+        info: {
+          type: 'objectAttribute',
+          value: {
+            type: 'object',
+            attributes: {
+              name: {
+                type: 'objectAttribute',
+                value: {
+                  type: 'string',
+                },
+              },
+              names: {
+                type: 'objectAttribute',
+                value: {
+                  type: 'string',
+                },
+              },
+              myparam: {
+                type: 'objectAttribute',
+                value: {
+                  type: 'unknown',
+                },
+              },
+            },
+          },
+        },
+      },
+    },
+  } satisfies TypeNode)
+  t.end()
+})
+
 function findSchemaType(name: string): TypeNode {
   const type = schemas.find((s) => s.name === name)
   if (!type) {

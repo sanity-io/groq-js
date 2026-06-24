@@ -417,7 +417,7 @@ function createExpressionBuilder(
         validateArity(name, funcDecl.params.length, args.length)
         return mapCustomFunction(
           funcDecl.body,
-          (body) => walkValidateCustomFunction(body),
+          (body) => walkValidateCustomFunction(body, funcDecl.params),
           (parameterNode) => resolveFunctionParameter(parameterNode, funcDecl.params, args),
         )
       }
@@ -1121,6 +1121,6 @@ function validateCustomFunctions(
 
     const FUNCTION_DECL_BUILDER = createFunctionDeclarationBuilder(parseOptions)
     const funcDecl = processor.process(FUNCTION_DECL_BUILDER)
-    mapCustomFunction(funcDecl.body, (body) => walkValidateCustomFunction(body))
+    mapCustomFunction(funcDecl.body, (body) => walkValidateCustomFunction(body, funcDecl.params))
   }
 }
