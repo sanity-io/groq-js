@@ -5,6 +5,12 @@
 All notable changes to this project will be documented in this file. See
 [Conventional Commits](https://conventionalcommits.org) for commit guidelines.
 
+## [1.30.3](https://github.com/sanity-io/groq-js/compare/v1.30.2...v1.30.3) (2026-06-26)
+
+### Bug Fixes
+
+- **parse:** only throw if function param is used >1 times ([c6e061b](https://github.com/sanity-io/groq-js/commit/c6e061be9885121499d00e0229d5360019b4a0da))
+
 ## [1.30.2](https://github.com/sanity-io/groq-js/compare/v1.30.1...v1.30.2) (2026-05-26)
 
 ### Bug Fixes
