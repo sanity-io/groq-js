@@ -78,7 +78,7 @@
     "debug": "^4.3.4"
   },
   "devDependencies": {
-    "@sanity/pkg-utils": "^7.2.2",
+    "@sanity/pkg-utils": "^8.1.29",
     "@sanity/prettier-config": "^3.0.0",
     "@sanity/semantic-release-preset": "^5.0.0",
     "@types/debug": "^4.1.12",
