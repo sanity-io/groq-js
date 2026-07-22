@@ -29,7 +29,7 @@ const result = buildSync({
   format: 'esm',
   treeShaking: true,
   platform: 'node',
-  external: ['debug'],
+  external: ['obug'],
   write: false,
 })
 
