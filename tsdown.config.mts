@@ -9,7 +9,7 @@ export default mergeConfig(
       '1': 'src/1.ts',
       'experimental': 'src/experimental.ts',
     },
-    format: ['esm', 'commonjs'],
+    format: ['esm'],
   }),
   {
     outputOptions: {
