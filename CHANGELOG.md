@@ -5,6 +5,31 @@
 All notable changes to this project will be documented in this file. See
 [Conventional Commits](https://conventionalcommits.org) for commit guidelines.
 
+## [2.0.0](https://github.com/sanity-io/groq-js/compare/v1.30.3...v2.0.0) (2026-07-22)
+
+### ⚠ BREAKING CHANGES
+
+- node >=22.12 is now required, matching the engines
+  range of `sanity` and `@sanity/cli`. The `groq-js`, `groq-js/1` and
+  `groq-js/experimental` entry points are unchanged.
+
+Co-authored-by: Cursor <cursoragent@cursor.com>
+
+- feat!: publish ESM-only
+
+Drops the CommonJS build and sets `"type": "module"`. Since the
+package already requires node >=22.12, CJS consumers can still
+require() the ESM build via require(esm).
+
+- groq-js is now ESM-only. On node >=22.12, require()
+  keeps working through require(esm) support.
+
+Co-authored-by: Cursor <cursoragent@cursor.com>
+
+### Features
+
+- replace debug with obug, drop CJS, require node >=22.12 ([#354](https://github.com/sanity-io/groq-js/issues/354)) ([c612e4b](https://github.com/sanity-io/groq-js/commit/c612e4b2bd142699419c66a4344ec0f52f0763ec)), closes [#355](https://github.com/sanity-io/groq-js/issues/355)
+
 ## [1.30.3](https://github.com/sanity-io/groq-js/compare/v1.30.2...v1.30.3) (2026-06-26)
 
 ### Bug Fixes
