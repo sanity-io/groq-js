@@ -1,9 +1,4 @@
-import debug from 'debug'
-
 import type {InlineTypeNode, NullTypeNode, Schema, TypeNode, UnionTypeNode} from './types'
-
-const $trace = debug('typeEvaluator:scope:trace')
-$trace.log = console.log.bind(console) // eslint-disable-line no-console
 
 export class Context {
   readonly schema: Schema

@@ -14,50 +14,22 @@
   "license": "MIT",
   "author": "Sanity.io <hello@sanity.io>",
   "sideEffects": false,
-  "type": "commonjs",
+  "type": "module",
   "exports": {
-    ".": {
-      "source": "./src/1.ts",
-      "import": "./dist/index.mjs",
-      "require": "./dist/index.js",
-      "default": "./dist/index.js"
-    },
-    "./1": {
-      "source": "./src/1.ts",
-      "import": "./dist/1.mjs",
-      "require": "./dist/1.js",
-      "default": "./dist/1.js"
-    },
-    "./experimental": {
-      "source": "./src/experimental.ts",
-      "import": "./dist/experimental.mjs",
-      "require": "./dist/experimental.js",
-      "default": "./dist/experimental.js"
-    },
+    ".": "./dist/index.js",
+    "./1": "./dist/1.js",
+    "./experimental": "./dist/experimental.js",
     "./package.json": "./package.json"
   },
-  "main": "./dist/index.js",
-  "module": "./dist/index.mjs",
   "types": "./dist/index.d.ts",
-  "typesVersions": {
-    "*": {
-      "1": [
-        "./dist/1.d.ts"
-      ],
-      "experimental": [
-        "./dist/experimental.d.ts"
-      ]
-    }
-  },
   "files": [
     "dist",
-    "src",
     "LICENSE",
     "API.md",
     "README.md"
   ],
   "scripts": {
-    "build": "pkg build --strict --check --clean",
+    "build": "tsdown",
     "prepublishOnly": "npm run build",
     "prettify": "prettier --write .",
     "prettify-check": "prettier --check .",
@@ -65,23 +37,22 @@
     "test:bundle": "tsx test/bundle.check.ts",
     "test:generate": "./test/generate.sh"
   },
-  "browserslist": "extends @sanity/browserslist-config",
   "prettier": "@sanity/prettier-config",
   "tap": {
     "check-coverage": false,
     "node-arg": [
-      "-r",
-      "tsx/cjs"
+      "--import",
+      "tsx"
     ]
   },
   "dependencies": {
-    "debug": "^4.3.4"
+    "obug": "^2.1.3"
   },
   "devDependencies": {
-    "@sanity/pkg-utils": "^7.2.2",
     "@sanity/prettier-config": "^3.0.0",
     "@sanity/semantic-release-preset": "^5.0.0",
-    "@types/debug": "^4.1.12",
+    "@sanity/tsconfig": "^2.2.1",
+    "@sanity/tsdown-config": "^0.19.6",
     "@types/tap": "^15.0.12",
     "@typescript-eslint/eslint-plugin": "^7.18.0",
     "@typescript-eslint/parser": "^7.18.0",
@@ -98,10 +69,11 @@
     "semantic-release": "^24.2.0",
     "semver": "^7.5.4",
     "tap": "^16.3.10",
+    "tsdown": "^0.22.13",
     "tsx": "^4.19.2",
-    "typescript": "5.8.3"
+    "typescript": "^6.0.3"
   },
   "engines": {
-    "node": ">= 14"
+    "node": ">=22.12"
   }
 }

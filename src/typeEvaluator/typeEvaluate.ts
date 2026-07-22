@@ -1,4 +1,4 @@
-import debug from 'debug'
+import {createDebug} from 'obug'
 
 import type {
   AccessAttributeNode,
@@ -59,13 +59,14 @@ import {
   type UnknownTypeNode,
 } from './types'
 
-const $trace = debug('typeEvaluator:evaluate:trace')
-$trace.log = console.log.bind(console) // eslint-disable-line no-console
-// log to stdout
-const $debug = debug('typeEvaluator:evaluate:debug')
-// log to stdout
-$debug.log = console.log.bind(console) // eslint-disable-line no-console
-const $warn = debug('typeEvaluator:evaluate:warn')
+// $trace and $debug log to stdout
+const $trace = createDebug('typeEvaluator:evaluate:trace', {
+  log: console.log.bind(console), // eslint-disable-line no-console
+})
+const $debug = createDebug('typeEvaluator:evaluate:debug', {
+  log: console.log.bind(console), // eslint-disable-line no-console
+})
+const $warn = createDebug('typeEvaluator:evaluate:warn')
 
 /**
  * Evaluates the type of a query and schema.

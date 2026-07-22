@@ -52,10 +52,10 @@ function space() {
   OUTPUT.write('\n')
 }
 
-write(`const fs = require('fs')`)
-write(`const ndjson = require('ndjson')`)
-write(`const tap = require('tap')`)
-write(`const {evaluate, parse, evaluateSync, toJS, unparse} = require('../src/1')`)
+write(`import fs from 'node:fs'`)
+write(`import ndjson from 'ndjson'`)
+write(`import tap from 'tap'`)
+write(`import {evaluate, evaluateSync, parse, toJS, unparse} from '../src/1'`)
 space()
 
 write(`tap.setTimeout(0)`)
@@ -77,7 +77,7 @@ async function loadDocuments(id) {
     // For now we've disabled all external datasets since they are very big.
     return null
     LOADERS.set(id, new Promise((resolve, reject) => {
-      let filename = __dirname + "/datasets/" + entry._id + ".ndjson"
+      let filename = import.meta.dirname + "/datasets/" + entry._id + ".ndjson"
       let documents = []
       fs.createReadStream(filename)
         .pipe(ndjson.parse())
