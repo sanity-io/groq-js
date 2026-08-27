@@ -20,6 +20,13 @@ t.test('unparse', async () => {
     '*[_type == "product"]{faqs[]->{question, answer}[0...3]}',
     '*[_type == "collection"][0]{"products": products[]->{title}[0...10]}',
     '*{faqs[]->{q}[0..3]}',
+    // Relative traversals nested across maps, flat maps, dereferences, and projections
+    '(*[_type=="project"][].members[]->dept->)[budget > 500000].name',
+    '*[_type=="project"][].members[]->dept->[budget > 500000].name',
+    '*[_id == "section-calories"][0] {"options": options[]->{_id, "calories": coalesce(nutrition.calories, ((options[].option->)[_type == "item"])[0].nutrition.calories)}}',
+    '*[_type == "common.procuredOffer" && $brand + "-holidays" in brands && propertyId in $hotelOffers[].propertyId]{..., "matchedOffers": rooms[active == true][].offers[id in $hotelOffers[propertyId == ^.^.propertyId].offerId]{"propertyId": ^.propertyId, "offerId": id}}.matchedOffers[]',
+    '*[_id == "menu-root"][0].defaultMenu->options[]->options[]->{"pickers": *["picker" == ^._type && _id == ^._id]._id}.pickers[]',
+    '*[_id == "settings"][0].resortSelection[defined(resort->slug.current)].resort->{"resortSlug": slug.current}[0...1]',
   ]
 
   for (const query of queries) {
