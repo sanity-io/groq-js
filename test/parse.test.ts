@@ -222,9 +222,43 @@ t.test('Expression parsing', async (t) => {
     })
   })
 
+  t.test('when parsing element access', async (t) => {
+    t.test('throws when an index is not an integer', async (t) => {
+      throwsWithMessage(t, () => parse('*[0.1]'), 'array element access must use an integer')
+      throwsWithMessage(
+        t,
+        () => parse('*[$index]', {params: {index: 0.1}}),
+        'array element access must use an integer',
+      )
+    })
+
+    t.test('allows integer-valued decimals and parameters', async (t) => {
+      t.doesNotThrow(() => parse('*[1.0]'))
+      t.doesNotThrow(() => parse('*[$index]', {params: {index: 1.0}}))
+    })
+  })
+
   t.test('when parsing slices', async (t) => {
     t.test('throws when a constant number is not used', async (t) => {
       throwsWithMessage(t, () => parse('*[0..x]'), 'slicing must use constant numbers')
+    })
+
+    t.test('throws when a slice bound is not an integer', async (t) => {
+      const queries = [
+        {query: '*[0.1..2]', params: {}},
+        {query: '*[0..1.5]', params: {}},
+        {query: '*[$from..2]', params: {from: 0.1}},
+        {query: '*[0..$to]', params: {to: 1.5}},
+      ]
+
+      for (const {query, params} of queries) {
+        throwsWithMessage(t, () => parse(query, {params}), 'slicing must use integer bounds')
+      }
+    })
+
+    t.test('allows integer-valued decimals and parameters', async (t) => {
+      t.doesNotThrow(() => parse('*[0.0..2.0]'))
+      t.doesNotThrow(() => parse('*[$from..$to]', {params: {from: 0.0, to: 2.0}}))
     })
   })
 

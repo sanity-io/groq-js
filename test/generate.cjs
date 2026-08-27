@@ -259,7 +259,8 @@ process.stdin
           write('tt.match(parsed, tree)')
         }
       } else {
-        write(`tt.throws(() => parse(query))`)
+        write(`let params = ${JSON.stringify(entry.params || {})}`)
+        write(`tt.throws(() => parse(query, {params}))`)
       }
       closeStack()
       space()
