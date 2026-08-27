@@ -624,6 +624,10 @@ function createExpressionBuilder(
 
       const value = tryConstantEvaluate(expr)
       if (value && value.type === 'number') {
+        if (!Number.isInteger(value.data)) {
+          throw new GroqQueryError('array element access must use an integer')
+        }
+
         return (right) =>
           traverseElement((base) => ({type: 'AccessElement', base, index: value.data}), right)
       }
@@ -661,6 +665,10 @@ function createExpressionBuilder(
         rightValue.type !== 'number'
       ) {
         throw new GroqQueryError('slicing must use constant numbers')
+      }
+
+      if (!Number.isInteger(leftValue.data) || !Number.isInteger(rightValue.data)) {
+        throw new GroqQueryError('slicing must use integer bounds')
       }
 
       return (rhs) =>
