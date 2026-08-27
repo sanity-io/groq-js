@@ -6,9 +6,6 @@ const json = (v: unknown) => JSON.stringify(v)
 
 /** Property accessor: `.name` if identifier-like, else `["name"]` */
 const prop = (name: string) => (isIdent(name) ? `.${name}` : `[${json(name)}]`)
-/** Property accessor with a custom prefix (e.g. `->`) */
-const propWith = (prefix: string, name: string) =>
-  `${prefix}${isIdent(name) ? `.${name}` : `[${json(name)}]`}`
 
 /** Join args with `, ` after unparsing */
 const joinArgs = (args: ExprNode[]) => args.map(unparse).join(', ')
@@ -185,29 +182,12 @@ function unparseSelector(node: ExprNode): string {
 }
 
 function unparseMapExpr(node: ExprNode): string {
-  // AccessAttribute chains with special handling for This/Deref
+  // `This` is the implicit base of a relative traversal expression.
+  if (node.type === 'This') return ''
+
   if (node.type === 'AccessAttribute') {
-    // this.<name> / this["name"]
-    if (node.base?.type === 'This') return prop(node.name)
-
-    // this->.<name> / this->["name"]
-    if (node.base?.type === 'Deref' && node.base.base?.type === 'This') {
-      return propWith('->', node.name)
-    }
-
-    // (this.attr)->.<name> / ...->["name"]
-    if (node.base?.type === 'Deref' && node.base.base?.type === 'AccessAttribute') {
-      const derefBase = unparseMapExpr(node.base.base)
-      return isIdent(node.name)
-        ? `${derefBase}->.${node.name}`
-        : `${derefBase}->[${json(node.name)}]`
-    }
-
-    // Generic attribute or element bases: append property
-    if (node.base?.type === 'AccessAttribute' || node.base?.type === 'AccessElement') {
-      const base = unparseMapExpr(node.base)
-      return `${base}${prop(node.name)}`
-    }
+    const base = node.base ? unparseMapExpr(node.base) : ''
+    return `${base}${prop(node.name)}`
   }
 
   if (node.type === 'AccessElement') {
@@ -215,8 +195,8 @@ function unparseMapExpr(node: ExprNode): string {
     return `${base}[${node.index}]`
   }
 
-  if (node.type === 'Deref' && node.base?.type === 'This') {
-    return '->'
+  if (node.type === 'Deref') {
+    return `${unparseMapExpr(node.base)}->`
   }
 
   if (node.type === 'ArrayCoerce') {
@@ -228,19 +208,7 @@ function unparseMapExpr(node: ExprNode): string {
   }
 
   if (node.type === 'Projection') {
-    if (node.base?.type === 'This') return unparseMapExpr(node.expr)
-
-    if (node.base?.type === 'Deref') {
-      if (node.base.base?.type === 'This') return `->${unparse(node.expr)}`
-      if (node.base.base?.type === 'AccessAttribute') {
-        const derefBase = unparseMapExpr(node.base.base)
-        return `${derefBase}->${unparse(node.expr)}`
-      }
-    }
-
-    if (node.base?.type === 'Projection') {
-      return unparseMapExpr(node.base) + unparse(node.expr)
-    }
+    return unparseMapExpr(node.base) + unparse(node.expr)
   }
 
   if (node.type === 'Map') return unparseMapExpr(node.expr)
@@ -251,26 +219,12 @@ function unparseMapExpr(node: ExprNode): string {
 }
 
 function unparseFlatMapExpr(node: ExprNode): string {
+  // `This` is the implicit base of a relative traversal expression.
+  if (node.type === 'This') return ''
+
   if (node.type === 'AccessAttribute') {
-    // this.<name> / this["name"]
-    if (node.base?.type === 'This') return prop(node.name)
-
-    if (node.base?.type === 'Deref') {
-      // this->.<name> / this->["name"]
-      if (node.base.base?.type === 'This') return propWith('->', node.name)
-
-      // Deref with any base expression: <base>->.<name> / <base>->["name"]
-      const derefBase = unparseFlatMapExpr(node.base.base)
-      return isIdent(node.name)
-        ? `${derefBase}->.${node.name}`
-        : `${derefBase}->[${json(node.name)}]`
-    }
-
-    // Generic attribute/element bases
-    if (node.base?.type === 'AccessAttribute' || node.base?.type === 'AccessElement') {
-      const base = unparseFlatMapExpr(node.base)
-      return `${base}${prop(node.name)}`
-    }
+    const base = node.base ? unparseFlatMapExpr(node.base) : ''
+    return `${base}${prop(node.name)}`
   }
 
   if (node.type === 'AccessElement') {
@@ -300,17 +254,11 @@ function unparseFlatMapExpr(node: ExprNode): string {
   }
 
   if (node.type === 'Projection') {
-    if (node.base?.type === 'This') return unparse(node.expr)
-    if (node.base?.type === 'Deref' && node.base.base?.type === 'This') {
-      return `->${unparse(node.expr)}`
-    }
-    if (node.base?.type === 'Map') {
-      return `${unparseFlatMapExpr(node.base)}${unparse(node.expr)}`
-    }
+    return `${unparseFlatMapExpr(node.base)}${unparse(node.expr)}`
   }
 
-  if (node.type === 'Deref' && node.base?.type === 'This') {
-    return '->'
+  if (node.type === 'Deref') {
+    return `${unparseFlatMapExpr(node.base)}->`
   }
 
   if (node.type === 'Filter') {
