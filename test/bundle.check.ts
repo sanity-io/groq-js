@@ -52,10 +52,9 @@ assert.match(bundle, /parse/, 'bundle should contain parse-related code')
 
 console.log('Bundle check passed: evaluator is tree-shaken from parse-only bundle.')
 
-// Declarations are code-split like the runtime, so every relative specifier
-// in a published .d.ts must resolve to a published .d.ts. An unresolvable
-// specifier degrades to TypeScript's `error` type, which `skipLibCheck`
-// silences, leaving consumers with implicit `any`.
+// Code splitting gives published .d.ts files cross-chunk relative imports.
+// If one doesn't resolve, TypeScript degrades it to the `error` type,
+// `skipLibCheck` silences it, and consumers get implicit `any`.
 // https://github.com/sanity-io/groq-js/issues/361
 
 const root = join(__dirname, '..')
