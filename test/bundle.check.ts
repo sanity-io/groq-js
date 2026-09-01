@@ -1,6 +1,7 @@
 import assert from 'node:assert/strict'
-import {existsSync} from 'node:fs'
-import {dirname, join} from 'node:path'
+import {execFileSync} from 'node:child_process'
+import {existsSync, readFileSync} from 'node:fs'
+import {dirname, join, posix} from 'node:path'
 import {fileURLToPath} from 'node:url'
 
 import {buildSync} from 'esbuild'
@@ -50,3 +51,27 @@ for (const id of evaluatorIdentifiers) {
 assert.match(bundle, /parse/, 'bundle should contain parse-related code')
 
 console.log('Bundle check passed: evaluator is tree-shaken from parse-only bundle.')
+
+// Code splitting gives published .d.ts files cross-chunk relative imports.
+// If one doesn't resolve, TypeScript degrades it to the `error` type,
+// `skipLibCheck` silences it, and consumers get implicit `any`.
+// https://github.com/sanity-io/groq-js/issues/361
+
+const root = join(__dirname, '..')
+const [{files}] = JSON.parse(
+  execFileSync('npm', ['pack', '--dry-run', '--json'], {cwd: root, encoding: 'utf-8'}),
+)
+const published = new Set<string>(files.map((file: {path: string}) => file.path))
+
+const missing: string[] = []
+for (const path of published) {
+  if (!path.endsWith('.d.ts')) continue
+  const source = readFileSync(join(root, path), 'utf-8')
+  for (const [, specifier] of source.matchAll(/(?:from\s*|import\()\s*['"](\.[^'"]+)['"]/g)) {
+    const declaration = posix.join(posix.dirname(path), specifier.replace(/\.[cm]?js$/, '.d.ts'))
+    if (!published.has(declaration)) missing.push(`${path} imports ${specifier}`)
+  }
+}
+assert.deepEqual(missing, [], 'every .d.ts specifier must resolve to a published declaration')
+
+console.log('Declaration check passed: every published .d.ts specifier resolves.')
