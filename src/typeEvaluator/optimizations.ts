@@ -1,5 +1,5 @@
 import {isDateTime} from './typeHelpers'
-import type {TypeNode} from './types'
+import type {InlineTypeNode, ObjectTypeNode, TypeNode, UnionTypeNode} from './types'
 
 const {compare} = new Intl.Collator('en')
 function typeNodesSorter(a: TypeNode, b: TypeNode): number {
@@ -97,6 +97,7 @@ export function removeDuplicateTypeNodes(typeNodes: TypeNode[]): TypeNode[] {
       continue
     }
     if (seenTypes.has(hash)) {
+      mergeDuplicateTypeNodeMetadata(newTypeNodes, hash, typeNode)
       continue
     }
 
@@ -107,28 +108,158 @@ export function removeDuplicateTypeNodes(typeNodes: TypeNode[]): TypeNode[] {
   return newTypeNodes
 }
 
+function mergeDuplicateTypeNodeMetadata(
+  typeNodes: TypeNode[],
+  hash: string,
+  duplicate: TypeNode,
+): void {
+  if (duplicate.type !== 'inline' && duplicate.type !== 'object' && duplicate.type !== 'union') {
+    return
+  }
+
+  const existing = typeNodes.find((typeNode) => hashField(typeNode) === hash)
+  if (duplicate.type === 'inline' && existing?.type === 'inline') {
+    mergeInlineMetadata(existing, duplicate)
+    return
+  }
+
+  if (duplicate.type === 'union' && existing?.type === 'union') {
+    mergeUnionMetadata(existing, duplicate)
+    return
+  }
+
+  if (duplicate.type === 'object' && existing?.type === 'object') {
+    mergeObjectMetadata(existing, duplicate)
+  }
+}
+
+function mergeUnionMetadata(target: UnionTypeNode, source: UnionTypeNode): void {
+  if (!target.name && source.name) {
+    target.name = source.name
+  }
+
+  const declaredOf = mergeTypeNodeListMetadata(target.declaredOf, source.declaredOf)
+  if (declaredOf !== undefined) {
+    target.declaredOf = declaredOf
+  }
+
+  const declaredTo = mergeTypeNodeListMetadata(target.declaredTo, source.declaredTo)
+  if (declaredTo !== undefined) {
+    target.declaredTo = declaredTo
+  }
+}
+
+function mergeObjectMetadata(target: ObjectTypeNode, source: ObjectTypeNode): void {
+  const declaredTo = mergeTypeNodeListMetadata(target.declaredTo, source.declaredTo)
+  if (declaredTo !== undefined) {
+    target.declaredTo = declaredTo
+  }
+}
+
+function mergeInlineMetadata(target: InlineTypeNode, source: InlineTypeNode): void {
+  const declaredTo = mergeTypeNodeListMetadata(target.declaredTo, source.declaredTo)
+  if (declaredTo !== undefined) {
+    target.declaredTo = declaredTo
+  }
+}
+
+function mergeTypeNodeListMetadata<T extends TypeNode>(
+  target: T[] | undefined,
+  source: T[] | undefined,
+): T[] | undefined {
+  if (source === undefined) {
+    return target
+  }
+
+  if (target === undefined) {
+    return source
+  }
+
+  const seen = new Set(target.map(hashField))
+  const merged = [...target]
+
+  for (const sourceNode of source) {
+    const hash = hashField(sourceNode)
+    if (seen.has(hash)) {
+      continue
+    }
+
+    seen.add(hash)
+    merged.push(sourceNode)
+  }
+
+  return merged
+}
+
+function unionHasMetadata(field: UnionTypeNode): boolean {
+  return Boolean(field.name || field.declaredOf || field.declaredTo)
+}
+
+function declaredOfForUnionMember(field: TypeNode): TypeNode[] {
+  if (field.type !== 'union') {
+    return [field]
+  }
+
+  if (field.name) {
+    return [{type: 'inline', name: field.name}]
+  }
+
+  if (field.declaredOf) {
+    return field.declaredOf
+  }
+
+  return field.of
+}
+
+function shouldCollectDeclaredOf(field: UnionTypeNode): boolean {
+  return field.of.some((member) => member.type === 'union' && unionHasMetadata(member))
+}
+
+function declaredToForUnionMember(field: TypeNode): InlineTypeNode[] {
+  if (field.type !== 'inline' && field.type !== 'object' && field.type !== 'union') {
+    return []
+  }
+
+  return field.declaredTo ?? []
+}
+
+function collectDeclaredTo(field: UnionTypeNode): InlineTypeNode[] | undefined {
+  const declaredTo = field.of.flatMap(declaredToForUnionMember)
+
+  return declaredTo.length > 0 ? declaredTo : undefined
+}
+
 export function optimizeUnions(field: TypeNode): TypeNode {
   if (field.type === 'union') {
     if (field.of.length === 0) {
       return field
     }
 
-    field.of = removeDuplicateTypeNodes(field.of)
-
-    if (field.of.length === 1) {
-      return optimizeUnions(field.of[0])
+    if (!field.declaredOf && shouldCollectDeclaredOf(field)) {
+      field.declaredOf = field.of.flatMap(declaredOfForUnionMember)
     }
 
-    // flatten union
-    for (let idx = 0; field.of.length > idx; idx++) {
-      const subField = field.of[idx]
+    const declaredTo = mergeTypeNodeListMetadata(field.declaredTo, collectDeclaredTo(field))
+    if (declaredTo !== undefined) {
+      field.declaredTo = declaredTo
+    }
+
+    const flattened: TypeNode[] = []
+
+    for (const member of field.of) {
+      const subField = optimizeUnions(member)
       if (subField.type === 'union') {
-        field.of.splice(idx, 1, ...subField.of)
-        idx--
+        flattened.push(...subField.of)
         continue
       }
 
-      field.of[idx] = optimizeUnions(subField)
+      flattened.push(subField)
+    }
+
+    field.of = removeDuplicateTypeNodes(flattened)
+
+    if (field.of.length === 1 && !unionHasMetadata(field)) {
+      return optimizeUnions(field.of[0]!)
     }
 
     field.of.sort((a, b) => {
@@ -152,7 +283,12 @@ export function optimizeUnions(field: TypeNode): TypeNode {
         continue
       }
 
-      field.attributes[idx].value = optimizeUnions(field.attributes[idx].value)
+      const attribute = field.attributes[idx]
+      if (!attribute) {
+        continue
+      }
+
+      attribute.value = optimizeUnions(attribute.value)
     }
     return field
   }
