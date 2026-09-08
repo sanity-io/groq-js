@@ -22,15 +22,12 @@ jobs:
 
       - uses: actions/setup-node@249970729cb0ef3589644e2896645e5dc5ba9c38 # v6
         with:
+          cache: npm
           node-version: 24
 
-      - uses: pnpm/action-setup@0977fd99725f1db4007ccb2928dbb4e90d06cc86 # v6
-        with:
-          version: 10.34.5
-
-      - run: pnpm install --lockfile=false
+      - run: npm ci
 
       - name: Bundle Stats
         uses: rexxars/bundle-stats@4c3c939363da017fdb1a44b2de0c2927a0c95020 # v2.0.0
         with:
-          build-command: "pnpm exec tsdown --config-loader native"
+          build-command: "npm run build"
