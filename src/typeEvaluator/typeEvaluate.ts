@@ -913,7 +913,7 @@ function handleFilterNode(node: FilterNode, scope: Scope): TypeNode {
   })
 }
 
-export function handleAccessAttributeNode(node: AccessAttributeNode, scope: Scope): TypeNode {
+function handleAccessAttributeNode(node: AccessAttributeNode, scope: Scope): TypeNode {
   let attributeBase: TypeNode = scope.value
   if (node.base) {
     attributeBase = walk({node: node.base, scope})
