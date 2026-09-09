@@ -59,14 +59,33 @@ import {
   type UnknownTypeNode,
 } from './types'
 
-// $trace and $debug log to stdout
-const $trace = createDebug('typeEvaluator:evaluate:trace', {
-  log: console.log.bind(console), // eslint-disable-line no-console
-})
-const $debug = createDebug('typeEvaluator:evaluate:debug', {
-  log: console.log.bind(console), // eslint-disable-line no-console
-})
-const $warn = createDebug('typeEvaluator:evaluate:warn')
+type LoggerArgs = Parameters<ReturnType<typeof createDebug>>
+
+let loggers: ReturnType<typeof createLoggers> | undefined
+
+function createLoggers() {
+  return {
+    trace: createDebug('typeEvaluator:evaluate:trace', {
+      log: console.log.bind(console), // eslint-disable-line no-console
+    }),
+    debug: createDebug('typeEvaluator:evaluate:debug', {
+      log: console.log.bind(console), // eslint-disable-line no-console
+    }),
+    warn: createDebug('typeEvaluator:evaluate:warn'),
+  }
+}
+
+function $trace(...args: LoggerArgs) {
+  ;(loggers ??= createLoggers()).trace(...args)
+}
+
+function $debug(...args: LoggerArgs) {
+  ;(loggers ??= createLoggers()).debug(...args)
+}
+
+function $warn(...args: LoggerArgs) {
+  ;(loggers ??= createLoggers()).warn(...args)
+}
 
 /**
  * Evaluates the type of a query and schema.
