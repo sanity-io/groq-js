@@ -53,7 +53,7 @@
     "@sanity/semantic-release-preset": "^5.0.0",
     "@sanity/tsconfig": "^2.2.1",
     "@sanity/tsdown-config": "^0.19.6",
-    "@types/tap": "^15.0.12",
+    "@types/tap": "^18.0.0",
     "@typescript-eslint/eslint-plugin": "^7.18.0",
     "@typescript-eslint/parser": "^7.18.0",
     "esbuild": "^0.28.0",
@@ -68,7 +68,7 @@
     "rimraf": "^5.0.0",
     "semantic-release": "^24.2.0",
     "semver": "^7.5.4",
-    "tap": "^16.3.10",
+    "tap": "^18.8.0",
     "tsdown": "^0.22.13",
     "tsx": "^4.19.2",
     "typescript": "^6.0.3"
