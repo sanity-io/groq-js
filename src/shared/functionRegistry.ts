@@ -8,7 +8,7 @@ export type GroqFunctionArity = number | ((count: number) => boolean)
  * Metadata for a single GROQ function, used by the parser for validation.
  * Does not contain the function implementation itself.
  */
-export interface FunctionRegistryEntry {
+interface FunctionRegistryEntry {
   /** Expected argument count, or a predicate for variadic functions. Omit for unconstrained arity. */
   arity?: GroqFunctionArity
   /** Restricts function availability to a specific evaluation mode. */

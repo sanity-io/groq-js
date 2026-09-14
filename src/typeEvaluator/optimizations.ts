@@ -11,7 +11,7 @@ function typeNodesSorter(a: TypeNode, b: TypeNode): number {
 
 const hashCache = new WeakMap<TypeNode, string>()
 
-export function hashField(field: TypeNode): string {
+function hashField(field: TypeNode): string {
   if (hashCache.has(field)) {
     return hashCache.get(field)!
   }
@@ -83,7 +83,7 @@ function calculateFieldHash(field: TypeNode): string {
   }
 }
 
-export function removeDuplicateTypeNodes(typeNodes: TypeNode[]): TypeNode[] {
+function removeDuplicateTypeNodes(typeNodes: TypeNode[]): TypeNode[] {
   const seenTypes = new Set<string>()
   const newTypeNodes = []
 

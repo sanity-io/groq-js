@@ -45,6 +45,7 @@ jobs:
       - name: Use Node.js ${{ steps.node.outputs.node-version }}
         run: npm install
       - run: npm run-script prettify-check
+      - run: npm run knip
       - run: npm run test:generate
       - run: npm test
         env:

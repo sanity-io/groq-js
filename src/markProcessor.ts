@@ -1,64 +1,13 @@
 import type {CustomFunctions} from './rawParser'
 import type {ParseOptions} from './types'
 
-export type MarkName =
-  | 'add'
-  | 'and'
-  | 'arr_expr'
-  | 'array_end'
-  | 'array_splat'
-  | 'array'
-  | 'asc'
-  | 'attr_ident'
-  | 'comp'
-  | 'dblparent'
-  | 'deref_field'
-  | 'deref'
-  | 'desc'
-  | 'div'
-  | 'exc_range'
-  | 'filter'
-  | 'float'
-  | 'func_args_end'
-  | 'func_call'
-  | 'func_decl'
-  | 'ident'
-  | 'inc_range'
-  | 'integer'
-  | 'mod'
-  | 'mul'
-  | 'neg'
-  | 'not'
-  | 'object_end'
-  | 'object_expr'
-  | 'object_pair'
-  | 'object_splat_this'
-  | 'object_splat'
-  | 'object'
-  | 'or'
-  | 'pair'
-  | 'param'
-  | 'paren'
-  | 'parent'
-  | 'pipecall'
-  | 'pos'
-  | 'pow'
-  | 'project'
-  | 'sci'
-  | 'star'
-  | 'str_begin'
-  | 'sub'
-  | 'this'
-
 export interface Mark {
   name: string
   position: number
 }
 
-export type FunctionId = `${string}::${string}`
-
 export type MarkVisitor<T> = Record<string, MarkVisitorFunc<T>>
-export type MarkVisitorFunc<T> = (p: MarkProcessor, mark: Mark) => T
+type MarkVisitorFunc<T> = (p: MarkProcessor, mark: Mark) => T
 
 export class MarkProcessor {
   private _string: string
