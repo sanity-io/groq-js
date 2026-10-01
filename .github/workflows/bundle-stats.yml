@@ -23,11 +23,11 @@ jobs:
       - uses: actions/setup-node@249970729cb0ef3589644e2896645e5dc5ba9c38 # v6
         with:
           cache: npm
-          node-version: 24
+          node-version: 24.21.0
 
       - run: npm ci
 
       - name: Bundle Stats
-        uses: rexxars/bundle-stats@4c3c939363da017fdb1a44b2de0c2927a0c95020 # v2.0.0
+        uses: rexxars/bundle-stats@c8bb783559da734cbb251f66731ee5227ba41059 # v2.0.1
         with:
           build-command: "npm run build"
