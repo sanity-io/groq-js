@@ -21,6 +21,7 @@ import type {
   OpCallNode,
   OrNode,
   ParentNode,
+  PipeFuncCallNode,
   PosNode,
   ProjectionNode,
   SelectNode,
@@ -913,6 +914,35 @@ function handleFilterNode(node: FilterNode, scope: Scope): TypeNode {
   })
 }
 
+function handlePipeFuncCallNode(node: PipeFuncCallNode, scope: Scope): TypeNode {
+  const base = walk({node: node.base, scope})
+  $trace('pipeFuncCall.base %s %O', node.name, base)
+
+  if (node.name !== 'score') {
+    return base
+  }
+
+  // score() drops non-object elements and sets `_score` on every object.
+  return mapArray(base, scope, (base) => ({
+    type: 'array',
+    of: mapNode(base.of, scope, (element) => {
+      if (element.type === 'unknown') {
+        return element
+      }
+      if (element.type !== 'object') {
+        return {type: 'union', of: []}
+      }
+      return {
+        ...element,
+        attributes: {
+          ...element.attributes,
+          _score: {type: 'objectAttribute', value: {type: 'number'}},
+        },
+      }
+    }),
+  }))
+}
+
 function handleAccessAttributeNode(node: AccessAttributeNode, scope: Scope): TypeNode {
   let attributeBase: TypeNode = scope.value
   if (node.base) {
@@ -1208,7 +1238,7 @@ export function walk({node, scope}: {node: ExprNode; scope: Scope}): TypeNode {
       return handleSelectNode(node, scope)
     }
     case 'PipeFuncCall': {
-      return walk({node: node.base, scope})
+      return handlePipeFuncCallNode(node, scope)
     }
 
     // Values
