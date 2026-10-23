@@ -396,6 +396,47 @@ t.test('pipe func call', (t) => {
   t.end()
 })
 
+t.test('score pipe func adds _score', (t) => {
+  const query = `*[_type == "post"] | score(name match $q) | order(_score desc) [_score > 0]{name, _score}`
+  const ast = parse(query)
+  const res = typeEvaluate(ast, schemas)
+  t.strictSame(res, {
+    type: 'array',
+    of: {
+      type: 'object',
+      attributes: {
+        name: {type: 'objectAttribute', value: {type: 'string'}},
+        _score: {type: 'objectAttribute', value: {type: 'number'}},
+      },
+    },
+  } satisfies TypeNode)
+  t.end()
+})
+
+t.test('score pipe func overrides existing _score and drops non-objects', (t) => {
+  const query = `[{"_score": "a"}, 1] | score(true)`
+  const ast = parse(query)
+  const res = typeEvaluate(ast, schemas)
+  t.strictSame(res, {
+    type: 'array',
+    of: {
+      type: 'object',
+      attributes: {
+        _score: {type: 'objectAttribute', value: {type: 'number'}},
+      },
+    },
+  } satisfies TypeNode)
+  t.end()
+})
+
+t.test('score pipe func on non-array', (t) => {
+  const query = `*[_type == "post"][0] | score(true)`
+  const ast = parse(query)
+  const res = typeEvaluate(ast, schemas)
+  t.strictSame(res, {type: 'null'} satisfies TypeNode)
+  t.end()
+})
+
 t.test('element access', (t) => {
   const query = `*[_type == "author"][0]`
   const ast = parse(query)
