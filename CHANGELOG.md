@@ -5,6 +5,18 @@
 All notable changes to this project will be documented in this file. See
 [Conventional Commits](https://conventionalcommits.org) for commit guidelines.
 
+## [2.0.1](https://github.com/sanity-io/groq-js/compare/v2.0.0...v2.0.1) (2026-10-23)
+
+### Bug Fixes
+
+- **build:** emit declarations for the shared and evaluator chunks ([#362](https://github.com/sanity-io/groq-js/issues/362)) ([30db00e](https://github.com/sanity-io/groq-js/commit/30db00e748fa821befdf59a802a48659025cc274)), closes [#361](https://github.com/sanity-io/groq-js/issues/361) [#361](https://github.com/sanity-io/groq-js/issues/361)
+- fix handling of float subscripts. ([557fbd9](https://github.com/sanity-io/groq-js/commit/557fbd9da4f0f0171d555a952bfcd28560ae44a1))
+- **typeEvaluator:** type \_score added by score() pipe function ([#366](https://github.com/sanity-io/groq-js/issues/366)) ([b356114](https://github.com/sanity-io/groq-js/commit/b35611449180211f57d15701457aaaac5cf85e63))
+
+### Performance Improvements
+
+- initialize type evaluator loggers lazily ([#364](https://github.com/sanity-io/groq-js/issues/364)) ([06ccb20](https://github.com/sanity-io/groq-js/commit/06ccb20914d3b92934bf95fd966ba53d87271d95))
+
 ## [2.0.0](https://github.com/sanity-io/groq-js/compare/v1.30.3...v2.0.0) (2026-07-22)
 
 ### ⚠ BREAKING CHANGES
