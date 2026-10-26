@@ -16,6 +16,8 @@ import {
   type UnknownTypeNode,
 } from './types'
 
+type UnionTypeMetadata = Pick<UnionTypeNode, 'declaredOf' | 'declaredTo' | 'name'>
+
 /**
  * createReferenceTypeNode creates a ObjectTypeNode representing a reference type
  * it adds required attributes for a reference type.
@@ -24,7 +26,11 @@ import {
  * @returns A ObjectTypeNode representing a reference type
  * @internal
  */
-export function createReferenceTypeNode(name: string, inArray: boolean = false): ObjectTypeNode {
+export function createReferenceTypeNode(
+  name: string,
+  inArray: boolean = false,
+  declaredTo?: InlineTypeNode[],
+): ObjectTypeNode {
   const attributes: Record<string, ObjectAttribute> = {
     _ref: {
       type: 'objectAttribute',
@@ -57,11 +63,17 @@ export function createReferenceTypeNode(name: string, inArray: boolean = false):
     } satisfies ObjectAttribute
   }
 
-  return {
+  const reference: ObjectTypeNode = {
     type: 'object',
     attributes,
     dereferencesTo: name,
-  } satisfies ObjectTypeNode
+  }
+
+  if (declaredTo !== undefined) {
+    reference.declaredTo = declaredTo
+  }
+
+  return reference
 }
 
 export function createObject(
@@ -93,20 +105,92 @@ export function createObjectAttribute(
 
 export function nullUnion(node: TypeNode): TypeNode {
   if (node.type === 'union') {
+    const metadata = getNullableUnionMetadata(node)
+    if (metadata) {
+      return unionOf([...node.of, {type: 'null'}], metadata)
+    }
+
     return unionOf(...node.of, {type: 'null'})
+  }
+
+  const declaredTo = getDeclaredToMetadata(node)
+  if (declaredTo) {
+    return unionOf([node, {type: 'null'}], {declaredTo})
   }
 
   return unionOf(node, {type: 'null'})
 }
 
-export function unionOf(...nodes: TypeNode[]): TypeNode {
+export function unionOf<T extends TypeNode>(
+  nodes: T[],
+  metadata?: UnionTypeMetadata,
+): UnionTypeNode<T>
+export function unionOf(...nodes: TypeNode[]): TypeNode
+export function unionOf(...args: unknown[]): TypeNode {
+  const firstArg = args[0]
+  const nodes = Array.isArray(firstArg) ? (firstArg as TypeNode[]) : (args as TypeNode[])
+  const metadata = Array.isArray(firstArg) ? (args[1] as UnionTypeMetadata | undefined) : undefined
+
   if (nodes.length === 1) {
-    return nodes[0]
+    if (!hasUnionMetadata(metadata)) {
+      return nodes[0]!
+    }
   }
-  return {
+
+  const union: UnionTypeNode = {
     type: 'union',
     of: nodes,
-  } satisfies UnionTypeNode
+  }
+
+  if (metadata?.name) {
+    union.name = metadata.name
+  }
+
+  if (metadata?.declaredOf) {
+    union.declaredOf = metadata.declaredOf
+  }
+
+  if (metadata?.declaredTo) {
+    union.declaredTo = metadata.declaredTo
+  }
+
+  return union
+}
+
+function hasUnionMetadata(metadata: UnionTypeMetadata | undefined): boolean {
+  return Boolean(metadata?.name || metadata?.declaredOf || metadata?.declaredTo)
+}
+
+function getNullableUnionMetadata(node: UnionTypeNode): UnionTypeMetadata | undefined {
+  const declaredOf = getUnionDeclaredOf(node)
+  const metadata: UnionTypeMetadata = {}
+
+  if (declaredOf) {
+    metadata.declaredOf = [...declaredOf, {type: 'null'}]
+  }
+
+  const declaredTo = getDeclaredToMetadata(node)
+  if (declaredTo) {
+    metadata.declaredTo = declaredTo
+  }
+
+  return hasUnionMetadata(metadata) ? metadata : undefined
+}
+
+function getUnionDeclaredOf(node: UnionTypeNode): TypeNode[] | undefined {
+  if (node.name) {
+    return [{type: 'inline', name: node.name}]
+  }
+
+  return node.declaredOf
+}
+
+function getDeclaredToMetadata(node: TypeNode): InlineTypeNode[] | undefined {
+  if (node.type !== 'inline' && node.type !== 'object' && node.type !== 'union') {
+    return undefined
+  }
+
+  return node.declaredTo && node.declaredTo.length > 0 ? node.declaredTo : undefined
 }
 
 export function dateTimeString(): StringTypeNode {
@@ -143,8 +227,8 @@ export function mapNode<T extends TypeNode = TypeNode>(
   node: TypeNode,
   scope: Scope,
   mapper: (node: ConcreteTypeNode | UnknownTypeNode) => T,
-  mergeUnions: (nodes: TypeNode[]) => TypeNode = (nodes) =>
-    optimizeUnions({type: 'union', of: nodes}),
+  mergeUnions: (nodes: TypeNode[], metadata?: UnionTypeMetadata) => TypeNode = (nodes, metadata) =>
+    optimizeUnions(unionOf(nodes, metadata)),
 ): TypeNode {
   switch (node.type) {
     case 'boolean':
@@ -156,7 +240,10 @@ export function mapNode<T extends TypeNode = TypeNode>(
     case 'unknown':
       return mapper(node)
     case 'union':
-      return mergeUnions(node.of.map((inner) => mapNode(inner, scope, mapper), mergeUnions))
+      return mergeUnions(
+        node.of.map((inner) => mapNode(inner, scope, mapper), mergeUnions),
+        getMappedUnionMetadata(node),
+      )
     case 'inline': {
       const resolvedInline = resolveInline(node, scope)
       return mapNode(resolvedInline, scope, mapper, mergeUnions)
@@ -165,6 +252,22 @@ export function mapNode<T extends TypeNode = TypeNode>(
       // @ts-expect-error - all types should be handled
       throw new Error(`Unknown type: ${node.type}`)
   }
+}
+
+function getMappedUnionMetadata(node: UnionTypeNode): UnionTypeMetadata | undefined {
+  const metadata: UnionTypeMetadata = {}
+
+  if (node.name) {
+    metadata.declaredOf = [{type: 'inline', name: node.name}]
+  } else if (node.declaredOf) {
+    metadata.declaredOf = node.declaredOf
+  }
+
+  if (node.declaredTo) {
+    metadata.declaredTo = node.declaredTo
+  }
+
+  return hasUnionMetadata(metadata) ? metadata : undefined
 }
 
 export function isFuncCall(node: ExprNode, name: string): boolean {

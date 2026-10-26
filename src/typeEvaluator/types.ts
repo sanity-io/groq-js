@@ -65,6 +65,8 @@ export interface InlineTypeNode {
   type: 'inline'
   /** the name of the referenced type */
   name: string
+  /** optional schema reference target provenance */
+  declaredTo?: InlineTypeNode[]
 }
 
 /**
@@ -83,6 +85,8 @@ export interface ObjectTypeNode<T extends TypeNode = TypeNode> {
   rest?: ObjectTypeNode | UnknownTypeNode | InlineTypeNode
   /* an optional reference to the document this object dereferences to */
   dereferencesTo?: string
+  /** optional schema reference target provenance */
+  declaredTo?: InlineTypeNode[]
 }
 
 /** Describes a type node for object attributes, including a type and an optional flag for being optional. */
@@ -99,8 +103,14 @@ export interface ObjectAttribute<T extends TypeNode = TypeNode> {
 export interface UnionTypeNode<T extends TypeNode = TypeNode> {
   /** can be used to identify the type of the node, in this case it's always 'union' */
   type: 'union'
+  /** optional schema union name, when this node represents a named union */
+  name?: string
   /** a collection of types */
   of: T[]
+  /** optional declared union members before effective members were flattened */
+  declaredOf?: TypeNode[]
+  /** optional schema reference target provenance */
+  declaredTo?: InlineTypeNode[]
 }
 
 /** Describes a type node for array values. */
