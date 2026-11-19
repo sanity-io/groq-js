@@ -820,8 +820,8 @@ function handleSelectNode(node: SelectNode, scope: Scope): TypeNode {
       guaranteed = true
     }
   }
-  if (node.fallback && !guaranteed) {
-    values.push(walk({node: node.fallback, scope}))
+  if (!guaranteed) {
+    values.push(node.fallback ? walk({node: node.fallback, scope}) : {type: 'null'})
   }
   if (values.length === 0) {
     return {type: 'null'} satisfies NullTypeNode
