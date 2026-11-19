@@ -1533,6 +1533,60 @@ t.test('with select, not guaranteed & with fallback', (t) => {
   t.end()
 })
 
+t.test('with select at the root of a query', (t) => {
+  const queries: [string, TypeNode][] = [
+    [`select(true => 1, 2)`, {type: 'number', value: 1}],
+    [
+      `select($x == 1 => "a", "b")`,
+      unionOf({type: 'string', value: 'a'}, {type: 'string', value: 'b'}),
+    ],
+    [
+      `select(defined($p) => {"p": 1}, 2)`,
+      unionOf(
+        {type: 'number', value: 2},
+        createObject({p: createObjectAttribute({type: 'number', value: 1})}),
+      ),
+    ],
+    [
+      `select(count(*) > 0 => "some", "none")`,
+      unionOf({type: 'string', value: 'none'}, {type: 'string', value: 'some'}),
+    ],
+    [
+      `{"a": select(true => 1, 2)}`,
+      createObject({a: createObjectAttribute({type: 'number', value: 1})}),
+    ],
+    [
+      `{"a": select(false => 1, 2)}`,
+      createObject({a: createObjectAttribute({type: 'number', value: 2})}),
+    ],
+    [
+      `{"a": select($flag => 1, 2)}`,
+      createObject({
+        a: createObjectAttribute(unionOf({type: 'number', value: 1}, {type: 'number', value: 2})),
+      }),
+    ],
+    [
+      `{"a": select($type == "author" => *[_type == $type]{name}, "__placeholder__")}`,
+      createObject({
+        a: createObjectAttribute(
+          unionOf(
+            {
+              type: 'array',
+              of: createObject({name: createObjectAttribute({type: 'string'})}),
+            },
+            {type: 'string', value: '__placeholder__'},
+          ),
+        ),
+      }),
+    ],
+  ]
+  for (const [query, result] of queries) {
+    const res = typeEvaluate(parse(query), schemas)
+    t.strictSame(res, result, query)
+  }
+  t.end()
+})
+
 t.test('with splat', (t) => {
   const query = `*[_type == "author"] {
         ...,

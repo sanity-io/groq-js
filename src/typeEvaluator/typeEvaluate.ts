@@ -805,9 +805,16 @@ function handleSelectNode(node: SelectNode, scope: Scope): TypeNode {
   let guaranteed = false
   for (const alternative of node.alternatives) {
     const conditionValue = walk({node: alternative.condition, scope})
-    const conditionScope = resolveFilter(alternative.condition, scope)
-    if (conditionScope.type === 'union' && conditionScope.of.length > 0) {
-      values.push(walk({node: alternative.value, scope: scope.createHidden(conditionScope.of)}))
+    if (scope.parent === undefined) {
+      // The root `@` has no members for the condition to keep, so judge the condition itself.
+      if (booleanValue(conditionValue, scope).canBeTrue) {
+        values.push(walk({node: alternative.value, scope}))
+      }
+    } else {
+      const conditionScope = resolveFilter(alternative.condition, scope)
+      if (conditionScope.type === 'union' && conditionScope.of.length > 0) {
+        values.push(walk({node: alternative.value, scope: scope.createHidden(conditionScope.of)}))
+      }
     }
     if (conditionValue.type === 'boolean' && conditionValue.value === true) {
       guaranteed = true
