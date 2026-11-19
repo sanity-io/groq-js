@@ -1587,6 +1587,58 @@ t.test('with select at the root of a query', (t) => {
   t.end()
 })
 
+t.test('with select, no fallback', (t) => {
+  const queries: [string, TypeNode][] = [
+    [
+      `*[_type == "author"]{"a": select(name == "x" => 1)}`,
+      createObject({a: createObjectAttribute(nullUnion({type: 'number', value: 1}))}),
+    ],
+    [
+      `*[_type == "author"]{"a": select(name == "x" => 1, name == "y" => 2)}`,
+      createObject({
+        a: createObjectAttribute(
+          unionOf({type: 'number', value: 1}, {type: 'number', value: 2}, {type: 'null'}),
+        ),
+      }),
+    ],
+    [
+      `*[_type == "author"]{"a": select($flag => 1, true => 2)}`,
+      createObject({
+        a: createObjectAttribute(unionOf({type: 'number', value: 1}, {type: 'number', value: 2})),
+      }),
+    ],
+    [
+      `*[_type == "author"]{"a": select(true => 1)}`,
+      createObject({a: createObjectAttribute({type: 'number', value: 1})}),
+    ],
+    [
+      `*[_type == "author"]{"a": select(false => 1)}`,
+      createObject({a: createObjectAttribute({type: 'null'})}),
+    ],
+  ]
+  for (const [query, of] of queries) {
+    t.strictSame(typeEvaluate(parse(query), schemas), {type: 'array', of}, query)
+  }
+  t.end()
+})
+
+t.test('with select at the root of a query, no fallback', (t) => {
+  const queries: [string, TypeNode][] = [
+    [`select($x == 1 => "a")`, nullUnion({type: 'string', value: 'a'})],
+    [
+      `{"a": select($x == 1 => "a")}`,
+      createObject({a: createObjectAttribute(nullUnion({type: 'string', value: 'a'}))}),
+    ],
+    [`select(false => "a")`, {type: 'null'}],
+    [`{"a": select(false => "a")}`, createObject({a: createObjectAttribute({type: 'null'})})],
+    [`select(true => "a")`, {type: 'string', value: 'a'}],
+  ]
+  for (const [query, result] of queries) {
+    t.strictSame(typeEvaluate(parse(query), schemas), result, query)
+  }
+  t.end()
+})
+
 t.test('with splat', (t) => {
   const query = `*[_type == "author"] {
         ...,
