@@ -1368,16 +1368,17 @@ function resolveFilter(expr: ExprNode, scope: Scope): UnionTypeNode {
     if (boolResult.canBeFalse && assertions.length > 0) {
       // Condition is uncertain (can be both true and false).
       // Apply the extracted assertions to narrow the type.
-      const narrowedNode = narrowNode(node, assertions)
+      const narrowedNode = narrowNode(node, assertions, (inline) => resolveInline(inline, scope))
       const narrowedScope = scope.createHidden([narrowedNode])
       const narrowedCond = walk({node: expr, scope: narrowedScope})
       const narrowedBoolResult = booleanValue(narrowedCond, narrowedScope)
 
-      if (narrowedBoolResult.canBeTrue && !narrowedBoolResult.canBeFalse) {
-        // Narrowing makes the condition definitely true, use the narrowed type
+      if (narrowedBoolResult.canBeTrue) {
+        // The assertions hold whenever the condition is true, so every value that passes the
+        // filter has the narrowed type, even when other terms (such as parameters) stay undecided.
         filtered.push(narrowedNode)
       } else {
-        // Narrowing doesn't help or makes it false, keep original type
+        // Narrowing makes it false, keep original type
         filtered.push(node)
       }
     } else {

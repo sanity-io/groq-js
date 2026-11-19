@@ -1,6 +1,8 @@
 import type {ExprNode} from '../shared/nodeTypes'
 import {createObjectAttribute, unionOf} from './typeHelpers'
-import type {NullTypeNode, ObjectAttribute, ObjectTypeNode, TypeNode} from './types'
+import type {InlineTypeNode, NullTypeNode, ObjectAttribute, ObjectTypeNode, TypeNode} from './types'
+
+type InlineResolver = (node: InlineTypeNode) => TypeNode
 
 /**
  * Represents a narrowing assertion extracted from a condition expression.
@@ -185,6 +187,7 @@ export function extractNarrowingAssertions(
 function applyAssertionsToObject(
   node: ObjectTypeNode,
   assertions: NarrowingAssertion[],
+  resolveInline: InlineResolver,
   currentDepth: number = 0,
   isOptionalPath: boolean = false,
 ): ObjectTypeNode | NullTypeNode {
@@ -266,13 +269,25 @@ function applyAssertionsToObject(
           hasChanges = true
         }
 
-        if (newAttr.value.type === 'object') {
-          const narrowedValue = applyAssertionsToObject(
-            newAttr.value,
+        // An inline type is only expanded when the assertions narrow it, so an attribute the
+        // filter doesn't change keeps its named type.
+        const narrowMember = (t: TypeNode): TypeNode => {
+          const resolved = t.type === 'inline' ? resolveInline(t) : t
+          if (resolved.type !== 'object') {
+            return t
+          }
+          const narrowed = applyAssertionsToObject(
+            resolved,
             deeperAssertions,
+            resolveInline,
             currentDepth + 1,
             thisPathIsOptional,
           )
+          return narrowed === resolved ? t : narrowed
+        }
+
+        if (newAttr.value.type === 'object' || newAttr.value.type === 'inline') {
+          const narrowedValue = narrowMember(newAttr.value)
           if (narrowedValue !== newAttr.value) {
             newAttr = createObjectAttribute(narrowedValue)
             hasChanges = true
@@ -280,17 +295,7 @@ function applyAssertionsToObject(
         } else if (newAttr.value.type === 'union') {
           // Handle union types - narrow each object in the union
           const originalOf = newAttr.value.of
-          const narrowedOf = originalOf.map((t) => {
-            if (t.type === 'object') {
-              return applyAssertionsToObject(
-                t,
-                deeperAssertions,
-                currentDepth + 1,
-                thisPathIsOptional,
-              )
-            }
-            return t
-          })
+          const narrowedOf = originalOf.map(narrowMember)
 
           // Remove nulls when narrowing nested paths (only if this path is optional)
           const nonNullTypes = narrowedOf.filter((t) => t.type !== 'null')
@@ -326,15 +331,19 @@ function applyAssertionsToObject(
 /**
  * Applies narrowing assertions to a type node.
  */
-export function narrowNode(node: TypeNode, assertions: NarrowingAssertion[]): TypeNode {
+export function narrowNode(
+  node: TypeNode,
+  assertions: NarrowingAssertion[],
+  resolveInline: InlineResolver,
+): TypeNode {
   if (assertions.length === 0) {
     return node
   }
   if (node.type === 'object') {
-    return applyAssertionsToObject(node, assertions)
+    return applyAssertionsToObject(node, assertions, resolveInline)
   }
   if (node.type === 'union') {
-    return unionOf(...node.of.map((n) => narrowNode(n, assertions)))
+    return unionOf(...node.of.map((n) => narrowNode(n, assertions, resolveInline)))
   }
   return node
 }

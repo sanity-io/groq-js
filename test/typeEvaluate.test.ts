@@ -2418,7 +2418,19 @@ t.test('function: global::defined', (t) => {
   const res = typeEvaluate(ast, [postDocument, authorDocument, slugType])
   t.strictSame(res, {
     type: 'array',
-    of: findSchemaType('post'),
+    of: {
+      type: 'object',
+      attributes: {
+        ...postDocument.attributes,
+        sluger: createObjectAttribute({
+          ...slugType.value,
+          attributes: {
+            ...slugType.value.attributes,
+            current: createObjectAttribute({type: 'string'}),
+          },
+        }),
+      },
+    },
   })
   t.end()
 })
@@ -2517,6 +2529,92 @@ t.test('narrows', (t) => {
     } satisfies TypeNode)
   }
 
+  t.end()
+})
+
+t.test('narrows when the rest of the filter is undecidable', (t) => {
+  const queries: [string, TypeNode][] = [
+    [
+      `*[_type == $type && defined(lastname)] { lastname }`,
+      createObject({lastname: createObjectAttribute({type: 'string'})}),
+    ],
+    [
+      `*[_type == $type && lastname != null] { lastname }`,
+      createObject({lastname: createObjectAttribute({type: 'string'})}),
+    ],
+    [
+      `*[null != lastname && _type == $type] { lastname }`,
+      createObject({lastname: createObjectAttribute({type: 'string'})}),
+    ],
+    [
+      `*[_type == $type && defined(optionalObject.subfield)] { "sub": optionalObject.subfield }`,
+      createObject({sub: createObjectAttribute({type: 'string'})}),
+    ],
+    [
+      `*[_type == "author" && age > $min && defined(optionalAge)] { optionalAge }`,
+      createObject({optionalAge: createObjectAttribute({type: 'number'})}),
+    ],
+  ]
+  for (const [query, result] of queries) {
+    const res = typeEvaluate(parse(query), [postDocument, authorDocument])
+    t.strictSame(res, {type: 'array', of: result} satisfies TypeNode, query)
+  }
+  t.end()
+})
+
+t.test('narrows a path through an inline type', (t) => {
+  const queries: [string, TypeNode][] = [
+    [
+      `*[_type == "post" && defined(sluger.current)] { "slug": sluger.current }`,
+      createObject({slug: createObjectAttribute({type: 'string'})}),
+    ],
+    [
+      `*[_type == $type && defined(sluger.current)] { "slug": sluger.current }`,
+      createObject({slug: createObjectAttribute({type: 'string'})}),
+    ],
+    [
+      `*[_type == "post" && sluger.current != null] { "slug": sluger.current }`,
+      createObject({slug: createObjectAttribute({type: 'string'})}),
+    ],
+  ]
+  for (const [query, result] of queries) {
+    const res = typeEvaluate(parse(query), [postDocument, slugType])
+    t.strictSame(res, {type: 'array', of: result} satisfies TypeNode, query)
+  }
+
+  // A terminal assertion on an inline attribute keeps the named type.
+  t.strictSame(
+    typeEvaluate(parse(`*[_type == $type && defined(sluger)] { sluger }`), [
+      postDocument,
+      slugType,
+    ]),
+    {
+      type: 'array',
+      of: createObject({sluger: createObjectAttribute({type: 'inline', name: 'slug'})}),
+    } satisfies TypeNode,
+  )
+  t.end()
+})
+
+t.test('does not narrow through || when the rest is undecidable', (t) => {
+  const queries: [string, TypeNode][] = [
+    [
+      `*[_type == $type && (defined(lastname) || defined(publishedAt))] { lastname }`,
+      createObject({lastname: createObjectAttribute(nullUnion({type: 'string'}))}),
+    ],
+    [
+      `*[_type == $type || defined(lastname)] { lastname }`,
+      createObject({lastname: createObjectAttribute(nullUnion({type: 'string'}))}),
+    ],
+    [
+      `*[_type == $type && !(defined(lastname) && defined(publishedAt))] { lastname }`,
+      createObject({lastname: createObjectAttribute(nullUnion({type: 'string'}))}),
+    ],
+  ]
+  for (const [query, result] of queries) {
+    const res = typeEvaluate(parse(query), [postDocument])
+    t.strictSame(res, {type: 'array', of: result} satisfies TypeNode, query)
+  }
   t.end()
 })
 
