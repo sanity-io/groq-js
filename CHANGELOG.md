@@ -5,6 +5,13 @@
 All notable changes to this project will be documented in this file. See
 [Conventional Commits](https://conventionalcommits.org) for commit guidelines.
 
+## [2.0.3](https://github.com/sanity-io/groq-js/compare/v2.0.2...v2.0.3) (2026-11-19)
+
+### Bug Fixes
+
+- **typeEvaluator:** type select() alternatives at the root of a query ([#368](https://github.com/sanity-io/groq-js/issues/368)) ([d503778](https://github.com/sanity-io/groq-js/commit/d5037788c083c8083e65eea7a5d531b75a52e3b8))
+- **typeEvaluator:** type select() without a fallback as nullable ([#369](https://github.com/sanity-io/groq-js/issues/369)) ([f6d4bf6](https://github.com/sanity-io/groq-js/commit/f6d4bf6d522394d1fc5354e5d5bb3dfa6bc8172c))
+
 ## [2.0.2](https://github.com/sanity-io/groq-js/compare/v2.0.1...v2.0.2) (2026-11-19)
 
 ### Bug Fixes
