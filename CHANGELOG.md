@@ -5,6 +5,12 @@
 All notable changes to this project will be documented in this file. See
 [Conventional Commits](https://conventionalcommits.org) for commit guidelines.
 
+## [2.0.2](https://github.com/sanity-io/groq-js/compare/v2.0.1...v2.0.2) (2026-11-19)
+
+### Bug Fixes
+
+- **typeEvaluator:** narrow on defined() when other filter terms are undecided ([#367](https://github.com/sanity-io/groq-js/issues/367)) ([b4ebf79](https://github.com/sanity-io/groq-js/commit/b4ebf79e9dd6ba165a09e1bd291bf16cdfcadcae))
+
 ## [2.0.1](https://github.com/sanity-io/groq-js/compare/v2.0.0...v2.0.1) (2026-10-23)
 
 ### Bug Fixes
